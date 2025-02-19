@@ -1,0 +1,196 @@
+---
+title: 'Go'
+description: 'Implementation of a Kafka consumer in Go for JSON format data streams'
+---
+
+## Overview
+
+This guide demonstrates how to implement a Kafka consumer in Go to subscribe and process onchain data streams in real-time. The consumer connects to Kafka brokers securely using SSL and handles incoming messages in **JSON format**.
+
+<Note>
+The complete code is available [here](https://github.com/chainstream-io/kafka-consumer-example).
+</Note>
+
+## Prerequisites
+
+Ensure you have the following components set up before running the Go Kafka consumer:
+
+1. **ChainStream Kafka Server Access**: Access to ChainStream Kafka brokers
+2. **Username and Password**: For authentication with the Kafka brokers
+3. **Topic name(s)** to subscribe to
+4. **Go**: Version >= 1.16
+5. **Confluent Kafka Go Client**: Kafka client library for Go
+
+## Dependencies
+
+Before running the script, ensure you have the necessary Go dependencies installed:
+
+1. Initialize your Go module:
+```bash
+go mod init kafka-consumer
+```
+
+2. Install the **confluent-kafka-go** library:
+```bash
+go get github.com/confluentinc/confluent-kafka-go/kafka
+```
+
+## Implementation
+
+### Kafka Client Initialization
+
+The Kafka client is initialized with SSL and SASL configurations:
+
+```go
+config := &kafka.ConfigMap{
+    "bootstrap.servers":                     "rpk0.chainstream.io:9093,rpk1.chainstream.io:9093,rpk2.chainstream.io:9093",
+    "group.id":                              "solanatest2-group-99",
+    "session.timeout.ms":                    30000,
+    "security.protocol":                     "SASL_SSL",
+    "ssl.ca.location":                       "server.cer.pem",
+    "ssl.key.location":                      "client.key.pem",
+    "ssl.certificate.location":              "client.cer.pem",
+    "ssl.endpoint.identification.algorithm": "none",
+    "sasl.mechanisms":                       "SCRAM-SHA-512",
+    "sasl.username":                         "usernamee",
+    "sasl.password":                         "pwww",
+    "auto.offset.reset":                     "latest",
+}
+```
+
+### Kafka Consumer Setup
+
+Create and configure the Kafka consumer:
+
+```go
+consumer, err := kafka.NewConsumer(config)
+if err != nil {
+    fmt.Printf("Failed to create consumer: %s\n", err)
+    os.Exit(1)
+}
+
+topic := "solana.broadcasted.transactions"
+
+// Subscribe to the topic
+err = consumer.SubscribeTopics([]string{topic}, nil)
+if err != nil {
+    fmt.Printf("Failed to subscribe to topic: %s\n", err)
+    os.Exit(1)
+}
+```
+
+### Message Processing Loop
+
+Implement the main processing loop with signal handling:
+
+```go
+// Set up a channel to handle shutdown
+sigchan := make(chan os.Signal, 1)
+signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+
+// Poll messages and process them
+run := true
+for run {
+    select {
+    case sig := <-sigchan:
+        fmt.Printf("Caught signal %v: terminating\n", sig)
+        run = false
+    default:
+        ev := consumer.Poll(100)
+        if ev == nil {
+            continue
+        }
+
+        switch e := ev.(type) {
+        case *kafka.Message:
+            processMessage(e)
+
+        case kafka.Error:
+            fmt.Printf("Error: %v\n", e)
+            if e.Code() == kafka.ErrAllBrokersDown {
+                run = false
+            }
+        default:
+            fmt.Printf("Ignored %v\n", e)
+        }
+    }
+}
+
+// Close down consumer
+consumer.Close()
+```
+
+### Message Processing Function
+
+Implement the message processing function:
+
+```go
+func processMessage(msg *kafka.Message) {
+    fmt.Printf("Received message on topic %s [%d] at offset %v:\n",
+        *msg.TopicPartition.Topic, msg.TopicPartition.Partition, msg.TopicPartition.Offset)
+
+    // Try to parse the message value as JSON
+    var jsonData interface{}
+    err := json.Unmarshal(msg.Value, &jsonData)
+    if err != nil {
+        fmt.Printf("Error parsing JSON: %v\n", err)
+        fmt.Printf("Raw message: %s\n", string(msg.Value))
+        return
+    }
+
+    // Pretty print the JSON
+    prettyJSON, err := json.MarshalIndent(jsonData, "", "  ")
+    if err != nil {
+        fmt.Printf("Error prettifying JSON: %v\n", err)
+        return
+    }
+
+    fmt.Printf("Parsed JSON:\n%s\n", string(prettyJSON))
+
+    // Log message data
+    logEntry := map[string]interface{}{
+        "topic":     *msg.TopicPartition.Topic,
+        "partition": msg.TopicPartition.Partition,
+        "offset":    msg.TopicPartition.Offset,
+        "key":       string(msg.Key),
+        "value":     string(prettyJSON),
+    }
+    fmt.Printf("Log entry: %+v\n", logEntry)
+    fmt.Println("----------------------------------------")
+}
+```
+
+## Running the Application
+
+1. **Initialize the Go module** (if not already done):
+```bash
+go mod init kafka-consumer
+```
+
+2. **Run the Go file**:
+```bash
+go run consumer.go
+```
+
+## Execution Workflow
+
+1. **Kafka Client Initialization**
+   - Initialize with SSL and SASL configurations
+   - Set unique `group.id` for independent message consumption
+
+2. **Consumer Setup**
+   - Create Kafka consumer
+   - Subscribe to specified topic
+
+3. **Message Processing**
+   - Poll for new messages every 100ms
+   - Parse JSON messages
+   - Log processed data
+
+4. **Graceful Shutdown**
+   - Handle termination signals
+   - Close consumer cleanly
+
+<Note>
+Ensure all SSL certificates are properly configured and placed in the correct locations before running the application.
+</Note> 

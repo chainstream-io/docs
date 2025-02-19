@@ -1,0 +1,152 @@
+---
+title: 'Concepts'
+description: 'Understanding Kafka streaming and when to use it'
+---
+
+# Kafka Streaming Concepts
+
+## GraphQL vs Kafka Streams
+
+### Kafka Advantages
+
+1. **Lower Latency**
+   - Shorter data pipeline
+   - Less processing overhead compared to GraphQL subscriptions
+   - No custom database or additional formatting logic needed
+
+2. **Better Reliability**
+   - More stable connection protocol than WebSocket
+   - Optimized for persistent connections
+   - Messages can be read from latest offset
+
+3. **Superior Scalability**
+   - Multiple consumers can split the load
+   - Automatic load redistribution
+   - Better handling of high-volume data
+
+### Kafka Limitations
+
+1. **Browser Incompatibility**
+   - Server-side only implementation
+   - No direct browser consumption
+
+2. **Limited Filtering**
+   - No pre-filtering capabilities
+   - Pre-defined schema
+   - Client-side post-processing required
+
+3. **Development Complexity**
+   - No IDE support for streams
+   - Debugging limited to consumer side
+
+## When to Choose Each Technology
+
+### Use GraphQL When:
+
+- Building prototypes with development speed as priority
+- Combining archive and real-time data
+- Displaying different data on web pages
+- Building client-side only applications
+
+### Use Kafka When:
+
+- Latency is critical
+- Message persistence is required
+- Complex calculations needed
+- Building scalable cloud applications
+
+## Technical Considerations
+
+### Important Notes
+
+1. **Stream Characteristics**
+   - Unfiltered data streams
+   - Requires robust network throughput
+   - Variable message granularity
+   - Non-sequential message delivery
+   - Possible message duplication
+   - Large messages may be split (1MB limit)
+
+2. **Latency Factors**
+   - Broadcasted topics available for most blockchains
+   - Transformation adds 100-1000ms latency
+   - Chain proximity affects speed
+
+<Frame>
+  <img src="../../../images/api-reference/streaming/kafka-pipeline.png" alt="Topic Data Pipeline" />
+</Frame>
+
+## Implementation Guide
+
+### Message Retention
+
+- **Proto Streams:** 24 hours
+- **DEX Trades (JSON):** 24 hours
+- **Other JSON Streams:** 4 hours
+
+### Connection Setup
+
+```javascript
+const sasl_conf = {
+  'bootstrap.servers': 'kfk0.chainstream.io:9093,kfk1.chainstream.io:9093,kfk2.chainstream.io:9093',
+  'security.protocol': 'SASL_SSL',
+  'sasl.mechanism': 'SCRAM-SHA-512',
+  'sasl.username': '<YOUR USERNAME HERE>',
+  'sasl.password': '<YOUR PASSWORD HERE>',
+  'ssl.key.location': 'client.key.pem',
+  'ssl.ca.location': 'server.cer.pem',
+  'ssl.certificate.location': 'client.cer.pem',
+  'ssl.endpoint.identification.algorithm': 'none'
+}
+```
+
+### Topic Structure
+
+```plaintext
+<BLOCKCHAIN_NAME>.<MESSAGE_TYPE>
+<BLOCKCHAIN_NAME>.broadcasted.<MESSAGE_TYPE>
+```
+
+Common MESSAGE_TYPES:
+- dextrades
+- dexorders
+- dexpools
+- transactions
+- transfers
+- instructions
+- raw
+
+## Best Practices
+
+### 1. Parallel Processing
+- Read all partitions in parallel
+- One thread per partition
+- Balance load distribution
+
+### 2. Continuous Consumption
+- Maintain uninterrupted consumer loop
+- Process messages asynchronously
+- Avoid blocking main consumption loop
+
+### 3. Message Processing
+- Implement batch processing when appropriate
+- Use worker groups for concurrent processing
+- Monitor and manage processing latency
+
+## Protobuf Streams
+
+### Key Features
+- Lower latency delivery
+- Compact binary format
+- Strict schema adherence
+- Message packing (max 250 transactions)
+- 24-hour message retention
+
+### Available Topics
+- solana.dextrades.proto
+- solana.tokens.proto
+- solana.transactions.proto
+
+<Note>
+For detailed implementation examples in specific languages, refer to our language-specific guides.
+</Note> 

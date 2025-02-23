@@ -1,0 +1,4106 @@
+{
+    "openapi": "3.0.0",
+    "paths": {
+        "/jobs/{id}": {
+            "get": {
+                "description": "Retrieve the current status and result of a job by its ID",
+                "operationId": "JobController_getJob",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "Job identifier",
+                        "schema": {
+                            "example": "12345",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job status retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "state": {
+                                            "type": "string",
+                                            "description": "Current job state",
+                                            "example": "completed"
+                                        },
+                                        "result": {
+                                            "type": "object",
+                                            "description": "Job execution result"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Job not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 404
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Job not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get job status",
+                "tags": [
+                    "Jobs"
+                ]
+            }
+        },
+        "/jobs/{id}/streaming": {
+            "get": {
+                "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs.",
+                "operationId": "JobController_streaming",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "Job identifier",
+                        "schema": {
+                            "example": "12345",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream established successfully",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "description": "Job ID",
+                                            "example": "12345"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "completed",
+                                                "error"
+                                            ],
+                                            "description": "Current job status"
+                                        },
+                                        "result": {
+                                            "type": "object",
+                                            "description": "Job result or error details"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Job not found",
+                        "content": {
+                            "text/event-stream": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "result": {
+                                            "type": "string",
+                                            "example": "Job for id 12345 not found."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Stream job updates",
+                "tags": [
+                    "Jobs"
+                ]
+            }
+        },
+        "/realtime/test": {
+            "get": {
+                "operationId": "RealtimeController_test",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Realtime"
+                ]
+            }
+        },
+        "/blockchain/{symbol}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific blockchain network by its symbol identifier",
+                "operationId": "BlockchainController_findBySymbol",
+                "parameters": [
+                    {
+                        "name": "symbol",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network symbol",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "SOL",
+                                "ETH",
+                                "BSC"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Blockchain information retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BlockchainDTO"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Blockchain not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 404
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Blockchain not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get blockchain by symbol",
+                "tags": [
+                    "Blockchain"
+                ]
+            }
+        },
+        "/blockchain": {
+            "get": {
+                "description": "Retrieve a paginated list of all supported blockchain networks with their details",
+                "operationId": "BlockchainController_paging",
+                "parameters": [
+                    {
+                        "name": "orderBy",
+                        "required": false,
+                        "in": "query",
+                        "description": "Field to order results by",
+                        "schema": {
+                            "default": "name",
+                            "enum": [
+                                "name",
+                                "symbol"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "required": false,
+                        "in": "query",
+                        "description": "Sort direction",
+                        "schema": {
+                            "default": "asc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "required": false,
+                        "in": "query",
+                        "description": "Pagination cursor",
+                        "schema": {
+                            "example": "eyJpZCI6MTAwfQ==",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results per page",
+                        "schema": {
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 20,
+                            "example": 20,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Blockchain list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BlockchainPage"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 400
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid limit value"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Bad Request"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List all blockchains",
+                "tags": [
+                    "Blockchain"
+                ]
+            }
+        },
+        "/transaction/{chain}/send": {
+            "post": {
+                "description": "Submit a signed transaction to the blockchain",
+                "operationId": "TransactionController_send",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "example": "solana",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "Transaction parameters",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendTxInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction submitted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SendTxResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Blockchain network not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 404
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Blockchain network not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Send transaction",
+                "tags": [
+                    "Transactions"
+                ]
+            }
+        },
+        "/{chain}/dex/swap": {
+            "post": {
+                "description": "Create a swap transaction for exchanging tokens on specified DEX. The transaction will be built and returned in serialized form.",
+                "operationId": "DexController_swap",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "Swap parameters including input token, output token, amount and slippage",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SwapInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Swap transaction created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SwapReply"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "DEX or token not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 404
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "DEX or token not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Execute token swap",
+                "tags": [
+                    "DEX Operations"
+                ]
+            }
+        },
+        "/{chain}/dex/route": {
+            "post": {
+                "description": "Calculate the best route for token swap considering price impact and fees. Returns the optimal path and a prepared transaction.",
+                "operationId": "DexController_route",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SwapRouteInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Optimal route found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SwapRouteResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No valid route found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 404
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No valid swap route found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Find optimal swap route",
+                "tags": [
+                    "DEX Operations"
+                ]
+            }
+        },
+        "/{chain}/dex/mint": {
+            "post": {
+                "description": "Create a new token on the specified DEX",
+                "operationId": "DexController_mint",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "Token creation parameters",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DexMintInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token creation transaction prepared",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "serializedTx": {
+                                            "type": "string",
+                                            "description": "Base64 encoded transaction",
+                                            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Create new token",
+                "tags": [
+                    "DEX Operations"
+                ]
+            }
+        },
+        "/{chain}/dex": {
+            "get": {
+                "description": "Retrieve a paginated list of DEXes on the specified chain",
+                "operationId": "DexController_paging",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of items to return per page",
+                        "schema": {
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 20,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DEX list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DexPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "List all DEXes",
+                "tags": [
+                    "DEX Operations"
+                ]
+            }
+        },
+        "/{chain}/dex/{address}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific DEX",
+                "operationId": "DexController_findByAddress",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "DEX contract address",
+                        "schema": {
+                            "example": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DEX details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DexDTO"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "DEX not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Get DEX details",
+                "tags": [
+                    "DEX Operations"
+                ]
+            }
+        },
+        "/solana/moonshot/mint": {
+            "post": {
+                "description": "Create a new token with Moonshot protocol on Solana",
+                "operationId": "MoonshotController_mint",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MintInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Token creation transaction prepared",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MintReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Create new token on Moonshot",
+                "tags": [
+                    "Solana DEX - Moonshot"
+                ]
+            }
+        },
+        "/solana/moonshot/submitMint": {
+            "post": {
+                "description": "Submit a signed token creation transaction to finalize token creation",
+                "operationId": "MoonshotController_submitMint",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SubmitInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token creation transaction submitted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "signature": {
+                                            "type": "string",
+                                            "description": "Transaction signature",
+                                            "example": "5KtPn1LGuxhFiwjxEqHRGrXJZ8wFzNqsV8DYjPZmxhVGwpEgKcdd9dGxPAzEqLXZ9QyjZvxHfYK9QqSf8EGtK4P5"
+                                        },
+                                        "slot": {
+                                            "type": "number",
+                                            "description": "Block slot number",
+                                            "example": 234506754
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Submit token creation transaction",
+                "tags": [
+                    "Solana DEX - Moonshot"
+                ]
+            }
+        },
+        "/solana/pumpfun/mint": {
+            "post": {
+                "description": "Create a new token with PumpFun protocol",
+                "operationId": "PumpfunController_mint",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Required parameters for minting token",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PumpMintInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Returns serialized transaction data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PumpMintReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Create token on PumpFun",
+                "tags": [
+                    "Solana DEX - PumpFun"
+                ]
+            }
+        },
+        "/trades/{signature}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific trade",
+                "operationId": "TradeController_get",
+                "parameters": [
+                    {
+                        "name": "signature",
+                        "required": true,
+                        "in": "path",
+                        "description": "Transaction signature/hash",
+                        "schema": {
+                            "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Trade details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Trade"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get trade details",
+                "tags": [
+                    "Trades"
+                ]
+            }
+        },
+        "/trades": {
+            "get": {
+                "description": "Retrieve paginated list of trades",
+                "operationId": "TradeController_paging",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": false,
+                        "in": "query",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tokenAddress",
+                        "required": true,
+                        "in": "query",
+                        "description": "Token contract address",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "required": false,
+                        "in": "query",
+                        "description": "Pagination cursor",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results per page",
+                        "schema": {
+                            "default": 20,
+                            "example": 20,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Trade list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradePage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List trades",
+                "tags": [
+                    "Trades"
+                ]
+            }
+        },
+        "/orders/placeOrder": {
+            "post": {
+                "description": "Create a new order on specified DEX",
+                "operationId": "OrderController_placeOrder",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Order parameters",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlaceOrderInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order transaction created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Place new order",
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/orders/cancelOrder": {
+            "post": {
+                "description": "Cancel an existing order",
+                "operationId": "OrderController_cancelOrder",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Cancel parameters",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelOrderInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cancel transaction created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Cancel order",
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/orders/cancelAllOrders": {
+            "post": {
+                "description": "Cancel all orders",
+                "operationId": "cancelAllOrders",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Required parameters for canceling all orders",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelAllOrdersInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cancel all orders transaction data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Cancel all orders",
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/orders/takeOrder": {
+            "post": {
+                "description": "Take order interface",
+                "operationId": "takeOrder",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Required parameters for taking order",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlaceOrderInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Take order transaction data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Take order",
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/orders/createMarket": {
+            "post": {
+                "description": "Create trading pair",
+                "operationId": "createMarket",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Required parameters for creating trading pair",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateMarketInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Create trading pair transaction data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Create market",
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/orders/closeMarket": {
+            "post": {
+                "description": "Close trading pair",
+                "operationId": "closeMarket",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Required parameters for closing trading pair",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CloseMarketInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Close trading pair transaction data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReply"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Close market",
+                "tags": [
+                    "Orders"
+                ]
+            }
+        },
+        "/solana/openbook/markets": {
+            "get": {
+                "description": "Retrieve a list of all available trading pairs on OpenBook",
+                "operationId": "OpenbookController_getMarkets",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "List of trading pairs retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SimpleMarketDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "List all markets",
+                "tags": [
+                    "Solana OpenBook"
+                ]
+            }
+        },
+        "/solana/openbook/market/{marketAddress}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific market",
+                "operationId": "OpenbookController_getMarketInfo",
+                "parameters": [
+                    {
+                        "name": "marketAddress",
+                        "required": true,
+                        "in": "path",
+                        "description": "OpenBook market account address",
+                        "schema": {
+                            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Market details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MarketInfoDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Get market details",
+                "tags": [
+                    "Solana OpenBook"
+                ]
+            }
+        },
+        "/solana/openbook/market/{marketAddress}/orderbook": {
+            "get": {
+                "description": "Retrieve current order book state for a specific market",
+                "operationId": "OpenbookController_getOrderBook",
+                "parameters": [
+                    {
+                        "name": "marketAddress",
+                        "required": true,
+                        "in": "path",
+                        "description": "OpenBook market account address",
+                        "schema": {
+                            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order book retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderBookInfoDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Get order book",
+                "tags": [
+                    "Solana OpenBook"
+                ]
+            }
+        },
+        "/solana/openbook/markets/{marketAddress}/users/{userAddress}/orders": {
+            "get": {
+                "description": "Retrieve all active orders for a specific user in a market",
+                "operationId": "OpenbookController_getUserOrders",
+                "parameters": [
+                    {
+                        "name": "marketAddress",
+                        "required": true,
+                        "in": "path",
+                        "description": "OpenBook market account address",
+                        "schema": {
+                            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userAddress",
+                        "required": true,
+                        "in": "path",
+                        "description": "User wallet address",
+                        "schema": {
+                            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserOrderInfoDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "Get user orders",
+                "tags": [
+                    "Solana OpenBook"
+                ]
+            }
+        },
+        "/{chain}/token/search": {
+            "get": {
+                "description": "Search for tokens with optional filters",
+                "operationId": "TokenController_search",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "required": false,
+                        "in": "query",
+                        "description": "Search query string",
+                        "schema": {
+                            "example": "USD",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results per page",
+                        "schema": {
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 20,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "required": false,
+                        "in": "query",
+                        "description": "Sort direction",
+                        "schema": {
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "protocols",
+                        "required": false,
+                        "in": "query",
+                        "description": "Filter by protocols",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "sortBy",
+                        "required": false,
+                        "in": "query",
+                        "description": "Field to sort by",
+                        "schema": {
+                            "example": "marketCapUsd",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Search tokens",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/token/{address}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific token",
+                "operationId": "TokenController_get",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Token"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get token details",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/token/{address}/pools": {
+            "get": {
+                "description": "Retrieve all DEX pools containing this token",
+                "operationId": "TokenController_getPools",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token pools retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/DexPoolDTO"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get token pools",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/token/{address}/stats": {
+            "get": {
+                "description": "Retrieve price statistics for a token",
+                "operationId": "TokenController_stats",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token statistics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenStatDTO"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get token stats",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/token/{address}/holders": {
+            "get": {
+                "description": "Retrieve list of token holders",
+                "operationId": "TokenController_holders",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token holders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenHolderPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get token holders",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/token/{address}/candles": {
+            "get": {
+                "description": "Retrieve historical price candles for a token",
+                "operationId": "TokenController_candles",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "resolution",
+                        "required": true,
+                        "in": "query",
+                        "description": "Time resolution for candle data",
+                        "schema": {
+                            "$ref": "#/components/schemas/Resolution"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "required": false,
+                        "in": "query",
+                        "description": "Start timestamp (Unix epoch in seconds)",
+                        "schema": {
+                            "example": 1709251200,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "required": false,
+                        "in": "query",
+                        "description": "End timestamp (Unix epoch in seconds)",
+                        "schema": {
+                            "example": 1709337600,
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token candles retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Candle"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get token candles",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/token/{address}/top_holders": {
+            "get": {
+                "description": "Retrieve list of largest token holders",
+                "operationId": "TokenController_topHolders",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top holders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenHolderPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get top holders",
+                "tags": [
+                    "Tokens"
+                ]
+            }
+        },
+        "/{chain}/{address}/ranking/{address}/top_gainers": {
+            "get": {
+                "description": "Retrieve list of top gaining token holders",
+                "operationId": "TokenRankingController_topGainers",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top gainers retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TokenHolder"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get top gainers",
+                "tags": [
+                    "Token Rankings"
+                ]
+            }
+        },
+        "/{chain}/{address}/ranking/{address}/top_losers": {
+            "get": {
+                "description": "Retrieve list of top losing token holders",
+                "operationId": "TokenRankingController_topLosers",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Token contract address",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top losers retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TokenHolder"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get top losers",
+                "tags": [
+                    "Token Rankings"
+                ]
+            }
+        },
+        "/{chain}/dexpools/{address}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific DEX pool",
+                "operationId": "DexPoolController_get",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Pool address",
+                        "schema": {
+                            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pool details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DexPoolDTO"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get pool details",
+                "tags": [
+                    "DEX Pools"
+                ]
+            }
+        },
+        "/{chain}/dexpools": {
+            "get": {
+                "description": "Retrieve a paginated list of DEX pools with optional filtering",
+                "operationId": "DexPoolController_paging",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "required": false,
+                        "in": "query",
+                        "description": "Sort direction for results",
+                        "schema": {
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sortBy",
+                        "required": false,
+                        "in": "query",
+                        "description": "Field to sort by",
+                        "schema": {
+                            "example": "tvl",
+                            "enum": [
+                                "tvl",
+                                "volume24h",
+                                "price"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "required": true,
+                        "in": "query",
+                        "description": "Start timestamp (Unix epoch in seconds)",
+                        "schema": {
+                            "example": 1709251200,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "required": true,
+                        "in": "query",
+                        "description": "End timestamp (Unix epoch in seconds)",
+                        "schema": {
+                            "example": 1709337600,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "required": false,
+                        "in": "query",
+                        "description": "Pagination cursor",
+                        "schema": {
+                            "example": "eyJpZCI6MTAwfQ==",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pool list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DexPoolPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List all pools",
+                "tags": [
+                    "DEX Pools"
+                ]
+            }
+        },
+        "/{chain}/dexpools/{address}/stats": {
+            "get": {
+                "description": "Retrieve price statistics for a specific pool",
+                "operationId": "DexPoolController_stat",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Pool address",
+                        "schema": {
+                            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pool statistics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DexPoolStatDTO"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get pool statistics",
+                "tags": [
+                    "DEX Pools"
+                ]
+            }
+        },
+        "/{chain}/ranking/hot": {
+            "get": {
+                "description": "Retrieve a list of trending tokens",
+                "operationId": "RankingController_hotTokens",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "Blockchain network",
+                        "schema": {
+                            "enum": [
+                                "solana",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hot tokens list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get hot tokens",
+                "tags": [
+                    "Rankings"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "Dex Aggregator API",
+        "description": "Dex Aggregator API ⚡️",
+        "version": "1.0",
+        "contact": {
+            "name": "AI",
+            "url": "https://github.com/openweb3-io/dex-aggregator",
+            "email": "ai@sx.ai"
+        }
+    },
+    "tags": [
+        {
+            "name": "Endpoints",
+            "description": ""
+        }
+    ],
+    "servers": [
+        {
+            "url": "https://api.chainstream.io"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearer": {
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "type": "http"
+            }
+        },
+        "schemas": {
+            "BlockchainDTO": {
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Blockchain symbol identifier",
+                        "example": "SOL"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Full name of the blockchain",
+                        "example": "Solana"
+                    },
+                    "explorerUrl": {
+                        "type": "string",
+                        "description": "URL to the blockchain explorer",
+                        "example": "https://explorer.solana.com"
+                    },
+                    "logoUrl": {
+                        "type": "string",
+                        "description": "URL to the blockchain logo image",
+                        "example": "https://s1.openweb3.io/logos/solana.png"
+                    }
+                },
+                "required": [
+                    "symbol",
+                    "name",
+                    "explorerUrl",
+                    "logoUrl"
+                ]
+            },
+            "BlockchainPage": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "description": "Array of blockchain data",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/BlockchainDTO"
+                        }
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Cursor for the next page of results"
+                    },
+                    "hasNext": {
+                        "type": "boolean",
+                        "description": "Indicates if there are more results available",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "SendTxInput": {
+                "type": "object",
+                "properties": {
+                    "signedTx": {
+                        "type": "string",
+                        "description": "Base64 encoded signed transaction",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    },
+                    "submitType": {
+                        "type": "string",
+                        "description": "Transaction submission method",
+                        "example": "default",
+                        "enum": [
+                            "default",
+                            "priority"
+                        ]
+                    }
+                },
+                "required": [
+                    "signedTx"
+                ]
+            },
+            "SendTxResponse": {
+                "type": "object",
+                "properties": {
+                    "signature": {
+                        "type": "string",
+                        "description": "Transaction signature/hash",
+                        "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+                    },
+                    "elapsedTime": {
+                        "type": "number",
+                        "description": "Transaction processing time in milliseconds",
+                        "example": 1500
+                    }
+                },
+                "required": [
+                    "signature",
+                    "elapsedTime"
+                ]
+            },
+            "SwapInput": {
+                "type": "object",
+                "properties": {
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier for the trade",
+                        "example": "raydium",
+                        "enum": [
+                            "raydium",
+                            "meteora",
+                            "pumpfun"
+                        ]
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Public key of the wallet initiating the transaction",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "priorityFee": {
+                        "type": "string",
+                        "description": "Priority fee in SOL to increase transaction processing speed",
+                        "example": "0.000001"
+                    },
+                    "poolAddress": {
+                        "type": "string",
+                        "description": "DEX pool address",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "amount": {
+                        "type": "string",
+                        "description": "Amount to swap. Use 'auto' for full balance or percentage like '50%'",
+                        "example": "1000000000"
+                    },
+                    "swapMode": {
+                        "type": "string",
+                        "description": "Swap direction mode",
+                        "enum": [
+                            "ExactIn",
+                            "ExactOut"
+                        ],
+                        "example": "ExactIn"
+                    },
+                    "slippage": {
+                        "type": "number",
+                        "description": "Slippage tolerance percentage",
+                        "example": 10,
+                        "default": 10,
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "inputMint": {
+                        "type": "string",
+                        "description": "Input Mint, the base token address"
+                    },
+                    "outputMint": {
+                        "type": "string",
+                        "description": "Ouput Mint, the quote token address"
+                    }
+                },
+                "required": [
+                    "dex",
+                    "userAddress",
+                    "amount",
+                    "swapMode",
+                    "slippage"
+                ]
+            },
+            "SwapReply": {
+                "type": "object",
+                "properties": {
+                    "serializedTx": {
+                        "type": "string",
+                        "description": "Base64 encoded transaction",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    },
+                    "elapsedTime": {
+                        "type": "number",
+                        "description": "Time taken to process the request in milliseconds",
+                        "example": 245
+                    }
+                },
+                "required": [
+                    "serializedTx",
+                    "elapsedTime"
+                ]
+            },
+            "SwapRouteInput": {
+                "type": "object",
+                "properties": {
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier for the trade",
+                        "example": "raydium",
+                        "enum": [
+                            "raydium",
+                            "meteora",
+                            "pumpfun"
+                        ]
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Public key of the wallet initiating the transaction",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "priorityFee": {
+                        "type": "string",
+                        "description": "Priority fee in SOL to increase transaction processing speed",
+                        "example": "0.000001"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "description": "Amount of tokens to swap",
+                        "example": "1000000000"
+                    },
+                    "swapMode": {
+                        "type": "string",
+                        "description": "Swap direction mode",
+                        "enum": [
+                            "ExactIn",
+                            "ExactOut"
+                        ],
+                        "example": "ExactIn"
+                    },
+                    "slippage": {
+                        "type": "number",
+                        "description": "Slippage tolerance percentage",
+                        "example": 5,
+                        "default": 5,
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "inputMint": {
+                        "type": "string",
+                        "description": "Input token mint address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "outputMint": {
+                        "type": "string",
+                        "description": "Output token mint address",
+                        "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                        "minLength": 8,
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "dex",
+                    "userAddress",
+                    "amount",
+                    "swapMode",
+                    "slippage"
+                ]
+            },
+            "SwapRouteResponse": {
+                "type": "object",
+                "properties": {
+                    "args": {
+                        "description": "Original swap request parameters",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SwapRouteInput"
+                            }
+                        ]
+                    },
+                    "serializedTx": {
+                        "type": "string",
+                        "description": "Base64 encoded transaction",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    },
+                    "routeInfo": {
+                        "type": "object",
+                        "description": "Detailed routing information",
+                        "example": {
+                            "inAmount": "1000000000",
+                            "outAmount": "985000000",
+                            "priceImpact": "0.15",
+                            "route": [
+                                "USDC",
+                                "SOL"
+                            ]
+                        }
+                    },
+                    "elapsedTime": {
+                        "type": "number",
+                        "description": "Time taken to process the request in milliseconds",
+                        "example": 245
+                    }
+                },
+                "required": [
+                    "args",
+                    "serializedTx",
+                    "routeInfo",
+                    "elapsedTime"
+                ]
+            },
+            "DexMintInput": {
+                "type": "object",
+                "properties": {
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier for the trade",
+                        "example": "raydium",
+                        "enum": [
+                            "raydium",
+                            "meteora",
+                            "pumpfun"
+                        ]
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Public key of the wallet initiating the transaction",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "priorityFee": {
+                        "type": "string",
+                        "description": "Priority fee in SOL to increase transaction processing speed",
+                        "example": "0.000001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the token to be created",
+                        "example": "Candy Token",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol/ticker",
+                        "example": "CANDY",
+                        "minLength": 1,
+                        "maxLength": 10
+                    },
+                    "uri": {
+                        "type": "string",
+                        "description": "URI for token metadata (usually points to image or JSON)",
+                        "example": "https://assets.candyproject.com/token/icon.png",
+                        "pattern": "^https?://.+"
+                    },
+                    "mintAddress": {
+                        "type": "string",
+                        "description": "Token mint address that requires signature for the transaction",
+                        "example": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
+                        "minLength": 32,
+                        "maxLength": 44
+                    }
+                },
+                "required": [
+                    "dex",
+                    "userAddress",
+                    "name",
+                    "symbol",
+                    "uri"
+                ]
+            },
+            "DexDTO": {
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "DEX contract address",
+                        "example": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the DEX",
+                        "example": "Raydium"
+                    }
+                },
+                "required": [
+                    "address",
+                    "name"
+                ]
+            },
+            "DexPage": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "description": "Array of DEX information",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DexDTO"
+                        }
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Cursor for the next page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "hasNext": {
+                        "type": "boolean",
+                        "description": "Indicates if there are more results",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "Link": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "URL of the resource",
+                        "example": "https://twitter.com/tokenproject"
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "Label for the link",
+                        "example": "Twitter",
+                        "enum": [
+                            "website",
+                            "twitter",
+                            "telegram",
+                            "discord"
+                        ]
+                    }
+                },
+                "required": [
+                    "url",
+                    "label"
+                ]
+            },
+            "MintInput": {
+                "type": "object",
+                "properties": {
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier for the trade",
+                        "example": "raydium",
+                        "enum": [
+                            "raydium",
+                            "meteora",
+                            "pumpfun"
+                        ]
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Public key of the wallet initiating the transaction",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "priorityFee": {
+                        "type": "string",
+                        "description": "Priority fee in SOL to increase transaction processing speed",
+                        "example": "0.000001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the token",
+                        "example": "My Token",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol/ticker",
+                        "example": "MTK",
+                        "minLength": 1,
+                        "maxLength": 10
+                    },
+                    "migrationDex": {
+                        "type": "string",
+                        "description": "Target DEX for token migration",
+                        "enum": [
+                            "RAYDIUM",
+                            "METEORA",
+                            "UNISWAP"
+                        ],
+                        "example": "RAYDIUM"
+                    },
+                    "icon": {
+                        "type": "string",
+                        "description": "Token icon URL (Base64 or HTTPS)",
+                        "example": "https://assets.mytoken.com/icon.png",
+                        "pattern": "^(https?://|data:image/)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Token description",
+                        "example": "A revolutionary new token for the Solana ecosystem",
+                        "maxLength": 1000
+                    },
+                    "links": {
+                        "description": "Social and website links",
+                        "example": [
+                            {
+                                "label": "website",
+                                "url": "https://mytoken.com"
+                            },
+                            {
+                                "label": "twitter",
+                                "url": "https://twitter.com/mytoken"
+                            }
+                        ],
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Link"
+                        }
+                    },
+                    "banner": {
+                        "type": "string",
+                        "description": "Banner image URL (defaults to icon if not provided)",
+                        "example": "https://assets.mytoken.com/banner.png"
+                    },
+                    "tokenAmount": {
+                        "type": "string",
+                        "description": "Total token supply amount (in base units)",
+                        "example": "1000000000",
+                        "pattern": "^[0-9]+$"
+                    }
+                },
+                "required": [
+                    "dex",
+                    "userAddress",
+                    "name",
+                    "symbol",
+                    "migrationDex",
+                    "icon",
+                    "description",
+                    "links",
+                    "tokenAmount"
+                ]
+            },
+            "MintReply": {
+                "type": "object",
+                "properties": {
+                    "serializedTx": {
+                        "type": "string",
+                        "description": "Base64 encoded transaction",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    },
+                    "extra": {
+                        "type": "object",
+                        "description": "Additional metadata about the created token",
+                        "example": {
+                            "tokenId": "token_123456",
+                            "token": {
+                                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                                "decimals": 9
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "serializedTx",
+                    "extra"
+                ]
+            },
+            "SubmitInput": {
+                "type": "object",
+                "properties": {
+                    "signedTx": {
+                        "type": "string",
+                        "description": "Signed transaction in Base64 format",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    },
+                    "extra": {
+                        "type": "object",
+                        "description": "Additional data required for transaction submission",
+                        "example": {
+                            "tokenId": "token_123456",
+                            "token": {
+                                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                                "decimals": 9
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "signedTx",
+                    "extra"
+                ]
+            },
+            "PumpMintInput": {
+                "type": "object",
+                "properties": {
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier for the trade",
+                        "example": "raydium",
+                        "enum": [
+                            "raydium",
+                            "meteora",
+                            "pumpfun"
+                        ]
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Public key of the wallet initiating the transaction",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+                        "minLength": 8,
+                        "maxLength": 64
+                    },
+                    "priorityFee": {
+                        "type": "string",
+                        "description": "Priority fee in SOL to increase transaction processing speed",
+                        "example": "0.000001"
+                    },
+                    "twitter": {
+                        "type": "string",
+                        "description": "Twitter profile URL or handle",
+                        "example": "@mytoken",
+                        "pattern": "^(@[a-zA-Z0-9_]{1,15}|https://twitter.com/[a-zA-Z0-9_]{1,15})$"
+                    },
+                    "telegram": {
+                        "type": "string",
+                        "description": "Telegram group or channel link",
+                        "example": "https://t.me/mytoken",
+                        "pattern": "^https://t.me/"
+                    },
+                    "website": {
+                        "type": "string",
+                        "description": "Project website URL",
+                        "example": "https://mytoken.com",
+                        "pattern": "^https?://"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Name of the token",
+                        "example": "My Token",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol/ticker",
+                        "example": "MTK",
+                        "minLength": 1,
+                        "maxLength": 10
+                    },
+                    "migrationDex": {
+                        "type": "string",
+                        "description": "Target DEX for token migration",
+                        "example": "RAYDIUM",
+                        "enum": [
+                            "RAYDIUM",
+                            "METEORA"
+                        ]
+                    },
+                    "icon": {
+                        "type": "string",
+                        "description": "Base64 encoded token icon image",
+                        "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+                        "pattern": "^data:image/"
+                    },
+                    "mintAddress": {
+                        "type": "string",
+                        "description": "Token mint address requiring signature",
+                        "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                        "minLength": 32,
+                        "maxLength": 44
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Token description",
+                        "example": "A revolutionary new token on Solana",
+                        "maxLength": 1000
+                    }
+                },
+                "required": [
+                    "dex",
+                    "userAddress",
+                    "name",
+                    "symbol",
+                    "migrationDex",
+                    "icon",
+                    "mintAddress",
+                    "description"
+                ]
+            },
+            "PumpMintReply": {
+                "type": "object",
+                "properties": {
+                    "serializedTx": {
+                        "type": "string",
+                        "description": "Base64 encoded transaction",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    },
+                    "extra": {
+                        "type": "object",
+                        "description": "Additional metadata about the created token",
+                        "example": {
+                            "tokenId": "pump_123456",
+                            "token": {
+                                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                                "decimals": 9
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "serializedTx"
+                ]
+            },
+            "TradeType": {
+                "type": "string",
+                "enum": [
+                    "buy",
+                    "sell"
+                ]
+            },
+            "Trade": {
+                "type": "object",
+                "properties": {
+                    "maker": {
+                        "type": "string",
+                        "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY"
+                    },
+                    "baseAmount": {
+                        "type": "string",
+                        "example": "3.49753400000000000000"
+                    },
+                    "quoteAmount": {
+                        "type": "string",
+                        "example": "0.00085986800000000000"
+                    },
+                    "quoteSymbol": {
+                        "type": "string",
+                        "example": "SOL"
+                    },
+                    "quoteAddress": {
+                        "type": "string",
+                        "example": "So11111111111111111111111111111111111111112"
+                    },
+                    "amountInUsd": {
+                        "type": "string",
+                        "example": "0.18691810584000000000"
+                    },
+                    "timestamp": {
+                        "type": "number",
+                        "description": "Trade timestamp (Unix epoch in seconds)",
+                        "example": 1709251200
+                    },
+                    "event": {
+                        "example": "buy",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TradeType"
+                            }
+                        ]
+                    },
+                    "txHash": {
+                        "type": "string",
+                        "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+                    },
+                    "priceInUsd": {
+                        "type": "string",
+                        "example": "0.05344282738637203200"
+                    },
+                    "totalTrade": {
+                        "type": "number",
+                        "example": 1
+                    },
+                    "id": {
+                        "type": "string",
+                        "example": "MDAzMTc4OTQ0OTUxNTcwMDAwMg=="
+                    },
+                    "isFollowing": {
+                        "type": "number",
+                        "example": 0
+                    },
+                    "isOpenOrClose": {
+                        "type": "number",
+                        "example": 0
+                    },
+                    "buyCostUsd": {
+                        "type": "string",
+                        "example": ""
+                    },
+                    "balance": {
+                        "type": "string",
+                        "example": "7.254002"
+                    },
+                    "cost": {
+                        "type": "string",
+                        "example": "0.18691810584"
+                    },
+                    "historyBoughtAmount": {
+                        "type": "string",
+                        "example": "3.497534"
+                    },
+                    "historySoldIncome": {
+                        "type": "string",
+                        "example": "0"
+                    },
+                    "historySoldAmount": {
+                        "type": "string",
+                        "example": "0"
+                    },
+                    "realizedProfit": {
+                        "type": "string",
+                        "example": "0"
+                    },
+                    "unrealizedProfit": {
+                        "type": "string",
+                        "example": "-0.00000000000003279335"
+                    },
+                    "makerTags": {
+                        "description": "Maker tags",
+                        "example": [
+                            "whale",
+                            "active_trader"
+                        ],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "makerTokenTags": {
+                        "description": "Token tags associated with maker",
+                        "example": [
+                            "defi",
+                            "gaming"
+                        ],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "makerName": {
+                        "type": "string",
+                        "description": "Maker display name",
+                        "example": "Crypto Whale"
+                    },
+                    "makerAvatar": {
+                        "type": "string",
+                        "description": "Maker avatar URL",
+                        "example": "https://example.com/avatar.png"
+                    },
+                    "makerEns": {
+                        "type": "string",
+                        "description": "Maker ENS name",
+                        "example": "whale.eth"
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
+                    },
+                    "makerTwitterUsername": {
+                        "type": "string",
+                        "description": "Maker Twitter username",
+                        "example": "@whale_trader"
+                    },
+                    "makerTwitterName": {
+                        "type": "string",
+                        "description": "Maker Twitter display name",
+                        "example": "Crypto Whale 🐋"
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "description": "Additional trade metadata",
+                        "example": {
+                            "slippage": "0.1",
+                            "route": "jupiter"
+                        }
+                    }
+                },
+                "required": [
+                    "maker",
+                    "baseAmount",
+                    "quoteAmount",
+                    "quoteSymbol",
+                    "quoteAddress",
+                    "amountInUsd",
+                    "timestamp",
+                    "event",
+                    "txHash",
+                    "priceInUsd",
+                    "totalTrade",
+                    "id",
+                    "isFollowing",
+                    "isOpenOrClose",
+                    "buyCostUsd",
+                    "balance",
+                    "cost",
+                    "historyBoughtAmount",
+                    "historySoldIncome",
+                    "historySoldAmount",
+                    "realizedProfit",
+                    "unrealizedProfit",
+                    "makerTags",
+                    "makerTokenTags",
+                    "makerName",
+                    "makerAvatar",
+                    "makerEns",
+                    "tokenAddress",
+                    "makerTwitterUsername",
+                    "makerTwitterName",
+                    "metadata"
+                ]
+            },
+            "TradePage": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Trade"
+                        }
+                    },
+                    "next": {
+                        "type": "string"
+                    },
+                    "hasNext": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "PlaceOrderInput": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana",
+                        "enum": [
+                            "solana",
+                            "ethereum"
+                        ]
+                    },
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier",
+                        "example": "raydium",
+                        "enum": [
+                            "raydium",
+                            "openbook",
+                            "jupiter"
+                        ]
+                    },
+                    "amount": {
+                        "type": "number",
+                        "description": "Order amount in base units",
+                        "example": 1000000000
+                    },
+                    "price": {
+                        "type": "number",
+                        "description": "Order price in quote units",
+                        "example": 50.5
+                    },
+                    "side": {
+                        "type": "string",
+                        "description": "Order side",
+                        "enum": [
+                            "bid",
+                            "ask"
+                        ],
+                        "example": "bid"
+                    },
+                    "marketAddress": {
+                        "type": "string",
+                        "description": "Market/Pool address",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Wallet address placing the order",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                    },
+                    "priorityFee": {
+                        "format": "int64",
+                        "type": "integer",
+                        "description": "Priority fee in microLamports",
+                        "example": "5000",
+                        "default": 5000
+                    }
+                },
+                "required": [
+                    "chain",
+                    "dex",
+                    "amount",
+                    "price",
+                    "side",
+                    "marketAddress",
+                    "userAddress"
+                ]
+            },
+            "OrderReply": {
+                "type": "object",
+                "properties": {
+                    "serializedTx": {
+                        "type": "string",
+                        "description": "Base64 encoded transaction",
+                        "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                    }
+                },
+                "required": [
+                    "serializedTx"
+                ]
+            },
+            "CancelOrderInput": {
+                "type": "object",
+                "properties": {
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier",
+                        "example": "openbook",
+                        "enum": [
+                            "raydium",
+                            "openbook",
+                            "jupiter"
+                        ]
+                    },
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana",
+                        "enum": [
+                            "solana",
+                            "ethereum"
+                        ]
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Wallet address owning the orders",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                    },
+                    "marketAddress": {
+                        "type": "string",
+                        "description": "Market/Pool address",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "orderIds": {
+                        "description": "List of order IDs to cancel",
+                        "example": [
+                            "order123",
+                            "order456"
+                        ],
+                        "default": [],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "clientOrderIds": {
+                        "description": "List of client order IDs to cancel",
+                        "example": [
+                            "client123",
+                            "client456"
+                        ],
+                        "default": [],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "priorityFee": {
+                        "format": "int64",
+                        "type": "integer",
+                        "description": "Priority fee in microLamports",
+                        "example": "5000",
+                        "default": 5000
+                    },
+                    "extra": {
+                        "type": "object",
+                        "description": "Additional cancellation metadata",
+                        "example": {
+                            "reason": "user_requested",
+                            "timestamp": "2024-03-14T12:00:00Z"
+                        }
+                    }
+                },
+                "required": [
+                    "dex",
+                    "chain",
+                    "userAddress",
+                    "marketAddress"
+                ]
+            },
+            "CancelAllOrdersInput": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana",
+                        "enum": [
+                            "solana",
+                            "ethereum"
+                        ]
+                    },
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier",
+                        "example": "openbook",
+                        "enum": [
+                            "raydium",
+                            "openbook",
+                            "jupiter"
+                        ]
+                    },
+                    "marketAddress": {
+                        "type": "string",
+                        "description": "Market/Pool address",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Wallet address owning the orders",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                    },
+                    "side": {
+                        "type": "string",
+                        "description": "Order side to cancel",
+                        "enum": [
+                            "bid",
+                            "ask"
+                        ],
+                        "example": "bid"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "description": "Maximum number of orders to cancel",
+                        "example": 10,
+                        "default": 10,
+                        "minimum": 1,
+                        "maximum": 100
+                    },
+                    "priorityFee": {
+                        "format": "int64",
+                        "type": "integer",
+                        "description": "Priority fee in microLamports",
+                        "example": "5000",
+                        "default": 5000
+                    }
+                },
+                "required": [
+                    "chain",
+                    "dex",
+                    "marketAddress",
+                    "userAddress",
+                    "side",
+                    "limit"
+                ]
+            },
+            "CreateMarketInput": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana",
+                        "enum": [
+                            "solana",
+                            "ethereum"
+                        ]
+                    },
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier",
+                        "example": "openbook",
+                        "enum": [
+                            "raydium",
+                            "openbook",
+                            "jupiter"
+                        ]
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Market display name",
+                        "example": "SOL/USDC",
+                        "minLength": 3,
+                        "maxLength": 20
+                    },
+                    "baseMint": {
+                        "type": "string",
+                        "description": "Base token mint address",
+                        "example": "So11111111111111111111111111111111111111112"
+                    },
+                    "quoteMint": {
+                        "type": "string",
+                        "description": "Quote token mint address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "baseLotSize": {
+                        "type": "number",
+                        "description": "Minimum tradeable amount of base token",
+                        "example": 100000000
+                    },
+                    "quoteLotSize": {
+                        "type": "number",
+                        "description": "Minimum tradeable amount of quote token",
+                        "example": 100000
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Market creator wallet address",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                    },
+                    "priorityFee": {
+                        "format": "int64",
+                        "type": "integer",
+                        "description": "Priority fee in microLamports",
+                        "example": "5000",
+                        "default": 5000
+                    },
+                    "makerFee": {
+                        "type": "number",
+                        "description": "Maker fee in basis points (1 = 0.01%)",
+                        "example": 0,
+                        "default": 0,
+                        "minimum": 0,
+                        "maximum": 10000
+                    },
+                    "takerFee": {
+                        "type": "number",
+                        "description": "Taker fee in basis points (1 = 0.01%)",
+                        "example": 0,
+                        "default": 0,
+                        "minimum": 0,
+                        "maximum": 10000
+                    },
+                    "timeExpiry": {
+                        "type": "number",
+                        "description": "Order expiry time in seconds",
+                        "example": 0,
+                        "default": 0,
+                        "minimum": 0
+                    },
+                    "oracleA": {
+                        "type": "string",
+                        "description": "Primary oracle account address",
+                        "example": "FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"
+                    },
+                    "oracleB": {
+                        "type": "string",
+                        "description": "Secondary oracle account address",
+                        "example": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b"
+                    },
+                    "extra": {
+                        "type": "object",
+                        "description": "Additional market creation metadata",
+                        "example": {
+                            "tags": [
+                                "spot",
+                                "perpetual"
+                            ],
+                            "description": "SOL/USDC spot market"
+                        }
+                    }
+                },
+                "required": [
+                    "chain",
+                    "dex",
+                    "name",
+                    "baseMint",
+                    "quoteMint",
+                    "baseLotSize",
+                    "quoteLotSize",
+                    "userAddress",
+                    "makerFee",
+                    "takerFee",
+                    "timeExpiry"
+                ]
+            },
+            "CloseMarketInput": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana",
+                        "enum": [
+                            "solana",
+                            "ethereum"
+                        ]
+                    },
+                    "dex": {
+                        "type": "string",
+                        "description": "DEX identifier",
+                        "example": "openbook",
+                        "enum": [
+                            "raydium",
+                            "openbook",
+                            "jupiter"
+                        ]
+                    },
+                    "marketAddress": {
+                        "type": "string",
+                        "description": "Market address to close",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "userAddress": {
+                        "type": "string",
+                        "description": "Market admin wallet address",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                    },
+                    "priorityFee": {
+                        "format": "int64",
+                        "type": "integer",
+                        "description": "Priority fee in microLamports",
+                        "example": "5000",
+                        "default": 5000
+                    },
+                    "extra": {
+                        "type": "object",
+                        "description": "Additional market closure metadata",
+                        "example": {
+                            "reason": "low_volume",
+                            "timestamp": "2024-03-14T12:00:00Z"
+                        }
+                    }
+                },
+                "required": [
+                    "chain",
+                    "dex",
+                    "marketAddress",
+                    "userAddress"
+                ]
+            },
+            "SimpleMarketDto": {
+                "type": "object",
+                "properties": {
+                    "market": {
+                        "type": "string",
+                        "description": "Market account address",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "baseMint": {
+                        "type": "string",
+                        "description": "Base token mint address",
+                        "example": "So11111111111111111111111111111111111111112"
+                    },
+                    "quoteMint": {
+                        "type": "string",
+                        "description": "Quote token mint address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Market display name",
+                        "example": "SOL/USDC"
+                    },
+                    "timestamp": {
+                        "type": "object",
+                        "description": "Last update timestamp (Unix epoch in seconds)",
+                        "example": 1709251200
+                    }
+                },
+                "required": [
+                    "market",
+                    "baseMint",
+                    "quoteMint",
+                    "name"
+                ]
+            },
+            "MarketInfoDto": {
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "Market account address",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Market display name",
+                        "example": "SOL/USDC"
+                    },
+                    "baseMint": {
+                        "type": "string",
+                        "description": "Base token mint address",
+                        "example": "So11111111111111111111111111111111111111112"
+                    },
+                    "quoteMint": {
+                        "type": "string",
+                        "description": "Quote token mint address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "baseDecimals": {
+                        "type": "number",
+                        "description": "Number of decimal places for base token",
+                        "example": 9,
+                        "minimum": 0,
+                        "maximum": 18
+                    },
+                    "quoteDecimals": {
+                        "type": "number",
+                        "description": "Number of decimal places for quote token",
+                        "example": 6,
+                        "minimum": 0,
+                        "maximum": 18
+                    },
+                    "baseLotSize": {
+                        "type": "number",
+                        "description": "Minimum tradeable amount of base token",
+                        "example": 100000000,
+                        "minimum": 1
+                    },
+                    "quoteLotSize": {
+                        "type": "number",
+                        "description": "Minimum tradeable amount of quote token",
+                        "example": 100000,
+                        "minimum": 1
+                    },
+                    "makerFee": {
+                        "type": "number",
+                        "description": "Fee rate for makers in basis points (1 = 0.01%)",
+                        "example": 0,
+                        "minimum": 0,
+                        "maximum": 10000
+                    },
+                    "takerFee": {
+                        "type": "number",
+                        "description": "Fee rate for takers in basis points (1 = 0.01%)",
+                        "example": 20,
+                        "minimum": 0,
+                        "maximum": 10000
+                    },
+                    "createTime": {
+                        "type": "number",
+                        "description": "Market creation timestamp (Unix epoch in seconds)",
+                        "example": 1709251200
+                    },
+                    "isExpired": {
+                        "type": "boolean",
+                        "description": "Whether the market has expired",
+                        "example": false
+                    },
+                    "timeExpiry": {
+                        "type": "number",
+                        "description": "Market expiry timestamp (Unix epoch in seconds)",
+                        "example": 1709337600
+                    }
+                },
+                "required": [
+                    "address",
+                    "name",
+                    "baseMint",
+                    "quoteMint",
+                    "baseDecimals",
+                    "quoteDecimals",
+                    "baseLotSize",
+                    "quoteLotSize",
+                    "makerFee",
+                    "takerFee",
+                    "isExpired",
+                    "timeExpiry"
+                ]
+            },
+            "OrderInfoDto": {
+                "type": "object",
+                "properties": {
+                    "price": {
+                        "type": "number",
+                        "description": "Order price in quote token units",
+                        "example": 50.5,
+                        "minimum": 0
+                    },
+                    "size": {
+                        "type": "number",
+                        "description": "Order size in base token units",
+                        "example": 1000000000,
+                        "minimum": 0
+                    },
+                    "owner": {
+                        "type": "string",
+                        "description": "Wallet address of the order owner",
+                        "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                    }
+                },
+                "required": [
+                    "price",
+                    "size",
+                    "owner"
+                ]
+            },
+            "OrderBookInfoDto": {
+                "type": "object",
+                "properties": {
+                    "bids": {
+                        "description": "List of buy orders sorted by price (descending)",
+                        "example": [
+                            {
+                                "price": 50.5,
+                                "size": 1000000000,
+                                "owner": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                            }
+                        ],
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderInfoDto"
+                        }
+                    },
+                    "asks": {
+                        "description": "List of sell orders sorted by price (ascending)",
+                        "example": [
+                            {
+                                "price": 51,
+                                "size": 2000000000,
+                                "owner": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+                            }
+                        ],
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderInfoDto"
+                        }
+                    },
+                    "bestBid": {
+                        "type": "number",
+                        "description": "Highest buy order price",
+                        "example": 50.5
+                    },
+                    "bestAsk": {
+                        "type": "number",
+                        "description": "Lowest sell order price",
+                        "example": 51
+                    },
+                    "spread": {
+                        "type": "number",
+                        "description": "Price difference between best ask and best bid",
+                        "example": 0.5
+                    }
+                },
+                "required": [
+                    "bids",
+                    "asks"
+                ]
+            },
+            "UserOrderDto": {
+                "type": "object",
+                "properties": {
+                    "side": {
+                        "type": "string",
+                        "description": "Order side",
+                        "enum": [
+                            "bid",
+                            "ask"
+                        ],
+                        "example": "bid"
+                    },
+                    "price": {
+                        "type": "number",
+                        "description": "Order price in quote token units",
+                        "example": 50.5,
+                        "minimum": 0
+                    },
+                    "size": {
+                        "type": "number",
+                        "description": "Order size in base token units",
+                        "example": 1000000000,
+                        "minimum": 0
+                    },
+                    "clientOrderId": {
+                        "type": "string",
+                        "description": "Client-assigned order identifier",
+                        "example": "client_order_123"
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "OpenBook-assigned order identifier",
+                        "example": "order_456"
+                    }
+                },
+                "required": [
+                    "side",
+                    "price",
+                    "size",
+                    "id"
+                ]
+            },
+            "UserOrderInfoDto": {
+                "type": "object",
+                "properties": {
+                    "openOrdersAddress": {
+                        "type": "string",
+                        "description": "User's OpenBook account address for this market",
+                        "example": "DZjbn6f5EebaABXVbYz3UwdJM1sLJkK3wGEZdyUYY1NR"
+                    },
+                    "orders": {
+                        "description": "List of user's active orders",
+                        "example": [
+                            {
+                                "side": "bid",
+                                "price": 50.5,
+                                "size": 1000000000,
+                                "clientOrderId": "client_order_123",
+                                "id": "order_456"
+                            }
+                        ],
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserOrderDto"
+                        }
+                    }
+                },
+                "required": [
+                    "openOrdersAddress",
+                    "orders"
+                ]
+            },
+            "DexPoolDTO": {
+                "type": "object",
+                "properties": {
+                    "poolAddress": {
+                        "type": "string",
+                        "description": "Unique address of the DEX pool",
+                        "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+                    },
+                    "baseTokenAddress": {
+                        "type": "string",
+                        "description": "Address of the base token in the pool",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "quoteTokenAddress": {
+                        "type": "string",
+                        "description": "Address of the quote token in the pool",
+                        "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+                    }
+                },
+                "required": [
+                    "poolAddress",
+                    "baseTokenAddress",
+                    "quoteTokenAddress"
+                ]
+            },
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana"
+                    },
+                    "address": {
+                        "type": "string",
+                        "description": "Token contract address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Token name",
+                        "example": "USD Coin"
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol",
+                        "example": "USDC"
+                    },
+                    "decimals": {
+                        "type": "number",
+                        "description": "Number of decimal places",
+                        "example": 6
+                    },
+                    "market": {
+                        "type": "string",
+                        "description": "Market identifier",
+                        "example": "USDC-SOL"
+                    },
+                    "image": {
+                        "type": "string",
+                        "description": "Token icon URL",
+                        "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                    },
+                    "deployer": {
+                        "type": "string",
+                        "description": "Token deployer address",
+                        "example": "FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Token description text",
+                        "example": "USDC is a fully-collateralized US dollar stablecoin"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "Current token price in base currency",
+                        "example": "1.00"
+                    },
+                    "priceInUsd": {
+                        "type": "string",
+                        "description": "Current token price in USD",
+                        "example": "1.00"
+                    },
+                    "marketCapUsd": {
+                        "type": "string",
+                        "description": "Total market capitalization in USD",
+                        "example": "33459846123.45"
+                    },
+                    "extension": {
+                        "type": "object",
+                        "description": "Additional token metadata",
+                        "example": {
+                            "website": "https://www.circle.com/usdc",
+                            "twitter": "@circle"
+                        }
+                    },
+                    "createdAt": {
+                        "format": "date-time",
+                        "type": "string",
+                        "description": "Token creation timestamp",
+                        "example": "2024-03-14T12:00:00Z"
+                    },
+                    "pools": {
+                        "description": "List of DEX pools containing this token",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DexPoolDTO"
+                        }
+                    }
+                },
+                "required": [
+                    "chain",
+                    "address",
+                    "name",
+                    "symbol",
+                    "decimals",
+                    "market",
+                    "deployer",
+                    "marketCapUsd"
+                ]
+            },
+            "TokenPage": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "number",
+                        "description": "Total number of tokens",
+                        "example": 1000
+                    },
+                    "countsByProtocols": {
+                        "type": "object",
+                        "description": "Token count by protocol",
+                        "example": {
+                            "uniswap": 500,
+                            "sushiswap": 300
+                        }
+                    },
+                    "data": {
+                        "description": "List of tokens",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Token"
+                        }
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Pagination cursor for next page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "hasNext": {
+                        "type": "boolean",
+                        "description": "Indicates if more results are available",
+                        "default": false
+                    },
+                    "hasPrev": {
+                        "type": "boolean",
+                        "description": "Indicates if previous results are available",
+                        "default": false
+                    },
+                    "startCursor": {
+                        "type": "object",
+                        "description": "Cursor for first item in current page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "endCursor": {
+                        "type": "object",
+                        "description": "Cursor for last item in current page",
+                        "example": "eyJpZCI6MjAwfQ=="
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "TokenStatDTO": {
+                "type": "object",
+                "properties": {
+                    "p1m": {
+                        "type": "string",
+                        "description": "Price change in last 1 minute",
+                        "example": "1.001"
+                    },
+                    "p5m": {
+                        "type": "string",
+                        "description": "Price change in last 5 minutes",
+                        "example": "0.999"
+                    },
+                    "p1h": {
+                        "type": "string",
+                        "description": "Price change in last 1 hour",
+                        "example": "1.002"
+                    },
+                    "p24h": {
+                        "type": "string",
+                        "description": "Price change in last 24 hours",
+                        "example": "0.998"
+                    }
+                },
+                "required": [
+                    "p1m",
+                    "p5m",
+                    "p1h",
+                    "p24h"
+                ]
+            },
+            "TokenHolder": {
+                "type": "object",
+                "properties": {}
+            },
+            "TokenHolderPage": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "description": "List of token holders",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TokenHolder"
+                        }
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Pagination cursor for next page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "hasNext": {
+                        "type": "boolean",
+                        "description": "Indicates if more results are available",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "Resolution": {
+                "type": "string",
+                "enum": [
+                    "1s",
+                    "1m",
+                    "1h",
+                    "1d"
+                ]
+            },
+            "Candle": {
+                "type": "object",
+                "properties": {
+                    "open": {
+                        "type": "string",
+                        "description": "Opening price",
+                        "example": "50.5"
+                    },
+                    "close": {
+                        "type": "string",
+                        "description": "Closing price",
+                        "example": "51.2"
+                    },
+                    "high": {
+                        "type": "string",
+                        "description": "Highest price",
+                        "example": "51.8"
+                    },
+                    "low": {
+                        "type": "string",
+                        "description": "Lowest price",
+                        "example": "50.1"
+                    },
+                    "volume": {
+                        "type": "string",
+                        "description": "Trading volume",
+                        "example": "1000000"
+                    },
+                    "resolution": {
+                        "description": "Time resolution",
+                        "example": "1h",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Resolution"
+                            }
+                        ]
+                    },
+                    "time": {
+                        "type": "number",
+                        "description": "Candle timestamp (Unix epoch in seconds)",
+                        "example": 1709251200
+                    }
+                },
+                "required": [
+                    "open",
+                    "close",
+                    "high",
+                    "low",
+                    "volume",
+                    "resolution",
+                    "time"
+                ]
+            },
+            "DexPoolPage": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "description": "Array of DEX pool data",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DexPoolDTO"
+                        }
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Cursor for next page",
+                        "example": "eyJpZCI6MTIwfQ=="
+                    },
+                    "hasNext": {
+                        "type": "boolean",
+                        "description": "Indicates if more results are available",
+                        "default": false
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "DexPoolStatDTO": {
+                "type": "object",
+                "properties": {
+                    "p1m": {
+                        "type": "string",
+                        "description": "Price change in last 1 minute",
+                        "example": "49.95"
+                    },
+                    "p5m": {
+                        "type": "string",
+                        "description": "Price change in last 5 minutes",
+                        "example": "50.12"
+                    },
+                    "p1h": {
+                        "type": "string",
+                        "description": "Price change in last 1 hour",
+                        "example": "51.23"
+                    },
+                    "p24h": {
+                        "type": "string",
+                        "description": "Price change in last 24 hours",
+                        "example": "48.75"
+                    }
+                },
+                "required": [
+                    "p1m",
+                    "p5m",
+                    "p1h",
+                    "p24h"
+                ]
+            },
+            "TradeEvent": {
+                "type": "object",
+                "properties": {
+                    "maker": {
+                        "type": "string",
+                        "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY"
+                    },
+                    "baseAmount": {
+                        "type": "string",
+                        "example": "3.49753400000000000000"
+                    },
+                    "quoteAmount": {
+                        "type": "string",
+                        "example": "0.00085986800000000000"
+                    },
+                    "quoteSymbol": {
+                        "type": "string",
+                        "example": "SOL"
+                    },
+                    "quoteAddress": {
+                        "type": "string",
+                        "example": "So11111111111111111111111111111111111111112"
+                    },
+                    "amountInUsd": {
+                        "type": "string",
+                        "example": "0.18691810584000000000"
+                    },
+                    "timestamp": {
+                        "type": "number"
+                    },
+                    "event": {
+                        "example": "buy",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TradeType"
+                            }
+                        ]
+                    },
+                    "txHash": {
+                        "type": "string",
+                        "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+                    },
+                    "priceInUsd": {
+                        "type": "string",
+                        "example": "0.05344282738637203200"
+                    },
+                    "id": {
+                        "type": "string",
+                        "example": "MDAzMTc4OTQ0OTUxNTcwMDAwMg=="
+                    },
+                    "buyCostUsd": {
+                        "type": "string",
+                        "example": ""
+                    },
+                    "tokenAddress": {
+                        "type": "string",
+                        "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
+                    }
+                },
+                "required": [
+                    "maker",
+                    "baseAmount",
+                    "quoteAmount",
+                    "quoteSymbol",
+                    "quoteAddress",
+                    "amountInUsd",
+                    "timestamp",
+                    "event",
+                    "txHash",
+                    "priceInUsd",
+                    "id",
+                    "buyCostUsd",
+                    "tokenAddress"
+                ]
+            }
+        }
+    }
+}

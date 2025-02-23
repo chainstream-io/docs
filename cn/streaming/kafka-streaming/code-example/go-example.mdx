@@ -1,0 +1,196 @@
+---
+title: 'Go'
+description: '使用 Go 实现 Kafka 消费者以处理 JSON 格式的数据流'
+---
+
+## 概述
+
+本指南演示如何使用 Go 实现 Kafka 消费者来实时订阅和处理链上数据流。消费者使用 SSL 安全连接到 Kafka 代理，并处理 **JSON 格式** 的传入消息。
+
+<Note>
+完整代码可在 [此处](https://github.com/chainstream-io/kafka-consumer-example) 获取。
+</Note>
+
+## 前置要求
+
+在运行 Go Kafka 消费者之前，请确保你具备以下组件：
+
+1. **ChainStream Kafka 服务器访问权限**：访问 ChainStream Kafka 代理
+2. **用户名和密码**：用于 Kafka 代理认证
+3. **主题名称** 用于订阅
+4. **Go**：版本 >= 1.16
+5. **Confluent Kafka Go 客户端**：Go 的 Kafka 客户端库
+
+## 依赖项
+
+运行脚本前，请确保安装必要的 Go 依赖：
+
+1. 初始化 Go 模块：
+```bash
+go mod init kafka-consumer
+```
+
+2. 安装 **confluent-kafka-go** 库：
+```bash
+go get github.com/confluentinc/confluent-kafka-go/kafka
+```
+
+## 实现
+
+### Kafka 客户端初始化
+
+使用 SSL 和 SASL 配置初始化 Kafka 客户端：
+
+```go
+config := &kafka.ConfigMap{
+    "bootstrap.servers":                     "rpk0.chainstream.io:9093,rpk1.chainstream.io:9093,rpk2.chainstream.io:9093",
+    "group.id":                              "solanatest2-group-99",
+    "session.timeout.ms":                    30000,
+    "security.protocol":                     "SASL_SSL",
+    "ssl.ca.location":                       "server.cer.pem",
+    "ssl.key.location":                      "client.key.pem",
+    "ssl.certificate.location":              "client.cer.pem",
+    "ssl.endpoint.identification.algorithm": "none",
+    "sasl.mechanisms":                       "SCRAM-SHA-512",
+    "sasl.username":                         "usernamee",
+    "sasl.password":                         "pwww",
+    "auto.offset.reset":                     "latest",
+}
+```
+
+### Kafka 消费者设置
+
+创建并配置 Kafka 消费者：
+
+```go
+consumer, err := kafka.NewConsumer(config)
+if err != nil {
+    fmt.Printf("Failed to create consumer: %s\n", err)
+    os.Exit(1)
+}
+
+topic := "solana.broadcasted.transactions"
+
+// Subscribe to the topic
+err = consumer.SubscribeTopics([]string{topic}, nil)
+if err != nil {
+    fmt.Printf("Failed to subscribe to topic: %s\n", err)
+    os.Exit(1)
+}
+```
+
+### 消息处理循环
+
+实现带有信号处理的主处理循环：
+
+```go
+// Set up a channel to handle shutdown
+sigchan := make(chan os.Signal, 1)
+signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+
+// Poll messages and process them
+run := true
+for run {
+    select {
+    case sig := <-sigchan:
+        fmt.Printf("Caught signal %v: terminating\n", sig)
+        run = false
+    default:
+        ev := consumer.Poll(100)
+        if ev == nil {
+            continue
+        }
+
+        switch e := ev.(type) {
+        case *kafka.Message:
+            processMessage(e)
+
+        case kafka.Error:
+            fmt.Printf("Error: %v\n", e)
+            if e.Code() == kafka.ErrAllBrokersDown {
+                run = false
+            }
+        default:
+            fmt.Printf("Ignored %v\n", e)
+        }
+    }
+}
+
+// Close down consumer
+consumer.Close()
+```
+
+### 消息处理函数
+
+实现消息处理函数：
+
+```go
+func processMessage(msg *kafka.Message) {
+    fmt.Printf("Received message on topic %s [%d] at offset %v:\n",
+        *msg.TopicPartition.Topic, msg.TopicPartition.Partition, msg.TopicPartition.Offset)
+
+    // Try to parse the message value as JSON
+    var jsonData interface{}
+    err := json.Unmarshal(msg.Value, &jsonData)
+    if err != nil {
+        fmt.Printf("Error parsing JSON: %v\n", err)
+        fmt.Printf("Raw message: %s\n", string(msg.Value))
+        return
+    }
+
+    // Pretty print the JSON
+    prettyJSON, err := json.MarshalIndent(jsonData, "", "  ")
+    if err != nil {
+        fmt.Printf("Error prettifying JSON: %v\n", err)
+        return
+    }
+
+    fmt.Printf("Parsed JSON:\n%s\n", string(prettyJSON))
+
+    // Log message data
+    logEntry := map[string]interface{}{
+        "topic":     *msg.TopicPartition.Topic,
+        "partition": msg.TopicPartition.Partition,
+        "offset":    msg.TopicPartition.Offset,
+        "key":       string(msg.Key),
+        "value":     string(prettyJSON),
+    }
+    fmt.Printf("Log entry: %+v\n", logEntry)
+    fmt.Println("----------------------------------------")
+}
+```
+
+## 运行应用程序
+
+1. **初始化 Go 模块**（如果尚未完成）：
+```bash
+go mod init kafka-consumer
+```
+
+2. **运行 Go 文件**：
+```bash
+go run consumer.go
+```
+
+## 执行流程
+
+1. **Kafka 客户端初始化**
+   - 使用 SSL 和 SASL 配置初始化
+   - 设置唯一的 `group.id` 用于独立消息消费
+
+2. **消费者设置**
+   - 创建 Kafka 消费者
+   - 订阅指定主题
+
+3. **消息处理**
+   - 每 100ms 轮询新消息
+   - 解析 JSON 消息
+   - 记录处理后的数据
+
+4. **优雅关闭**
+   - 处理终止信号
+   - 清理关闭消费者
+
+<Note>
+运行应用程序前，请确保所有 SSL 证书都已正确配置并放置在正确的位置。
+</Note> 

@@ -1,0 +1,61 @@
+---
+title: 'Authentication'
+description: 'How to sign API requests with authentication'
+---
+
+## Signing Requests
+
+ChainStream uses API keys to authenticate all API calls. The **Base API URL** will be one of the following depending on your workspace environment type:
+
+* Sandbox: `https://sandbox-api.chainstream.io/v1`
+* Mainnet/Testnet: `https://api.chainstream.io/v1`
+
+Each API request must include the following headers:
+
+* `X-API-Key` - API key created from your ChainStream workspace.
+* `Authorization` - This value should be set to `Bearer <Access Token>`. The access token is a Base64 encoded JSON Web Token (JWT).
+
+## JWT Structure
+
+`Authorization: Bearer <JWT>`
+
+The JWT payload should contain the following fields:
+
+* `uri` - The URI portion of the request (e.g., /v1/transactions)
+* `nonce` - A unique number or string. Each API request must have a different nonce
+* `iat` - The time at which the JWT was issued, in Epoch seconds
+* `exp` - The time after which the JWT must not be accepted for processing, in Epoch seconds (must be less than `iat`+30 seconds)
+* `sub` - API key
+* `bodyHash` - A hex-encoded SHA-256 hash of the raw HTTP request body
+
+The JWT must be signed using your ChainStream API key and the RS256 algorithm (RSASSA-PKCS1-v1_5 using SHA-256 hash).
+
+## Using SDKs
+
+You can use the ChainStream SDK to set up request headers, as shown in these examples:
+
+### JavaScript SDK
+
+```javascript
+import fs from "fs";
+import path from "path";
+import { ChainStreamSDK } from "chainstream-sdk";
+
+const apiSecret = fs.readFileSync(path.resolve(__dirname, "./chainstream_secret.key"), "utf8");
+const apiKey = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+const chainstream = new ChainStreamSDK(apiSecret, apiKey);
+```
+
+### Python SDK
+
+```python
+from chainstream_sdk import ChainStreamSDK
+
+apiSecret = open('chainstream_secret.key', 'r').read()
+apiKey = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+chainstream = ChainStreamSDK(apiSecret, apiKey)
+```
+
+<Note>
+When using the SDK code examples above to sign requests, make sure to replace `apiKey` with your own API key.
+</Note>

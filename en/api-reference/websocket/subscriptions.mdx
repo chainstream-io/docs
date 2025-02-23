@@ -1,0 +1,130 @@
+---
+title: 'Subscriptions'
+description: 'Subscribe to real-time data streams via WebSocket'
+---
+
+## Subscription Messages
+
+To subscribe to specific data feeds, you need to send a subscription message with the following format:
+
+```json
+{
+  "method": "subscribe",
+  "subscription": { ... }
+}
+```
+
+The subscription object contains the details of the specific feed you want to subscribe to.
+
+## Available Subscriptions
+
+Choose from the following subscription types:
+
+1. **Market Data**
+   * `trades`: Real-time trade updates for a specific coin
+   * `l2Book`: Order book updates (Level 2 data)
+   * `candle`: Candlestick data updates
+   * `allMids`: All mid prices updates
+
+2. **User Data**
+   * `notification`: User-specific notifications
+   * `webData2`: Aggregate user information
+   * `orderUpdates`: User's order status updates
+   * `userEvents`: User-related events
+   * `userFills`: User's trade fills
+   * `userFundings`: User's funding payments
+
+### Subscription Examples
+
+1. Subscribe to trades for a specific coin:
+```json
+{
+  "method": "subscribe",
+  "subscription": {
+    "type": "trades",
+    "coin": "SOL"
+  }
+}
+```
+
+2. Subscribe to order book updates:
+```json
+{
+  "method": "subscribe",
+  "subscription": {
+    "type": "l2Book",
+    "coin": "SOL",
+    "nSigFigs": 4
+  }
+}
+```
+
+3. Subscribe to user notifications:
+```json
+{
+  "method": "subscribe",
+  "subscription": {
+    "type": "notification",
+    "user": "<address>"
+  }
+}
+```
+
+## Data Formats
+
+The server responds with messages in the following format:
+
+```json
+{
+  "channel": "subscriptionResponse",
+  "data": {
+    "method": "subscribe",
+    "subscription": { ... }
+  }
+}
+```
+
+### Common Data Types
+
+```typescript
+interface WsTrade {
+  coin: string;
+  side: string;
+  px: string;
+  sz: string;
+  hash: string;
+  time: number;
+  tid: number;
+  users: [string, string];
+}
+
+interface WsBook {
+  coin: string;
+  levels: [Array<WsLevel>, Array<WsLevel>];
+  time: number;
+}
+
+interface WsLevel {
+  px: string;  // price
+  sz: string;  // size
+  n: number;   // number of orders
+}
+```
+
+## Unsubscribing
+
+To unsubscribe from a data feed, send an unsubscribe message:
+
+```json
+{
+  "method": "unsubscribe",
+  "subscription": {
+    "type": "trades",
+    "coin": "SOL"
+  }
+}
+```
+
+<Note>
+The subscription object in the unsubscribe message should match the original subscription message.
+</Note> 

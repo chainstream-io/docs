@@ -1,0 +1,130 @@
+---
+title: '订阅'
+description: '通过 WebSocket 订阅实时数据流'
+---
+
+## 订阅消息
+
+要订阅特定的数据流，你需要发送格式如下的订阅消息：
+
+```json
+{
+  "method": "subscribe",
+  "subscription": { ... }
+}
+```
+
+subscription 对象包含你想要订阅的特定数据流的详细信息。
+
+## 可用订阅
+
+可以选择以下订阅类型：
+
+1. **市场数据**
+   * `trades`: 特定代币的实时交易更新
+   * `l2Book`: 订单簿更新（二级数据）
+   * `candle`: K线数据更新
+   * `allMids`: 所有中间价格更新
+
+2. **用户数据**
+   * `notification`: 用户特定通知
+   * `webData2`: 用户聚合信息
+   * `orderUpdates`: 用户订单状态更新
+   * `userEvents`: 用户相关事件
+   * `userFills`: 用户交易成交
+   * `userFundings`: 用户资金费用支付
+
+### 订阅示例
+
+1. 订阅特定代币的交易：
+```json
+{
+  "method": "subscribe",
+  "subscription": {
+    "type": "trades",
+    "coin": "SOL"
+  }
+}
+```
+
+2. 订阅订单簿更新：
+```json
+{
+  "method": "subscribe",
+  "subscription": {
+    "type": "l2Book",
+    "coin": "SOL",
+    "nSigFigs": 4
+  }
+}
+```
+
+3. 订阅用户通知：
+```json
+{
+  "method": "subscribe",
+  "subscription": {
+    "type": "notification",
+    "user": "<address>"
+  }
+}
+```
+
+## 数据格式
+
+服务器以以下格式响应消息：
+
+```json
+{
+  "channel": "subscriptionResponse",
+  "data": {
+    "method": "subscribe",
+    "subscription": { ... }
+  }
+}
+```
+
+### 常用数据类型
+
+```typescript
+interface WsTrade {
+  coin: string;    // 代币
+  side: string;    // 方向
+  px: string;      // 价格
+  sz: string;      // 数量
+  hash: string;    // 哈希
+  time: number;    // 时间
+  tid: number;     // 交易ID
+  users: [string, string];  // 用户
+}
+
+interface WsBook {
+  coin: string;    // 代币
+  levels: [Array<WsLevel>, Array<WsLevel>];  // 价格层级
+  time: number;    // 时间
+}
+
+interface WsLevel {
+  px: string;  // 价格
+  sz: string;  // 数量
+  n: number;   // 订单数量
+}
+```
+
+## 取消订阅
+
+要取消订阅数据流，发送取消订阅消息：
+
+```json
+{
+  "method": "unsubscribe",
+  "subscription": {
+    "type": "trades",
+    "coin": "SOL"
+  }
+}
+```
+
+<Note>
+取消订阅消息中的 subscription 对象应与原始订阅消息相匹配。
+</Note> 

@@ -1,0 +1,40 @@
+---
+title: 'Timeouts and Heartbeats'
+description: 'Keep WebSocket connections alive'
+---
+
+## Overview
+
+To maintain an active WebSocket connection, you need to understand how timeouts work and how to use heartbeat messages.
+
+## Connection Timeout
+
+The server will automatically close any connection that hasn't received a message in the last 60 seconds. This helps maintain server resources and clean up stale connections.
+
+## Heartbeat Messages
+
+If you are subscribed to a channel that doesn't receive regular messages (less than once every 60 seconds), you should send heartbeat messages to keep your connection alive.
+
+### Ping Format
+
+Send a ping message in this format:
+
+```json
+{
+  "method": "ping"
+}
+```
+
+### Pong Response
+
+The server will respond with:
+
+```json
+{
+  "channel": "pong"
+}
+```
+
+<Note>
+It's recommended to implement an automatic heartbeat mechanism in your client to send ping messages every 30 seconds if no other messages have been sent.
+</Note> 

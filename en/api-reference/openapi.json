@@ -156,26 +156,25 @@
         "/blockchain/{symbol}": {
             "get": {
                 "description": "Retrieve information about a specific blockchain.",
-                "operationId": "BlockchainController_findBySymbol",
+                "operationId": "blockchain.get",
                 "parameters": [
                     {
                         "name": "symbol",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain Symbol",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
-                            "type": "string",
-                            "enum": [
-                                "SOL",
-                                "ETH",
-                                "BSC"
-                            ]
+                            "example": {
+                                "SOLANA": "sol",
+                                "BASE": "base"
+                            },
+                            "type": "string"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Blockchain information retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -183,29 +182,9 @@
                                 }
                             }
                         }
-                    },
-                    "404": {
-                        "description": "Blockchain not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "statusCode": {
-                                            "type": "number",
-                                            "example": 404
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Blockchain not found"
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 },
-                "summary": "Get Blockchain",
+                "summary": "Blockchain - Detail",
                 "tags": [
                     "Blockchain"
                 ]
@@ -214,7 +193,7 @@
         "/blockchain": {
             "get": {
                 "description": "Fetch information about all supported blockchains.",
-                "operationId": "BlockchainController_paging",
+                "operationId": "blockchain.list",
                 "parameters": [
                     {
                         "name": "orderBy",
@@ -270,7 +249,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Blockchain list retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -278,33 +257,9 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "description": "Invalid query parameters",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "statusCode": {
-                                            "type": "number",
-                                            "example": 400
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Invalid limit value"
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Bad Request"
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 },
-                "summary": "Supported Blockchains",
+                "summary": "Blockchain - List",
                 "tags": [
                     "Blockchain"
                 ]
@@ -313,15 +268,18 @@
         "/transaction/{chain}/send": {
             "post": {
                 "description": "Submit a signed transaction to the blockchain",
-                "operationId": "TransactionController_send",
+                "operationId": "transaction.send",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain network",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
-                            "example": "solana",
+                            "example": {
+                                "SOLANA": "sol",
+                                "BASE": "base"
+                            },
                             "type": "string"
                         }
                     }
@@ -339,31 +297,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Transaction submitted successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/SendTxResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Blockchain network not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "statusCode": {
-                                            "type": "number",
-                                            "example": 404
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Blockchain network not found"
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -374,22 +312,22 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Send transaction",
+                "summary": "Transaction - Send",
                 "tags": [
                     "Transaction"
                 ]
             }
         },
-        "/{chain}/dex/swap": {
+        "/dex/{chain}/swap": {
             "post": {
                 "description": "Create a swap transaction for exchanging tokens on specified DEX. The transaction will be built and returned in serialized form.",
-                "operationId": "DexController_swap",
+                "operationId": "dex.swap",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain network",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "enum": [
                                 "sol",
@@ -412,31 +350,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Swap transaction created successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/SwapReply"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "DEX or token not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "statusCode": {
-                                            "type": "number",
-                                            "example": 404
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "DEX or token not found"
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -447,22 +365,22 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Execute token swap",
+                "summary": "Dex - Swap",
                 "tags": [
                     "Dex"
                 ]
             }
         },
-        "/{chain}/dex/route": {
+        "/dex/{chain}/route": {
             "post": {
                 "description": "Calculate the best route for token swap considering price impact and fees. Returns the optimal path and a prepared transaction.",
-                "operationId": "DexController_route",
+                "operationId": "dex.route",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain network",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "enum": [
                                 "sol",
@@ -484,31 +402,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Optimal route found",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/SwapRouteResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "No valid route found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "statusCode": {
-                                            "type": "number",
-                                            "example": 404
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "No valid swap route found"
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -519,22 +417,22 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Find optimal swap route",
+                "summary": "Dex - Route",
                 "tags": [
                     "Dex"
                 ]
             }
         },
-        "/{chain}/dex/mint": {
+        "/dex/{chain}/mint": {
             "post": {
                 "description": "Create a new token on the specified DEX",
-                "operationId": "DexController_mint",
+                "operationId": "dex.mint",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain network",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "enum": [
                                 "sol",
@@ -557,17 +455,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Token creation transaction prepared",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "properties": {
-                                        "serializedTx": {
-                                            "type": "string",
-                                            "description": "Base64 encoded transaction",
-                                            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/SwapReply"
                                 }
                             }
                         }
@@ -578,35 +470,33 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Create new token",
+                "summary": "Dex - Mint",
                 "tags": [
                     "Dex"
                 ]
             }
         },
-        "/{chain}/dex": {
+        "/dex": {
             "get": {
                 "description": "Obtain information about all DEXs on a specified blockchain.",
-                "operationId": "DexController_paging",
+                "operationId": "dex.list",
                 "parameters": [
                     {
-                        "name": "chain",
-                        "required": true,
-                        "in": "path",
-                        "description": "Blockchain Symbol",
+                        "name": "chains",
+                        "required": false,
+                        "in": "query",
                         "schema": {
-                            "enum": [
-                                "sol",
-                                "base"
-                            ],
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
                         }
                     },
                     {
                         "name": "limit",
                         "required": false,
                         "in": "query",
-                        "description": "Number of items to return per page",
+                        "description": "Number of results per page",
                         "schema": {
                             "minimum": 1,
                             "maximum": 100,
@@ -617,7 +507,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "DEX list retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -632,62 +522,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "List all DEXes",
-                "tags": [
-                    "Dex"
-                ]
-            }
-        },
-        "/{chain}/dex/{address}": {
-            "get": {
-                "description": "Retrieve detailed information about a specific DEX",
-                "operationId": "DexController_findByAddress",
-                "parameters": [
-                    {
-                        "name": "chain",
-                        "required": true,
-                        "in": "path",
-                        "description": "Blockchain network",
-                        "schema": {
-                            "enum": [
-                                "sol",
-                                "base"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "address",
-                        "required": true,
-                        "in": "path",
-                        "description": "DEX contract address",
-                        "schema": {
-                            "example": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "DEX details retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DexDTO"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "DEX not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearer": []
-                    }
-                ],
-                "summary": "Get DEX details",
+                "summary": "Dex - List",
                 "tags": [
                     "Dex"
                 ]
@@ -696,10 +531,11 @@
         "/solana/moonshot/mint": {
             "post": {
                 "description": "Create a new token with Moonshot protocol on Solana",
-                "operationId": "MoonshotController_mint",
+                "operationId": "moonshot.mint",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
+                    "description": "Token creation parameters",
                     "content": {
                         "application/json": {
                             "schema": {
@@ -709,8 +545,8 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Token creation transaction prepared",
+                    "200": {
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -725,7 +561,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Create new token on Moonshot",
+                "summary": "Moonshot - Mint",
                 "tags": [
                     "Moonshot"
                 ]
@@ -734,10 +570,11 @@
         "/solana/moonshot/submitMint": {
             "post": {
                 "description": "Submit a signed token creation transaction to finalize token creation",
-                "operationId": "MoonshotController_submitMint",
+                "operationId": "moonshot.submitMint",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
+                    "description": "Signed transaction and token details",
                     "content": {
                         "application/json": {
                             "schema": {
@@ -775,7 +612,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Submit token creation transaction",
+                "summary": "Moonshot - Submit Mint",
                 "tags": [
                     "Moonshot"
                 ]
@@ -784,7 +621,7 @@
         "/solana/pumpfun/mint": {
             "post": {
                 "description": "Create a new token with PumpFun protocol",
-                "operationId": "PumpfunController_mint",
+                "operationId": "pumpfun.mint",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -799,7 +636,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Returns serialized transaction data",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -809,7 +646,7 @@
                         }
                     }
                 },
-                "summary": "Create token on PumpFun",
+                "summary": "PumpFun - Mint",
                 "tags": [
                     "Pumpfun"
                 ]
@@ -818,7 +655,7 @@
         "/trades/{signature}": {
             "get": {
                 "description": "Retrieve detailed information about a specific trade",
-                "operationId": "TradeController_get",
+                "operationId": "trade.get",
                 "parameters": [
                     {
                         "name": "signature",
@@ -833,7 +670,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Trade details retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -843,7 +680,7 @@
                         }
                     }
                 },
-                "summary": "Get trade details",
+                "summary": "Trade - Detail",
                 "tags": [
                     "Trade"
                 ]
@@ -852,13 +689,13 @@
         "/trades": {
             "get": {
                 "description": "Retrieve paginated list of trades",
-                "operationId": "TradeController_paging",
+                "operationId": "trade.list",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": false,
                         "in": "query",
-                        "description": "Blockchain network",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "type": "string"
                         }
@@ -894,8 +731,8 @@
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Trade list retrieved successfully",
+                    "default": {
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -905,7 +742,7 @@
                         }
                     }
                 },
-                "summary": "List trades",
+                "summary": "Trade - List",
                 "tags": [
                     "Trade"
                 ]
@@ -914,7 +751,7 @@
         "/orders/placeOrder": {
             "post": {
                 "description": "Create a new order on specified DEX",
-                "operationId": "OrderController_placeOrder",
+                "operationId": "order.place",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -929,7 +766,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Order transaction created successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -944,7 +781,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Place new order",
+                "summary": "Order - Place",
                 "tags": [
                     "Order"
                 ]
@@ -953,7 +790,7 @@
         "/orders/cancelOrder": {
             "post": {
                 "description": "Cancel an existing order",
-                "operationId": "OrderController_cancelOrder",
+                "operationId": "order.cancel",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -968,7 +805,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Cancel transaction created successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -983,7 +820,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Cancel order",
+                "summary": "Order - Cancel",
                 "tags": [
                     "Order"
                 ]
@@ -992,7 +829,7 @@
         "/orders/cancelAllOrders": {
             "post": {
                 "description": "Cancel all orders",
-                "operationId": "cancelAllOrders",
+                "operationId": "order.cancelAll",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -1007,7 +844,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Cancel all orders transaction data",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1022,7 +859,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Cancel all orders",
+                "summary": "Order - Cancel All",
                 "tags": [
                     "Order"
                 ]
@@ -1031,7 +868,7 @@
         "/orders/takeOrder": {
             "post": {
                 "description": "Take order interface",
-                "operationId": "takeOrder",
+                "operationId": "order.take",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -1046,7 +883,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Take order transaction data",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1061,7 +898,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Take order",
+                "summary": "Order - Take",
                 "tags": [
                     "Order"
                 ]
@@ -1070,7 +907,7 @@
         "/orders/createMarket": {
             "post": {
                 "description": "Create trading pair",
-                "operationId": "createMarket",
+                "operationId": "order.createMarket",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -1085,7 +922,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Create trading pair transaction data",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1100,7 +937,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Create market",
+                "summary": "Order - Create Market",
                 "tags": [
                     "Order"
                 ]
@@ -1109,7 +946,7 @@
         "/orders/closeMarket": {
             "post": {
                 "description": "Close trading pair",
-                "operationId": "closeMarket",
+                "operationId": "order.closeMarket",
                 "parameters": [],
                 "requestBody": {
                     "required": true,
@@ -1124,7 +961,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Close trading pair transaction data",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1139,7 +976,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Close market",
+                "summary": "Order - Close Market",
                 "tags": [
                     "Order"
                 ]
@@ -1148,11 +985,11 @@
         "/solana/openbook/markets": {
             "get": {
                 "description": "Retrieve a list of all available trading pairs on OpenBook",
-                "operationId": "OpenbookController_getMarkets",
+                "operationId": "openbook.list",
                 "parameters": [],
                 "responses": {
                     "200": {
-                        "description": "List of trading pairs retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1170,7 +1007,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "List all markets",
+                "summary": "OpenBook - List",
                 "tags": [
                     "Openbook"
                 ]
@@ -1179,7 +1016,7 @@
         "/solana/openbook/market/{marketAddress}": {
             "get": {
                 "description": "Retrieve detailed information about a specific market",
-                "operationId": "OpenbookController_getMarketInfo",
+                "operationId": "openbook.get",
                 "parameters": [
                     {
                         "name": "marketAddress",
@@ -1194,7 +1031,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Market details retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1209,7 +1046,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Get market details",
+                "summary": "OpenBook - Detail",
                 "tags": [
                     "Openbook"
                 ]
@@ -1218,7 +1055,7 @@
         "/solana/openbook/market/{marketAddress}/orderbook": {
             "get": {
                 "description": "Retrieve current order book state for a specific market",
-                "operationId": "OpenbookController_getOrderBook",
+                "operationId": "openbook.get.orderbook",
                 "parameters": [
                     {
                         "name": "marketAddress",
@@ -1233,7 +1070,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Order book retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1248,7 +1085,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Get order book",
+                "summary": "OpenBook - Orderbook",
                 "tags": [
                     "Openbook"
                 ]
@@ -1257,7 +1094,7 @@
         "/solana/openbook/markets/{marketAddress}/users/{userAddress}/orders": {
             "get": {
                 "description": "Retrieve all active orders for a specific user in a market",
-                "operationId": "OpenbookController_getUserOrders",
+                "operationId": "openbook.get.user.orders",
                 "parameters": [
                     {
                         "name": "marketAddress",
@@ -1282,7 +1119,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "User orders retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1297,7 +1134,7 @@
                         "bearer": []
                     }
                 ],
-                "summary": "Get user orders",
+                "summary": "OpenBook - User Orders",
                 "tags": [
                     "Openbook"
                 ]
@@ -1306,7 +1143,7 @@
         "/token/search": {
             "get": {
                 "description": "Get token list of given chain",
-                "operationId": "TokenController_search",
+                "operationId": "token.search",
                 "parameters": [
                     {
                         "name": "chains",
@@ -1384,19 +1221,6 @@
                             "example": "marketCapUsd",
                             "type": "string"
                         }
-                    },
-                    {
-                        "name": "chain",
-                        "required": true,
-                        "in": "path",
-                        "description": "A chain name listed in supported networks",
-                        "schema": {
-                            "enum": [
-                                "sol",
-                                "base"
-                            ],
-                            "type": "string"
-                        }
                     }
                 ],
                 "responses": {
@@ -1419,8 +1243,8 @@
         },
         "/token/{chain}/{address}": {
             "get": {
-                "description": "Get metadata of token",
-                "operationId": "TokenController_get",
+                "description": "Get detail of token",
+                "operationId": "token.get",
                 "parameters": [
                     {
                         "name": "chain",
@@ -1458,6 +1282,53 @@
                         }
                     }
                 },
+                "summary": "Token - Detail",
+                "tags": [
+                    "Token"
+                ]
+            }
+        },
+        "/token/{chain}/{address}/metadata": {
+            "get": {
+                "description": "Get metadata of token",
+                "operationId": "token.get.metadata",
+                "parameters": [
+                    {
+                        "name": "chain",
+                        "required": true,
+                        "in": "path",
+                        "description": "A chain name listed in supported networks",
+                        "schema": {
+                            "enum": [
+                                "sol",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "required": true,
+                        "in": "path",
+                        "description": "Address of a token",
+                        "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenMetadata"
+                                }
+                            }
+                        }
+                    }
+                },
                 "summary": "Token - Metadata",
                 "tags": [
                     "Token"
@@ -1467,7 +1338,7 @@
         "/token/{chain}/{address}/pools": {
             "get": {
                 "description": "Get all DEX pools containing this token",
-                "operationId": "TokenController_getPools",
+                "operationId": "token.get.pools",
                 "parameters": [
                     {
                         "name": "chain",
@@ -1516,19 +1387,29 @@
         },
         "/token/{chain}/{address}/stats": {
             "get": {
-                "operationId": "token.stats",
+                "description": "Get stats of a token",
+                "operationId": "token.get.stats",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "schema": {}
+                        "description": "A chain name listed in supported networks",
+                        "schema": {
+                            "enum": [
+                                "sol",
+                                "base"
+                            ],
+                            "type": "string"
+                        }
                     },
                     {
                         "name": "address",
                         "required": true,
                         "in": "path",
+                        "description": "Address of a token",
                         "schema": {
+                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                             "type": "string"
                         }
                     }
@@ -1548,7 +1429,7 @@
                         }
                     }
                 },
-                "summary": "",
+                "summary": "Token - Stats",
                 "tags": [
                     "Token"
                 ]
@@ -1604,13 +1485,13 @@
         "/token/{chain}/{address}/candles": {
             "get": {
                 "description": "Retrieve historical price candles for a token",
-                "operationId": "TokenController_candles",
+                "operationId": "token.candles",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain Symbol",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "enum": [
                                 "sol",
@@ -1623,7 +1504,7 @@
                         "name": "address",
                         "required": true,
                         "in": "path",
-                        "description": "Token Contract address",
+                        "description": "Address of a token",
                         "schema": {
                             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                             "type": "string"
@@ -1661,7 +1542,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Token candles retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1674,7 +1555,7 @@
                         }
                     }
                 },
-                "summary": "Get Token Candles",
+                "summary": "Token - Candles",
                 "tags": [
                     "Token"
                 ]
@@ -1727,16 +1608,16 @@
                 ]
             }
         },
-        "/{chain}/{address}/ranking/{address}/top_gainers": {
+        "/ranking/{chain}/{address}/gainers": {
             "get": {
                 "description": "Get a list of tokens that have gained the most in value.",
-                "operationId": "TokenRankingController_topGainers",
+                "operationId": "ranking.gainers",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain Symbol",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "enum": [
                                 "sol",
@@ -1749,7 +1630,7 @@
                         "name": "address",
                         "required": true,
                         "in": "path",
-                        "description": "Token contract address",
+                        "description": "Address of a token",
                         "schema": {
                             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                             "type": "string"
@@ -1758,7 +1639,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Top gainers retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1771,72 +1652,22 @@
                         }
                     }
                 },
-                "summary": "Get top gainers",
+                "summary": "Ranking - Gainers",
                 "tags": [
                     "Token Rankings"
                 ]
             }
         },
-        "/{chain}/{address}/ranking/{address}/top_losers": {
-            "get": {
-                "description": "Fetch a list of tokens that have lost the most in value.",
-                "operationId": "TokenRankingController_topLosers",
-                "parameters": [
-                    {
-                        "name": "chain",
-                        "required": true,
-                        "in": "path",
-                        "description": "Blockchain Symbol",
-                        "schema": {
-                            "enum": [
-                                "sol",
-                                "base"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "address",
-                        "required": true,
-                        "in": "path",
-                        "description": "Token contract address",
-                        "schema": {
-                            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Top losers retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/TokenHolder"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "summary": "Get top losers",
-                "tags": [
-                    "Token Rankings"
-                ]
-            }
-        },
-        "/{chain}/dexpools/{address}": {
+        "/dexpools/{chain}/{address}": {
             "get": {
                 "description": "Retrieve detailed information about a specific DEX pool",
-                "operationId": "DexPoolController_get",
+                "operationId": "dexpool.get",
                 "parameters": [
                     {
                         "name": "chain",
                         "required": true,
                         "in": "path",
-                        "description": "Blockchain network",
+                        "description": "A chain name listed in supported networks",
                         "schema": {
                             "enum": [
                                 "sol",
@@ -1849,7 +1680,7 @@
                         "name": "address",
                         "required": true,
                         "in": "path",
-                        "description": "Pool address",
+                        "description": " Address of a token",
                         "schema": {
                             "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
                             "type": "string"
@@ -1858,7 +1689,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pool details retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1868,112 +1699,16 @@
                         }
                     }
                 },
-                "summary": "Get pool details",
+                "summary": "DexPool - Detail",
                 "tags": [
                     "DexPool"
                 ]
             }
         },
-        "/{chain}/dexpools": {
-            "get": {
-                "description": "Retrieve a paginated list of DEX pools with optional filtering",
-                "operationId": "DexPoolController_paging",
-                "parameters": [
-                    {
-                        "name": "chain",
-                        "required": true,
-                        "in": "path",
-                        "description": "Blockchain network",
-                        "schema": {
-                            "enum": [
-                                "sol",
-                                "base"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "sort",
-                        "required": false,
-                        "in": "query",
-                        "description": "Sort direction for results",
-                        "schema": {
-                            "default": "desc",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "sortBy",
-                        "required": false,
-                        "in": "query",
-                        "description": "Field to sort by",
-                        "schema": {
-                            "example": "tvl",
-                            "enum": [
-                                "tvl",
-                                "volume24h",
-                                "price"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "from",
-                        "required": true,
-                        "in": "query",
-                        "description": "Start timestamp (Unix epoch in seconds)",
-                        "schema": {
-                            "example": 1709251200,
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "name": "to",
-                        "required": true,
-                        "in": "query",
-                        "description": "End timestamp (Unix epoch in seconds)",
-                        "schema": {
-                            "example": 1709337600,
-                            "type": "number"
-                        }
-                    },
-                    {
-                        "name": "cursor",
-                        "required": false,
-                        "in": "query",
-                        "description": "Pagination cursor",
-                        "schema": {
-                            "example": "eyJpZCI6MTAwfQ==",
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Pool list retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DexPoolPage"
-                                }
-                            }
-                        }
-                    }
-                },
-                "summary": "List all pools",
-                "tags": [
-                    "DexPool"
-                ]
-            }
-        },
-        "/{chain}/dexpools/{address}/stats": {
+        "/dexpools/{chain}/{address}/stats": {
             "get": {
                 "description": "Retrieve price statistics for a specific pool",
-                "operationId": "DexPoolController_stat",
+                "operationId": "dexpool.stats",
                 "parameters": [
                     {
                         "name": "chain",
@@ -2001,7 +1736,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Pool statistics retrieved successfully",
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -2011,7 +1746,7 @@
                         }
                     }
                 },
-                "summary": "Get pool statistics",
+                "summary": "DexPool - Stats",
                 "tags": [
                     "DexPool"
                 ]
@@ -2020,7 +1755,7 @@
         "/{chain}/ranking/hot": {
             "get": {
                 "description": "Retrieve a list of trending tokens",
-                "operationId": "RankingController_hotTokens",
+                "operationId": "Ranking - hotTokens",
                 "parameters": [
                     {
                         "name": "chain",
@@ -2061,7 +1796,7 @@
         "version": "1.0",
         "contact": {
             "name": "AI",
-            "url": "https://github.com/openweb3-io/dex-aggregator",
+            "url": "https://github.com/chainstream-io/dex",
             "email": "ai@sx.ai"
         }
     },
@@ -2073,7 +1808,7 @@
     ],
     "servers": [
         {
-            "url": "https://api.chainstream.io"
+            "url": "https://api.dex.chainstream.io"
         }
     ],
     "components": {
@@ -2106,7 +1841,7 @@
                     "logoUrl": {
                         "type": "string",
                         "description": "Blockchain Logo URL",
-                        "example": "https://s1.openweb3.io/logos/solana.png"
+                        "example": "https://s1.chainstream.io/logos/solana.png"
                     }
                 },
                 "required": [
@@ -2447,20 +2182,26 @@
             "DexDTO": {
                 "type": "object",
                 "properties": {
-                    "address": {
+                    "programAddress": {
                         "type": "string",
-                        "description": "DEX contract address",
-                        "example": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
+                        "description": "DEX program address",
+                        "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
                     },
-                    "name": {
+                    "poolName": {
                         "type": "string",
-                        "description": "Name of the DEX",
-                        "example": "Raydium"
+                        "description": "Pool name",
+                        "example": "OrcaWhirpool"
+                    },
+                    "chain": {
+                        "type": "string",
+                        "description": "Chain",
+                        "example": "sol"
                     }
                 },
                 "required": [
-                    "address",
-                    "name"
+                    "programAddress",
+                    "poolName",
+                    "chain"
                 ]
             },
             "DexPage": {
@@ -2482,6 +2223,21 @@
                         "type": "boolean",
                         "description": "Indicates if there are more results",
                         "default": false
+                    },
+                    "startCursor": {
+                        "type": "object",
+                        "description": "Cursor for first item in current page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "endCursor": {
+                        "type": "object",
+                        "description": "Cursor for last item in current page",
+                        "example": "eyJpZCI6MjAwfQ=="
+                    },
+                    "total": {
+                        "type": "number",
+                        "description": "Total number of tokens",
+                        "example": 1000
                     }
                 },
                 "required": [
@@ -3691,24 +3447,318 @@
                 "properties": {
                     "poolAddress": {
                         "type": "string",
-                        "description": "Unique address of the DEX pool",
+                        "description": "Pool address",
                         "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
                     },
                     "baseTokenAddress": {
                         "type": "string",
-                        "description": "Address of the base token in the pool",
+                        "description": "Base token address",
                         "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
                     },
                     "quoteTokenAddress": {
+                        "description": "Quote token address",
+                        "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "poolName": {
                         "type": "string",
-                        "description": "Address of the quote token in the pool",
-                        "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+                        "description": "Pool protocol name",
+                        "example": "Raydium"
+                    },
+                    "tvlInUsd": {
+                        "type": "string",
+                        "description": "Total value locked in USD",
+                        "example": "1000000.45"
                     }
                 },
                 "required": [
                     "poolAddress",
                     "baseTokenAddress",
-                    "quoteTokenAddress"
+                    "quoteTokenAddress",
+                    "poolName"
+                ]
+            },
+            "Token": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana"
+                    },
+                    "decimals": {
+                        "type": "string",
+                        "description": "Token decimals",
+                        "example": "9"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Token name",
+                        "example": "USD Coin"
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol",
+                        "example": "USDC"
+                    },
+                    "metadataAddress": {
+                        "type": "string",
+                        "description": "Metadata program address",
+                        "example": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+                    },
+                    "address": {
+                        "type": "string",
+                        "description": "Token mint address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "tokenCreators": {
+                        "type": "string",
+                        "description": "Token creator addresses",
+                        "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+                    },
+                    "imageUrl": {
+                        "type": "string",
+                        "description": "Token image URL",
+                        "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                    },
+                    "uri": {
+                        "type": "string",
+                        "description": "Metadata URI",
+                        "example": "https://..."
+                    },
+                    "extra": {
+                        "type": "string",
+                        "description": "Additional metadata",
+                        "example": "{}"
+                    },
+                    "metadata": {
+                        "type": "string",
+                        "description": "Full metadata JSON",
+                        "example": "{}"
+                    },
+                    "socialMedias": {
+                        "type": "string",
+                        "description": "Social media links",
+                        "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+                    },
+                    "tokenCreatedAt": {
+                        "type": "string",
+                        "description": "Token creation timestamp",
+                        "example": "2024-03-14T12:00:00Z"
+                    },
+                    "market": {
+                        "type": "string",
+                        "description": "Market identifier",
+                        "example": "USDC-SOL"
+                    },
+                    "deployer": {
+                        "type": "string",
+                        "description": "Token deployer address",
+                        "example": "FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw"
+                    },
+                    "price": {
+                        "type": "string",
+                        "description": "Current token price in base currency",
+                        "example": "1.00"
+                    },
+                    "priceInUsd": {
+                        "type": "string",
+                        "description": "Current token price in USD",
+                        "example": "1.00"
+                    },
+                    "marketCapUsd": {
+                        "type": "string",
+                        "description": "Total market capitalization in USD",
+                        "example": "33459846123.45"
+                    },
+                    "extension": {
+                        "type": "object",
+                        "description": "Additional token metadata",
+                        "example": {
+                            "website": "https://www.circle.com/usdc",
+                            "twitter": "@circle"
+                        }
+                    },
+                    "buys24h": {
+                        "type": "string",
+                        "description": "Number of buy orders in the last 24 hours",
+                        "example": "150"
+                    },
+                    "sells24h": {
+                        "type": "string",
+                        "description": "Number of sell orders in the last 24 hours",
+                        "example": "120"
+                    },
+                    "buyVolumes24h": {
+                        "type": "string",
+                        "description": "Total buy volume in the last 24 hours",
+                        "example": "50000.45"
+                    },
+                    "sellsVolumes24h": {
+                        "type": "string",
+                        "description": "Total sell volume in the last 24 hours",
+                        "example": "45000.32"
+                    },
+                    "pools": {
+                        "description": "List of DEX pools containing this token",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DexPoolDTO"
+                        }
+                    }
+                },
+                "required": [
+                    "chain",
+                    "decimals",
+                    "name",
+                    "symbol",
+                    "metadataAddress",
+                    "address",
+                    "tokenCreators",
+                    "tokenCreatedAt",
+                    "market",
+                    "deployer",
+                    "marketCapUsd",
+                    "buys24h",
+                    "sells24h",
+                    "buyVolumes24h",
+                    "sellsVolumes24h"
+                ]
+            },
+            "TokenPage": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "number",
+                        "description": "Total number of tokens",
+                        "example": 1000
+                    },
+                    "countsByProtocols": {
+                        "type": "object",
+                        "description": "Token count by protocol",
+                        "example": {
+                            "uniswap": 500,
+                            "sushiswap": 300
+                        }
+                    },
+                    "data": {
+                        "description": "List of tokens",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Token"
+                        }
+                    },
+                    "next": {
+                        "type": "string",
+                        "description": "Pagination cursor for next page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "hasNext": {
+                        "type": "boolean",
+                        "description": "Indicates if more results are available",
+                        "default": false
+                    },
+                    "hasPrev": {
+                        "type": "boolean",
+                        "description": "Indicates if previous results are available",
+                        "default": false
+                    },
+                    "startCursor": {
+                        "type": "object",
+                        "description": "Cursor for first item in current page",
+                        "example": "eyJpZCI6MTAwfQ=="
+                    },
+                    "endCursor": {
+                        "type": "object",
+                        "description": "Cursor for last item in current page",
+                        "example": "eyJpZCI6MjAwfQ=="
+                    }
+                },
+                "required": [
+                    "data"
+                ]
+            },
+            "TokenMetadata": {
+                "type": "object",
+                "properties": {
+                    "chain": {
+                        "type": "string",
+                        "description": "Blockchain network identifier",
+                        "example": "solana"
+                    },
+                    "decimals": {
+                        "type": "string",
+                        "description": "Token decimals",
+                        "example": "9"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Token name",
+                        "example": "USD Coin"
+                    },
+                    "symbol": {
+                        "type": "string",
+                        "description": "Token symbol",
+                        "example": "USDC"
+                    },
+                    "metadataAddress": {
+                        "type": "string",
+                        "description": "Metadata program address",
+                        "example": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+                    },
+                    "address": {
+                        "type": "string",
+                        "description": "Token mint address",
+                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                    },
+                    "tokenCreators": {
+                        "type": "string",
+                        "description": "Token creator addresses",
+                        "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+                    },
+                    "imageUrl": {
+                        "type": "string",
+                        "description": "Token image URL",
+                        "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                    },
+                    "uri": {
+                        "type": "string",
+                        "description": "Metadata URI",
+                        "example": "https://..."
+                    },
+                    "extra": {
+                        "type": "string",
+                        "description": "Additional metadata",
+                        "example": "{}"
+                    },
+                    "metadata": {
+                        "type": "string",
+                        "description": "Full metadata JSON",
+                        "example": "{}"
+                    },
+                    "socialMedias": {
+                        "type": "string",
+                        "description": "Social media links",
+                        "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+                    },
+                    "tokenCreatedAt": {
+                        "type": "string",
+                        "description": "Token creation timestamp",
+                        "example": "2024-03-14T12:00:00Z"
+                    }
+                },
+                "required": [
+                    "chain",
+                    "decimals",
+                    "name",
+                    "symbol",
+                    "metadataAddress",
+                    "address",
+                    "tokenCreators",
+                    "tokenCreatedAt"
                 ]
             },
             "TokenStat": {
@@ -3934,163 +3984,6 @@
                     "sellsVolumes24h"
                 ]
             },
-            "Token": {
-                "type": "object",
-                "properties": {
-                    "chain": {
-                        "type": "string",
-                        "description": "Blockchain network identifier",
-                        "example": "solana"
-                    },
-                    "address": {
-                        "type": "string",
-                        "description": "Token contract address",
-                        "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-                    },
-                    "name": {
-                        "type": "string",
-                        "description": "Token name",
-                        "example": "USD Coin"
-                    },
-                    "symbol": {
-                        "type": "string",
-                        "description": "Token symbol",
-                        "example": "USDC"
-                    },
-                    "decimals": {
-                        "type": "number",
-                        "description": "Number of decimal places",
-                        "example": 6
-                    },
-                    "market": {
-                        "type": "string",
-                        "description": "Market identifier",
-                        "example": "USDC-SOL"
-                    },
-                    "image": {
-                        "type": "string",
-                        "description": "Token icon URL",
-                        "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
-                    },
-                    "deployer": {
-                        "type": "string",
-                        "description": "Token deployer address",
-                        "example": "FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Token description text",
-                        "example": "USDC is a fully-collateralized US dollar stablecoin"
-                    },
-                    "price": {
-                        "type": "string",
-                        "description": "Current token price in base currency",
-                        "example": "1.00"
-                    },
-                    "priceInUsd": {
-                        "type": "string",
-                        "description": "Current token price in USD",
-                        "example": "1.00"
-                    },
-                    "marketCapUsd": {
-                        "type": "string",
-                        "description": "Total market capitalization in USD",
-                        "example": "33459846123.45"
-                    },
-                    "extension": {
-                        "type": "object",
-                        "description": "Additional token metadata",
-                        "example": {
-                            "website": "https://www.circle.com/usdc",
-                            "twitter": "@circle"
-                        }
-                    },
-                    "createdAt": {
-                        "format": "date-time",
-                        "type": "string",
-                        "description": "Token creation timestamp",
-                        "example": "2024-03-14T12:00:00Z"
-                    },
-                    "pools": {
-                        "description": "List of DEX pools containing this token",
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/DexPoolDTO"
-                        }
-                    },
-                    "stats": {
-                        "description": "Token statistics across different time periods",
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/TokenStat"
-                            }
-                        ]
-                    }
-                },
-                "required": [
-                    "chain",
-                    "address",
-                    "name",
-                    "symbol",
-                    "decimals",
-                    "market",
-                    "deployer",
-                    "marketCapUsd"
-                ]
-            },
-            "TokenPage": {
-                "type": "object",
-                "properties": {
-                    "total": {
-                        "type": "number",
-                        "description": "Total number of tokens",
-                        "example": 1000
-                    },
-                    "countsByProtocols": {
-                        "type": "object",
-                        "description": "Token count by protocol",
-                        "example": {
-                            "uniswap": 500,
-                            "sushiswap": 300
-                        }
-                    },
-                    "data": {
-                        "description": "List of tokens",
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Token"
-                        }
-                    },
-                    "next": {
-                        "type": "string",
-                        "description": "Pagination cursor for next page",
-                        "example": "eyJpZCI6MTAwfQ=="
-                    },
-                    "hasNext": {
-                        "type": "boolean",
-                        "description": "Indicates if more results are available",
-                        "default": false
-                    },
-                    "hasPrev": {
-                        "type": "boolean",
-                        "description": "Indicates if previous results are available",
-                        "default": false
-                    },
-                    "startCursor": {
-                        "type": "object",
-                        "description": "Cursor for first item in current page",
-                        "example": "eyJpZCI6MTAwfQ=="
-                    },
-                    "endCursor": {
-                        "type": "object",
-                        "description": "Cursor for last item in current page",
-                        "example": "eyJpZCI6MjAwfQ=="
-                    }
-                },
-                "required": [
-                    "data"
-                ]
-            },
             "TokenHolder": {
                 "type": "object",
                 "properties": {}
@@ -4186,31 +4079,6 @@
                     "volume",
                     "resolution",
                     "time"
-                ]
-            },
-            "DexPoolPage": {
-                "type": "object",
-                "properties": {
-                    "data": {
-                        "description": "Array of DEX pool data",
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/DexPoolDTO"
-                        }
-                    },
-                    "next": {
-                        "type": "string",
-                        "description": "Cursor for next page",
-                        "example": "eyJpZCI6MTIwfQ=="
-                    },
-                    "hasNext": {
-                        "type": "boolean",
-                        "description": "Indicates if more results are available",
-                        "default": false
-                    }
-                },
-                "required": [
-                    "data"
                 ]
             },
             "DexPoolStatDTO": {

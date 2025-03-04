@@ -1,0 +1,4413 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/jobs/{id}": {
+      "get": {
+        "description": "Retrieve the current status and result of a job by its ID",
+        "operationId": "JobController_getJob",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Job identifier",
+            "schema": {
+              "example": "12345",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "state": {
+                      "type": "string",
+                      "description": "Current job state",
+                      "example": "completed"
+                    },
+                    "result": {
+                      "type": "object",
+                      "description": "Job execution result"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 404
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Job not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get job status",
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/jobs/{id}/streaming": {
+      "get": {
+        "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs.",
+        "operationId": "JobController_streaming",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Job identifier",
+            "schema": {
+              "example": "12345",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE stream established successfully",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Job ID",
+                      "example": "12345"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "completed",
+                        "error"
+                      ],
+                      "description": "Current job status"
+                    },
+                    "result": {
+                      "type": "object",
+                      "description": "Job result or error details"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "result": {
+                      "type": "string",
+                      "example": "Job for id 12345 not found."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stream job updates",
+        "tags": [
+          "Jobs"
+        ]
+      }
+    },
+    "/realtime/test": {
+      "get": {
+        "operationId": "RealtimeController_test",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Realtime"
+        ]
+      }
+    },
+    "/blockchain/{symbol}": {
+      "get": {
+        "description": "Retrieve information about a specific blockchain.",
+        "operationId": "blockchain.get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "example": {
+                "SOLANA": "sol",
+                "BASE": "base"
+              },
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockchainDTO"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Blockchain - Detail",
+        "tags": [
+          "Blockchain"
+        ]
+      }
+    },
+    "/blockchain": {
+      "get": {
+        "description": "Fetch information about all supported blockchains.",
+        "operationId": "blockchain.list",
+        "parameters": [
+          {
+            "name": "orderBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "symbol"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Sort type",
+            "schema": {
+              "default": "asc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockchainPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Blockchain - List",
+        "tags": [
+          "Blockchain"
+        ]
+      }
+    },
+    "/transaction/{chain}/send": {
+      "post": {
+        "description": "提交已签名的交易到区块链",
+        "operationId": "transaction.send",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "example": {
+                "SOLANA": "sol",
+                "BASE": "base"
+              },
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "交易参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTxInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendTxResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易 - 发送",
+        "tags": [
+          "Transaction"
+        ]
+      }
+    },
+    "/dex/{chain}/swap": {
+      "post": {
+        "description": "兑换参数，包括输入代币、输出代币、数量和滑点",
+        "operationId": "dex.swap",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "DEX - 兑换",
+        "tags": [
+          "Dex"
+        ]
+      }
+    },
+    "/dex/{chain}/route": {
+      "post": {
+        "description": "计算代币兑换的最佳路由，考虑价格影响和费用。返回最优路径和准备好的交易",
+        "operationId": "dex.route",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapRouteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapRouteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "DEX - 路由",
+        "tags": [
+          "Dex"
+        ]
+      }
+    },
+    "/dex/{chain}/mint": {
+      "post": {
+        "description": "在指定 DEX 上创建新代币",
+        "operationId": "dex.mint",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Token creation parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DexMintInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "DEX - 铸造",
+        "tags": [
+          "Dex"
+        ]
+      }
+    },
+    "/dex": {
+      "get": {
+        "description": "获取指定区块链上所有 DEX 的信息",
+        "operationId": "dex.list",
+        "parameters": [
+          {
+            "name": "chains",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DexPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "DEX - 列表",
+        "tags": [
+          "Dex"
+        ]
+      }
+    },
+    "/solana/moonshot/mint": {
+      "post": {
+        "description": "使用 Moonshot 协议在 Solana 上创建新代币",
+        "operationId": "moonshot.mint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Token creation parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MintInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MintReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Moonshot - 铸造",
+        "tags": [
+          "Moonshot"
+        ]
+      }
+    },
+    "/solana/moonshot/submitMint": {
+      "post": {
+        "description": "提交已签名的代币创建交易以完成代币创建",
+        "operationId": "moonshot.submitMint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Signed transaction and token details",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token creation transaction submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "signature": {
+                      "type": "string",
+                      "description": "Transaction signature",
+                      "example": "5KtPn1LGuxhFiwjxEqHRGrXJZ8wFzNqsV8DYjPZmxhVGwpEgKcdd9dGxPAzEqLXZ9QyjZvxHfYK9QqSf8EGtK4P5"
+                    },
+                    "slot": {
+                      "type": "number",
+                      "description": "Block slot number",
+                      "example": 234506754
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Moonshot - 提交铸造",
+        "tags": [
+          "Moonshot"
+        ]
+      }
+    },
+    "/solana/pumpfun/mint": {
+      "post": {
+        "description": "使用 PumpFun 协议创建新代币",
+        "operationId": "pumpfun.mint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Required parameters for minting token",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PumpMintInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PumpMintReply"
+                }
+              }
+            }
+          }
+        },
+        "summary": "PumpFun - 铸造",
+        "tags": [
+          "Pumpfun"
+        ]
+      }
+    },
+    "/trades/{signature}": {
+      "get": {
+        "description": "获取特定交易的详细信息",
+        "operationId": "trades.get",
+        "parameters": [
+          {
+            "name": "signature",
+            "required": true,
+            "in": "path",
+            "description": "交易签名/哈希",
+            "schema": {
+              "example": "CONTROLLER.TRADE.GET.SIGNATURE.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Trade"
+                }
+              }
+            }
+          }
+        },
+        "summary": "交易 - 详情",
+        "tags": [
+          "Trades"
+        ]
+      }
+    },
+    "/trades": {
+      "get": {
+        "description": "获取分页的交易列表",
+        "operationId": "trade.list",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "query",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "query",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parseJupiter",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "hideArb",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "default": 20,
+              "example": "CONTROLLER.TRADE.LIST.LIMIT.EXAMPLE",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradePage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "交易 - 列表",
+        "tags": [
+          "Trades"
+        ]
+      }
+    },
+    "/orders/placeOrder": {
+      "post": {
+        "description": "在指定 DEX 上创建新订单",
+        "operationId": "order.place",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "订单参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceOrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "订单 - 下单",
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/orders/cancelOrder": {
+      "post": {
+        "description": "取消现有订单",
+        "operationId": "order.cancel",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "取消参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "订单 - 取消",
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/orders/cancelAllOrders": {
+      "post": {
+        "description": "取消所有订单",
+        "operationId": "order.cancelAll",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "取消所有订单所需参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelAllOrdersInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "订单 - 取消全部",
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/orders/takeOrder": {
+      "post": {
+        "description": "吃单接口",
+        "operationId": "order.take",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "吃单所需参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceOrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "订单 - 吃单",
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/orders/createMarket": {
+      "post": {
+        "description": "创建交易对",
+        "operationId": "order.createMarket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "创建交易对所需参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMarketInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "订单 - 创建市场",
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/orders/closeMarket": {
+      "post": {
+        "description": "关闭交易对",
+        "operationId": "order.closeMarket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "关闭交易对所需参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseMarketInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "订单 - 关闭市场",
+        "tags": [
+          "Order"
+        ]
+      }
+    },
+    "/solana/openbook/markets": {
+      "get": {
+        "description": "获取 OpenBook 上所有可用交易对的列表",
+        "operationId": "openbook.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SimpleMarketDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "OpenBook - 列表",
+        "tags": [
+          "Openbook"
+        ]
+      }
+    },
+    "/solana/openbook/market/{marketAddress}": {
+      "get": {
+        "description": "获取特定市场的详细信息",
+        "operationId": "openbook.get",
+        "parameters": [
+          {
+            "name": "marketAddress",
+            "required": true,
+            "in": "path",
+            "description": "市场地址",
+            "schema": {
+              "example": "GLOBAL.MARKETADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketInfoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "OpenBook - 详情",
+        "tags": [
+          "Openbook"
+        ]
+      }
+    },
+    "/solana/openbook/market/{marketAddress}/orderbook": {
+      "get": {
+        "description": "获取特定市场的当前订单簿状态",
+        "operationId": "openbook.get.orderbook",
+        "parameters": [
+          {
+            "name": "marketAddress",
+            "required": true,
+            "in": "path",
+            "description": "市场地址",
+            "schema": {
+              "example": "GLOBAL.MARKETADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderBookInfoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "OpenBook - 订单簿",
+        "tags": [
+          "Openbook"
+        ]
+      }
+    },
+    "/solana/openbook/markets/{marketAddress}/users/{userAddress}/orders": {
+      "get": {
+        "description": "获取特定用户在市场中的所有活跃订单",
+        "operationId": "openbook.get.user.orders",
+        "parameters": [
+          {
+            "name": "marketAddress",
+            "required": true,
+            "in": "path",
+            "description": "市场地址",
+            "schema": {
+              "example": "GLOBAL.MARKETADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "userAddress",
+            "required": true,
+            "in": "path",
+            "description": "用户的钱包地址",
+            "schema": {
+              "example": "GLOBAL.USERADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOrderInfoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "OpenBook - 用户订单",
+        "tags": [
+          "Openbook"
+        ]
+      }
+    },
+    "/token/search": {
+      "get": {
+        "description": "获取指定链的代币列表",
+        "operationId": "token.search",
+        "parameters": [
+          {
+            "name": "chains",
+            "required": false,
+            "in": "query",
+            "description": "链筛选",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "代币名称、符号或地址的搜索查询字符串",
+            "schema": {
+              "minLength": 1,
+              "example": "USDC",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "protocols",
+            "required": false,
+            "in": "query",
+            "description": "协议筛选",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "DTO.PAGE.CURSOR",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "example": "marketCapUsd",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 列表",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}": {
+      "get": {
+        "description": "获取代币详情",
+        "operationId": "token.get",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 详情",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/metadata": {
+      "get": {
+        "description": "获取代币元数据",
+        "operationId": "token.get.metadata",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenMetadata"
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 元数据",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/pools": {
+      "get": {
+        "description": "获取包含此代币的所有资金池",
+        "operationId": "token.get.pools",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DexPoolDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 资金池",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/stats": {
+      "get": {
+        "description": "获取代币统计信息",
+        "operationId": "token.get.stats",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenStat"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 统计",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/holders": {
+      "get": {
+        "description": "获取代币持有者",
+        "operationId": "token.get.holders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "example": "eyJpZCI6MjAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenHolderPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 持有者",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/candles": {
+      "get": {
+        "description": "获取代币价格K线",
+        "operationId": "token.candles",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": true,
+            "in": "query",
+            "description": "K线时间分辨率",
+            "schema": {
+              "$ref": "#/components/schemas/Resolution"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "开始时间戳（Unix 纪元秒数）",
+            "schema": {
+              "example": 1709251200,
+              "type": "number"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "结束时间戳（Unix 纪元秒数）",
+            "schema": {
+              "example": 1709337600,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Candle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - K线",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/topHolders": {
+      "get": {
+        "description": "获取代币前20名持有者",
+        "operationId": "token.get.top.holders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenHolderPage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 大户排名",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/marketCap": {
+      "get": {
+        "description": "获取代币市值",
+        "operationId": "token.get.market.cap",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenMarketCap"
+                }
+              }
+            }
+          }
+        },
+        "summary": "代币 - 市值",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/ranking/{chain}/{tokenAddress}/gainers": {
+      "get": {
+        "description": "获取代币交易者排行",
+        "operationId": "ranking.gainers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenGainersPage"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "排名 - 代币的交易者排行",
+        "tags": [
+          "Token-Rankings"
+        ]
+      }
+    },
+    "/dexpools/{chain}/{poolAddress}": {
+      "get": {
+        "description": "获取特定 DEX 资金池的详细信息",
+        "operationId": "dexpool.get",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": true,
+            "in": "path",
+            "description": "资金池地址",
+            "schema": {
+              "example": "GLOBAL.POOLADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DexPoolDTO"
+                }
+              }
+            }
+          }
+        },
+        "summary": "DEX 资金池 - 详情",
+        "tags": [
+          "DexPool"
+        ]
+      }
+    },
+    "/dexpools/{chain}/{tokenAddress}/{poolAddress}/stats": {
+      "get": {
+        "description": "获取特定资金池的价格统计信息",
+        "operationId": "dexpool.stats",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "GLOBAL.TOKENADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": true,
+            "in": "path",
+            "description": "资金池地址",
+            "schema": {
+              "example": "GLOBAL.POOLADDRESS.EXAMPLE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DexPoolStatDTO"
+                }
+              }
+            }
+          }
+        },
+        "summary": "DEX 资金池 - 统计",
+        "tags": [
+          "DexPool"
+        ]
+      }
+    },
+    "/ranking/{chain}/hotTokens/{duration}": {
+      "get": {
+        "description": "获取热门代币列表",
+        "operationId": "ranking.hot.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "duration",
+            "required": true,
+            "in": "path",
+            "description": "排名时间段",
+            "schema": {
+              "enum": [
+                "1m",
+                "5m",
+                "1h",
+                "4h",
+                "24h"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        },
+        "summary": "排名 - 热门代币",
+        "tags": [
+          "Ranking"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Dex Aggregator API",
+    "description": "Dex Aggregator API ⚡️",
+    "version": "1.0",
+    "contact": {
+      "name": "AI",
+      "url": "https://github.com/openweb3-io/dex-aggregator",
+      "email": "ai@sx.ai"
+    }
+  },
+  "tags": [
+    {
+      "name": "Endpoints",
+      "description": ""
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://api.chainstream.io"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "BlockchainDTO": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Blockchain Symbol",
+            "example": "SOL"
+          },
+          "name": {
+            "type": "string",
+            "description": "Blockchain Name",
+            "example": "Solana"
+          },
+          "explorerUrl": {
+            "type": "string",
+            "description": "Blockchain Explorer URL",
+            "example": "https://explorer.solana.com"
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Blockchain Logo URL",
+            "example": "https://s1.openweb3.io/logos/solana.png"
+          }
+        },
+        "required": [
+          "symbol",
+          "name",
+          "explorerUrl",
+          "logoUrl"
+        ]
+      },
+      "BlockchainPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of blockchain data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlockchainDTO"
+            }
+          },
+          "next": {
+            "type": "string",
+            "description": "Cursor for the next page of results"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results available",
+            "default": false
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "SendTxInput": {
+        "type": "object",
+        "properties": {
+          "signedTx": {
+            "type": "string",
+            "description": "Base64 编码的已签名交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "submitType": {
+            "type": "string",
+            "description": "交易提交方式",
+            "example": "default",
+            "enum": [
+              "default",
+              "priority"
+            ]
+          }
+        },
+        "required": [
+          "signedTx"
+        ]
+      },
+      "SendTxResponse": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "description": "交易签名/哈希",
+            "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+          },
+          "elapsedTime": {
+            "type": "number",
+            "description": "交易处理时间（毫秒）",
+            "example": 1500
+          }
+        },
+        "required": [
+          "signature",
+          "elapsedTime"
+        ]
+      },
+      "SwapInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "交易的 DEX 标识符",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "meteora",
+              "pumpfun"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "发起交易的钱包公钥",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "SOL 优先费用，用于提高交易处理速度",
+            "example": "0.000001"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "DEX 资金池地址",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "amount": {
+            "type": "string",
+            "description": "兑换数量。使用 \"auto\" 表示全部余额或百分比如 \"50%\"",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "description": "兑换方向模式",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          },
+          "slippage": {
+            "type": "number",
+            "description": "滑点容忍百分比",
+            "example": 10,
+            "default": 10,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "输入铸造，基础代币地址"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "输出铸造，报价代币地址"
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "amount",
+          "swapMode",
+          "slippage"
+        ]
+      },
+      "SwapReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "elapsedTime": {
+            "type": "number",
+            "description": "请求处理时间（毫秒）",
+            "example": 245
+          }
+        },
+        "required": [
+          "serializedTx",
+          "elapsedTime"
+        ]
+      },
+      "SwapRouteInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "交易的 DEX 标识符",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "meteora",
+              "pumpfun"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "发起交易的钱包公钥",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "SOL 优先费用，用于提高交易处理速度",
+            "example": "0.000001"
+          },
+          "amount": {
+            "type": "string",
+            "description": "兑换数量。使用 \"auto\" 表示全部余额或百分比如 \"50%\"",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "description": "兑换方向模式",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          },
+          "slippage": {
+            "type": "number",
+            "description": "滑点容忍百分比",
+            "example": 5,
+            "default": 5,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "输入铸造，基础代币地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "输出铸造，报价代币地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+            "minLength": 8,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "amount",
+          "swapMode",
+          "slippage"
+        ]
+      },
+      "SwapRouteResponse": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "原始兑换请求参数",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SwapRouteInput"
+              }
+            ]
+          },
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "routeInfo": {
+            "type": "object",
+            "description": "详细路由信息",
+            "example": {
+              "inAmount": "1000000000",
+              "outAmount": "985000000",
+              "priceImpact": "0.15",
+              "route": [
+                "USDC",
+                "SOL"
+              ]
+            }
+          },
+          "elapsedTime": {
+            "type": "number",
+            "description": "请求处理时间（毫秒）",
+            "example": 245
+          }
+        },
+        "required": [
+          "args",
+          "serializedTx",
+          "routeInfo",
+          "elapsedTime"
+        ]
+      },
+      "DexMintInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "交易的 DEX 标识符",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "meteora",
+              "pumpfun"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "发起交易的钱包公钥",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "SOL 优先费用，用于提高交易处理速度",
+            "example": "0.000001"
+          },
+          "name": {
+            "type": "string",
+            "description": "要创建的代币名称",
+            "example": "Candy Token",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号/代号",
+            "example": "CANDY",
+            "minLength": 1,
+            "maxLength": 10
+          },
+          "uri": {
+            "type": "string",
+            "description": "代币元数据 URI（通常指向图片或 JSON）",
+            "example": "https://assets.candyproject.com/token/icon.png",
+            "pattern": "^https?://.+"
+          },
+          "mintAddress": {
+            "type": "string",
+            "description": "需要签名交易的代币铸造地址",
+            "example": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
+            "minLength": 32,
+            "maxLength": 44
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "name",
+          "symbol",
+          "uri"
+        ]
+      },
+      "DexDTO": {
+        "type": "object",
+        "properties": {
+          "programAddress": {
+            "type": "string",
+            "description": "DEX 程序地址",
+            "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
+          },
+          "dexName": {
+            "type": "string",
+            "description": "DEX 名称",
+            "example": "OrcaWhirpool"
+          },
+          "chain": {
+            "type": "string",
+            "description": "链名称",
+            "example": "sol"
+          }
+        },
+        "required": [
+          "programAddress",
+          "dexName",
+          "chain"
+        ]
+      },
+      "DexPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "DEX 信息数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexDTO"
+            }
+          },
+          "next": {
+            "type": "string",
+            "description": "下一页游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "是否有更多结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "object",
+            "description": "当前页第一项的游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "endCursor": {
+            "type": "object",
+            "description": "当前页最后一项的游标",
+            "example": "eyJpZCI6MjAwfQ=="
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数",
+            "example": 1000
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "Link": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "资源 URL",
+            "example": "https://twitter.com/tokenproject"
+          },
+          "label": {
+            "type": "string",
+            "description": "链接标签",
+            "example": "Twitter",
+            "enum": [
+              "website",
+              "twitter",
+              "telegram",
+              "discord"
+            ]
+          }
+        },
+        "required": [
+          "url",
+          "label"
+        ]
+      },
+      "MintInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "交易的 DEX 标识符",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "meteora",
+              "pumpfun"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "发起交易的钱包公钥",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "SOL 优先费用，用于提高交易处理速度",
+            "example": "0.000001"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "My Token",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号/代号",
+            "example": "MTK",
+            "minLength": 1,
+            "maxLength": 10
+          },
+          "migrationDex": {
+            "type": "string",
+            "description": "代币迁移目标 DEX",
+            "enum": [
+              "RAYDIUM",
+              "METEORA",
+              "UNISWAP"
+            ],
+            "example": "RAYDIUM"
+          },
+          "icon": {
+            "type": "string",
+            "description": "代币图标 URL (Base64 或 HTTPS)",
+            "example": "https://assets.mytoken.com/icon.png",
+            "pattern": "^(https?://|data:image/)"
+          },
+          "description": {
+            "type": "string",
+            "description": "代币描述",
+            "example": "A revolutionary new token for the Solana ecosystem",
+            "maxLength": 1000
+          },
+          "links": {
+            "description": "社交媒体和网站链接",
+            "example": [
+              {
+                "label": "website",
+                "url": "https://mytoken.com"
+              },
+              {
+                "label": "twitter",
+                "url": "https://twitter.com/mytoken"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            }
+          },
+          "banner": {
+            "type": "string",
+            "description": "横幅图片 URL (如未提供则使用图标)",
+            "example": "https://assets.mytoken.com/banner.png"
+          },
+          "tokenAmount": {
+            "type": "string",
+            "description": "代币总供应量(基本单位)",
+            "example": "1000000000",
+            "pattern": "^[0-9]+$"
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "name",
+          "symbol",
+          "migrationDex",
+          "icon",
+          "description",
+          "links",
+          "tokenAmount"
+        ]
+      },
+      "MintReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "extra": {
+            "type": "object",
+            "description": "创建代币的额外元数据",
+            "example": {
+              "tokenId": "token_123456",
+              "token": {
+                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "serializedTx",
+          "extra"
+        ]
+      },
+      "SubmitInput": {
+        "type": "object",
+        "properties": {
+          "signedTx": {
+            "type": "string",
+            "description": "Base64 格式的已签名交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "extra": {
+            "type": "object",
+            "description": "交易提交所需的额外数据",
+            "example": {
+              "tokenId": "token_123456",
+              "token": {
+                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "signedTx",
+          "extra"
+        ]
+      },
+      "PumpMintInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "交易的 DEX 标识符",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "meteora",
+              "pumpfun"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "发起交易的钱包公钥",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "SOL 优先费用，用于提高交易处理速度",
+            "example": "0.000001"
+          },
+          "twitter": {
+            "type": "string",
+            "description": "Twitter 个人资料 URL 或用户名",
+            "example": "@mytoken",
+            "pattern": "^(@[a-zA-Z0-9_]{1,15}|https://twitter.com/[a-zA-Z0-9_]{1,15})$"
+          },
+          "telegram": {
+            "type": "string",
+            "description": "Telegram 群组或频道链接",
+            "example": "https://t.me/mytoken",
+            "pattern": "^https://t.me/"
+          },
+          "website": {
+            "type": "string",
+            "description": "项目网站 URL",
+            "example": "https://mytoken.com",
+            "pattern": "^https?://"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "My Token",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号/代号",
+            "example": "MTK",
+            "minLength": 1,
+            "maxLength": 10
+          },
+          "migrationDex": {
+            "type": "string",
+            "description": "代币迁移目标 DEX",
+            "example": "RAYDIUM",
+            "enum": [
+              "RAYDIUM",
+              "METEORA"
+            ]
+          },
+          "icon": {
+            "type": "string",
+            "description": "Base64 编码的代币图标图片",
+            "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+            "pattern": "^data:image/"
+          },
+          "mintAddress": {
+            "type": "string",
+            "description": "需要签名的代币铸造地址",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "minLength": 32,
+            "maxLength": 44
+          },
+          "description": {
+            "type": "string",
+            "description": "代币描述",
+            "example": "A revolutionary new token on Solana",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "name",
+          "symbol",
+          "migrationDex",
+          "icon",
+          "mintAddress",
+          "description"
+        ]
+      },
+      "PumpMintReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "extra": {
+            "type": "object",
+            "description": "创建代币的额外元数据",
+            "example": {
+              "tokenId": "pump_123456",
+              "token": {
+                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "serializedTx"
+        ]
+      },
+      "TradeType": {
+        "type": "string",
+        "enum": [
+          "buy",
+          "sell"
+        ]
+      },
+      "Trade": {
+        "type": "object",
+        "properties": {
+          "maker": {
+            "type": "string",
+            "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY"
+          },
+          "baseAmount": {
+            "type": "string",
+            "example": "3.49753400000000000000"
+          },
+          "quoteAmount": {
+            "type": "string",
+            "example": "0.00085986800000000000"
+          },
+          "quoteSymbol": {
+            "type": "string",
+            "example": "SOL"
+          },
+          "quoteAddress": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "example": "0.18691810584000000000"
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "Trade timestamp (Unix epoch in seconds)",
+            "example": 1709251200
+          },
+          "event": {
+            "example": "buy",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TradeType"
+              }
+            ]
+          },
+          "txHash": {
+            "type": "string",
+            "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+          },
+          "priceInUsd": {
+            "type": "string",
+            "example": "0.05344282738637203200"
+          },
+          "totalTrade": {
+            "type": "number",
+            "example": 1
+          },
+          "id": {
+            "type": "string",
+            "example": "MDAzMTc4OTQ0OTUxNTcwMDAwMg=="
+          },
+          "isFollowing": {
+            "type": "number",
+            "example": 0
+          },
+          "isOpenOrClose": {
+            "type": "number",
+            "example": 0
+          },
+          "buyCostUsd": {
+            "type": "string",
+            "example": ""
+          },
+          "balance": {
+            "type": "string",
+            "example": "7.254002"
+          },
+          "cost": {
+            "type": "string",
+            "example": "0.18691810584"
+          },
+          "historyBoughtAmount": {
+            "type": "string",
+            "example": "3.497534"
+          },
+          "historySoldIncome": {
+            "type": "string",
+            "example": "0"
+          },
+          "historySoldAmount": {
+            "type": "string",
+            "example": "0"
+          },
+          "realizedProfit": {
+            "type": "string",
+            "example": "0"
+          },
+          "unrealizedProfit": {
+            "type": "string",
+            "example": "-0.00000000000003279335"
+          },
+          "makerTags": {
+            "description": "Maker tags",
+            "example": [
+              "whale",
+              "active_trader"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "makerTokenTags": {
+            "description": "Token tags associated with maker",
+            "example": [
+              "defi",
+              "gaming"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "makerName": {
+            "type": "string",
+            "description": "Maker display name",
+            "example": "Crypto Whale"
+          },
+          "makerAvatar": {
+            "type": "string",
+            "description": "Maker avatar URL",
+            "example": "https://example.com/avatar.png"
+          },
+          "makerEns": {
+            "type": "string",
+            "description": "Maker ENS name",
+            "example": "whale.eth"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
+          },
+          "makerTwitterUsername": {
+            "type": "string",
+            "description": "Maker Twitter username",
+            "example": "@whale_trader"
+          },
+          "makerTwitterName": {
+            "type": "string",
+            "description": "Maker Twitter display name",
+            "example": "Crypto Whale 🐋"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional trade metadata",
+            "example": {
+              "slippage": "0.1",
+              "route": "jupiter"
+            }
+          }
+        },
+        "required": [
+          "maker",
+          "baseAmount",
+          "quoteAmount",
+          "quoteSymbol",
+          "quoteAddress",
+          "amountInUsd",
+          "timestamp",
+          "event",
+          "txHash",
+          "priceInUsd",
+          "totalTrade",
+          "id",
+          "isFollowing",
+          "isOpenOrClose",
+          "buyCostUsd",
+          "balance",
+          "cost",
+          "historyBoughtAmount",
+          "historySoldIncome",
+          "historySoldAmount",
+          "realizedProfit",
+          "unrealizedProfit",
+          "makerTags",
+          "makerTokenTags",
+          "makerName",
+          "makerAvatar",
+          "makerEns",
+          "tokenAddress",
+          "makerTwitterUsername",
+          "makerTwitterName",
+          "metadata"
+        ]
+      },
+      "TradePage": {
+        "type": "object",
+        "properties": {
+          "trades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Trade"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "trades"
+        ]
+      },
+      "PlaceOrderInput": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "区块链网络标识符",
+            "example": "solana",
+            "enum": [
+              "solana",
+              "ethereum"
+            ]
+          },
+          "dex": {
+            "type": "string",
+            "description": "DEX 标识符",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "openbook",
+              "jupiter"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "description": "订单基础单位数量",
+            "example": 1000000000
+          },
+          "price": {
+            "type": "number",
+            "description": "订单报价单位价格",
+            "example": 50.5
+          },
+          "side": {
+            "type": "string",
+            "description": "订单方向",
+            "enum": [
+              "bid",
+              "ask"
+            ],
+            "example": "bid"
+          },
+          "marketAddress": {
+            "type": "string",
+            "description": "市场/资金池地址",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "下单钱包地址",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+          },
+          "priorityFee": {
+            "format": "int64",
+            "type": "integer",
+            "description": "优先费用（微 Lamports）",
+            "example": "5000",
+            "default": 5000
+          }
+        },
+        "required": [
+          "chain",
+          "dex",
+          "amount",
+          "price",
+          "side",
+          "marketAddress",
+          "userAddress"
+        ]
+      },
+      "OrderReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        },
+        "required": [
+          "serializedTx"
+        ]
+      },
+      "CancelOrderInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier",
+            "example": "openbook",
+            "enum": [
+              "raydium",
+              "openbook",
+              "jupiter"
+            ]
+          },
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network identifier",
+            "example": "solana",
+            "enum": [
+              "solana",
+              "ethereum"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Wallet address owning the orders",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+          },
+          "marketAddress": {
+            "type": "string",
+            "description": "Market/Pool address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "orderIds": {
+            "description": "List of order IDs to cancel",
+            "example": [
+              "order123",
+              "order456"
+            ],
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "clientOrderIds": {
+            "description": "List of client order IDs to cancel",
+            "example": [
+              "client123",
+              "client456"
+            ],
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priorityFee": {
+            "format": "int64",
+            "type": "integer",
+            "description": "Priority fee in microLamports",
+            "example": "5000",
+            "default": 5000
+          },
+          "extra": {
+            "type": "object",
+            "description": "Additional cancellation metadata",
+            "example": {
+              "reason": "user_requested",
+              "timestamp": "2024-03-14T12:00:00Z"
+            }
+          }
+        },
+        "required": [
+          "dex",
+          "chain",
+          "userAddress",
+          "marketAddress"
+        ]
+      },
+      "CancelAllOrdersInput": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network identifier",
+            "example": "solana",
+            "enum": [
+              "solana",
+              "ethereum"
+            ]
+          },
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier",
+            "example": "openbook",
+            "enum": [
+              "raydium",
+              "openbook",
+              "jupiter"
+            ]
+          },
+          "marketAddress": {
+            "type": "string",
+            "description": "Market/Pool address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Wallet address owning the orders",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+          },
+          "side": {
+            "type": "string",
+            "description": "Order side to cancel",
+            "enum": [
+              "bid",
+              "ask"
+            ],
+            "example": "bid"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of orders to cancel",
+            "example": 10,
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "priorityFee": {
+            "format": "int64",
+            "type": "integer",
+            "description": "Priority fee in microLamports",
+            "example": "5000",
+            "default": 5000
+          }
+        },
+        "required": [
+          "chain",
+          "dex",
+          "marketAddress",
+          "userAddress",
+          "side",
+          "limit"
+        ]
+      },
+      "CreateMarketInput": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network identifier",
+            "example": "solana",
+            "enum": [
+              "solana",
+              "ethereum"
+            ]
+          },
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier",
+            "example": "openbook",
+            "enum": [
+              "raydium",
+              "openbook",
+              "jupiter"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Market display name",
+            "example": "SOL/USDC",
+            "minLength": 3,
+            "maxLength": 20
+          },
+          "baseMint": {
+            "type": "string",
+            "description": "Base token mint address",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "quoteMint": {
+            "type": "string",
+            "description": "Quote token mint address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "baseLotSize": {
+            "type": "number",
+            "description": "Minimum tradeable amount of base token",
+            "example": 100000000
+          },
+          "quoteLotSize": {
+            "type": "number",
+            "description": "Minimum tradeable amount of quote token",
+            "example": 100000
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Market creator wallet address",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+          },
+          "priorityFee": {
+            "format": "int64",
+            "type": "integer",
+            "description": "Priority fee in microLamports",
+            "example": "5000",
+            "default": 5000
+          },
+          "makerFee": {
+            "type": "number",
+            "description": "Maker fee in basis points (1 = 0.01%)",
+            "example": 0,
+            "default": 0,
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "takerFee": {
+            "type": "number",
+            "description": "Taker fee in basis points (1 = 0.01%)",
+            "example": 0,
+            "default": 0,
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "timeExpiry": {
+            "type": "number",
+            "description": "Order expiry time in seconds",
+            "example": 0,
+            "default": 0,
+            "minimum": 0
+          },
+          "oracleA": {
+            "type": "string",
+            "description": "Primary oracle account address",
+            "example": "FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"
+          },
+          "oracleB": {
+            "type": "string",
+            "description": "Secondary oracle account address",
+            "example": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b"
+          },
+          "extra": {
+            "type": "object",
+            "description": "Additional market creation metadata",
+            "example": {
+              "tags": [
+                "spot",
+                "perpetual"
+              ],
+              "description": "SOL/USDC spot market"
+            }
+          }
+        },
+        "required": [
+          "chain",
+          "dex",
+          "name",
+          "baseMint",
+          "quoteMint",
+          "baseLotSize",
+          "quoteLotSize",
+          "userAddress",
+          "makerFee",
+          "takerFee",
+          "timeExpiry"
+        ]
+      },
+      "CloseMarketInput": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network identifier",
+            "example": "solana",
+            "enum": [
+              "solana",
+              "ethereum"
+            ]
+          },
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier",
+            "example": "openbook",
+            "enum": [
+              "raydium",
+              "openbook",
+              "jupiter"
+            ]
+          },
+          "marketAddress": {
+            "type": "string",
+            "description": "Market address to close",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Market admin wallet address",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+          },
+          "priorityFee": {
+            "format": "int64",
+            "type": "integer",
+            "description": "Priority fee in microLamports",
+            "example": "5000",
+            "default": 5000
+          },
+          "extra": {
+            "type": "object",
+            "description": "Additional market closure metadata",
+            "example": {
+              "reason": "low_volume",
+              "timestamp": "2024-03-14T12:00:00Z"
+            }
+          }
+        },
+        "required": [
+          "chain",
+          "dex",
+          "marketAddress",
+          "userAddress"
+        ]
+      },
+      "SimpleMarketDto": {
+        "type": "object",
+        "properties": {
+          "market": {
+            "type": "string",
+            "description": "Market account address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "baseMint": {
+            "type": "string",
+            "description": "Base token mint address",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "quoteMint": {
+            "type": "string",
+            "description": "Quote token mint address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "name": {
+            "type": "string",
+            "description": "Market display name",
+            "example": "SOL/USDC"
+          },
+          "timestamp": {
+            "type": "object",
+            "description": "Last update timestamp (Unix epoch in seconds)",
+            "example": 1709251200
+          }
+        },
+        "required": [
+          "market",
+          "baseMint",
+          "quoteMint",
+          "name"
+        ]
+      },
+      "MarketInfoDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Market account address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "name": {
+            "type": "string",
+            "description": "Market display name",
+            "example": "SOL/USDC"
+          },
+          "baseMint": {
+            "type": "string",
+            "description": "Base token mint address",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "quoteMint": {
+            "type": "string",
+            "description": "Quote token mint address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "baseDecimals": {
+            "type": "number",
+            "description": "Number of decimal places for base token",
+            "example": 9,
+            "minimum": 0,
+            "maximum": 18
+          },
+          "quoteDecimals": {
+            "type": "number",
+            "description": "Number of decimal places for quote token",
+            "example": 6,
+            "minimum": 0,
+            "maximum": 18
+          },
+          "baseLotSize": {
+            "type": "number",
+            "description": "Minimum tradeable amount of base token",
+            "example": 100000000,
+            "minimum": 1
+          },
+          "quoteLotSize": {
+            "type": "number",
+            "description": "Minimum tradeable amount of quote token",
+            "example": 100000,
+            "minimum": 1
+          },
+          "makerFee": {
+            "type": "number",
+            "description": "Fee rate for makers in basis points (1 = 0.01%)",
+            "example": 0,
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "takerFee": {
+            "type": "number",
+            "description": "Fee rate for takers in basis points (1 = 0.01%)",
+            "example": 20,
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "createTime": {
+            "type": "number",
+            "description": "Market creation timestamp (Unix epoch in seconds)",
+            "example": 1709251200
+          },
+          "isExpired": {
+            "type": "boolean",
+            "description": "Whether the market has expired",
+            "example": false
+          },
+          "timeExpiry": {
+            "type": "number",
+            "description": "Market expiry timestamp (Unix epoch in seconds)",
+            "example": 1709337600
+          }
+        },
+        "required": [
+          "address",
+          "name",
+          "baseMint",
+          "quoteMint",
+          "baseDecimals",
+          "quoteDecimals",
+          "baseLotSize",
+          "quoteLotSize",
+          "makerFee",
+          "takerFee",
+          "isExpired",
+          "timeExpiry"
+        ]
+      },
+      "OrderInfoDto": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number",
+            "description": "Order price in quote token units",
+            "example": 50.5,
+            "minimum": 0
+          },
+          "size": {
+            "type": "number",
+            "description": "Order size in base token units",
+            "example": 1000000000,
+            "minimum": 0
+          },
+          "owner": {
+            "type": "string",
+            "description": "Wallet address of the order owner",
+            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+          }
+        },
+        "required": [
+          "price",
+          "size",
+          "owner"
+        ]
+      },
+      "OrderBookInfoDto": {
+        "type": "object",
+        "properties": {
+          "bids": {
+            "description": "List of buy orders sorted by price (descending)",
+            "example": [
+              {
+                "price": 50.5,
+                "size": 1000000000,
+                "owner": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderInfoDto"
+            }
+          },
+          "asks": {
+            "description": "List of sell orders sorted by price (ascending)",
+            "example": [
+              {
+                "price": 51,
+                "size": 2000000000,
+                "owner": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderInfoDto"
+            }
+          },
+          "bestBid": {
+            "type": "number",
+            "description": "Highest buy order price",
+            "example": 50.5
+          },
+          "bestAsk": {
+            "type": "number",
+            "description": "Lowest sell order price",
+            "example": 51
+          },
+          "spread": {
+            "type": "number",
+            "description": "Price difference between best ask and best bid",
+            "example": 0.5
+          }
+        },
+        "required": [
+          "bids",
+          "asks"
+        ]
+      },
+      "UserOrderDto": {
+        "type": "object",
+        "properties": {
+          "side": {
+            "type": "string",
+            "description": "Order side",
+            "enum": [
+              "bid",
+              "ask"
+            ],
+            "example": "bid"
+          },
+          "price": {
+            "type": "number",
+            "description": "Order price in quote token units",
+            "example": 50.5,
+            "minimum": 0
+          },
+          "size": {
+            "type": "number",
+            "description": "Order size in base token units",
+            "example": 1000000000,
+            "minimum": 0
+          },
+          "clientOrderId": {
+            "type": "string",
+            "description": "Client-assigned order identifier",
+            "example": "client_order_123"
+          },
+          "id": {
+            "type": "string",
+            "description": "OpenBook-assigned order identifier",
+            "example": "order_456"
+          }
+        },
+        "required": [
+          "side",
+          "price",
+          "size",
+          "id"
+        ]
+      },
+      "UserOrderInfoDto": {
+        "type": "object",
+        "properties": {
+          "openOrdersAddress": {
+            "type": "string",
+            "description": "User's OpenBook account address for this market",
+            "example": "DZjbn6f5EebaABXVbYz3UwdJM1sLJkK3wGEZdyUYY1NR"
+          },
+          "orders": {
+            "description": "List of user's active orders",
+            "example": [
+              {
+                "side": "bid",
+                "price": 50.5,
+                "size": 1000000000,
+                "clientOrderId": "client_order_123",
+                "id": "order_456"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserOrderDto"
+            }
+          }
+        },
+        "required": [
+          "openOrdersAddress",
+          "orders"
+        ]
+      },
+      "DexPoolDTO": {
+        "type": "object",
+        "properties": {
+          "programAddress": {
+            "type": "string",
+            "description": "DEX 程序地址",
+            "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
+          },
+          "dexName": {
+            "type": "string",
+            "description": "DEX 名称",
+            "example": "OrcaWhirpool"
+          },
+          "chain": {
+            "type": "string",
+            "description": "链名称",
+            "example": "sol"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "资金池地址",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "baseTokenAddress": {
+            "type": "string",
+            "description": "基础代币地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "quoteTokenAddress": {
+            "description": "报价代币地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tvlInUsd": {
+            "type": "string",
+            "description": "总锁仓价值（美元）",
+            "example": "1000000.45"
+          }
+        },
+        "required": [
+          "programAddress",
+          "dexName",
+          "chain",
+          "poolAddress",
+          "baseTokenAddress",
+          "quoteTokenAddress"
+        ]
+      },
+      "TokenMarketCap": {
+        "type": "object",
+        "properties": {
+          "circulatingSupply": {
+            "type": "string",
+            "description": "流通供应量",
+            "example": "1000000000"
+          },
+          "marketCap": {
+            "type": "string",
+            "description": "流通市值",
+            "example": "1000000000"
+          }
+        },
+        "required": [
+          "circulatingSupply",
+          "marketCap"
+        ]
+      },
+      "Token": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "区块链网络标识符",
+            "example": "solana"
+          },
+          "decimals": {
+            "type": "string",
+            "description": "代币小数位数",
+            "example": "9"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "USD Coin"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号",
+            "example": "USDC"
+          },
+          "metadataAddress": {
+            "type": "string",
+            "description": "元数据程序地址",
+            "example": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+          },
+          "address": {
+            "type": "string",
+            "description": "代币铸造地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenCreators": {
+            "type": "string",
+            "description": "代币创建者地址",
+            "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "代币图片 URL",
+            "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+          },
+          "uri": {
+            "type": "string",
+            "description": "元数据 URI",
+            "example": "https://..."
+          },
+          "extra": {
+            "type": "string",
+            "description": "额外元数据",
+            "example": "{}"
+          },
+          "metadata": {
+            "type": "string",
+            "description": "完整元数据 JSON",
+            "example": "{}"
+          },
+          "socialMedias": {
+            "type": "string",
+            "description": "社交媒体链接",
+            "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+          },
+          "tokenCreatedAt": {
+            "type": "string",
+            "description": "代币创建时间戳",
+            "example": "2024-03-14T12:00:00Z"
+          },
+          "description": {
+            "type": "string",
+            "description": "代币描述",
+            "example": "USDC is a stablecoin pegged to the US dollar"
+          },
+          "market": {
+            "type": "string",
+            "description": "市场标识符",
+            "example": "USDC-SOL"
+          },
+          "deployer": {
+            "type": "string",
+            "description": "代币部署者地址",
+            "example": "FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw"
+          },
+          "price": {
+            "type": "string",
+            "description": "当前代币基础货币价格",
+            "example": "1.00"
+          },
+          "priceInUsd": {
+            "type": "string",
+            "description": "当前代币美元价格",
+            "example": "1.00"
+          },
+          "marketCapUsd": {
+            "type": "string",
+            "description": "总市值（美元）",
+            "example": "33459846123.45"
+          },
+          "extension": {
+            "type": "object",
+            "description": "额外代币元数据",
+            "example": {
+              "website": "https://www.circle.com/usdc",
+              "twitter": "@circle"
+            }
+          },
+          "buys24h": {
+            "type": "string",
+            "description": "最近24小时买单数量",
+            "example": "150"
+          },
+          "sells24h": {
+            "type": "string",
+            "description": "最近24小时卖单数量",
+            "example": "120"
+          },
+          "buyVolumes24h": {
+            "type": "string",
+            "description": "最近24小时买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes24h": {
+            "type": "string",
+            "description": "最近24小时卖出总量",
+            "example": "45000.32"
+          },
+          "pools": {
+            "description": "包含此代币的 DEX 资金池列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexPoolDTO"
+            }
+          },
+          "marketCap": {
+            "description": "市值",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenMarketCap"
+              }
+            ]
+          }
+        },
+        "required": [
+          "chain",
+          "decimals",
+          "name",
+          "symbol",
+          "metadataAddress",
+          "address",
+          "tokenCreators",
+          "tokenCreatedAt",
+          "description",
+          "market",
+          "deployer",
+          "marketCapUsd",
+          "buys24h",
+          "sells24h",
+          "buyVolumes24h",
+          "sellsVolumes24h",
+          "marketCap"
+        ]
+      },
+      "TokenPage": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "代币总数",
+            "example": 1000
+          },
+          "countsByProtocols": {
+            "type": "object",
+            "description": "按协议统计的代币数量",
+            "example": {
+              "uniswap": 500,
+              "sushiswap": 300
+            }
+          },
+          "data": {
+            "description": "代币列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          },
+          "next": {
+            "type": "string",
+            "description": "下一页游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "是否有上一页",
+            "default": false
+          },
+          "startCursor": {
+            "type": "object",
+            "description": "当前页第一项的游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "endCursor": {
+            "type": "object",
+            "description": "当前页最后一项的游标",
+            "example": "eyJpZCI6MjAwfQ=="
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "TokenMetadata": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "区块链网络标识符",
+            "example": "solana"
+          },
+          "decimals": {
+            "type": "string",
+            "description": "代币小数位数",
+            "example": "9"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "USD Coin"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号",
+            "example": "USDC"
+          },
+          "metadataAddress": {
+            "type": "string",
+            "description": "元数据程序地址",
+            "example": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+          },
+          "address": {
+            "type": "string",
+            "description": "代币铸造地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenCreators": {
+            "type": "string",
+            "description": "代币创建者地址",
+            "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "代币图片 URL",
+            "example": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+          },
+          "uri": {
+            "type": "string",
+            "description": "元数据 URI",
+            "example": "https://..."
+          },
+          "extra": {
+            "type": "string",
+            "description": "额外元数据",
+            "example": "{}"
+          },
+          "metadata": {
+            "type": "string",
+            "description": "完整元数据 JSON",
+            "example": "{}"
+          },
+          "socialMedias": {
+            "type": "string",
+            "description": "社交媒体链接",
+            "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+          },
+          "tokenCreatedAt": {
+            "type": "string",
+            "description": "代币创建时间戳",
+            "example": "2024-03-14T12:00:00Z"
+          },
+          "description": {
+            "type": "string",
+            "description": "代币描述",
+            "example": "USDC is a stablecoin pegged to the US dollar"
+          }
+        },
+        "required": [
+          "chain",
+          "decimals",
+          "name",
+          "symbol",
+          "metadataAddress",
+          "address",
+          "tokenCreators",
+          "tokenCreatedAt",
+          "description"
+        ]
+      },
+      "TokenStat": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "price1m": {
+            "type": "string",
+            "description": "最近1分钟代币价格",
+            "example": "1.234"
+          },
+          "buys1m": {
+            "type": "string",
+            "description": "最近1分钟买单数量",
+            "example": "150"
+          },
+          "sells1m": {
+            "type": "string",
+            "description": "最近1分钟卖单数量",
+            "example": "120"
+          },
+          "buyVolumes1m": {
+            "type": "string",
+            "description": "最近1分钟买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes1m": {
+            "type": "string",
+            "description": "最近1分钟卖出总量",
+            "example": "45000.32"
+          },
+          "price5m": {
+            "type": "string",
+            "description": "最近5分钟代币价格",
+            "example": "1.245"
+          },
+          "buys5m": {
+            "type": "string",
+            "description": "最近5分钟买单数量",
+            "example": "150"
+          },
+          "sells5m": {
+            "type": "string",
+            "description": "最近5分钟卖单数量",
+            "example": "120"
+          },
+          "buyVolumes5m": {
+            "type": "string",
+            "description": "最近5分钟买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes5m": {
+            "type": "string",
+            "description": "最近5分钟卖出总量",
+            "example": "45000.32"
+          },
+          "price15m": {
+            "type": "string",
+            "description": "最近15分钟代币价格",
+            "example": "1.255"
+          },
+          "buys15m": {
+            "type": "string",
+            "description": "最近15分钟买单数量",
+            "example": "150"
+          },
+          "sells15m": {
+            "type": "string",
+            "description": "最近15分钟卖单数量",
+            "example": "120"
+          },
+          "buyVolumes15m": {
+            "type": "string",
+            "description": "最近15分钟买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes15m": {
+            "type": "string",
+            "description": "最近15分钟卖出总量",
+            "example": "45000.32"
+          },
+          "price30m": {
+            "type": "string",
+            "description": "最近30分钟代币价格",
+            "example": "1.265"
+          },
+          "buys30m": {
+            "type": "string",
+            "description": "最近30分钟买单数量",
+            "example": "150"
+          },
+          "sells30m": {
+            "type": "string",
+            "description": "最近30分钟卖单数量",
+            "example": "120"
+          },
+          "buyVolumes30m": {
+            "type": "string",
+            "description": "最近30分钟买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes30m": {
+            "type": "string",
+            "description": "最近30分钟卖出总量",
+            "example": "45000.32"
+          },
+          "price1h": {
+            "type": "string",
+            "description": "最近1小时代币价格",
+            "example": "1.275"
+          },
+          "buys1h": {
+            "type": "string",
+            "description": "最近1小时买单数量",
+            "example": "150"
+          },
+          "sells1h": {
+            "type": "string",
+            "description": "最近1小时卖单数量",
+            "example": "120"
+          },
+          "buyVolumes1h": {
+            "type": "string",
+            "description": "最近1小时买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes1h": {
+            "type": "string",
+            "description": "最近1小时卖出总量",
+            "example": "45000.32"
+          },
+          "price4h": {
+            "type": "string",
+            "description": "最近4小时代币价格",
+            "example": "1.285"
+          },
+          "buys4h": {
+            "type": "string",
+            "description": "最近4小时买单数量",
+            "example": "150"
+          },
+          "sells4h": {
+            "type": "string",
+            "description": "最近4小时卖单数量",
+            "example": "120"
+          },
+          "buyVolumes4h": {
+            "type": "string",
+            "description": "最近4小时买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes4h": {
+            "type": "string",
+            "description": "最近4小时卖出总量",
+            "example": "45000.32"
+          },
+          "price24h": {
+            "type": "string",
+            "description": "最近24小时代币价格",
+            "example": "1.295"
+          },
+          "buys24h": {
+            "type": "string",
+            "description": "最近24小时买单数量",
+            "example": "150"
+          },
+          "sells24h": {
+            "type": "string",
+            "description": "最近24小时卖单数量",
+            "example": "120"
+          },
+          "buyVolumes24h": {
+            "type": "string",
+            "description": "最近24小时买入总量",
+            "example": "50000.45"
+          },
+          "sellsVolumes24h": {
+            "type": "string",
+            "description": "最近24小时卖出总量",
+            "example": "45000.32"
+          }
+        },
+        "required": [
+          "address",
+          "price1m",
+          "buys1m",
+          "sells1m",
+          "buyVolumes1m",
+          "sellsVolumes1m",
+          "price5m",
+          "buys5m",
+          "sells5m",
+          "buyVolumes5m",
+          "sellsVolumes5m",
+          "price15m",
+          "buys15m",
+          "sells15m",
+          "buyVolumes15m",
+          "sellsVolumes15m",
+          "price30m",
+          "buys30m",
+          "sells30m",
+          "buyVolumes30m",
+          "sellsVolumes30m",
+          "price1h",
+          "buys1h",
+          "sells1h",
+          "buyVolumes1h",
+          "sellsVolumes1h",
+          "price4h",
+          "buys4h",
+          "sells4h",
+          "buyVolumes4h",
+          "sellsVolumes4h",
+          "price24h",
+          "buys24h",
+          "sells24h",
+          "buyVolumes24h",
+          "sellsVolumes24h"
+        ]
+      },
+      "TokenHolder": {
+        "type": "object",
+        "properties": {
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "0x1234567890abcdef"
+          },
+          "amount": {
+            "type": "number",
+            "description": "数量",
+            "example": "1000000000000000000"
+          },
+          "amountInUsd": {
+            "type": "number",
+            "description": "美元价值",
+            "example": 1000000000000000000
+          },
+          "percentage": {
+            "type": "string",
+            "description": "百分比",
+            "example": "100"
+          }
+        },
+        "required": [
+          "walletAddress",
+          "amount",
+          "amountInUsd",
+          "percentage"
+        ]
+      },
+      "TokenHolderPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "代币持有者列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenHolder"
+            }
+          },
+          "totals": {
+            "type": "number",
+            "description": "总项目数",
+            "example": 1000000
+          },
+          "next": {
+            "type": "string",
+            "description": "下一页游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "是否有上一页",
+            "default": false
+          },
+          "startCursor": {
+            "type": "object",
+            "description": "当前页第一项的游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "endCursor": {
+            "type": "object",
+            "description": "当前页最后一项的游标",
+            "example": "eyJpZCI6MjAwfQ=="
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "Resolution": {
+        "type": "string",
+        "enum": [
+          "1s",
+          "15s",
+          "30s",
+          "1m",
+          "5m",
+          "15m",
+          "1h",
+          "4h",
+          "12h",
+          "1d"
+        ]
+      },
+      "Candle": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "string",
+            "description": "开盘价",
+            "example": "50.5"
+          },
+          "close": {
+            "type": "string",
+            "description": "收盘价",
+            "example": "51.2"
+          },
+          "high": {
+            "type": "string",
+            "description": "最高价",
+            "example": "51.8"
+          },
+          "low": {
+            "type": "string",
+            "description": "最低价",
+            "example": "50.1"
+          },
+          "volume": {
+            "type": "string",
+            "description": "交易量",
+            "example": "1000000"
+          },
+          "resolution": {
+            "description": "K线时间分辨率",
+            "example": "1h",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Resolution"
+              }
+            ]
+          },
+          "time": {
+            "type": "number",
+            "description": "K线时间戳（Unix 纪元秒数）",
+            "example": 1709251200
+          }
+        },
+        "required": [
+          "open",
+          "close",
+          "high",
+          "low",
+          "volume",
+          "resolution",
+          "time"
+        ]
+      },
+      "TokenGainers": {
+        "type": "object",
+        "properties": {}
+      },
+      "TokenGainersPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "代币持有者列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenGainers"
+            }
+          },
+          "next": {
+            "type": "string",
+            "description": "下一页分页游标",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "是否有更多结果",
+            "default": false
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "DexPoolStatDTO": {
+        "type": "object",
+        "properties": {}
+      },
+      "TradeEvent": {
+        "type": "object",
+        "properties": {
+          "maker": {
+            "type": "string",
+            "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY"
+          },
+          "baseAmount": {
+            "type": "string",
+            "example": "3.49753400000000000000"
+          },
+          "quoteAmount": {
+            "type": "string",
+            "example": "0.00085986800000000000"
+          },
+          "quoteSymbol": {
+            "type": "string",
+            "example": "SOL"
+          },
+          "quoteAddress": {
+            "type": "string",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "example": "0.18691810584000000000"
+          },
+          "timestamp": {
+            "type": "number"
+          },
+          "event": {
+            "example": "buy",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TradeType"
+              }
+            ]
+          },
+          "txHash": {
+            "type": "string",
+            "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+          },
+          "priceInUsd": {
+            "type": "string",
+            "example": "0.05344282738637203200"
+          },
+          "id": {
+            "type": "string",
+            "example": "MDAzMTc4OTQ0OTUxNTcwMDAwMg=="
+          },
+          "buyCostUsd": {
+            "type": "string",
+            "example": ""
+          },
+          "tokenAddress": {
+            "type": "string",
+            "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
+          }
+        },
+        "required": [
+          "maker",
+          "baseAmount",
+          "quoteAmount",
+          "quoteSymbol",
+          "quoteAddress",
+          "amountInUsd",
+          "timestamp",
+          "event",
+          "txHash",
+          "priceInUsd",
+          "id",
+          "buyCostUsd",
+          "tokenAddress"
+        ]
+      }
+    }
+  }
+}

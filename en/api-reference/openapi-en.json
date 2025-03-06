@@ -562,7 +562,7 @@
         ],
         "summary": "Moonshot - Mint",
         "tags": [
-          "Moonshot"
+          "Defi/solana/Moonshot"
         ]
       }
     },
@@ -613,7 +613,7 @@
         ],
         "summary": "Moonshot - Submit Mint",
         "tags": [
-          "Moonshot"
+          "Defi/solana/Moonshot"
         ]
       }
     },
@@ -647,11 +647,11 @@
         },
         "summary": "PumpFun - Mint",
         "tags": [
-          "Pumpfun"
+          "Defi/solana/Pumpfun"
         ]
       }
     },
-    "/trades/{signature}": {
+    "/trade/{signature}": {
       "get": {
         "description": "Retrieve detailed information about a specific trade",
         "operationId": "trades.get",
@@ -681,11 +681,11 @@
         },
         "summary": "Trade - Detail",
         "tags": [
-          "Trades"
+          "Trade"
         ]
       }
     },
-    "/trades": {
+    "/trade": {
       "get": {
         "description": "Retrieve paginated list of trades",
         "operationId": "trade.list",
@@ -766,7 +766,7 @@
         },
         "summary": "Trade - List",
         "tags": [
-          "Trades"
+          "Trade"
         ]
       }
     },
@@ -1912,7 +1912,7 @@
     "/wallet/{chain}/{walletAddress}": {
       "get": {
         "description": "Get profit and loss information for wallet tokens",
-        "operationId": "wallet.get.pnl",
+        "operationId": "wallet.get",
         "parameters": [
           {
             "name": "chain",
@@ -1968,6 +1968,56 @@
           "Wallet"
         ]
       }
+    },
+    "/wallet/{chain}/{walletAddress}/stats": {
+      "get": {
+        "description": "Get profit and loss stats for wallet",
+        "operationId": "wallet.get.pnl.stats",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WalletPnlDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Wallet - PNL Stats",
+        "tags": [
+          "Wallet"
+        ]
+      }
     }
   },
   "info": {
@@ -1976,7 +2026,7 @@
     "version": "1.0",
     "contact": {
       "name": "AI",
-      "url": "https://github.com/openweb3-io/dex-aggregator",
+      "url": "https://github.com/chainstream-io/dex",
       "email": "ai@sx.ai"
     }
   },
@@ -1988,7 +2038,7 @@
   ],
   "servers": [
     {
-      "url": "https://api-dex.chainstream.io"
+      "url": "https://api.chainstream.io"
     }
   ],
   "components": {
@@ -3622,6 +3672,313 @@
           "orders"
         ]
       },
+      "TokenStat": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "price1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_1M",
+            "example": "1.234"
+          },
+          "buys1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_1M",
+            "example": "150"
+          },
+          "sells1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_1M",
+            "example": "120"
+          },
+          "buyVolumes1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_1M",
+            "example": "50000.45"
+          },
+          "sellsVolumes1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_1M",
+            "example": "45000.32"
+          },
+          "buyers1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_1M",
+            "example": "50"
+          },
+          "sellers1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_1M",
+            "example": "45"
+          },
+          "price5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_5M",
+            "example": "1.245"
+          },
+          "buys5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_5M",
+            "example": "150"
+          },
+          "sells5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_5M",
+            "example": "120"
+          },
+          "buyVolumes5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_5M",
+            "example": "50000.45"
+          },
+          "sellsVolumes5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_5M",
+            "example": "45000.32"
+          },
+          "buyers5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_5M",
+            "example": "50"
+          },
+          "sellers5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_5M",
+            "example": "45"
+          },
+          "price15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_15M",
+            "example": "1.255"
+          },
+          "buys15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_15M",
+            "example": "150"
+          },
+          "sells15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_15M",
+            "example": "120"
+          },
+          "buyVolumes15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_15M",
+            "example": "50000.45"
+          },
+          "sellsVolumes15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_15M",
+            "example": "45000.32"
+          },
+          "buyers15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_15M",
+            "example": "50"
+          },
+          "sellers15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_15M",
+            "example": "45"
+          },
+          "price30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_30M",
+            "example": "1.265"
+          },
+          "buys30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_30M",
+            "example": "150"
+          },
+          "sells30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_30M",
+            "example": "120"
+          },
+          "buyVolumes30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_30M",
+            "example": "50000.45"
+          },
+          "sellsVolumes30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_30M",
+            "example": "45000.32"
+          },
+          "buyers30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_30M",
+            "example": "50"
+          },
+          "sellers30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_30M",
+            "example": "45"
+          },
+          "price1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_1H",
+            "example": "1.275"
+          },
+          "buys1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_1H",
+            "example": "150"
+          },
+          "sells1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_1H",
+            "example": "120"
+          },
+          "buyVolumes1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_1H",
+            "example": "50000.45"
+          },
+          "sellsVolumes1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_1H",
+            "example": "45000.32"
+          },
+          "buyers1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_1H",
+            "example": "50"
+          },
+          "sellers1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_1H",
+            "example": "45"
+          },
+          "price4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_4H",
+            "example": "1.285"
+          },
+          "buys4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_4H",
+            "example": "150"
+          },
+          "sells4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_4H",
+            "example": "120"
+          },
+          "buyVolumes4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_4H",
+            "example": "50000.45"
+          },
+          "sellsVolumes4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_4H",
+            "example": "45000.32"
+          },
+          "buyers4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_4H",
+            "example": "50"
+          },
+          "sellers4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_4H",
+            "example": "45"
+          },
+          "price24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_24H",
+            "example": "1.295"
+          },
+          "buys24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYS_24H",
+            "example": "150"
+          },
+          "sells24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLS_24H",
+            "example": "120"
+          },
+          "buyVolumes24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUY_VOLUMES_24H",
+            "example": "50000.45"
+          },
+          "sellsVolumes24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELL_VOLUMES_24H",
+            "example": "45000.32"
+          },
+          "buyers24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.BUYERS_24H",
+            "example": "50"
+          },
+          "sellers24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.SELLERS_24H",
+            "example": "45"
+          }
+        },
+        "required": [
+          "address",
+          "price1m",
+          "buys1m",
+          "sells1m",
+          "buyVolumes1m",
+          "sellsVolumes1m",
+          "buyers1m",
+          "sellers1m",
+          "price5m",
+          "buys5m",
+          "sells5m",
+          "buyVolumes5m",
+          "sellsVolumes5m",
+          "buyers5m",
+          "sellers5m",
+          "price15m",
+          "buys15m",
+          "sells15m",
+          "buyVolumes15m",
+          "sellsVolumes15m",
+          "buyers15m",
+          "sellers15m",
+          "price30m",
+          "buys30m",
+          "sells30m",
+          "buyVolumes30m",
+          "sellsVolumes30m",
+          "buyers30m",
+          "sellers30m",
+          "price1h",
+          "buys1h",
+          "sells1h",
+          "buyVolumes1h",
+          "sellsVolumes1h",
+          "buyers1h",
+          "sellers1h",
+          "price4h",
+          "buys4h",
+          "sells4h",
+          "buyVolumes4h",
+          "sellsVolumes4h",
+          "buyers4h",
+          "sellers4h",
+          "price24h",
+          "buys24h",
+          "sells24h",
+          "buyVolumes24h",
+          "sellsVolumes24h",
+          "buyers24h",
+          "sellers24h"
+        ]
+      },
       "DexPoolDTO": {
         "type": "object",
         "properties": {
@@ -3688,22 +4045,22 @@
           },
           "top10TotalHoldings": {
             "type": "string",
-            "description": "Total holdings of top 10 holders",
+            "description": "DTO.TOKEN.MARKET_CAP.TOP10_TOTAL_HOLDINGS",
             "example": "100000"
           },
           "top10HoldingsRatio": {
             "type": "string",
-            "description": "Ratio of holdings by top 10 holders",
+            "description": "DTO.TOKEN.MARKET_CAP.TOP10_HOLDINGS_RATIO",
             "example": "0.1"
           },
           "top100TotalHoldings": {
             "type": "string",
-            "description": "Total holdings of top 100 holders",
+            "description": "DTO.TOKEN.MARKET_CAP.TOP100_TOTAL_HOLDINGS",
             "example": "500000"
           },
           "top100HoldingsRatio": {
             "type": "string",
-            "description": "Ratio of holdings by top 100 holders",
+            "description": "DTO.TOKEN.MARKET_CAP.TOP100_HOLDINGS_RATIO",
             "example": "0.5"
           },
           "holders": {
@@ -3810,16 +4167,6 @@
             "description": "Current token price in base currency",
             "example": "1.00"
           },
-          "priceInUsd": {
-            "type": "string",
-            "description": "Current token price in USD",
-            "example": "1.00"
-          },
-          "marketCapUsd": {
-            "type": "string",
-            "description": "Total market capitalization in USD",
-            "example": "33459846123.45"
-          },
           "extension": {
             "type": "object",
             "description": "Additional token metadata",
@@ -3828,25 +4175,13 @@
               "twitter": "@circle"
             }
           },
-          "buys24h": {
-            "type": "string",
-            "description": "Number of buy orders in the last 24 hours",
-            "example": "150"
-          },
-          "sells24h": {
-            "type": "string",
-            "description": "Number of sell orders in the last 24 hours",
-            "example": "120"
-          },
-          "buyVolumes24h": {
-            "type": "string",
-            "description": "Total buy volume in the last 24 hours",
-            "example": "50000.45"
-          },
-          "sellsVolumes24h": {
-            "type": "string",
-            "description": "Total sell volume in the last 24 hours",
-            "example": "45000.32"
+          "stats": {
+            "description": "Token stats",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenStat"
+              }
+            ]
           },
           "pools": {
             "description": "List of DEX pools containing this token",
@@ -3876,11 +4211,7 @@
           "description",
           "market",
           "deployer",
-          "marketCapUsd",
-          "buys24h",
-          "sells24h",
-          "buyVolumes24h",
-          "sellsVolumes24h",
+          "stats",
           "marketCap"
         ]
       },
@@ -4021,229 +4352,6 @@
           "tokenCreators",
           "tokenCreatedAt",
           "description"
-        ]
-      },
-      "TokenStat": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string",
-            "description": "Token contract address",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "price1m": {
-            "type": "string",
-            "description": "Token price in the last 1 minute",
-            "example": "1.234"
-          },
-          "buys1m": {
-            "type": "string",
-            "description": "Number of buy orders in the last 1 minute",
-            "example": "150"
-          },
-          "sells1m": {
-            "type": "string",
-            "description": "Number of sell orders in the last 1 minute",
-            "example": "120"
-          },
-          "buyVolumes1m": {
-            "type": "string",
-            "description": "Total buy volume in the last 1 minute",
-            "example": "50000.45"
-          },
-          "sellsVolumes1m": {
-            "type": "string",
-            "description": "Total sell volume in the last 1 minute",
-            "example": "45000.32"
-          },
-          "price5m": {
-            "type": "string",
-            "description": "Token price in the last 5 minutes",
-            "example": "1.245"
-          },
-          "buys5m": {
-            "type": "string",
-            "description": "Number of buy orders in the last 5 minutes",
-            "example": "150"
-          },
-          "sells5m": {
-            "type": "string",
-            "description": "Number of sell orders in the last 5 minutes",
-            "example": "120"
-          },
-          "buyVolumes5m": {
-            "type": "string",
-            "description": "Total buy volume in the last 5 minutes",
-            "example": "50000.45"
-          },
-          "sellsVolumes5m": {
-            "type": "string",
-            "description": "Total sell volume in the last 5 minutes",
-            "example": "45000.32"
-          },
-          "price15m": {
-            "type": "string",
-            "description": "Token price in the last 15 minutes",
-            "example": "1.255"
-          },
-          "buys15m": {
-            "type": "string",
-            "description": "Number of buy orders in the last 15 minutes",
-            "example": "150"
-          },
-          "sells15m": {
-            "type": "string",
-            "description": "Number of sell orders in the last 15 minutes",
-            "example": "120"
-          },
-          "buyVolumes15m": {
-            "type": "string",
-            "description": "Total buy volume in the last 15 minutes",
-            "example": "50000.45"
-          },
-          "sellsVolumes15m": {
-            "type": "string",
-            "description": "Total sell volume in the last 15 minutes",
-            "example": "45000.32"
-          },
-          "price30m": {
-            "type": "string",
-            "description": "Token price in the last 30 minutes",
-            "example": "1.265"
-          },
-          "buys30m": {
-            "type": "string",
-            "description": "Number of buy orders in the last 30 minutes",
-            "example": "150"
-          },
-          "sells30m": {
-            "type": "string",
-            "description": "Number of sell orders in the last 30 minutes",
-            "example": "120"
-          },
-          "buyVolumes30m": {
-            "type": "string",
-            "description": "Total buy volume in the last 30 minutes",
-            "example": "50000.45"
-          },
-          "sellsVolumes30m": {
-            "type": "string",
-            "description": "Total sell volume in the last 30 minutes",
-            "example": "45000.32"
-          },
-          "price1h": {
-            "type": "string",
-            "description": "Token price in the last 1 hour",
-            "example": "1.275"
-          },
-          "buys1h": {
-            "type": "string",
-            "description": "Number of buy orders in the last 1 hour",
-            "example": "150"
-          },
-          "sells1h": {
-            "type": "string",
-            "description": "Number of sell orders in the last 1 hour",
-            "example": "120"
-          },
-          "buyVolumes1h": {
-            "type": "string",
-            "description": "Total buy volume in the last 1 hour",
-            "example": "50000.45"
-          },
-          "sellsVolumes1h": {
-            "type": "string",
-            "description": "Total sell volume in the last 1 hour",
-            "example": "45000.32"
-          },
-          "price4h": {
-            "type": "string",
-            "description": "Token price in the last 4 hours",
-            "example": "1.285"
-          },
-          "buys4h": {
-            "type": "string",
-            "description": "Number of buy orders in the last 4 hours",
-            "example": "150"
-          },
-          "sells4h": {
-            "type": "string",
-            "description": "Number of sell orders in the last 4 hours",
-            "example": "120"
-          },
-          "buyVolumes4h": {
-            "type": "string",
-            "description": "Total buy volume in the last 4 hours",
-            "example": "50000.45"
-          },
-          "sellsVolumes4h": {
-            "type": "string",
-            "description": "Total sell volume in the last 4 hours",
-            "example": "45000.32"
-          },
-          "price24h": {
-            "type": "string",
-            "description": "Token price in the last 24 hours",
-            "example": "1.295"
-          },
-          "buys24h": {
-            "type": "string",
-            "description": "Number of buy orders in the last 24 hours",
-            "example": "150"
-          },
-          "sells24h": {
-            "type": "string",
-            "description": "Number of sell orders in the last 24 hours",
-            "example": "120"
-          },
-          "buyVolumes24h": {
-            "type": "string",
-            "description": "Total buy volume in the last 24 hours",
-            "example": "50000.45"
-          },
-          "sellsVolumes24h": {
-            "type": "string",
-            "description": "Total sell volume in the last 24 hours",
-            "example": "45000.32"
-          }
-        },
-        "required": [
-          "address",
-          "price1m",
-          "buys1m",
-          "sells1m",
-          "buyVolumes1m",
-          "sellsVolumes1m",
-          "price5m",
-          "buys5m",
-          "sells5m",
-          "buyVolumes5m",
-          "sellsVolumes5m",
-          "price15m",
-          "buys15m",
-          "sells15m",
-          "buyVolumes15m",
-          "sellsVolumes15m",
-          "price30m",
-          "buys30m",
-          "sells30m",
-          "buyVolumes30m",
-          "sellsVolumes30m",
-          "price1h",
-          "buys1h",
-          "sells1h",
-          "buyVolumes1h",
-          "sellsVolumes1h",
-          "price4h",
-          "buys4h",
-          "sells4h",
-          "buyVolumes4h",
-          "sellsVolumes4h",
-          "price24h",
-          "buys24h",
-          "sells24h",
-          "buyVolumes24h",
-          "sellsVolumes24h"
         ]
       },
       "TokenHolder": {

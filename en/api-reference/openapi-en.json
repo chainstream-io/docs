@@ -651,49 +651,15 @@
         ]
       }
     },
-    "/trade/{signature}": {
+    "/trade/token/{chain}/{tokenAddress}": {
       "get": {
-        "description": "Retrieve detailed information about a specific trade",
-        "operationId": "trades.get",
-        "parameters": [
-          {
-            "name": "signature",
-            "required": true,
-            "in": "path",
-            "description": "Transaction signature/hash",
-            "schema": {
-              "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trade"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Trade - Detail",
-        "tags": [
-          "Trade"
-        ]
-      }
-    },
-    "/trade": {
-      "get": {
-        "description": "Retrieve paginated list of trades",
-        "operationId": "trade.list",
+        "description": "Retrieve a list of token transactions",
+        "operationId": "trade.get.token",
         "parameters": [
           {
             "name": "chain",
             "required": true,
-            "in": "query",
+            "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
               "enum": [
@@ -706,7 +672,7 @@
           {
             "name": "tokenAddress",
             "required": true,
-            "in": "query",
+            "in": "path",
             "description": "An address of a token",
             "schema": {
               "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
@@ -726,6 +692,7 @@
             "name": "parseJupiter",
             "required": false,
             "in": "query",
+            "description": "Whether to parse Jupiter trades",
             "schema": {
               "default": false,
               "type": "boolean"
@@ -735,6 +702,7 @@
             "name": "hideArb",
             "required": false,
             "in": "query",
+            "description": "Whether to hide arbitrage trades",
             "schema": {
               "default": false,
               "type": "boolean"
@@ -744,10 +712,9 @@
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "Number of results per page",
+            "description": "Number of trades per page",
             "schema": {
               "default": 20,
-              "example": "20",
               "type": "number"
             }
           }
@@ -764,7 +731,189 @@
             }
           }
         },
-        "summary": "Trade - List",
+        "summary": "Trade - Token",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/trade/wallet/{chain}/{walletAddress}": {
+      "get": {
+        "description": "Retrieve trading history for a specific wallet",
+        "operationId": "trade.get.wallet",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parseJupiter",
+            "required": false,
+            "in": "query",
+            "description": "Whether to parse Jupiter trades",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "hideArb",
+            "required": false,
+            "in": "query",
+            "description": "Whether to hide arbitrage trades",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of trades per page",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletTrades"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Trade - Wallet",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/trade/tokenAndWallet/{chain}/{tokenAddress}/{walletAddress}": {
+      "get": {
+        "description": "Retrieve trading history for a specific token and wallet",
+        "operationId": "trade.get.token.and.wallet",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a token",
+            "schema": {
+              "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parseJupiter",
+            "required": false,
+            "in": "query",
+            "description": "Whether to parse Jupiter trades",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "hideArb",
+            "required": false,
+            "in": "query",
+            "description": "Whether to hide arbitrage trades",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of trades per page",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradePage"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Trade - Token And Wallet",
         "tags": [
           "Trade"
         ]
@@ -1313,6 +1462,53 @@
         ]
       }
     },
+    "/token/{chain}/multi": {
+      "post": {
+        "description": "Get detail of tokens",
+        "operationId": "token.get.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenAddressesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Map"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Token - Detail (Multi)",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/token/{chain}/{tokenAddress}/metadata": {
       "get": {
         "description": "Get metadata of token",
@@ -1395,10 +1591,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DexPoolDTO"
-                  }
+                  "$ref": "#/components/schemas/LiquidityDTO"
                 }
               }
             }
@@ -1857,7 +2050,7 @@
       }
     },
     "/ranking/{chain}/hotTokens/{duration}": {
-      "get": {
+      "post": {
         "description": "Retrieve a list of trending tokens",
         "operationId": "ranking.hot.tokens",
         "parameters": [
@@ -1891,6 +2084,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenSortFilterRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -1904,6 +2107,53 @@
           }
         },
         "summary": "Ranking - Hot Tokens",
+        "tags": [
+          "Ranking"
+        ]
+      }
+    },
+    "/ranking/{chain}/newTokens": {
+      "post": {
+        "description": "Return the latest 100 tokens",
+        "operationId": "ranking.new.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenSortFilterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ranking - New Tokens",
         "tags": [
           "Ranking"
         ]
@@ -2018,6 +2268,53 @@
           "Wallet"
         ]
       }
+    },
+    "/wallet/{chain}/{walletAddress}/balances": {
+      "get": {
+        "description": "Get wallet balance information",
+        "operationId": "wallet.get.balances",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletBalancesDTO"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Wallet - Balances",
+        "tags": [
+          "Wallet"
+        ]
+      }
     }
   },
   "info": {
@@ -2026,7 +2323,7 @@
     "version": "1.0",
     "contact": {
       "name": "AI",
-      "url": "https://github.com/chainstream-io/dex",
+      "url": "https://github.com/openweb3-io/dex-aggregator",
       "email": "ai@sx.ai"
     }
   },
@@ -2038,7 +2335,7 @@
   ],
   "servers": [
     {
-      "url": "https://api.chainstream.io"
+      "url": "https://api.dex.chainstream.io"
     }
   ],
   "components": {
@@ -2784,26 +3081,32 @@
         "properties": {
           "maker": {
             "type": "string",
+            "description": "Maker address",
             "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY"
           },
           "baseAmount": {
             "type": "string",
+            "description": "Base token amount",
             "example": "3.49753400000000000000"
           },
           "quoteAmount": {
             "type": "string",
+            "description": "Quote token amount",
             "example": "0.00085986800000000000"
           },
           "quoteSymbol": {
             "type": "string",
+            "description": "Quote token symbol",
             "example": "SOL"
           },
           "quoteAddress": {
             "type": "string",
+            "description": "Quote token address",
             "example": "So11111111111111111111111111111111111111112"
           },
           "amountInUsd": {
             "type": "string",
+            "description": "Amount in USD",
             "example": "0.18691810584000000000"
           },
           "timestamp": {
@@ -2812,6 +3115,7 @@
             "example": 1709251200
           },
           "event": {
+            "description": "Trade event type",
             "example": "buy",
             "allOf": [
               {
@@ -2821,58 +3125,72 @@
           },
           "txHash": {
             "type": "string",
+            "description": "Transaction hash",
             "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
           },
           "priceInUsd": {
             "type": "string",
+            "description": "Price in USD",
             "example": "0.05344282738637203200"
           },
           "totalTrade": {
             "type": "number",
+            "description": "Total number of trades",
             "example": 1
           },
           "id": {
             "type": "string",
+            "description": "Trade ID",
             "example": "MDAzMTc4OTQ0OTUxNTcwMDAwMg=="
           },
           "isFollowing": {
             "type": "number",
+            "description": "Whether the maker is being followed",
             "example": 0
           },
           "isOpenOrClose": {
             "type": "number",
+            "description": "Whether this is an open or close trade",
             "example": 0
           },
           "buyCostUsd": {
             "type": "string",
+            "description": "Buy cost in USD",
             "example": ""
           },
           "balance": {
             "type": "string",
+            "description": "Current balance",
             "example": "7.254002"
           },
           "cost": {
             "type": "string",
+            "description": "Trade cost",
             "example": "0.18691810584"
           },
           "historyBoughtAmount": {
             "type": "string",
+            "description": "Historical bought amount",
             "example": "3.497534"
           },
           "historySoldIncome": {
             "type": "string",
+            "description": "Historical sold income",
             "example": "0"
           },
           "historySoldAmount": {
             "type": "string",
+            "description": "Historical sold amount",
             "example": "0"
           },
           "realizedProfit": {
             "type": "string",
+            "description": "Realized profit",
             "example": "0"
           },
           "unrealizedProfit": {
             "type": "string",
+            "description": "Unrealized profit",
             "example": "-0.00000000000003279335"
           },
           "makerTags": {
@@ -2914,6 +3232,7 @@
           },
           "tokenAddress": {
             "type": "string",
+            "description": "Token address",
             "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
           },
           "makerTwitterUsername": {
@@ -2973,9 +3292,81 @@
         "type": "object",
         "properties": {
           "trades": {
+            "description": "List of trades",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Trade"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Next page cursor"
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "Whether there are more trades",
+            "default": false
+          }
+        },
+        "required": [
+          "trades"
+        ]
+      },
+      "WalletTradeInfo": {
+        "type": "object",
+        "properties": {
+          "tx": {
+            "type": "string",
+            "description": "Transaction hash"
+          },
+          "from": {
+            "type": "object",
+            "description": "From token information"
+          },
+          "to": {
+            "type": "object",
+            "description": "To token information"
+          },
+          "price": {
+            "type": "object",
+            "description": "Price information"
+          },
+          "volume": {
+            "type": "object",
+            "description": "Volume information"
+          },
+          "wallet": {
+            "type": "string",
+            "description": "Wallet address"
+          },
+          "program": {
+            "type": "string",
+            "description": "Program ID"
+          },
+          "time": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Trade timestamp"
+          }
+        },
+        "required": [
+          "tx",
+          "from",
+          "to",
+          "price",
+          "volume",
+          "wallet",
+          "program",
+          "time"
+        ]
+      },
+      "WalletTrades": {
+        "type": "object",
+        "properties": {
+          "trades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletTradeInfo"
             }
           },
           "nextCursor": {
@@ -2986,7 +3377,9 @@
           }
         },
         "required": [
-          "trades"
+          "trades",
+          "nextCursor",
+          "hasNextPage"
         ]
       },
       "PlaceOrderInput": {
@@ -3705,6 +4098,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_1M",
             "example": "45000.32"
           },
+          "volumes1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_1M",
+            "example": "95000.77"
+          },
           "buyers1m": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_1M",
@@ -3714,6 +4112,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_1M",
             "example": "45"
+          },
+          "openPriceInUsd1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_1M",
+            "example": "1.255"
+          },
+          "closePriceInUsd1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_1M",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_1M",
+            "example": "0.01"
+          },
+          "trades1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_1M",
+            "example": "270"
+          },
+          "traders1m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_1M",
+            "example": "270"
           },
           "price5m": {
             "type": "string",
@@ -3740,6 +4163,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_5M",
             "example": "45000.32"
           },
+          "volumes5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_5M",
+            "example": "95000.77"
+          },
           "buyers5m": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_5M",
@@ -3749,6 +4177,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_5M",
             "example": "45"
+          },
+          "openPriceInUsd5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_5M",
+            "example": "1.255"
+          },
+          "closePriceInUsd5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_5M",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_5M",
+            "example": "0.01"
+          },
+          "trades5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_5M",
+            "example": "270"
+          },
+          "traders5m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_5M",
+            "example": "270"
           },
           "price15m": {
             "type": "string",
@@ -3775,6 +4228,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_15M",
             "example": "45000.32"
           },
+          "volumes15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_15M",
+            "example": "95000.77"
+          },
           "buyers15m": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_15M",
@@ -3784,6 +4242,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_15M",
             "example": "45"
+          },
+          "openPriceInUsd15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_15M",
+            "example": "1.255"
+          },
+          "closePriceInUsd15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_15M",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_15M",
+            "example": "0.01"
+          },
+          "trades15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_15M",
+            "example": "270"
+          },
+          "traders15m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_15M",
+            "example": "270"
           },
           "price30m": {
             "type": "string",
@@ -3810,6 +4293,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_30M",
             "example": "45000.32"
           },
+          "volumes30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_30M",
+            "example": "95000.77"
+          },
           "buyers30m": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_30M",
@@ -3819,6 +4307,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_30M",
             "example": "45"
+          },
+          "openPriceInUsd30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_30M",
+            "example": "1.255"
+          },
+          "closePriceInUsd30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_30M",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_30M",
+            "example": "0.01"
+          },
+          "trades30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_30M",
+            "example": "270"
+          },
+          "traders30m": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_30M",
+            "example": "270"
           },
           "price1h": {
             "type": "string",
@@ -3845,6 +4358,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_1H",
             "example": "45000.32"
           },
+          "volumes1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_1H",
+            "example": "95000.77"
+          },
           "buyers1h": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_1H",
@@ -3854,6 +4372,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_1H",
             "example": "45"
+          },
+          "openPriceInUsd1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_1H",
+            "example": "1.255"
+          },
+          "closePriceInUsd1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_1H",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_1H",
+            "example": "0.01"
+          },
+          "trades1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_1H",
+            "example": "270"
+          },
+          "traders1h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_1H",
+            "example": "270"
           },
           "price4h": {
             "type": "string",
@@ -3880,6 +4423,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_4H",
             "example": "45000.32"
           },
+          "volumes4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_4H",
+            "example": "95000.77"
+          },
           "buyers4h": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_4H",
@@ -3889,6 +4437,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_4H",
             "example": "45"
+          },
+          "openPriceInUsd4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_4H",
+            "example": "1.255"
+          },
+          "closePriceInUsd4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_4H",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_4H",
+            "example": "0.01"
+          },
+          "trades4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_4H",
+            "example": "270"
+          },
+          "traders4h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_4H",
+            "example": "270"
           },
           "price24h": {
             "type": "string",
@@ -3915,6 +4488,11 @@
             "description": "DTO.TOKEN.STAT.SELL_VOLUMES_24H",
             "example": "45000.32"
           },
+          "volumes24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.VOLUMES_24H",
+            "example": "95000.77"
+          },
           "buyers24h": {
             "type": "string",
             "description": "DTO.TOKEN.STAT.BUYERS_24H",
@@ -3924,6 +4502,31 @@
             "type": "string",
             "description": "DTO.TOKEN.STAT.SELLERS_24H",
             "example": "45"
+          },
+          "openPriceInUsd24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.OPEN_PRICE_IN_USD_24H",
+            "example": "1.255"
+          },
+          "closePriceInUsd24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.CLOSE_PRICE_IN_USD_24H",
+            "example": "1.265"
+          },
+          "priceChangeRatioInUsd24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.PRICE_CHANGE_RATIO_IN_USD_24H",
+            "example": "0.01"
+          },
+          "trades24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADES_24H",
+            "example": "270"
+          },
+          "traders24h": {
+            "type": "string",
+            "description": "DTO.TOKEN.STAT.TRADERS_24H",
+            "example": "270"
           }
         },
         "required": [
@@ -3933,50 +4536,92 @@
           "sells1m",
           "buyVolumes1m",
           "sellsVolumes1m",
+          "volumes1m",
           "buyers1m",
           "sellers1m",
+          "openPriceInUsd1m",
+          "closePriceInUsd1m",
+          "priceChangeRatioInUsd1m",
+          "trades1m",
+          "traders1m",
           "price5m",
           "buys5m",
           "sells5m",
           "buyVolumes5m",
           "sellsVolumes5m",
+          "volumes5m",
           "buyers5m",
           "sellers5m",
+          "openPriceInUsd5m",
+          "closePriceInUsd5m",
+          "priceChangeRatioInUsd5m",
+          "trades5m",
+          "traders5m",
           "price15m",
           "buys15m",
           "sells15m",
           "buyVolumes15m",
           "sellsVolumes15m",
+          "volumes15m",
           "buyers15m",
           "sellers15m",
+          "openPriceInUsd15m",
+          "closePriceInUsd15m",
+          "priceChangeRatioInUsd15m",
+          "trades15m",
+          "traders15m",
           "price30m",
           "buys30m",
           "sells30m",
           "buyVolumes30m",
           "sellsVolumes30m",
+          "volumes30m",
           "buyers30m",
           "sellers30m",
+          "openPriceInUsd30m",
+          "closePriceInUsd30m",
+          "priceChangeRatioInUsd30m",
+          "trades30m",
+          "traders30m",
           "price1h",
           "buys1h",
           "sells1h",
           "buyVolumes1h",
           "sellsVolumes1h",
+          "volumes1h",
           "buyers1h",
           "sellers1h",
+          "openPriceInUsd1h",
+          "closePriceInUsd1h",
+          "priceChangeRatioInUsd1h",
+          "trades1h",
+          "traders1h",
           "price4h",
           "buys4h",
           "sells4h",
           "buyVolumes4h",
           "sellsVolumes4h",
+          "volumes4h",
           "buyers4h",
           "sellers4h",
+          "openPriceInUsd4h",
+          "closePriceInUsd4h",
+          "priceChangeRatioInUsd4h",
+          "trades4h",
+          "traders4h",
           "price24h",
           "buys24h",
           "sells24h",
           "buyVolumes24h",
           "sellsVolumes24h",
+          "volumes24h",
           "buyers24h",
-          "sellers24h"
+          "sellers24h",
+          "openPriceInUsd24h",
+          "closePriceInUsd24h",
+          "priceChangeRatioInUsd24h",
+          "trades24h",
+          "traders24h"
         ]
       },
       "DexPoolDTO": {
@@ -4028,6 +4673,27 @@
           "poolAddress",
           "baseTokenAddress",
           "quoteTokenAddress"
+        ]
+      },
+      "LiquidityDTO": {
+        "type": "object",
+        "properties": {
+          "liquidityTvlInUsd": {
+            "type": "string",
+            "description": "Liquidity TVL",
+            "example": "1000000.45"
+          },
+          "pools": {
+            "description": "Pools info",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexPoolDTO"
+            }
+          }
+        },
+        "required": [
+          "liquidityTvlInUsd",
+          "pools"
         ]
       },
       "TokenMarketCap": {
@@ -4183,12 +4849,13 @@
               }
             ]
           },
-          "pools": {
-            "description": "List of DEX pools containing this token",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DexPoolDTO"
-            }
+          "liquidity": {
+            "description": "Liquidity",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LiquidityDTO"
+              }
+            ]
           },
           "marketCap": {
             "description": "Market cap",
@@ -4267,6 +4934,29 @@
         "required": [
           "data"
         ]
+      },
+      "TokenAddressesRequest": {
+        "type": "object",
+        "properties": {
+          "tokenAddresses": {
+            "description": "An array of token addresses (maximum 100), separated by commas",
+            "example": [
+              "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "tokenAddresses"
+        ]
+      },
+      "Map": {
+        "type": "object",
+        "properties": {}
       },
       "TokenMetadata": {
         "type": "object",
@@ -4531,6 +5221,38 @@
         "type": "object",
         "properties": {}
       },
+      "TokenSortFilterRequest": {
+        "type": "object",
+        "properties": {
+          "sortBy": {
+            "type": "object",
+            "description": "Sort field",
+            "example": "price"
+          },
+          "sortDirection": {
+            "type": "string",
+            "description": "Sort Direction",
+            "enum": [
+              "ASC",
+              "DESC"
+            ],
+            "default": "DESC"
+          },
+          "filterBy": {
+            "description": "Filter field",
+            "example": [
+              {
+                "field": "marketCap.marketCap",
+                "min": "50000"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "WalletPnlDTO": {
         "type": "object",
         "properties": {
@@ -4578,12 +5300,12 @@
             "example": "2024-03-14T12:00:00Z"
           },
           "balance": {
-            "type": "string",
+            "type": "number",
             "description": "Current token balance",
             "example": "1000"
           },
           "buyAmount": {
-            "type": "string",
+            "type": "number",
             "description": "Total amount of tokens bought",
             "example": "1500"
           },
@@ -4593,12 +5315,12 @@
             "example": "1845"
           },
           "buys": {
-            "type": "string",
+            "type": "number",
             "description": "Number of buy transactions",
             "example": "10"
           },
           "sellAmount": {
-            "type": "string",
+            "type": "number",
             "description": "Total amount of tokens sold",
             "example": "500"
           },
@@ -4608,17 +5330,17 @@
             "example": "615"
           },
           "sells": {
-            "type": "string",
+            "type": "number",
             "description": "Number of sell transactions",
             "example": "5"
           },
           "averageBuyPrice": {
-            "type": "string",
+            "type": "number",
             "description": "Average buying price",
             "example": "1.23"
           },
           "averageSellPrice": {
-            "type": "string",
+            "type": "number",
             "description": "Average selling price",
             "example": "1.23"
           },
@@ -4628,7 +5350,7 @@
             "example": "123.45"
           },
           "unrealizedProfitRatio": {
-            "type": "string",
+            "type": "number",
             "description": "Unrealized profit ratio",
             "example": "12.34"
           },
@@ -4638,17 +5360,17 @@
             "example": "45.67"
           },
           "realizedProfitRatio": {
-            "type": "string",
+            "type": "number",
             "description": "Realized profit ratio",
             "example": "4.56"
           },
           "totalRealizedProfitInUsd": {
-            "type": "string",
+            "type": "number",
             "description": "Total realized profit in USD",
             "example": "169.12"
           },
           "totalRealizedProfitRatio": {
-            "type": "string",
+            "type": "number",
             "description": "Total realized profit ratio",
             "example": "16.91"
           }
@@ -4679,37 +5401,127 @@
           "totalRealizedProfitRatio"
         ]
       },
+      "WalletBalanceDetailDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Token amount",
+            "example": "2675.098457775"
+          },
+          "valueInUsd": {
+            "type": "string",
+            "description": "Token amount in USD",
+            "example": "366908.31721324675"
+          },
+          "name": {
+            "type": "string",
+            "description": "Token name",
+            "example": "Solana"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Token symbol",
+            "example": "SOL"
+          },
+          "price": {
+            "type": "string",
+            "description": "Current token price",
+            "example": "137.15"
+          },
+          "priceChangeRatioInUsd24h": {
+            "type": "string",
+            "description": "DTO.WALLET.BALANCE.PRICE_CHANGE_24H",
+            "example": "5.23"
+          },
+          "realizedProfitInUsd": {
+            "type": "string",
+            "description": "Realized profit in USD",
+            "example": "1234.56"
+          },
+          "realizedProfitRatio": {
+            "type": "string",
+            "description": "Realized profit ratio",
+            "example": "12.34"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "amount",
+          "valueInUsd",
+          "name",
+          "symbol",
+          "price",
+          "priceChangeRatioInUsd24h",
+          "realizedProfitInUsd",
+          "realizedProfitRatio"
+        ]
+      },
+      "WalletBalancesDTO": {
+        "type": "object",
+        "properties": {
+          "totalBalancesInUsd": {
+            "type": "string",
+            "description": "Total wallet value",
+            "example": "1000000"
+          },
+          "balances": {
+            "description": "Wallet balance details",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletBalanceDetailDTO"
+            }
+          }
+        },
+        "required": [
+          "totalBalancesInUsd",
+          "balances"
+        ]
+      },
       "TradeEvent": {
         "type": "object",
         "properties": {
           "maker": {
             "type": "string",
+            "description": "Maker address",
             "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY"
           },
           "baseAmount": {
             "type": "string",
+            "description": "Base token amount",
             "example": "3.49753400000000000000"
           },
           "quoteAmount": {
             "type": "string",
+            "description": "Quote token amount",
             "example": "0.00085986800000000000"
           },
           "quoteSymbol": {
             "type": "string",
+            "description": "Quote token symbol",
             "example": "SOL"
           },
           "quoteAddress": {
             "type": "string",
+            "description": "Quote token address",
             "example": "So11111111111111111111111111111111111111112"
           },
           "amountInUsd": {
             "type": "string",
+            "description": "Amount in USD",
             "example": "0.18691810584000000000"
           },
           "timestamp": {
-            "type": "number"
+            "type": "number",
+            "description": "Trade timestamp (Unix epoch in seconds)"
           },
           "event": {
+            "description": "Trade event type",
             "example": "buy",
             "allOf": [
               {
@@ -4719,22 +5531,27 @@
           },
           "txHash": {
             "type": "string",
+            "description": "Transaction hash",
             "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
           },
           "priceInUsd": {
             "type": "string",
+            "description": "Price in USD",
             "example": "0.05344282738637203200"
           },
           "id": {
             "type": "string",
+            "description": "Trade ID",
             "example": "MDAzMTc4OTQ0OTUxNTcwMDAwMg=="
           },
           "buyCostUsd": {
             "type": "string",
+            "description": "Buy cost in USD",
             "example": ""
           },
           "tokenAddress": {
             "type": "string",
+            "description": "Token address",
             "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump"
           }
         },

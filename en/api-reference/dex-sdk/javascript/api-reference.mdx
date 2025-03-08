@@ -1,0 +1,579 @@
+---
+title: 'API Reference'
+description: 'JavaScript SDK API Reference'
+---
+
+# API Reference
+
+## DEX Operations
+
+### List DEXes
+Get a list of all DEXes on the specified chain.
+
+```typescript
+client.dex.list(params: {
+  chain: string;  // Chain name
+}): Promise<DexInfo[]>
+
+interface DexInfo {
+  program_address: string;  // DEX program address
+  protocol_family: string;  // Protocol family
+  protocol_name: string;    // Protocol name
+  chain: string;           // Chain
+}
+```
+
+### Token Minting
+Create a new token on the specified DEX.
+
+```typescript
+client.dex.mint(params: {
+  chain: string;           // Chain name
+  dex: string;            // DEX name
+  name: string;           // Token name
+  symbol: string;         // Token symbol
+  uri?: string;           // Metadata URI
+  description?: string;   // Token description
+  migration_dex?: string; // Migration target DEX
+  icon?: string;         // Token icon
+  banner?: string;       // Banner image
+  token_amount?: string; // Total token supply
+}): Promise<MintResponse>
+
+interface MintResponse {
+  serialized_tx: string;   // Base64 encoded transaction
+  mint_address: string;    // Token mint address
+  elapsed_time: number;    // Processing time (ms)
+  extra: any;             // Additional metadata
+}
+```
+
+### Submit Mint Transaction
+Submit a signed token mint transaction.
+
+```typescript
+client.dex.submitMint(params: {
+  chain: string;          // Chain name
+  dex: string;           // DEX name
+  signed_tx: string;     // Signed transaction
+}): Promise<SubmitMintResponse>
+
+interface SubmitMintResponse {
+  signature: string;      // Transaction signature
+  elapsed_time: number;   // Processing time
+}
+```
+
+### Get Swap Route
+Calculate the best route for token swap.
+
+```typescript
+client.dex.route(params: {
+  chain: string;          // Chain name
+  dex: string;           // DEX name
+  input_mint: string;     // Input token address
+  output_mint: string;    // Output token address
+  amount: string;         // Amount
+  mode?: 'ExactIn' | 'ExactOut';  // Swap mode
+  slippage?: string;     // Slippage
+}): Promise<RouteResponse>
+
+interface RouteResponse {
+  serialized_tx: string;  // Base64 encoded transaction
+  elapsed_time: number;   // Processing time
+  route_info: {
+    input_amount: string;
+    output_amount: string;
+    price_impact: string;
+    fee: string;
+  };
+}
+```
+
+### Execute Swap
+Execute a token swap transaction.
+
+```typescript
+client.dex.swap(params: {
+  chain: string;          // Chain name
+  dex: string;           // DEX name
+  input_mint: string;     // Input token address
+  output_mint: string;    // Output token address
+  amount: string;         // Amount
+  mode?: 'ExactIn' | 'ExactOut';  // Swap mode
+  slippage?: string;     // Slippage
+  pool_address?: string; // Pool address
+}): Promise<SwapResponse>
+
+interface SwapResponse {
+  serialized_tx: string;  // Base64 encoded transaction
+  elapsed_time: number;   // Processing time
+  args: SwapArgs;        // Swap arguments
+  route_info: RouteInfo; // Route information
+}
+```
+
+## Token Operations
+
+### Get Token Information
+Get detailed information about a token.
+
+```typescript
+client.token.get(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+}): Promise<TokenInfo>
+
+interface TokenInfo {
+  metadata: {
+    chain: string;
+    decimals: number;
+    name: string;
+    symbol: string;
+    metadata_address: string;
+    address: string;
+    token_creators: string[];
+    image_url: string;
+    uri: string;
+    description: string;
+  };
+  price: {
+    value: string;
+    updated_at: number;
+  };
+  market_cap: {
+    circulating_supply: string;
+    market_cap: string;
+    holders: number;
+  };
+}
+```
+
+### Get Token Metadata
+Get metadata information about a token.
+
+```typescript
+client.token.getMetadata(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+}): Promise<TokenMetadata>
+
+interface TokenMetadata {
+  chain: string;
+  decimals: number;
+  name: string;
+  symbol: string;
+  metadata_address: string;
+  address: string;
+  token_creators: string[];
+  image_url: string;
+  uri: string;
+  metadata: any;
+  social_medias: any;
+  token_created_at: number;
+  description: string;
+}
+```
+
+### Get Token Pools
+Get all pools containing this token.
+
+```typescript
+client.token.getPools(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+}): Promise<TokenPool[]>
+
+interface TokenPool {
+  auth_freeze: boolean;
+  dex_program: string;
+  base_token: string;
+  address: string;
+  chain: string;
+  updated_at: number;
+  mint_auth: boolean;
+  id: string;
+  quote_tokens: string[];
+}
+```
+
+### Get Token Stats
+Get market statistics for a token.
+
+```typescript
+client.token.getStats(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+}): Promise<TokenStats>
+
+interface TokenStats {
+  price_1m: string;
+  price_change_1m: string;
+  volume_1m: string;
+  trades_1m: number;
+  traders_1m: number;
+  buys_1m: number;
+  sells_1m: number;
+  buy_volumes_1m: string;
+  sell_volumes_1m: string;
+  // ... 5m, 15m, 30m, 1h, 4h, 24h 的相同统计
+}
+```
+
+### Get Token Candles
+Get K-line data for a token.
+
+```typescript
+client.token.getCandles(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+  resolution: string;    // Time period
+  from: number;         // Start time
+  to: number;           // End time
+}): Promise<Candle[]>
+
+interface Candle {
+  open: number;
+  close: number;
+  high: number;
+  low: number;
+  volume: number;
+  time: number;
+}
+```
+
+### Get Token Holders
+Get a list of holders for a token.
+
+```typescript
+client.token.getHolders(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+  cursor?: string;      // Pagination cursor
+  limit?: number;       // Page size
+}): Promise<TokenHolders>
+
+interface TokenHolders {
+  holders: {
+    wallet_address: string;
+    amount: string;
+    amount_in_usd: string;
+    percentage: string;
+  }[];
+  next: string;
+  has_next: boolean;
+}
+```
+
+### Get Top Holders
+Get the top 20 holders for a token.
+
+```typescript
+client.token.getTopHolders(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+}): Promise<TokenHolder[]>
+
+interface TokenHolder {
+  wallet_address: string;
+  amount: string;
+  amount_in_usd: string;
+  percentage: string;
+}
+```
+
+### Get Token Market Cap
+Get market capitalization information for a token.
+
+```typescript
+client.token.getMarketCap(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+}): Promise<TokenMarketCap>
+
+interface TokenMarketCap {
+  circulating_supply: string;
+  market_cap: string;
+  top10_total_holdings: string;
+  top10_holdings_ratio: string;
+  top100_total_holdings: string;
+  top100_holdings_ratio: string;
+  holders: number;
+}
+```
+
+## Order Operations
+
+### Place Order
+Create a new order.
+
+```typescript
+client.order.place(params: {
+  chain: string;           // Chain name
+  dex: string;            // DEX name
+  market_address: string;  // Market address
+  side: 'buy' | 'sell';   // Order direction
+  amount: string;         // Amount
+  price: string;          // Price
+  priority_fee?: string;  // Priority fee
+}): Promise<OrderResponse>
+
+interface OrderResponse {
+  serialized_tx: string;
+  extra: any;
+  order_id: string;
+  status: string;
+  filled_amount: string;
+}
+```
+
+### Cancel Order
+Cancel an existing order.
+
+```typescript
+client.order.cancel(params: {
+  chain: string;           // Chain name
+  dex: string;            // DEX name
+  market_address: string;  // Market address
+  order_id: string;       // Order ID
+}): Promise<void>
+```
+
+### Cancel All Orders
+Cancel all orders for a specified market.
+
+```typescript
+client.order.cancelAll(params: {
+  chain: string;           // Chain name
+  dex: string;            // DEX name
+  market_address: string;  // Market address
+}): Promise<void>
+```
+
+### Take Order
+Execute a take order operation.
+
+```typescript
+client.order.take(params: {
+  chain: string;           // Chain name
+  dex: string;            // DEX name
+  market_address: string;  // Market address
+  order_id: string;       // Order ID
+  amount: string;         // Amount
+}): Promise<TakeOrderResponse>
+
+interface TakeOrderResponse {
+  serialized_tx: string;
+  extra: any;
+}
+```
+
+## Wallet Operations
+
+### Get Wallet Balance
+Get the token balance for a wallet.
+
+```typescript
+client.wallet.getBalance(params: {
+  chain: string;          // Chain name
+  walletAddress: string;  // Wallet address
+}): Promise<WalletBalance>
+
+interface WalletBalance {
+  total_balances_in_usd: string;
+  balances: {
+    token_address: string;
+    amount: string;
+    amount_in_usd: string;
+    token_name: string;
+    token_symbol: string;
+    token_price: string;
+    price_change_24h: string;
+  }[];
+}
+```
+
+### Get Wallet PnL
+Get transaction profit and loss information for a wallet.
+
+```typescript
+client.wallet.getPnL(params: {
+  chain: string;          // Chain name
+  walletAddress: string;  // Wallet address
+  tokenAddress: string;   // Token address
+}): Promise<WalletPnL>
+
+interface WalletPnL {
+  unrealized_profit_in_usd: string;
+  unrealized_profit_ratio: string;
+  realized_profit_in_usd: string;
+  realized_profit_ratio: string;
+  total_realized_profit_in_usd: string;
+  total_realized_profit_ratio: string;
+}
+```
+
+### Get Wallet PnL Stats
+Get profit and loss statistics for a wallet.
+
+```typescript
+client.wallet.getPnLStats(params: {
+  chain: string;          // Chain name
+  walletAddress: string;  // Wallet address
+}): Promise<WalletPnLStats>
+
+interface WalletPnLStats {
+  pt24h: PnLStatsDetail;  // 24-hour statistics
+  pt168h: PnLStatsDetail; // 7-day statistics
+  pt720h: PnLStatsDetail; // 30-day statistics
+}
+
+interface PnLStatsDetail {
+  chain: string;
+  wallet_address: string;
+  buys: number;
+  buy_amount: string;
+  buy_amount_usd: string;
+  sells: number;
+  sell_amount: string;
+  sell_amount_usd: string;
+  wins: number;
+  win_ratio: string;
+  pnl_usd: string;
+  pnl_ratio: string;
+  tokens: number;
+  resolution: string;
+}
+```
+
+## Trade Operations
+
+### Get Trade Details
+Get detailed information about a trade.
+
+```typescript
+client.trade.get(params: {
+  chain: string;      // Chain name
+  signature: string;  // Trade signature
+}): Promise<TradeDetail>
+
+interface TradeDetail {
+  tx: string;
+  amount: string;
+  price_usd: string;
+  volume: string;
+  type: string;
+  wallet: string;
+  time: number;
+  program: string;
+}
+```
+
+### Get Token Trades
+Get trade records for a specified token.
+
+```typescript
+client.trade.getTokenTrades(params: {
+  chain: string;         // Chain name
+  tokenAddress: string;  // Token address
+  cursor?: string;      // Pagination cursor
+  limit?: number;       // Page size
+}): Promise<TradeList>
+
+interface TradeList {
+  trades: Trade[];
+  next: string;
+  has_next: boolean;
+}
+```
+
+### Get Wallet Trades
+Get trade records for a specified wallet.
+
+```typescript
+client.trade.getWalletTrades(params: {
+  chain: string;          // Chain name
+  walletAddress: string;  // Wallet address
+  cursor?: string;       // Pagination cursor
+  limit?: number;        // Page size
+}): Promise<TradeList>
+```
+
+### Get Token and Wallet Trades
+Get trade records for a specified token and wallet.
+
+```typescript
+client.trade.getTokenAndWalletTrades(params: {
+  chain: string;          // Chain name
+  tokenAddress: string;   // Token address
+  walletAddress: string;  // Wallet address
+  cursor?: string;       // Pagination cursor
+  limit?: number;        // Page size
+}): Promise<TradeList>
+```
+
+## Ranking Operations
+
+### Get Hot Tokens
+Get a list of hot tokens.
+
+```typescript
+client.ranking.getHotTokens(params: {
+  chain: string;        // Chain name
+  duration?: string;    // Time period
+}): Promise<HotToken[]>
+
+interface HotToken {
+  address: string;
+  name: string;
+  symbol: string;
+  price_usd: string;
+  volume_24h: string;
+  price_change_24h: string;
+}
+```
+
+### Get New Tokens
+Get a list of newly created tokens.
+
+```typescript
+client.ranking.getNewTokens(params: {
+  chain: string;     // Chain name
+}): Promise<TokenInfo[]>
+```
+
+### Get Gainers
+Get a list of tokens with the highest price increase.
+
+```typescript
+client.ranking.getGainers(params: {
+  chain: string;        // Chain name
+  duration?: string;    // Time period
+}): Promise<TokenGainer[]>
+
+interface TokenGainer {
+  address: string;
+  name: string;
+  symbol: string;
+  price_usd: string;
+  price_change: string;
+}
+```
+
+## Transaction Operations
+
+### Send Transaction
+Submit a signed transaction to the blockchain.
+
+```typescript
+client.transaction.send(params: {
+  chain: string;          // Chain name
+  signed_tx: string;      // Base64 encoded signed transaction
+  submit_type?: string;   // Submit type
+}): Promise<TransactionResponse>
+
+interface TransactionResponse {
+  signature: string;      // Transaction signature/hash
+  elapsed_time: number;   // Processing time (ms)
+}
+```

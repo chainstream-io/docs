@@ -1,0 +1,595 @@
+---
+title: 'API 参考'
+description: 'JavaScript SDK API 方法参考'
+---
+
+# API 参考
+
+## DEX 操作
+
+### 获取 DEX 列表
+获取指定链上的所有DEX列表。
+
+```typescript
+client.dex.list(params: {
+  chain: string;  // 链名称
+}): Promise<DexInfo[]>
+
+interface DexInfo {
+  program_address: string;  // DEX程序地址
+  protocol_family: string;  // 协议族
+  protocol_name: string;    // 协议名称
+  chain: string;           // 链
+}
+```
+
+### 代币铸造
+在指定DEX上创建新代币。
+
+```typescript
+client.dex.mint(params: {
+  chain: string;           // 链名称
+  dex: string;            // DEX名称
+  name: string;           // 代币名称
+  symbol: string;         // 代币符号
+  uri?: string;           // 元数据URI
+  description?: string;   // 代币描述
+  migration_dex?: string; // 迁移目标DEX
+  icon?: string;         // 代币图标
+  banner?: string;       // 横幅图片
+  token_amount?: string; // 代币总供应量
+}): Promise<MintResponse>
+
+interface MintResponse {
+  serialized_tx: string;   // Base64编码的交易
+  mint_address: string;    // 代币铸造地址
+  elapsed_time: number;    // 处理时间（毫秒）
+  extra: any;             // 额外元数据
+}
+```
+
+### 提交铸造交易
+提交已签名的代币铸造交易。
+
+```typescript
+client.dex.submitMint(params: {
+  chain: string;          // 链名称
+  dex: string;           // DEX名称
+  signed_tx: string;     // 已签名的交易
+}): Promise<SubmitMintResponse>
+
+interface SubmitMintResponse {
+  signature: string;      // 交易签名
+  elapsed_time: number;   // 处理时间
+}
+```
+
+### 获取兑换路由
+计算代币兑换的最佳路由。
+
+```typescript
+client.dex.route(params: {
+  chain: string;          // 链名称
+  dex: string;           // DEX名称
+  input_mint: string;     // 输入代币地址
+  output_mint: string;    // 输出代币地址
+  amount: string;         // 数量
+  mode?: 'ExactIn' | 'ExactOut';  // 兑换模式
+  slippage?: string;     // 滑点
+}): Promise<RouteResponse>
+
+interface RouteResponse {
+  serialized_tx: string;  // Base64编码的交易
+  elapsed_time: number;   // 处理时间
+  route_info: {
+    input_amount: string;
+    output_amount: string;
+    price_impact: string;
+    fee: string;
+  };
+}
+```
+
+### 执行兑换
+执行代币兑换交易。
+
+```typescript
+client.dex.swap(params: {
+  chain: string;          // 链名称
+  dex: string;           // DEX名称
+  input_mint: string;     // 输入代币地址
+  output_mint: string;    // 输出代币地址
+  amount: string;         // 数量
+  mode?: 'ExactIn' | 'ExactOut';  // 兑换模式
+  slippage?: string;     // 滑点
+  pool_address?: string; // 资金池地址
+}): Promise<SwapResponse>
+
+interface SwapResponse {
+  serialized_tx: string;  // Base64编码的交易
+  elapsed_time: number;   // 处理时间
+  args: SwapArgs;        // 兑换参数
+  route_info: RouteInfo; // 路由信息
+}
+```
+
+## 代币操作
+
+### 获取代币信息
+获取代币的详细信息。
+
+```typescript
+client.token.get(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+}): Promise<TokenInfo>
+
+interface TokenInfo {
+  metadata: {
+    chain: string;
+    decimals: number;
+    name: string;
+    symbol: string;
+    metadata_address: string;
+    address: string;
+    token_creators: string[];
+    image_url: string;
+    uri: string;
+    description: string;
+  };
+  price: {
+    value: string;
+    updated_at: number;
+  };
+  market_cap: {
+    circulating_supply: string;
+    market_cap: string;
+    holders: number;
+  };
+}
+```
+
+### 获取代币元数据
+获取代币的元数据信息。
+
+```typescript
+client.token.getMetadata(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+}): Promise<TokenMetadata>
+
+interface TokenMetadata {
+  chain: string;
+  decimals: number;
+  name: string;
+  symbol: string;
+  metadata_address: string;
+  address: string;
+  token_creators: string[];
+  image_url: string;
+  uri: string;
+  metadata: any;
+  social_medias: any;
+  token_created_at: number;
+  description: string;
+}
+```
+
+### 获取代币资金池
+获取包含此代币的所有资金池。
+
+```typescript
+client.token.getPools(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+}): Promise<TokenPool[]>
+
+interface TokenPool {
+  auth_freeze: boolean;
+  dex_program: string;
+  base_token: string;
+  address: string;
+  chain: string;
+  updated_at: number;
+  mint_auth: boolean;
+  id: string;
+  quote_tokens: string[];
+}
+```
+
+### 获取代币统计
+获取代币的市场统计数据。
+
+```typescript
+client.token.getStats(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+}): Promise<TokenStats>
+
+interface TokenStats {
+  price_1m: string;
+  price_change_1m: string;
+  volume_1m: string;
+  trades_1m: number;
+  traders_1m: number;
+  buys_1m: number;
+  sells_1m: number;
+  buy_volumes_1m: string;
+  sell_volumes_1m: string;
+  // ... 5m, 15m, 30m, 1h, 4h, 24h 的相同统计
+}
+```
+
+### 获取代币K线
+获取代币的K线数据。
+
+```typescript
+client.token.getCandles(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+  resolution: string;    // 时间周期
+  from: number;         // 开始时间
+  to: number;           // 结束时间
+}): Promise<Candle[]>
+
+interface Candle {
+  open: number;
+  close: number;
+  high: number;
+  low: number;
+  volume: number;
+  time: number;
+}
+```
+
+### 获取代币持有者
+获取代币的持有者列表。
+
+```typescript
+client.token.getHolders(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+  cursor?: string;      // 分页游标
+  limit?: number;       // 每页数量
+}): Promise<TokenHolders>
+
+interface TokenHolders {
+  holders: {
+    wallet_address: string;
+    amount: string;
+    amount_in_usd: string;
+    percentage: string;
+  }[];
+  next: string;
+  has_next: boolean;
+}
+```
+
+### 获取大户排名
+获取代币前20名持有者。
+
+```typescript
+client.token.getTopHolders(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+}): Promise<TokenHolder[]>
+
+interface TokenHolder {
+  wallet_address: string;
+  amount: string;
+  amount_in_usd: string;
+  percentage: string;
+}
+```
+
+### 获取代币市值
+获取代币的市值信息。
+
+```typescript
+client.token.getMarketCap(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+}): Promise<TokenMarketCap>
+
+interface TokenMarketCap {
+  circulating_supply: string;
+  market_cap: string;
+  top10_total_holdings: string;
+  top10_holdings_ratio: string;
+  top100_total_holdings: string;
+  top100_holdings_ratio: string;
+  holders: number;
+}
+```
+
+## 订单操作
+
+### 下单
+创建新的订单。
+
+```typescript
+client.order.place(params: {
+  chain: string;           // 链名称
+  dex: string;            // DEX名称
+  market_address: string;  // 市场地址
+  side: 'buy' | 'sell';   // 订单方向
+  amount: string;         // 数量
+  price: string;          // 价格
+  priority_fee?: string;  // 优先费用
+}): Promise<OrderResponse>
+
+interface OrderResponse {
+  serialized_tx: string;
+  extra: any;
+  order_id: string;
+  status: string;
+  filled_amount: string;
+}
+```
+
+### 取消订单
+取消已存在的订单。
+
+```typescript
+client.order.cancel(params: {
+  chain: string;           // 链名称
+  dex: string;            // DEX名称
+  market_address: string;  // 市场地址
+  order_id: string;       // 订单ID
+}): Promise<void>
+```
+
+### 取消全部订单
+取消指定市场的所有订单。
+
+```typescript
+client.order.cancelAll(params: {
+  chain: string;           // 链名称
+  dex: string;            // DEX名称
+  market_address: string;  // 市场地址
+}): Promise<void>
+```
+
+### 吃单
+执行吃单操作。
+
+```typescript
+client.order.take(params: {
+  chain: string;           // 链名称
+  dex: string;            // DEX名称
+  market_address: string;  // 市场地址
+  order_id: string;       // 订单ID
+  amount: string;         // 数量
+}): Promise<TakeOrderResponse>
+
+interface TakeOrderResponse {
+  serialized_tx: string;
+  extra: any;
+}
+```
+
+## 钱包操作
+
+### 获取钱包余额
+获取钱包的代币余额。
+
+```typescript
+client.wallet.getBalance(params: {
+  chain: string;          // 链名称
+  walletAddress: string;  // 钱包地址
+}): Promise<WalletBalance>
+
+interface WalletBalance {
+  total_balances_in_usd: string;
+  balances: {
+    token_address: string;
+    amount: string;
+    amount_in_usd: string;
+    token_name: string;
+    token_symbol: string;
+    token_price: string;
+    price_change_24h: string;
+  }[];
+}
+```
+
+### 获取钱包盈亏
+获取钱包的交易盈亏信息。
+
+```typescript
+client.wallet.getPnL(params: {
+  chain: string;          // 链名称
+  walletAddress: string;  // 钱包地址
+  tokenAddress: string;   // 代币地址
+}): Promise<WalletPnL>
+
+interface WalletPnL {
+  unrealized_profit_in_usd: string;
+  unrealized_profit_ratio: string;
+  realized_profit_in_usd: string;
+  realized_profit_ratio: string;
+  total_realized_profit_in_usd: string;
+  total_realized_profit_ratio: string;
+}
+```
+
+### 获取钱包盈亏统计
+获取钱包的盈亏统计信息。
+
+```typescript
+client.wallet.getPnLStats(params: {
+  chain: string;          // 链名称
+  walletAddress: string;  // 钱包地址
+}): Promise<WalletPnLStats>
+
+interface WalletPnLStats {
+  pt24h: PnLStatsDetail;  // 24小时统计
+  pt168h: PnLStatsDetail; // 7天统计
+  pt720h: PnLStatsDetail; // 30天统计
+}
+
+interface PnLStatsDetail {
+  chain: string;
+  wallet_address: string;
+  buys: number;
+  buy_amount: string;
+  buy_amount_usd: string;
+  sells: number;
+  sell_amount: string;
+  sell_amount_usd: string;
+  wins: number;
+  win_ratio: string;
+  pnl_usd: string;
+  pnl_ratio: string;
+  tokens: number;
+  resolution: string;
+}
+```
+
+## 交易操作
+
+### 发送交易
+提交已签名的交易到区块链。
+
+```typescript
+client.transaction.send(params: {
+  chain: string;          // 链名称
+  signed_tx: string;      // Base64编码的已签名交易
+  submit_type?: string;   // 提交类型
+}): Promise<TransactionResponse>
+
+interface TransactionResponse {
+  signature: string;      // 交易签名/哈希
+  elapsed_time: number;   // 处理时间（毫秒）
+}
+```
+
+### 获取交易详情
+获取交易的详细信息。
+
+```typescript
+client.trade.get(params: {
+  chain: string;      // 链名称
+  signature: string;  // 交易签名
+}): Promise<TradeDetail>
+
+interface TradeDetail {
+  tx: string;
+  amount: string;
+  price_usd: string;
+  volume: string;
+  type: string;
+  wallet: string;
+  time: number;
+  program: string;
+}
+```
+
+### 获取代币交易
+获取指定代币的交易记录。
+
+```typescript
+client.trade.getTokenTrades(params: {
+  chain: string;         // 链名称
+  tokenAddress: string;  // 代币地址
+  cursor?: string;      // 分页游标
+  limit?: number;       // 每页数量
+}): Promise<TradeList>
+
+interface TradeList {
+  trades: Trade[];
+  next: string;
+  has_next: boolean;
+}
+```
+
+### 获取钱包交易
+获取指定钱包的交易记录。
+
+```typescript
+client.trade.getWalletTrades(params: {
+  chain: string;          // 链名称
+  walletAddress: string;  // 钱包地址
+  cursor?: string;       // 分页游标
+  limit?: number;        // 每页数量
+}): Promise<TradeList>
+```
+
+### 获取代币和钱包交易
+获取指定代币和钱包的交易记录。
+
+```typescript
+client.trade.getTokenAndWalletTrades(params: {
+  chain: string;          // 链名称
+  tokenAddress: string;   // 代币地址
+  walletAddress: string;  // 钱包地址
+  cursor?: string;       // 分页游标
+  limit?: number;        // 每页数量
+}): Promise<TradeList>
+```
+
+## 排名操作
+
+### 获取热门代币
+获取热门代币列表。
+
+```typescript
+client.ranking.getHotTokens(params: {
+  chain: string;        // 链名称
+  duration?: string;    // 时间段
+}): Promise<HotToken[]>
+
+interface HotToken {
+  address: string;
+  name: string;
+  symbol: string;
+  price_usd: string;
+  volume_24h: string;
+  price_change_24h: string;
+}
+```
+
+### 获取新代币
+获取最新创建的代币列表。
+
+```typescript
+client.ranking.getNewTokens(params: {
+  chain: string;     // 链名称
+}): Promise<TokenInfo[]>
+```
+
+### 获取涨幅榜
+获取价格涨幅最大的代币列表。
+
+```typescript
+client.ranking.getGainers(params: {
+  chain: string;        // 链名称
+  duration?: string;    // 时间段
+}): Promise<TokenGainer[]>
+
+interface TokenGainer {
+  address: string;
+  name: string;
+  symbol: string;
+  price_usd: string;
+  price_change: string;
+}
+```
+
+## 交易处理操作
+
+### 发送交易
+提交已签名的交易到区块链。
+
+```typescript
+client.transaction.send(params: {
+  chain: string;          // 链名称
+  signed_tx: string;      // Base64编码的已签名交易
+  submit_type?: string;   // 提交类型
+}): Promise<TransactionResponse>
+
+interface TransactionResponse {
+  signature: string;      // 交易签名/哈希
+  elapsed_time: number;   // 处理时间（毫秒）
+}
+``` 

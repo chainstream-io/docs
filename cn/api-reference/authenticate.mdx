@@ -7,8 +7,7 @@ description: '如何对 API 请求进行签名认证'
 
 ChainStream 使用 API 密钥对所有 API 调用进行认证。根据工作区环境类型，**基础 API URL** 将是以下之一：
 
-* 沙箱环境: `https://sandbox-api-dex.chainstream.io/`
-* 主网/测试网: `https://api-dex.chainstream.io/`
+* 主网: `https://api.dex.chainstream.io/`
 
 每个 API 请求必须包含以下请求头：
 
@@ -37,39 +36,16 @@ JWT 必须使用 ChainStream API 密钥和 RS256 算法（使用 SHA-256 哈希�
 ### JavaScript SDK
 
 ```javascript
-import { DexSDK } from "@chainstream-io/dex";
+const tokenUrl = `https://dex.asia.auth.openweb3.io/oauth/token`;
 
-// 使用 API 密钥初始化 SDK
-const apiKey = "your-api-key";
-const dex = new DexSDK({ apiKey });
+const response = await axios.post(tokenUrl, new URLSearchParams({
+  grant_type: 'client_credentials',
+  client_id: 'your client id',
+  client_secret: 'your client secret',
+  audience: audience,
+}));
 
-// 为特定请求生成 JWT 令牌
-const requestParams = {
-  uri: "/v1/transactions",
-  body: { /* 你的请求体 */ },  // 可选
-  nonce: Date.now().toString()  // 唯一字符串
-};
-
-const jwtToken = dex.generateJWT(requestParams);
-```
-
-### Python SDK
-
-```python
-from chainstream.dex import DexSDK
-
-# 使用 API 密钥初始化 SDK
-api_key = "your-api-key"
-dex = DexSDK(api_key=api_key)
-
-# 为特定请求生成 JWT 令牌
-request_params = {
-    "uri": "/v1/transactions",
-    "body": {},  # 可选
-    "nonce": str(int(time.time() * 1000))  # 唯一字符串
-}
-
-jwt_token = dex.generate_jwt(request_params)
+return response.data.access_token;
 ```
 
 <Note>
@@ -85,27 +61,8 @@ JWT 令牌在 30 秒后过期。请为每个请求生成新令牌，或在当前
 ```javascript
 import { DexSDK } from "@chainstream-io/dex";
 
-const apiKey = "your-api-key";
 const jwtToken = "your-jwt-token";  // 从上一步生成的令牌
-const dex = new DexSDK({ 
-  apiKey: apiKey,
-  jwt: jwtToken,
-  environment: "mainnet" // 或 "testnet", "sandbox"
-});
-```
-
-### Python SDK
-
-```python
-from chainstream.dex import DexSDK
-
-api_key = "your-api-key"
-jwt_token = "your-jwt-token"  // 从上一步生成的令牌
-dex = DexSDK(
-    api_key=api_key,
-    jwt=jwt_token,
-    environment="mainnet"  # 或 "testnet", "sandbox"
-)
+const dex = new DexSDK(jwtToken);
 ```
 
 <Note>

@@ -1,0 +1,321 @@
+---
+title: 'WebSocket API'
+description: 'WebSocket API Real-time Data Subscription Service'
+---
+
+## Overview
+
+ChainStream DEX WebSocket API provides real-time data subscription services for the following data types:
+- Candles Data
+- Token Statistics
+- Token Activities
+- Trade Events
+- Token Holders
+- Wallet Balance
+- Token Balance
+
+**Base URL**
+```bash
+wss://realtime-dex.chainstream.io/connection/websocket
+```
+
+## Quick Start
+
+### 1. Establish Connection
+
+First, create a WebSocket connection and authenticate:
+
+```typescript
+const ws = new WebSocket("wss://realtime-dex.chainstream.io/connection/websocket");
+
+ws.onopen = () => {
+  // Send authentication message
+  ws.send(JSON.stringify({
+    type: "auth",
+    token: "YOUR_ACCESS_TOKEN"
+  }));
+};
+```
+
+### 2. Subscribe to Data
+
+Choose the data type you want to subscribe to:
+
+```typescript
+// Example: Subscribe to candle data
+ws.send(JSON.stringify({
+  type: "subscribe",
+  channel: "dex-candle:solana_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
+}));
+```
+
+### 3. Handle Data
+
+```typescript
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received data:', data);
+};
+```
+
+## Data Subscriptions
+
+### Candles Data
+
+Real-time price movement data for tokens.
+
+**Subscription Format**
+\`dex-candle:${chain}_${tokenAddress}_${resolution}\`
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| chain | Blockchain name | solana |
+| tokenAddress | Token contract address | 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN |
+| resolution | Candle period | 1m, 5m, 15m, 1h, 4h, 1d |
+
+**Response Data**
+```typescript
+{
+  "o": number,    // Opening price
+  "c": number,    // Closing price
+  "h": number,    // Highest price
+  "l": number,    // Lowest price
+  "v": number,    // Trading volume
+  "r": string,    // Resolution
+  "t": number     // Timestamp
+}
+```
+
+### Token Statistics
+
+Real-time market statistics for tokens.
+
+**Subscription Format**
+\`dex-token-stats:${chain}_${tokenAddress}\`
+
+**Response Data**
+```typescript
+{
+  "price": {
+    "usd": number,      // USD price
+    "change_24h": number // 24h price change
+  },
+  "volume": {
+    "usd_24h": number   // 24h trading volume (USD)
+  },
+  "market_cap": {
+    "usd": number       // Market cap (USD)
+  },
+  "holders": number,    // Number of holders
+  "timestamp": number   // Timestamp
+}
+```
+
+### Token Activities
+
+Real-time token activity data.
+
+**Subscription Format**
+\`dex-token-activities:${chain}_${tokenAddress}\`
+
+### Trade Events
+
+Real-time trading events for tokens.
+
+**Subscription Format**
+\`dex-trades:${chain}_${tokenAddress}\`
+
+**Response Data**
+```typescript
+{
+  "bwa": string,  // Maker address
+  "ba": number,   // Base token amount
+  "sa": number,   // Quote token amount
+  "swa": string,  // Quote token address
+  "bais": number, // USD amount
+  "t": number,    // Timestamp
+  "k": string,    // Event type
+  "h": string,    // Transaction hash
+  "a": string     // Token address
+}
+```
+
+### Wallet Balance
+
+Real-time wallet balance information.
+
+**Subscription Format**
+\`dex-wallet-balance:${chain}_${walletAddress}\`
+
+**Response Data**
+```typescript
+{
+  "a": string,    // Wallet address
+  "ta": string,   // Token address
+  "tpiu": number, // Token price in USD
+  "t": number,    // Timestamp
+  "ba": number,   // Buy amount
+  "baiu": number, // Buy amount in USD
+  "bs": number,   // Number of buys
+  "sa": number,   // Sell amount
+  "saiu": number, // Sell amount in USD
+  "ss": number,   // Number of sells
+  "abp": number,  // Average buy price
+  "asp": number,  // Average sell price
+  "upiu": number, // Unrealized profit in USD
+  "upr": number,  // Unrealized profit ratio
+  "rpiu": number, // Realized profit in USD
+  "rpr": number,  // Realized profit ratio
+  "trpiu": number,// Total realized profit in USD
+  "trr": number   // Total realized profit ratio
+}
+```
+
+### Token Balance
+
+Real-time balance information for specific tokens.
+
+**Subscription Format**
+\`dex-token-balance:${chain}_${tokenAddress}_${walletAddress}\`
+
+### Token Holders Statistics
+
+Real-time token holder statistics.
+
+**Subscription Format**
+\`dex-token-general-stat-num:${chain}_${tokenAddress}\`
+
+**Response Data**
+```typescript
+{
+  "a": string,    // Token address
+  "v": number,    // Number of holders
+  "ts": number    // Timestamp
+}
+```
+
+## Usage Examples
+
+```typescript
+const streamApi = new StreamApi(context);
+
+// Subscribe to candle data
+streamApi.subscribeTokenCandles({
+  chain: "solana",
+  tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+  resolution: "1m",
+  callback: (data) => {
+    console.log("Candle data:", data);
+  }
+});
+
+// Subscribe to wallet balance
+streamApi.subscribeWalletBalance({
+  chain: "solana",
+  walletAddress: "YOUR_WALLET_ADDRESS",
+  callback: (data) => {
+    console.log("Wallet balance:", data);
+  }
+});
+```
+
+## Error Handling
+
+### Error Codes
+
+| Code | Description | Handling Suggestion |
+|------|-------------|-------------------|
+| 1000 | Normal closure | No action needed |
+| 1006 | Abnormal closure | Trigger reconnection |
+| 4001 | Authentication failed | Check token |
+| 4004 | Subscription failed | Check parameters |
+
+### Reconnection Strategy
+
+Recommended exponential backoff algorithm for reconnection:
+
+```typescript
+function reconnect(attempt) {
+  const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+  setTimeout(() => {
+    connect();
+  }, delay);
+}
+```
+
+## Usage Limits
+
+| Item | Limit | Description |
+|------|-------|-------------|
+| Max subscriptions | 100 per connection | Excess will be rejected |
+| Message size | 100KB | Excess will be truncated |
+| Heartbeat interval | 30 seconds | Regular heartbeat required |
+
+## Best Practices
+
+1. **Connection Management**
+   - Maintain a single WebSocket connection
+   - Implement automatic reconnection
+   - Send regular heartbeats
+
+2. **Error Handling**
+   - Implement complete error handling
+   - Log detailed error information
+   - Use exponential backoff for reconnection
+
+3. **Performance Optimization**
+   - Control subscription quantity
+   - Implement message queue mechanism
+   - Clean up unused subscriptions
+
+## Complete Example
+
+```typescript
+class DexWebSocket {
+  private ws: WebSocket;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private messageHandlers = new Map<string, Set<(data: any) => void>>();
+
+  constructor(
+    private url: string,
+    private accessToken: string
+  ) {
+    this.connect();
+  }
+
+  private connect() {
+    this.ws = new WebSocket(this.url);
+    
+    this.ws.onopen = () => {
+      // Send authentication
+      this.authenticate();
+      // Resubscribe
+      this.resubscribe();
+    };
+
+    this.ws.onmessage = (event) => {
+      this.handleMessage(JSON.parse(event.data));
+    };
+
+    this.ws.onclose = () => {
+      this.reconnect();
+    };
+  }
+
+  private authenticate() {
+    this.send({
+      type: "auth",
+      token: this.accessToken
+    });
+  }
+
+  public subscribe(channel: string, handler: (data: any) => void) {
+    // Subscription implementation
+  }
+
+  public unsubscribe(channel: string) {
+    // Unsubscription implementation
+  }
+}
+```

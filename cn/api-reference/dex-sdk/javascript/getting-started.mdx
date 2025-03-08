@@ -1,0 +1,89 @@
+---
+title: '快速开始'
+description: 'JavaScript SDK 快速入门指南'
+---
+
+## 安装
+
+```bash
+npm install @chainstream/dex
+# or
+yarn add @chainstream/dex
+```
+
+## 初始化
+
+```javascript
+import { DexClient } from '@chainstream/dex';
+
+// 初始化客户端
+const client = new DexClient('YOUR_ACCESS_TOKEN');
+```
+
+## 基础用例
+
+### 查询代币信息
+```javascript
+// 获取代币详情
+const tokenInfo = await client.token.get({
+  chain: 'sol',
+  tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'
+});
+```
+
+### 订阅实时数据
+```javascript
+// 订阅K线数据
+const unsubscribe = client.stream.subscribeTokenCandles({
+  chain: 'sol',
+  tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+  resolution: '1m',
+  callback: (candle) => {
+    console.log('New candle:', candle);
+  }
+});
+```
+
+### 交易操作
+```javascript
+// 代币兑换
+const swapResult = await client.dex.swap({
+  chain: 'sol',
+  dex: 'openbook',
+  input_mint: 'INPUT_TOKEN_ADDRESS',
+  output_mint: 'OUTPUT_TOKEN_ADDRESS',
+  amount: '100',
+  slippage: '1'
+});
+```
+
+## 错误处理
+
+```javascript
+try {
+  await client.token.get({
+    chain: 'sol',
+    tokenAddress: 'INVALID_ADDRESS'
+  });
+} catch (error) {
+  if (error.code === 'TOKEN_NOT_FOUND') {
+    console.error('代币未找到');
+  } else {
+    console.error('未知错误:', error);
+  }
+}
+```
+
+## 配置选项
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| accessToken | string | 是 | API访问令牌 |
+| environment | string | 是 | 环境设置 ('mainnet' 或 'testnet') |
+| baseUrl | string | 否 | 自定义API基础URL |
+| streamUrl | string | 否 | 自定义WebSocket URL |
+
+## 下一步
+
+- 查看 [API参考文档](./api-reference) 了解所有可用方法
+- 了解 [WebSocket订阅](./websocket) 的实时数据功能

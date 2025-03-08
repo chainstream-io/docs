@@ -1,0 +1,321 @@
+---
+title: 'WebSocket API'
+description: 'WebSocket API 实时数据订阅服务'
+---
+
+## 概述
+
+ChainStream DEX WebSocket API 提供实时数据订阅服务，支持以下数据类型：
+- K线数据 (Candles)
+- 代币统计 (Token Stats)
+- 代币活动 (Token Activities)
+- 交易事件 (Trade Events)
+- 代币持有者 (Token Holders)
+- 钱包余额 (Wallet Balance)
+- 代币余额 (Token Balance)
+
+**基础 URL**
+```bash
+wss://realtime-dex.chainstream.io/connection/websocket
+```
+
+## 快速开始
+
+### 1. 建立连接
+
+首先需要创建 WebSocket 连接并进行认证：
+
+```typescript
+const ws = new WebSocket("wss://realtime-dex.chainstream.io/connection/websocket");
+
+ws.onopen = () => {
+  // 发送认证消息
+  ws.send(JSON.stringify({
+    type: "auth",
+    token: "YOUR_ACCESS_TOKEN"
+  }));
+};
+```
+
+### 2. 订阅数据
+
+选择需要的数据类型进行订阅：
+
+```typescript
+// 订阅K线数据示例
+ws.send(JSON.stringify({
+  type: "subscribe",
+  channel: "dex-candle:solana_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
+}));
+```
+
+### 3. 处理数据
+
+```typescript
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('收到数据:', data);
+};
+```
+
+## 数据订阅
+
+### K线数据
+
+实时获取代币价格走势的K线图数据。
+
+**订阅格式**
+\`dex-candle:${chain}_${tokenAddress}_${resolution}\`
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| chain | 区块链名称 | solana |
+| tokenAddress | 代币合约地址 | 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN |
+| resolution | K线周期 | 1m, 5m, 15m, 1h, 4h, 1d |
+
+**响应数据**
+```typescript
+{
+  "o": number,    // 开盘价 (open)
+  "c": number,    // 收盘价 (close)
+  "h": number,    // 最高价 (high)
+  "l": number,    // 最低价 (low)
+  "v": number,    // 交易量 (volume)
+  "r": string,    // 周期 (resolution)
+  "t": number     // 时间戳 (timestamp)
+}
+```
+
+### 代币统计
+
+实时获取代币的市场统计数据。
+
+**订阅格式**
+\`dex-token-stats:${chain}_${tokenAddress}\`
+
+**响应数据**
+```typescript
+{
+  "price": {
+    "usd": number,      // 美元价格
+    "change_24h": number // 24小时价格变化
+  },
+  "volume": {
+    "usd_24h": number   // 24小时交易量(USD)
+  },
+  "market_cap": {
+    "usd": number       // 市值(USD)
+  },
+  "holders": number,    // 持有者数量
+  "timestamp": number   // 时间戳
+}
+```
+
+### 代币活动
+
+实时获取代币的活动数据。
+
+**订阅格式**
+\`dex-token-activities:${chain}_${tokenAddress}\`
+
+### 交易事件
+
+实时获取代币的交易事件。
+
+**订阅格式**
+\`dex-trades:${chain}_${tokenAddress}\`
+
+**响应数据**
+```typescript
+{
+  "bwa": string,  // maker地址
+  "ba": number,   // 基础代币数量
+  "sa": number,   // 报价代币数量
+  "swa": string,  // 报价代币地址
+  "bais": number, // 美元金额
+  "t": number,    // 时间戳
+  "k": string,    // 事件类型
+  "h": string,    // 交易哈希
+  "a": string     // 代币地址
+}
+```
+
+### 钱包余额
+
+实时获取钱包的余额信息。
+
+**订阅格式**
+\`dex-wallet-balance:${chain}_${walletAddress}\`
+
+**响应数据**
+```typescript
+{
+  "a": string,    // 钱包地址
+  "ta": string,   // 代币地址
+  "tpiu": number, // 代币美元价格
+  "t": number,    // 时间戳
+  "ba": number,   // 买入数量
+  "baiu": number, // 买入美元金额
+  "bs": number,   // 买入次数
+  "sa": number,   // 卖出数量
+  "saiu": number, // 卖出美元金额
+  "ss": number,   // 卖出次数
+  "abp": number,  // 平均买入价格
+  "asp": number,  // 平均卖出价格
+  "upiu": number, // 未实现盈亏(USD)
+  "upr": number,  // 未实现盈亏率
+  "rpiu": number, // 已实现盈亏(USD)
+  "rpr": number,  // 已实现盈亏率
+  "trpiu": number,// 总实现盈亏(USD)
+  "trr": number   // 总实现盈亏率
+}
+```
+
+### 代币余额
+
+实时获取特定代币的余额信息。
+
+**订阅格式**
+\`dex-token-balance:${chain}_${tokenAddress}_${walletAddress}\`
+
+### 代币持有者统计
+
+实时获取代币持有者统计信息。
+
+**订阅格式**
+\`dex-token-general-stat-num:${chain}_${tokenAddress}\`
+
+**响应数据**
+```typescript
+{
+  "a": string,    // 代币地址
+  "v": number,    // 持有者数量
+  "ts": number    // 时间戳
+}
+```
+
+## 使用示例
+
+```typescript
+const streamApi = new StreamApi(context);
+
+// 订阅K线数据
+streamApi.subscribeTokenCandles({
+  chain: "solana",
+  tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+  resolution: "1m",
+  callback: (data) => {
+    console.log("K线数据:", data);
+  }
+});
+
+// 订阅钱包余额
+streamApi.subscribeWalletBalance({
+  chain: "solana",
+  walletAddress: "YOUR_WALLET_ADDRESS",
+  callback: (data) => {
+    console.log("钱包余额:", data);
+  }
+});
+```
+
+## 错误处理
+
+### 错误码说明
+
+| 错误码 | 说明 | 处理建议 |
+|--------|------|----------|
+| 1000 | 正常关闭 | 无需处理 |
+| 1006 | 异常关闭 | 触发重连 |
+| 4001 | 认证失败 | 检查token |
+| 4004 | 订阅失败 | 检查参数 |
+
+### 重连策略
+
+推荐使用指数退避算法进行重连：
+
+```typescript
+function reconnect(attempt) {
+  const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+  setTimeout(() => {
+    connect();
+  }, delay);
+}
+```
+
+## 使用限制
+
+| 限制项 | 限制值 | 说明 |
+|--------|--------|------|
+| 最大订阅数 | 100个/连接 | 超出将被拒绝 |
+| 消息大小 | 100KB | 超出将被截断 |
+| 心跳间隔 | 30秒 | 需定期发送 |
+
+## 最佳实践
+
+1. **连接管理**
+   - 保持单个WebSocket连接
+   - 实现自动重连机制
+   - 定期发送心跳
+
+2. **错误处理**
+   - 实现完整的错误处理流程
+   - 记录详细的错误日志
+   - 使用指数退避重连
+
+3. **性能优化**
+   - 合理控制订阅数量
+   - 实现消息队列机制
+   - 及时清理无用订阅
+
+## 完整示例
+
+```typescript
+class DexWebSocket {
+  private ws: WebSocket;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private messageHandlers = new Map<string, Set<(data: any) => void>>();
+
+  constructor(
+    private url: string,
+    private accessToken: string
+  ) {
+    this.connect();
+  }
+
+  private connect() {
+    this.ws = new WebSocket(this.url);
+    
+    this.ws.onopen = () => {
+      // 发送认证
+      this.authenticate();
+      // 重新订阅
+      this.resubscribe();
+    };
+
+    this.ws.onmessage = (event) => {
+      this.handleMessage(JSON.parse(event.data));
+    };
+
+    this.ws.onclose = () => {
+      this.reconnect();
+    };
+  }
+
+  private authenticate() {
+    this.send({
+      type: "auth",
+      token: this.accessToken
+    });
+  }
+
+  public subscribe(channel: string, handler: (data: any) => void) {
+    // 订阅实现
+  }
+
+  public unsubscribe(channel: string) {
+    // 取消订阅实现
+  }
+}
+```

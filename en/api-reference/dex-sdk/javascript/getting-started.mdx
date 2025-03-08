@@ -1,0 +1,95 @@
+---
+title: 'Getting Started'
+description: 'JavaScript SDK Quick Start Guide'
+---
+
+# Getting Started
+
+## Installation
+
+```bash
+npm install @chainstream/dex
+# or
+yarn add @chainstream/dex
+```
+
+## Initialization
+
+```javascript
+import { DexClient } from '@chainstream/dex';
+
+// Initialize the client
+const client = new DexClient({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  environment: 'mainnet' // or 'testnet'
+});
+```
+
+## Basic Usage
+
+### Query Token Information
+```javascript
+// Get token details
+const tokenInfo = await client.token.get({
+  chain: 'sol',
+  tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'
+});
+```
+
+### Subscribe to Real-time Data
+```javascript
+// Subscribe to candle data
+const unsubscribe = client.stream.subscribeTokenCandles({
+  chain: 'sol',
+  tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+  resolution: '1m',
+  callback: (candle) => {
+    console.log('New candle:', candle);
+  }
+});
+```
+
+### Trading Operations
+```javascript
+// Token swap
+const swapResult = await client.dex.swap({
+  chain: 'sol',
+  dex: 'openbook',
+  input_mint: 'INPUT_TOKEN_ADDRESS',
+  output_mint: 'OUTPUT_TOKEN_ADDRESS',
+  amount: '100',
+  slippage: '1'
+});
+```
+
+## Error Handling
+
+```javascript
+try {
+  await client.token.get({
+    chain: 'sol',
+    tokenAddress: 'INVALID_ADDRESS'
+  });
+} catch (error) {
+  if (error.code === 'TOKEN_NOT_FOUND') {
+    console.error('Token not found');
+  } else {
+    console.error('Unknown error:', error);
+  }
+}
+```
+
+## Configuration Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| accessToken | string | Yes | API access token |
+| environment | string | Yes | Environment setting ('mainnet' or 'testnet') |
+| baseUrl | string | No | Custom API base URL |
+| streamUrl | string | No | Custom WebSocket URL |
+
+## Next Steps
+
+- Check the [API Reference](./api-reference) for all available methods
+- Learn about [WebSocket Subscriptions](./websocket) for real-time data
+- Review [Best Practices](./best-practices) to optimize your application

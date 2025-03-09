@@ -21,122 +21,15 @@ ChainStream DEX WebSocket API provides real-time data subscription services for 
 wss://realtime-dex.chainstream.io/connection/websocket
 ```
 
-ChainStream DEX SDK 提供了实时数据订阅功能，支持以下数据类型：
-- K线数据
-- 代币统计
-- 交易活动
-- 钱包余额
-
-## Subscription Methods
-
-### Candle Data Subscription
-
-```typescript
-const unsubscribe = client.stream.subscribeTokenCandles({
-  chain: string;
-  tokenAddress: string;
-  resolution: '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
-  callback: (data: Candle) => void;
-}): () => void
-
-interface Candle {
-  o: number;    // Opening price
-  c: number;    // Closing price
-  h: number;    // Highest price
-  l: number;    // Lowest price
-  v: number;    // Trading volume
-  r: string;    // Resolution
-  t: number;    // Timestamp
-}
-```
-
-### Token Statistics Subscription
-
-```typescript
-const unsubscribe = client.stream.subscribeTokenStats({
-  chain: string;
-  tokenAddress: string;
-  callback: (data: TokenStats) => void;
-}): () => void
-
-interface TokenStats {
-  price: {
-    usd: number;
-    change_24h: number;
-  };
-  volume: {
-    usd_24h: number;
-  };
-  market_cap: {
-    usd: number;
-  };
-  holders: number;
-  timestamp: number;
-}
-```
-
-### Trade Events Subscription
-
-```typescript
-const unsubscribe = client.stream.subscribeTokenTrades({
-  chain: string;
-  tokenAddress: string;
-  callback: (data: Trade[]) => void;
-}): () => void
-
-interface Trade {
-  bwa: string;   // Maker address
-  ba: number;    // Base token amount
-  sa: number;    // Quote token amount
-  swa: string;   // Quote token address
-  bais: number;  // USD amount
-  t: number;     // Timestamp
-  k: string;     // Event type
-  h: string;     // Transaction hash
-  a: string;     // Token address
-  piu: string;   // Price in USD
-  id: string     // Trade ID
-}
-```
-
-### Wallet Balance Subscription
-
-```typescript
-const unsubscribe = client.stream.subscribeWalletBalance({
-  chain: string;
-  walletAddress: string;
-  callback: (data: WalletBalance[]) => void;
-}): () => void
-
-interface WalletBalance {
-  a: string;     // Wallet address
-  ta: string;    // Token address
-  tpiu: number;  // Token price in USD
-  t: number;     // Timestamp
-  ba: number;    // Buy amount
-  baiu: number;  // Buy amount in USD
-  bs: number;    // Number of buys
-  sa: number;    // Sell amount
-  saiu: number;  // Sell amount in USD
-  ss: number;    // Number of sells
-  abp: number;   // Average buy price
-  asp: number;   // Average sell price
-  upiu: number;  // Unrealized profit in USD
-  upr: number;   // Unrealized profit ratio
-  rpiu: number;  // Realized profit in USD
-  rpr: number;   // Realized profit ratio
-  trpiu: number; // Total realized profit in USD
-  trr: number    // Total realized profit ratio
-}
-```
-
 ## Data Subscriptions
 
 ### Candle Data
 Real-time price movement data for tokens.
 
 **Subscription Format**
-\`dex-candle:${chain}_${tokenAddress}_${resolution}\`
+```text
+dex-candle:{chain}_{tokenAddress}_{resolution}
+```
 
 **Parameters**
 <ParamField query="chain" type="string" required>
@@ -168,7 +61,9 @@ Real-time price movement data for tokens.
 Real-time market statistics for tokens.
 
 **Subscription Format**
-\`dex-token-stats:${chain}_${tokenAddress}\`
+```text
+dex-token-stats:{chain}_{tokenAddress}
+```
 
 **Response Data**
 ```typescript
@@ -192,7 +87,9 @@ Real-time market statistics for tokens.
 Real-time token activity data.
 
 **Subscription Format**
-\`dex-token-activities:${chain}_${tokenAddress}\`
+```text
+dex-token-activities:{chain}_{tokenAddress}
+```
 
 **Response Data**
 ```typescript
@@ -209,7 +106,9 @@ Real-time token activity data.
 Real-time token transaction events.
 
 **Subscription Format**
-\`dex-trades:${chain}_${tokenAddress}\`
+```text
+dex-trades:{chain}_{tokenAddress}
+```
 
 **Response Data**
 ```typescript
@@ -232,7 +131,9 @@ Real-time token transaction events.
 Real-time wallet balance information.
 
 **Subscription Format**
-\`dex-wallet-balance:${chain}_${walletAddress}\`
+```text
+dex-wallet-balance:{chain}_{walletAddress}
+```
 
 **Response Data**
 ```typescript
@@ -262,7 +163,9 @@ Real-time wallet balance information.
 Real-time token balance information.
 
 **Subscription Format**
-\`dex-token-balance:${chain}_${tokenAddress}_${walletAddress}\`
+```text
+dex-token-balance:{chain}_{tokenAddress}_{walletAddress}
+```
 
 **Response Data**
 ```typescript
@@ -278,7 +181,9 @@ Real-time token balance information.
 Real-time token holders statistics.
 
 **Subscription Format**
-\`dex-token-general-stat-num:${chain}_${tokenAddress}\`
+```text
+dex-token-general-stat-num:{chain}_{tokenAddress}
+```
 
 **Response Data**
 ```typescript
@@ -293,7 +198,9 @@ Real-time token holders statistics.
 Real-time token market capitalization information.
 
 **Subscription Format**
-\`dex-token-market-cap:${chain}_${tokenAddress}\`
+```text
+dex-token-market-cap:{chain}_{tokenAddress}
+```
 
 **Response Data**
 ```typescript
@@ -313,7 +220,9 @@ Real-time token market capitalization information.
 Real-time token profit and loss information.
 
 **Subscription Format**
-\`dex-token-pnl:${chain}_${tokenAddress}_${walletAddress}\`
+```text
+dex-token-pnl:{chain}_{tokenAddress}_{walletAddress}
+```
 
 **Response Data**
 ```typescript

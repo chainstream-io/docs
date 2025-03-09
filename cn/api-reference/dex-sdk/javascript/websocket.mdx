@@ -21,116 +21,15 @@ ChainStream DEX WebSocket API 提供实时数据订阅服务，支持以下数�
 wss://realtime-dex.chainstream.io/connection/websocket
 ```
 
-ChainStream DEX SDK 提供了实时数据订阅功能，支持以下数据类型：
-- K线数据
-- 代币统计
-- 交易活动
-- 钱包余额
-
-## 订阅方法
-
-### K线数据订阅
-
-```typescript
-const unsubscribe = client.stream.subscribeTokenCandles({
-  chain: string;
-  tokenAddress: string;
-  resolution: '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
-  callback: (data: Candle) => void;
-}): () => void
-
-interface Candle {
-  o: number;    // 开盘价
-  c: number;    // 收盘价
-  h: number;    // 最高价
-  l: number;    // 最低价
-  v: number;    // 成交量
-  r: string;    // 周期
-  t: number;    // 时间戳
-}
-```
-
-### 代币统计订阅
-
-```typescript
-const unsubscribe = client.stream.subscribeTokenStats({
-  chain: string;
-  tokenAddress: string;
-  callback: (data: TokenStats) => void;
-}): () => void
-
-interface TokenStats {
-  price: {
-    usd: number;
-    change_24h: number;
-  };
-  volume: {
-    usd_24h: number;
-  };
-  market_cap: {
-    usd: number;
-  };
-  holders: number;
-  timestamp: number;
-}
-```
-
-### 交易活动订阅
-
-```typescript
-const unsubscribe = client.stream.subscribeTokenTrades({
-  chain: string;
-  tokenAddress: string;
-  callback: (data: Trade[]) => void;
-}): () => void
-
-interface Trade {
-  bwa: string;   // maker地址
-  ba: number;    // 基础代币数量
-  sa: number;    // 报价代币数量
-  swa: string;   // 报价代币地址
-  bais: number;  // 美元金额
-  t: number;     // 时间戳
-  k: string;     // 事件类型
-  h: string;     // 交易哈希
-  a: string;     // 代币地址
-}
-```
-
-### 钱包余额订阅
-
-```typescript
-const unsubscribe = client.stream.subscribeWalletBalance({
-  chain: string;
-  walletAddress: string;
-  callback: (data: WalletBalance[]) => void;
-}): () => void
-
-interface WalletBalance {
-  a: string;     // 钱包地址
-  ta: string;    // 代币地址
-  tpiu: number;  // 代币美元价格
-  t: number;     // 时间戳
-  ba: number;    // 买入数量
-  baiu: number;  // 买入美元金额
-  bs: number;    // 买入次数
-  sa: number;    // 卖出数量
-  saiu: number;  // 卖出美元金额
-  ss: number;    // 卖出次数
-  upiu: number;  // 未实现盈亏(USD)
-  upr: number;   // 未实现盈亏率
-  rpiu: number;  // 已实现盈亏(USD)
-  rpr: number;   // 已实现盈亏率
-}
-```
-
 ## 数据订阅
 
 ### K线数据
 实时获取代币价格走势的K线图数据。
 
 **订阅格式**
-\`dex-candle:${chain}_${tokenAddress}_${resolution}\`
+```text
+dex-candle:{chain}_{tokenAddress}_{resolution}
+```
 
 **参数说明**
 <ParamField query="chain" type="string" required>
@@ -162,7 +61,9 @@ interface WalletBalance {
 实时获取代币的市场统计数据。
 
 **订阅格式**
-\`dex-token-stats:${chain}_${tokenAddress}\`
+```text
+dex-token-stats:{chain}_{tokenAddress}
+```
 
 **响应数据**
 ```typescript
@@ -186,7 +87,9 @@ interface WalletBalance {
 实时获取代币的活动数据。
 
 **订阅格式**
-\`dex-token-activities:${chain}_${tokenAddress}\`
+```text
+dex-token-activities:{chain}_{tokenAddress}
+```
 
 **响应数据**
 ```typescript
@@ -203,7 +106,9 @@ interface WalletBalance {
 实时获取代币的交易事件。
 
 **订阅格式**
-\`dex-trades:${chain}_${tokenAddress}\`
+```text
+dex-trades:{chain}_{tokenAddress}
+```
 
 **响应数据**
 ```typescript
@@ -226,7 +131,9 @@ interface WalletBalance {
 实时获取钱包的余额信息。
 
 **订阅格式**
-\`dex-wallet-balance:${chain}_${walletAddress}\`
+```text
+dex-wallet-balance:{chain}_{walletAddress}
+```
 
 **响应数据**
 ```typescript
@@ -256,7 +163,9 @@ interface WalletBalance {
 实时获取特定代币的余额信息。
 
 **订阅格式**
-\`dex-token-balance:${chain}_${tokenAddress}_${walletAddress}\`
+```text
+dex-token-balance:{chain}_{tokenAddress}_{walletAddress}
+```
 
 **响应数据**
 ```typescript
@@ -272,7 +181,9 @@ interface WalletBalance {
 实时获取代币持有者统计信息。
 
 **订阅格式**
-\`dex-token-general-stat-num:${chain}_${tokenAddress}\`
+```text
+dex-token-general-stat-num:{chain}_{tokenAddress}
+```
 
 **响应数据**
 ```typescript
@@ -287,7 +198,9 @@ interface WalletBalance {
 实时获取代币市值信息。
 
 **订阅格式**
-\`dex-token-market-cap:${chain}_${tokenAddress}\`
+```text
+dex-token-market-cap:{chain}_{tokenAddress}
+```
 
 **响应数据**
 ```typescript
@@ -307,7 +220,9 @@ interface WalletBalance {
 实时获取代币盈亏信息。
 
 **订阅格式**
-\`dex-token-pnl:${chain}_${tokenAddress}_${walletAddress}\`
+```text
+dex-token-pnl:{chain}_{tokenAddress}_{walletAddress}
+```
 
 **响应数据**
 ```typescript

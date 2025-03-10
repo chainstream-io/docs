@@ -45,7 +45,7 @@ ws.onopen = () => {
 // 订阅K线数据示例
 ws.send(JSON.stringify({
   type: "subscribe",
-  channel: "dex-candle:solana_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
+  channel: "dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
 }));
 ```
 
@@ -65,13 +65,22 @@ ws.onmessage = (event) => {
 实时获取代币价格走势的K线图数据。
 
 **订阅格式**
-\`dex-candle:${chain}_${tokenAddress}_${resolution}\`
+```text
+dex-candle:{chain}_{tokenAddress}_{resolution}
+```
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| chain | 区块链名称 | solana |
-| tokenAddress | 代币合约地址 | 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN |
-| resolution | K线周期 | 1m, 5m, 15m, 1h, 4h, 1d |
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="resolution" type="string" required>
+  K线周期，支持：1m, 5m, 15m, 1h, 4h, 1d
+</ParamField>
 
 **响应数据**
 ```typescript
@@ -91,7 +100,18 @@ ws.onmessage = (event) => {
 实时获取代币的市场统计数据。
 
 **订阅格式**
-\`dex-token-stats:${chain}_${tokenAddress}\`
+```text
+dex-token-stats:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 **响应数据**
 ```typescript
@@ -116,14 +136,36 @@ ws.onmessage = (event) => {
 实时获取代币的活动数据。
 
 **订阅格式**
-\`dex-token-activities:${chain}_${tokenAddress}\`
+```text
+dex-token-activities:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 ### 交易事件
 
 实时获取代币的交易事件。
 
 **订阅格式**
-\`dex-trades:${chain}_${tokenAddress}\`
+```text
+dex-trades:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 **响应数据**
 ```typescript
@@ -145,7 +187,18 @@ ws.onmessage = (event) => {
 实时获取钱包的余额信息。
 
 **订阅格式**
-\`dex-wallet-balance:${chain}_${walletAddress}\`
+```text
+dex-wallet-balance:{chain}_{walletAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  钱包地址，例如：HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+</ParamField>
 
 **响应数据**
 ```typescript
@@ -176,14 +229,40 @@ ws.onmessage = (event) => {
 实时获取特定代币的余额信息。
 
 **订阅格式**
-\`dex-token-balance:${chain}_${tokenAddress}_${walletAddress}\`
+```text
+dex-token-balance:{chain}_{tokenAddress}_{walletAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  钱包地址，例如：HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+</ParamField>
 
 ### 代币持有者统计
 
 实时获取代币持有者统计信息。
 
 **订阅格式**
-\`dex-token-general-stat-num:${chain}_${tokenAddress}\`
+```text
+dex-token-general-stat-num:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 **响应数据**
 ```typescript
@@ -201,7 +280,7 @@ const streamApi = new StreamApi(context);
 
 // 订阅K线数据
 streamApi.subscribeTokenCandles({
-  chain: "solana",
+  chain: "sol",
   tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
   resolution: "1m",
   callback: (data) => {
@@ -211,24 +290,13 @@ streamApi.subscribeTokenCandles({
 
 // 订阅钱包余额
 streamApi.subscribeWalletBalance({
-  chain: "solana",
+  chain: "sol",
   walletAddress: "YOUR_WALLET_ADDRESS",
   callback: (data) => {
     console.log("钱包余额:", data);
   }
 });
 ```
-
-## 错误处理
-
-### 错误码说明
-
-| 错误码 | 说明 | 处理建议 |
-|--------|------|----------|
-| 1000 | 正常关闭 | 无需处理 |
-| 1006 | 异常关闭 | 触发重连 |
-| 4001 | 认证失败 | 检查token |
-| 4004 | 订阅失败 | 检查参数 |
 
 ### 重连策略
 

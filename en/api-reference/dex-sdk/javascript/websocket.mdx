@@ -3,327 +3,104 @@ title: 'WebSocket API'
 description: 'WebSocket API Real-time Data Subscription Service'
 ---
 
-## Overview
+This document describes the WebSocket subscription methods provided by the ChainStream DEX JavaScript SDK. Each method is a wrapper for the corresponding WebSocket API. For detailed parameter descriptions and return value structures, please click the corresponding API link.
 
-ChainStream DEX WebSocket API provides real-time data subscription services for the following data types:
-- Candles Data
-- Token Statistics
-- Token Activities
-- Trade Events
-- Token Holders
-- Wallet Balance
-- Token Balance
-- Market Cap
-- Profit and Loss
+## Candlestick Data Subscription
 
-**Base URL**
-```bash
-wss://realtime-dex.chainstream.io/connection/websocket
-```
+### Subscribe to Candlestick Data
+Subscribe to token price candlestick data.
 
-## Data Subscriptions
-
-### Candle Data
-Real-time price movement data for tokens.
-
-**Subscription Format**
-```text
-dex-candle:{chain}_{tokenAddress}_{resolution}
-```
-
-**Parameters**
-<ParamField query="chain" type="string" required>
-  Blockchain name, example: solana
-</ParamField>
-
-<ParamField query="tokenAddress" type="string" required>
-  Token contract address, example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
-</ParamField>
-
-<ParamField query="resolution" type="string" required>
-  Candle period: 1m, 5m, 15m, 1h, 4h, 1d
-</ParamField>
-
-**Response Data**
-```typescript
-{
-  "o": number,    // Opening price
-  "c": number,    // Closing price
-  "h": number,    // Highest price
-  "l": number,    // Lowest price
-  "v": number,    // Trading volume
-  "r": string,    // Resolution
-  "t": number     // Timestamp
-}
-```
-
-### Token Statistics
-Real-time market statistics for tokens.
-
-**Subscription Format**
-```text
-dex-token-stats:{chain}_{tokenAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "price": {
-    "usd": number,       // USD price
-    "change_24h": number // 24-hour price change
-  },
-  "volume": {
-    "usd_24h": number    // 24-hour trading volume (USD)
-  },
-  "market_cap": {
-    "usd": number        // Market capitalization (USD)
-  },
-  "holders": number,     // Number of holders
-  "timestamp": number    // Timestamp
-}
-```
-
-### Token Activities
-Real-time token activity data.
-
-**Subscription Format**
-```text
-dex-token-activities:{chain}_{tokenAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "type": string,        // Activity type
-  "timestamp": number,   // Timestamp
-  "data": {
-    // Activity-specific data
-  }
-}
-```
-
-### Trade Events
-Real-time token transaction events.
-
-**Subscription Format**
-```text
-dex-trades:{chain}_{tokenAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "bwa": string,   // Maker address
-  "ba": number,    // Base token amount
-  "sa": number,    // Quote token amount
-  "swa": string,   // Quote token address
-  "bais": number,  // USD amount
-  "t": number,     // Timestamp
-  "k": string,     // Event type
-  "h": string,     // Transaction hash
-  "a": string,     // Token address
-  "piu": string,   // Price in USD
-  "id": string     // Trade ID
-}
-```
-
-### Wallet Balance
-Real-time wallet balance information.
-
-**Subscription Format**
-```text
-dex-wallet-balance:{chain}_{walletAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "a": string,     // Wallet address
-  "ta": string,    // Token address
-  "tpiu": number,  // Token price in USD
-  "t": number,     // Timestamp
-  "ba": number,    // Buy amount
-  "baiu": number,  // Buy amount in USD
-  "bs": number,    // Number of buys
-  "sa": number,    // Sell amount
-  "saiu": number,  // Sell amount in USD
-  "ss": number,    // Number of sells
-  "abp": number,   // Average buy price
-  "asp": number,   // Average sell price
-  "upiu": number,  // Unrealized profit in USD
-  "upr": number,   // Unrealized profit ratio
-  "rpiu": number,  // Realized profit in USD
-  "rpr": number,   // Realized profit ratio
-  "trpiu": number, // Total realized profit in USD
-  "trr": number    // Total realized profit ratio
-}
-```
-
-### Token Balance
-Real-time token balance information.
-
-**Subscription Format**
-```text
-dex-token-balance:{chain}_{tokenAddress}_{walletAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "balance": string,     // Balance
-  "token_address": string, // Token address
-  "wallet_address": string, // Wallet address
-  "timestamp": number    // Timestamp
-}
-```
-
-### Token Holders Statistics
-Real-time token holders statistics.
-
-**Subscription Format**
-```text
-dex-token-general-stat-num:{chain}_{tokenAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "a": string,    // Token address
-  "v": number,    // Number of holders
-  "ts": number    // Timestamp
-}
-```
-
-### Token Market Cap
-Real-time token market capitalization information.
-
-**Subscription Format**
-```text
-dex-token-market-cap:{chain}_{tokenAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "circulating_supply": string,
-  "market_cap": string,
-  "top10_total_holdings": string,
-  "top10_holdings_ratio": string,
-  "top100_total_holdings": string,
-  "top100_holdings_ratio": string,
-  "holders": number,
-  "timestamp": number
-}
-```
-
-### Token PNL
-Real-time token profit and loss information.
-
-**Subscription Format**
-```text
-dex-token-pnl:{chain}_{tokenAddress}_{walletAddress}
-```
-
-**Response Data**
-```typescript
-{
-  "unrealized_profit_in_usd": string,
-  "unrealized_profit_ratio": string,
-  "realized_profit_in_usd": string,
-  "realized_profit_ratio": string,
-  "total_realized_profit_in_usd": string,
-  "total_realized_profit_ratio": string,
-  "timestamp": number
-}
-```
-
-## Usage Examples
-
-### Basic Subscription
+<Tip>
+  **WebSocket API:** [Candlestick Data](/en/api-reference/endpoint/websocket/api#candlestick-data)
+</Tip>
 
 ```typescript
-const streamApi = new StreamApi(context);
-
-// Subscribe to candle data
-streamApi.subscribeTokenCandles({
-  chain: "solana",
-  tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-  resolution: "1m",
-  callback: (data) => {
-    console.log("Candle data:", data);
-  }
-});
-
-// Subscribe to wallet balance
-streamApi.subscribeWalletBalance({
-  chain: "solana",
-  walletAddress: "YOUR_WALLET_ADDRESS",
-  callback: (data) => {
-    console.log("Wallet balance:", data);
-  }
-});
+client.stream.subscribeTokenCandles()
 ```
 
-## Error Handling
+## Token Data Subscription
 
-### Error Codes
+### Subscribe to Token Statistics
+Subscribe to token market statistics.
 
-<ResponseField name="1000" type="number">
-  Normal closure - No action needed
-</ResponseField>
-
-<ResponseField name="1006" type="number">
-  Abnormal closure - Trigger reconnection
-</ResponseField>
-
-<ResponseField name="4001" type="number">
-  Authentication failed - Check token
-</ResponseField>
-
-<ResponseField name="4004" type="number">
-  Subscription failed - Check parameters
-</ResponseField>
-
-### Reconnection Strategy
-
-Recommended exponential backoff algorithm for reconnection:
+<Tip>
+  **WebSocket API:** [Token Statistics](/en/api-reference/endpoint/websocket/api#token-statistics)
+</Tip>
 
 ```typescript
-function reconnect(attempt) {
-  const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-  setTimeout(() => {
-    connect();
-  }, delay);
-}
+client.stream.subscribeTokenStat()
 ```
 
-## Usage Limits
+### Subscribe to Token Activities
+Subscribe to token activity data.
 
-<ResponseField name="Max subscriptions" type="number">
-  100 per connection - Excess will be rejected
-</ResponseField>
+<Tip>
+  **WebSocket API:** [Token Activities](/en/api-reference/endpoint/websocket/api#token-activities)
+</Tip>
 
-<ResponseField name="Message size" type="string">
-  100KB - Excess will be truncated
-</ResponseField>
+```typescript
+client.stream.subscribeTokenActivities()
+```
 
-<ResponseField name="Heartbeat interval" type="string">
-  30 seconds - Regular heartbeat required
-</ResponseField>
+### Subscribe to Token Trades
+Subscribe to token trading events.
 
-## Best Practices
+<Tip>
+  **WebSocket API:** [Trade Events](/en/api-reference/endpoint/websocket/api#trade-events)
+</Tip>
 
-1. **Connection Management**
-   - Maintain a single WebSocket connection
-   - Implement automatic reconnection
-   - Send regular heartbeats
+```typescript
+client.stream.subscribeTokenTrades()
+```
 
-2. **Error Handling**
-   - Implement complete error handling
-   - Log detailed error information
-   - Use exponential backoff for reconnection
+### Subscribe to Token Holders
+Subscribe to token holder statistics.
 
-3. **Performance Optimization**
-   - Control subscription quantity
-   - Implement message queue mechanism
-   - Clean up unused subscriptions 
+<Tip>
+  **WebSocket API:** [Token Holders](/en/api-reference/endpoint/websocket/api#token-holder-statistics)
+</Tip>
+
+```typescript
+client.stream.subscribeTokenHolders()
+```
+
+## Wallet Data Subscription
+
+### Subscribe to Wallet Balance
+Subscribe to wallet balance information.
+
+<Tip>
+  **WebSocket API:** [Wallet Balance](/en/api-reference/endpoint/websocket/api#wallet-balance)
+</Tip>
+
+```typescript
+client.stream.subscribeWalletBalance()
+```
+
+### Subscribe to Token Balance
+Subscribe to balance information for a specific token.
+
+<Tip>
+  **WebSocket API:** [Token Balance](/en/api-reference/endpoint/websocket/api#token-balance)
+</Tip>
+
+```typescript
+client.stream.subscribeBalanceForToken()
+```
+
+## Connection Management
+
+### Establish Connection
+```typescript
+client.stream.connect()
+```
+
+All subscription methods return an `Unsubscribe` object that can be used to cancel the subscription:
+
+```typescript
+const subscription = client.stream.subscribeTokenCandles(/* ... */);
+// Cancel subscription
+subscription.unsubscribe();
+```
+
+For detailed parameter descriptions, data formats, and error handling, please refer to the [WebSocket API Documentation](/en/api-reference/endpoint/websocket/api). 

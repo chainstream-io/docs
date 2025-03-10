@@ -3,327 +3,104 @@ title: 'WebSocket API'
 description: 'WebSocket API 实时数据订阅服务'
 ---
 
-## 概述
+本文档描述了 ChainStream DEX JavaScript SDK 提供的 WebSocket 订阅方法。每个方法都是对应 WebSocket API 的封装，详细的参数说明和返回值结构请点击对应的 API 链接查看。
 
-ChainStream DEX WebSocket API 提供实时数据订阅服务，支持以下数据类型：
-- K线数据 (Candles)
-- 代币统计 (Token Stats)
-- 代币活动 (Token Activities)
-- 交易事件 (Trade Events)
-- 代币持有者 (Token Holders)
-- 钱包余额 (Wallet Balance)
-- 代币余额 (Token Balance)
-- 代币市值 (Market Cap)
-- 代币PNL (Profit and Loss)
+## K线数据订阅
 
-**基础 URL**
-```bash
-wss://realtime-dex.chainstream.io/connection/websocket
-```
+### 订阅K线数据
+订阅代币价格K线数据。
 
-## 数据订阅
-
-### K线数据
-实时获取代币价格走势的K线图数据。
-
-**订阅格式**
-```text
-dex-candle:{chain}_{tokenAddress}_{resolution}
-```
-
-**参数说明**
-<ParamField query="chain" type="string" required>
-  区块链名称，例如：solana
-</ParamField>
-
-<ParamField query="tokenAddress" type="string" required>
-  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
-</ParamField>
-
-<ParamField query="resolution" type="string" required>
-  K线周期，支持：1m, 5m, 15m, 1h, 4h, 1d
-</ParamField>
-
-**响应数据**
-```typescript
-{
-  "o": number,    // 开盘价 (open)
-  "c": number,    // 收盘价 (close)
-  "h": number,    // 最高价 (high)
-  "l": number,    // 最低价 (low)
-  "v": number,    // 成交量 (volume)
-  "r": string,    // 周期 (resolution)
-  "t": number     // 时间戳 (timestamp)
-}
-```
-
-### 代币统计
-实时获取代币的市场统计数据。
-
-**订阅格式**
-```text
-dex-token-stats:{chain}_{tokenAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "price": {
-    "usd": number,       // 美元价格
-    "change_24h": number // 24小时价格变化
-  },
-  "volume": {
-    "usd_24h": number    // 24小时交易量(USD)
-  },
-  "market_cap": {
-    "usd": number        // 市值(USD)
-  },
-  "holders": number,     // 持有者数量
-  "timestamp": number    // 时间戳
-}
-```
-
-### 代币活动
-实时获取代币的活动数据。
-
-**订阅格式**
-```text
-dex-token-activities:{chain}_{tokenAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "type": string,        // 活动类型
-  "timestamp": number,   // 时间戳
-  "data": {
-    // 活动相关数据
-  }
-}
-```
-
-### 交易事件
-实时获取代币的交易事件。
-
-**订阅格式**
-```text
-dex-trades:{chain}_{tokenAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "bwa": string,   // maker地址
-  "ba": number,    // 基础代币数量
-  "sa": number,    // 报价代币数量
-  "swa": string,   // 报价代币地址
-  "bais": number,  // 美元金额
-  "t": number,     // 时间戳
-  "k": string,     // 事件类型
-  "h": string,     // 交易哈希
-  "a": string,     // 代币地址
-  "piu": string,   // 美元价格
-  "id": string     // 交易ID
-}
-```
-
-### 钱包余额
-实时获取钱包的余额信息。
-
-**订阅格式**
-```text
-dex-wallet-balance:{chain}_{walletAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "a": string,     // 钱包地址
-  "ta": string,    // 代币地址
-  "tpiu": number,  // 代币美元价格
-  "t": number,     // 时间戳
-  "ba": number,    // 买入数量
-  "baiu": number,  // 买入美元金额
-  "bs": number,    // 买入次数
-  "sa": number,    // 卖出数量
-  "saiu": number,  // 卖出美元金额
-  "ss": number,    // 卖出次数
-  "abp": number,   // 平均买入价格
-  "asp": number,   // 平均卖出价格
-  "upiu": number,  // 未实现盈亏(USD)
-  "upr": number,   // 未实现盈亏率
-  "rpiu": number,  // 已实现盈亏(USD)
-  "rpr": number,   // 已实现盈亏率
-  "trpiu": number, // 总实现盈亏(USD)
-  "trr": number    // 总实现盈亏率
-}
-```
-
-### 代币余额
-实时获取特定代币的余额信息。
-
-**订阅格式**
-```text
-dex-token-balance:{chain}_{tokenAddress}_{walletAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "balance": string,     // 余额
-  "token_address": string, // 代币地址
-  "wallet_address": string, // 钱包地址
-  "timestamp": number    // 时间戳
-}
-```
-
-### 代币持有者统计
-实时获取代币持有者统计信息。
-
-**订阅格式**
-```text
-dex-token-general-stat-num:{chain}_{tokenAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "a": string,    // 代币地址
-  "v": number,    // 持有者数量
-  "ts": number    // 时间戳
-}
-```
-
-### 代币市值
-实时获取代币市值信息。
-
-**订阅格式**
-```text
-dex-token-market-cap:{chain}_{tokenAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "circulating_supply": string,
-  "market_cap": string,
-  "top10_total_holdings": string,
-  "top10_holdings_ratio": string,
-  "top100_total_holdings": string,
-  "top100_holdings_ratio": string,
-  "holders": number,
-  "timestamp": number
-}
-```
-
-### 代币PNL
-实时获取代币盈亏信息。
-
-**订阅格式**
-```text
-dex-token-pnl:{chain}_{tokenAddress}_{walletAddress}
-```
-
-**响应数据**
-```typescript
-{
-  "unrealized_profit_in_usd": string,
-  "unrealized_profit_ratio": string,
-  "realized_profit_in_usd": string,
-  "realized_profit_ratio": string,
-  "total_realized_profit_in_usd": string,
-  "total_realized_profit_ratio": string,
-  "timestamp": number
-}
-```
-
-## 使用示例
-
-### 基础订阅
+<Tip>
+  **WebSocket API:** [K线数据](/cn/api-reference/endpoint/websocket/api#k线数据)
+</Tip>
 
 ```typescript
-const streamApi = new StreamApi(context);
-
-// 订阅K线数据
-streamApi.subscribeTokenCandles({
-  chain: "solana",
-  tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-  resolution: "1m",
-  callback: (data) => {
-    console.log("K线数据:", data);
-  }
-});
-
-// 订阅钱包余额
-streamApi.subscribeWalletBalance({
-  chain: "solana",
-  walletAddress: "YOUR_WALLET_ADDRESS",
-  callback: (data) => {
-    console.log("钱包余额:", data);
-  }
-});
+client.stream.subscribeTokenCandles()
 ```
 
-## 错误处理
+## 代币数据订阅
 
-### 错误代码
+### 订阅代币统计
+订阅代币的市场统计数据。
 
-<ResponseField name="1000" type="number">
-  正常关闭 - 无需处理
-</ResponseField>
-
-<ResponseField name="1006" type="number">
-  异常关闭 - 触发重连
-</ResponseField>
-
-<ResponseField name="4001" type="number">
-  认证失败 - 检查令牌
-</ResponseField>
-
-<ResponseField name="4004" type="number">
-  订阅失败 - 检查参数
-</ResponseField>
-
-### 重连策略
-
-推荐使用指数退避算法进行重连：
+<Tip>
+  **WebSocket API:** [代币统计](/cn/api-reference/endpoint/websocket/api#代币统计)
+</Tip>
 
 ```typescript
-function reconnect(attempt) {
-  const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-  setTimeout(() => {
-    connect();
-  }, delay);
-}
+client.stream.subscribeTokenStat()
 ```
 
-## 使用限制
+### 订阅代币活动
+订阅代币的活动数据。
 
-<ResponseField name="最大订阅数" type="number">
-  每个连接100个，超出将被拒绝
-</ResponseField>
+<Tip>
+  **WebSocket API:** [代币活动](/cn/api-reference/endpoint/websocket/api#代币活动)
+</Tip>
 
-<ResponseField name="消息大小" type="string">
-  100KB，超出将被截断
-</ResponseField>
+```typescript
+client.stream.subscribeTokenActivities()
+```
 
-<ResponseField name="心跳间隔" type="string">
-  30秒，需要定期发送心跳
-</ResponseField>
+### 订阅代币交易
+订阅代币的交易事件。
 
-## 最佳实践
+<Tip>
+  **WebSocket API:** [交易事件](/cn/api-reference/endpoint/websocket/api#交易事件)
+</Tip>
 
-1. **连接管理**
-   - 保持单个WebSocket连接
-   - 实现自动重连机制
-   - 定期发送心跳包
+```typescript
+client.stream.subscribeTokenTrades()
+```
 
-2. **错误处理**
-   - 实现完整的错误处理
-   - 记录详细的错误信息
-   - 使用指数退避进行重连
+### 订阅代币持有者
+订阅代币的持有者统计信息。
 
-3. **性能优化**
-   - 控制订阅数量
-   - 实现消息队列机制
-   - 清理未使用的订阅 
+<Tip>
+  **WebSocket API:** [代币持有者](/cn/api-reference/endpoint/websocket/api#代币持有者统计)
+</Tip>
+
+```typescript
+client.stream.subscribeTokenHolders()
+```
+
+## 钱包数据订阅
+
+### 订阅钱包余额
+订阅钱包的余额信息。
+
+<Tip>
+  **WebSocket API:** [钱包余额](/cn/api-reference/endpoint/websocket/api#钱包余额)
+</Tip>
+
+```typescript
+client.stream.subscribeWalletBalance()
+```
+
+### 订阅代币余额
+订阅特定代币的余额信息。
+
+<Tip>
+  **WebSocket API:** [代币余额](/cn/api-reference/endpoint/websocket/api#代币余额)
+</Tip>
+
+```typescript
+client.stream.subscribeBalanceForToken()
+```
+
+## 连接管理
+
+### 建立连接
+```typescript
+client.stream.connect()
+```
+
+所有订阅方法都会返回一个 `Unsubscrible` 对象，可以用于取消订阅：
+
+```typescript
+const subscription = client.stream.subscribeTokenCandles(/* ... */);
+// 取消订阅
+subscription.unsubscribe();
+```
+
+详细的参数说明、数据格式和错误处理请参考 [WebSocket API 文档](/cn/api-reference/endpoint/websocket/api)。 

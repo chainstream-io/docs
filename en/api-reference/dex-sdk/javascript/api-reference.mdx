@@ -1,319 +1,166 @@
 ---
 title: 'API Reference'
-description: 'JavaScript SDK API Reference'
+description: 'JavaScript SDK API Method Reference'
 ---
+
+This document describes the methods provided by the ChainStream DEX JavaScript SDK. Each method is a wrapper for the corresponding REST API. For detailed parameter descriptions and return value structures, please click the corresponding API link.
 
 ## DEX Operations
 
 ### List DEXes
 Get a list of all DEXes on the specified chain.
 
-```typescript
-client.dex.list(params: {
-  chain: string;  // Chain name
-}): Promise<DexInfo[]>
+<Tip>
+  **REST API:** [DEX - List](/en/api-reference/endpoint/dex/dex)
+</Tip>
 
-interface DexInfo {
-  program_address: string;  // DEX program address
-  protocol_family: string;  // Protocol family
-  protocol_name: string;    // Protocol name
-  chain: string;           // Chain
-}
+```typescript
+client.dex.list()
 ```
 
 ### Token Minting
 Create a new token on the specified DEX.
 
-```typescript
-client.dex.mint(params: {
-  chain: string;           // Chain name
-  dex: string;            // DEX name
-  name: string;           // Token name
-  symbol: string;         // Token symbol
-  uri?: string;           // Metadata URI
-  description?: string;   // Token description
-  migration_dex?: string; // Migration target DEX
-  icon?: string;         // Token icon
-  banner?: string;       // Banner image
-  token_amount?: string; // Total token supply
-}): Promise<MintResponse>
+<Tip>
+  **REST API:** [DEX - Mint](/en/api-reference/endpoint/dex/dex-chain-mint)
+</Tip>
 
-interface MintResponse {
-  serialized_tx: string;   // Base64 encoded transaction
-  mint_address: string;    // Token mint address
-  elapsed_time: number;    // Processing time (ms)
-  extra: any;             // Additional metadata
-}
+```typescript
+client.dex.mint()
 ```
 
-### Submit Mint Transaction
-Submit a signed token mint transaction.
+### Swap
+Swap tokens.
+
+<Tip>
+  **REST API:** [DEX - Swap](/en/api-reference/endpoint/dex/dex-chain-swap)
+</Tip>
 
 ```typescript
-client.dex.submitMint(params: {
-  chain: string;          // Chain name
-  dex: string;           // DEX name
-  signed_tx: string;     // Signed transaction
-}): Promise<SubmitMintResponse>
-
-interface SubmitMintResponse {
-  signature: string;      // Transaction signature
-  elapsed_time: number;   // Processing time
-}
+client.dex.swap()
 ```
 
 ### Get Swap Route
-Calculate the best route for token swap.
+Calculate the best route for token swaps.
+
+<Tip>
+  **REST API:** [DEX - Route](/en/api-reference/endpoint/dex/dex-chain-route)
+</Tip>
 
 ```typescript
-client.dex.route(params: {
-  chain: string;          // Chain name
-  dex: string;           // DEX name
-  input_mint: string;     // Input token address
-  output_mint: string;    // Output token address
-  amount: string;         // Amount
-  mode?: 'ExactIn' | 'ExactOut';  // Swap mode
-  slippage?: string;     // Slippage
-}): Promise<RouteResponse>
-
-interface RouteResponse {
-  serialized_tx: string;  // Base64 encoded transaction
-  elapsed_time: number;   // Processing time
-  route_info: {
-    input_amount: string;
-    output_amount: string;
-    price_impact: string;
-    fee: string;
-  };
-}
-```
-
-### Execute Swap
-Execute a token swap transaction.
-
-```typescript
-client.dex.swap(params: {
-  chain: string;          // Chain name
-  dex: string;           // DEX name
-  input_mint: string;     // Input token address
-  output_mint: string;    // Output token address
-  amount: string;         // Amount
-  mode?: 'ExactIn' | 'ExactOut';  // Swap mode
-  slippage?: string;     // Slippage
-  pool_address?: string; // Pool address
-}): Promise<SwapResponse>
-
-interface SwapResponse {
-  serialized_tx: string;  // Base64 encoded transaction
-  elapsed_time: number;   // Processing time
-  args: SwapArgs;        // Swap arguments
-  route_info: RouteInfo; // Route information
-}
+client.dex.route()
 ```
 
 ## Token Operations
 
+### Search Token Information
+Search for token information.
+
+<Tip>
+  **REST API:** [Token - Search](/en/api-reference/endpoint/token/token-search)
+</Tip>
+
+```typescript
+client.token.search()
+```
+
 ### Get Token Information
 Get detailed information about a token.
 
-```typescript
-client.token.get(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-}): Promise<TokenInfo>
+<Tip>
+  **REST API:** [Token - Details](/en/api-reference/endpoint/token/token-chain-tokenaddress)
+</Tip>
 
-interface TokenInfo {
-  metadata: {
-    chain: string;
-    decimals: number;
-    name: string;
-    symbol: string;
-    metadata_address: string;
-    address: string;
-    token_creators: string[];
-    image_url: string;
-    uri: string;
-    description: string;
-  };
-  price: {
-    value: string;
-    updated_at: number;
-  };
-  market_cap: {
-    circulating_supply: string;
-    market_cap: string;
-    holders: number;
-  };
-}
+```typescript
+client.token.getToken()
 ```
 
-### Get Multiple Tokens Information
+### Get Multiple Token Information
 Get detailed information about multiple tokens in batch.
 
+<Tip>
+  **REST API:** [Token - Details (Multiple)](/en/api-reference/endpoint/token/token-chain-multi)
+</Tip>
+
 ```typescript
-client.token.getTokens(params: {
-  chain: string;          // Chain name, supported: 'sol', 'base'
-  tokenAddresses: string[];  // List of token addresses, max 100
-  sortBy?: object;        // Sort field
-  sortDirection?: 'ASC' | 'DESC';  // Sort direction, default: 'DESC'
-  filterBy?: Array<{      // Filter conditions
-    field: string;        // Filter field
-    min?: string;        // Minimum value
-  }>;
-}): Promise<Record<string, TokenInfo>>
+client.token.getTokens()
 ```
 
 ### Get Token Metadata
-Get metadata information about a token.
+Get token metadata information.
+
+<Tip>
+  **REST API:** [Token - Metadata](/en/api-reference/endpoint/token/token-chain-tokenaddress-metadata)
+</Tip>
 
 ```typescript
-client.token.getMetadata(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-}): Promise<TokenMetadata>
-
-interface TokenMetadata {
-  chain: string;
-  decimals: number;
-  name: string;
-  symbol: string;
-  metadata_address: string;
-  address: string;
-  token_creators: string[];
-  image_url: string;
-  uri: string;
-  metadata: any;
-  social_medias: any;
-  token_created_at: number;
-  description: string;
-}
+client.token.getMetadata()
 ```
 
 ### Get Token Pools
-Get all pools containing this token.
+Get all liquidity pools containing this token.
+
+<Tip>
+  **REST API:** [Token - Liquidity Pools](/en/api-reference/endpoint/token/token-chain-tokenaddress-pools)
+</Tip>
 
 ```typescript
-client.token.getPools(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-}): Promise<TokenPool[]>
-
-interface TokenPool {
-  auth_freeze: boolean;
-  dex_program: string;
-  base_token: string;
-  address: string;
-  chain: string;
-  updated_at: number;
-  mint_auth: boolean;
-  id: string;
-  quote_tokens: string[];
-}
+client.token.getPools()
 ```
 
-### Get Token Stats
+### Get Token Statistics
 Get market statistics for a token.
 
-```typescript
-client.token.getStats(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-}): Promise<TokenStats>
+<Tip>
+  **REST API:** [Token - Statistics](/en/api-reference/endpoint/token/token-chain-tokenaddress-stats)
+</Tip>
 
-interface TokenStats {
-  price_1m: string;
-  price_change_1m: string;
-  volume_1m: string;
-  trades_1m: number;
-  traders_1m: number;
-  buys_1m: number;
-  sells_1m: number;
-  buy_volumes_1m: string;
-  sell_volumes_1m: string;
-  // ... 5m, 15m, 30m, 1h, 4h, 24h 的相同统计
-}
+```typescript
+client.token.getStats()
 ```
 
 ### Get Token Candles
-Get K-line data for a token.
+Get candlestick data for a token.
+
+<Tip>
+  **REST API:** [Token - Candles](/en/api-reference/endpoint/token/token-chain-tokenaddress-candles)
+</Tip>
 
 ```typescript
-client.token.getCandles(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-  resolution: string;    // Time period
-  from: number;         // Start time
-  to: number;           // End time
-}): Promise<Candle[]>
-
-interface Candle {
-  open: number;
-  close: number;
-  high: number;
-  low: number;
-  volume: number;
-  time: number;
-}
+client.token.getCandles()
 ```
 
 ### Get Token Holders
-Get a list of holders for a token.
+Get the list of token holders.
+
+<Tip>
+  **REST API:** [Token - Holders](/en/api-reference/endpoint/token/token-chain-tokenaddress-holders)
+</Tip>
 
 ```typescript
-client.token.getHolders(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-  cursor?: string;      // Pagination cursor
-  limit?: number;       // Page size
-}): Promise<TokenHolders>
-
-interface TokenHolders {
-  holders: {
-    wallet_address: string;
-    amount: string;
-    amount_in_usd: string;
-    percentage: string;
-  }[];
-  next: string;
-  has_next: boolean;
-}
+client.token.getHolders()
 ```
 
-### Get Top Holders
-Get the top 20 holders for a token.
+### Get Top Holders Ranking
+Get the top 20 holders of a token.
+
+<Tip>
+  **REST API:** [Token - Top Holders](/en/api-reference/endpoint/token/token-chain-tokenaddress-topholders)
+</Tip>
 
 ```typescript
-client.token.getTopHolders(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-}): Promise<TokenHolder[]>
-
-interface TokenHolder {
-  wallet_address: string;
-  amount: string;
-  amount_in_usd: string;
-  percentage: string;
-}
+client.token.getTopHolders()
 ```
 
 ### Get Token Market Cap
 Get market capitalization information for a token.
 
-```typescript
-client.token.getMarketCap(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-}): Promise<TokenMarketCap>
+<Tip>
+  **REST API:** [Token - Market Cap](/en/api-reference/endpoint/token/token-chain-tokenaddress-marketcap)
+</Tip>
 
-interface TokenMarketCap {
-  circulating_supply: string;
-  market_cap: string;
-  top10_total_holdings: string;
-  top10_holdings_ratio: string;
-  top100_total_holdings: string;
-  top100_holdings_ratio: string;
-  holders: number;
-}
+```typescript
+client.token.getMarketCap()
 ```
 
 ## Order Operations
@@ -321,273 +168,231 @@ interface TokenMarketCap {
 ### Place Order
 Create a new order.
 
-```typescript
-client.order.place(params: {
-  chain: string;           // Chain name
-  dex: string;            // DEX name
-  market_address: string;  // Market address
-  side: 'buy' | 'sell';   // Order direction
-  amount: string;         // Amount
-  price: string;          // Price
-  priority_fee?: string;  // Priority fee
-}): Promise<OrderResponse>
+<Tip>
+  **REST API:** [Order - Create](/en/api-reference/endpoint/order/orders-placeorder)
+</Tip>
 
-interface OrderResponse {
-  serialized_tx: string;
-  extra: any;
-  order_id: string;
-  status: string;
-  filled_amount: string;
-}
+```typescript
+client.order.place()
 ```
 
 ### Cancel Order
 Cancel an existing order.
 
+<Tip>
+  **REST API:** [Order - Cancel](/en/api-reference/endpoint/order/orders-cancelorder)
+</Tip>
+
 ```typescript
-client.order.cancel(params: {
-  chain: string;           // Chain name
-  dex: string;            // DEX name
-  market_address: string;  // Market address
-  order_id: string;       // Order ID
-}): Promise<void>
+client.order.cancel()
 ```
 
 ### Cancel All Orders
-Cancel all orders for a specified market.
+Cancel all orders in a specified market.
+
+<Tip>
+  **REST API:** [Order - Cancel All](/en/api-reference/endpoint/order/orders-cancelallorders)
+</Tip>
 
 ```typescript
-client.order.cancelAll(params: {
-  chain: string;           // Chain name
-  dex: string;            // DEX name
-  market_address: string;  // Market address
-}): Promise<void>
+client.order.cancelAll()
 ```
 
 ### Take Order
 Execute a take order operation.
 
-```typescript
-client.order.take(params: {
-  chain: string;           // Chain name
-  dex: string;            // DEX name
-  market_address: string;  // Market address
-  order_id: string;       // Order ID
-  amount: string;         // Amount
-}): Promise<TakeOrderResponse>
+<Tip>
+  **REST API:** [Order - Take](/en/api-reference/endpoint/order/orders-takeorder)
+</Tip>
 
-interface TakeOrderResponse {
-  serialized_tx: string;
-  extra: any;
-}
+```typescript
+client.order.take()
+```
+
+### Create Market
+Create a trading pair.
+
+<Tip>
+  **REST API:** [Order - Create Market](/en/api-reference/endpoint/order/orders-createmarket)
+</Tip>
+
+```typescript
+client.order.createMarket()
+```
+
+### Close Market
+Close a trading pair.
+
+<Tip>
+  **REST API:** [Order - Close Market](/en/api-reference/endpoint/order/orders-closemarket)
+</Tip>
+
+```typescript
+client.order.closeMarket()
 ```
 
 ## Wallet Operations
 
 ### Get Wallet Balance
-Get the token balance for a wallet.
+Get token balances for a wallet.
+
+<Tip>
+  **REST API:** [Wallet - Balance](/en/api-reference/endpoint/wallet/wallet-chain-walletaddress-balance)
+</Tip>
 
 ```typescript
-client.wallet.getBalance(params: {
-  chain: string;          // Chain name
-  walletAddress: string;  // Wallet address
-}): Promise<WalletBalance>
-
-interface WalletBalance {
-  total_balances_in_usd: string;
-  balances: {
-    token_address: string;
-    amount: string;
-    amount_in_usd: string;
-    token_name: string;
-    token_symbol: string;
-    token_price: string;
-    price_change_24h: string;
-  }[];
-}
+client.wallet.getBalance()
 ```
 
 ### Get Wallet PnL
-Get transaction profit and loss information for a wallet.
+Get trading profit and loss information for a wallet.
+
+<Tip>
+  **REST API:** [Wallet - PnL](/en/api-reference/endpoint/wallet/wallet-chain-walletaddress)
+</Tip>
 
 ```typescript
-client.wallet.getPnL(params: {
-  chain: string;          // Chain name
-  walletAddress: string;  // Wallet address
-  tokenAddress: string;   // Token address
-}): Promise<WalletPnL>
-
-interface WalletPnL {
-  unrealized_profit_in_usd: string;
-  unrealized_profit_ratio: string;
-  realized_profit_in_usd: string;
-  realized_profit_ratio: string;
-  total_realized_profit_in_usd: string;
-  total_realized_profit_ratio: string;
-}
+client.wallet.getPnl()
 ```
 
-### Get Wallet PnL Stats
+### Get Wallet PnL Statistics
 Get profit and loss statistics for a wallet.
 
+<Tip>
+  **REST API:** [Wallet - PnL Statistics](/en/api-reference/endpoint/wallet/wallet-chain-walletaddress-stats)
+</Tip>
+
 ```typescript
-client.wallet.getPnLStats(params: {
-  chain: string;          // Chain name
-  walletAddress: string;  // Wallet address
-}): Promise<WalletPnLStats>
-
-interface WalletPnLStats {
-  pt24h: PnLStatsDetail;  // 24-hour statistics
-  pt168h: PnLStatsDetail; // 7-day statistics
-  pt720h: PnLStatsDetail; // 30-day statistics
-}
-
-interface PnLStatsDetail {
-  chain: string;
-  wallet_address: string;
-  buys: number;
-  buy_amount: string;
-  buy_amount_usd: string;
-  sells: number;
-  sell_amount: string;
-  sell_amount_usd: string;
-  wins: number;
-  win_ratio: string;
-  pnl_usd: string;
-  pnl_ratio: string;
-  tokens: number;
-  resolution: string;
-}
+client.wallet.getPnlStats()
 ```
 
 ## Trade Operations
 
-### Get Trade Details
-Get detailed information about a trade.
-
-```typescript
-client.trade.get(params: {
-  chain: string;      // Chain name
-  signature: string;  // Trade signature
-}): Promise<TradeDetail>
-
-interface TradeDetail {
-  tx: string;
-  amount: string;
-  price_usd: string;
-  volume: string;
-  type: string;
-  wallet: string;
-  time: number;
-  program: string;
-}
-```
-
 ### Get Token Trades
-Get trade records for a specified token.
+Get trade records for a specific token.
+
+<Tip>
+  **REST API:** [Trade - Token Trades](/en/api-reference/endpoint/trade/trade-token-chain-tokenaddress)
+</Tip>
 
 ```typescript
-client.trade.getTokenTrades(params: {
-  chain: string;         // Chain name
-  tokenAddress: string;  // Token address
-  cursor?: string;      // Pagination cursor
-  limit?: number;       // Page size
-}): Promise<TradeList>
-
-interface TradeList {
-  trades: Trade[];
-  next: string;
-  has_next: boolean;
-}
+client.trade.getTradesByToken()
 ```
 
 ### Get Wallet Trades
-Get trade records for a specified wallet.
+Get trade records for a specific wallet.
+
+<Tip>
+  **REST API:** [Trade - Wallet Trades](/en/api-reference/endpoint/trade/trade-wallet-chain-walletaddress)
+</Tip>
 
 ```typescript
-client.trade.getWalletTrades(params: {
-  chain: string;          // Chain name
-  walletAddress: string;  // Wallet address
-  cursor?: string;       // Pagination cursor
-  limit?: number;        // Page size
-}): Promise<TradeList>
+client.trade.getTradesByWallet()
 ```
 
 ### Get Token and Wallet Trades
-Get trade records for a specified token and wallet.
+Get trade records for a specific token and wallet.
+
+<Tip>
+  **REST API:** [Trade - Token and Wallet Trades](/en/api-reference/endpoint/trade/trade-tokenandwallet-chain-tokenaddress-walletaddress)
+</Tip>
 
 ```typescript
-client.trade.getTokenAndWalletTrades(params: {
-  chain: string;          // Chain name
-  tokenAddress: string;   // Token address
-  walletAddress: string;  // Wallet address
-  cursor?: string;       // Pagination cursor
-  limit?: number;        // Page size
-}): Promise<TradeList>
+client.trade.getTradesByTokenAndWallet()
 ```
 
 ## Ranking Operations
 
 ### Get Hot Tokens
-Get a list of hot tokens.
+Get a list of trending tokens.
+
+<Tip>
+  **REST API:** [Ranking - Hot Tokens](/en/api-reference/endpoint/ranking/ranking-chain-hottokens-duration)
+</Tip>
 
 ```typescript
-client.ranking.getHotTokens(params: {
-  chain: string;        // Chain name
-  duration?: string;    // Time period
-}): Promise<HotToken[]>
-
-interface HotToken {
-  address: string;
-  name: string;
-  symbol: string;
-  price_usd: string;
-  volume_24h: string;
-  price_change_24h: string;
-}
+client.ranking.getHotTokens()
 ```
 
 ### Get New Tokens
 Get a list of newly created tokens.
 
-```typescript
-client.ranking.getNewTokens(params: {
-  chain: string;     // Chain name
-}): Promise<TokenInfo[]>
-```
-
-### Get Gainers
-Get a list of tokens with the highest price increase.
+<Tip>
+  **REST API:** [Ranking - New Tokens](/en/api-reference/endpoint/ranking/ranking-chain-newtokens)
+</Tip>
 
 ```typescript
-client.ranking.getGainers(params: {
-  chain: string;        // Chain name
-  duration?: string;    // Time period
-}): Promise<TokenGainer[]>
-
-interface TokenGainer {
-  address: string;
-  name: string;
-  symbol: string;
-  price_usd: string;
-  price_change: string;
-}
+client.ranking.getNewTokens()
 ```
 
-## Transaction Operations
+## Transaction Processing Operations
 
 ### Send Transaction
 Submit a signed transaction to the blockchain.
 
-```typescript
-client.transaction.send(params: {
-  chain: string;          // Chain name
-  signed_tx: string;      // Base64 encoded signed transaction
-  submit_type?: string;   // Submit type
-}): Promise<TransactionResponse>
+<Tip>
+  **REST API:** [Transaction - Send](/en/api-reference/endpoint/transaction/transaction-chain-send)
+</Tip>
 
-interface TransactionResponse {
-  signature: string;      // Transaction signature/hash
-  elapsed_time: number;   // Processing time (ms)
-}
+```typescript
+client.transaction.send()
+```
+
+## DeFi Operations
+
+### Moonshot Token Minting
+Create a new token on Solana using the Moonshot protocol.
+
+<Tip>
+  **REST API:** [Moonshot - Mint](/en/api-reference/endpoint/defi/solana/moonshot/solana-moonshot-mint)
+</Tip>
+
+```typescript
+client.moonshot.moonshotMint()
+```
+
+### Submit Moonshot Mint Transaction
+Submit a signed token creation transaction to complete token creation.
+
+<Tip>
+  **REST API:** [Moonshot - Submit Mint](/en/api-reference/endpoint/defi/solana/moonshot/solana-moonshot-submitmint)
+</Tip>
+
+```typescript
+client.moonshot.moonshotSubmitMint()
+```
+
+### PumpFun Token Minting
+Create a new token using the PumpFun protocol.
+
+<Tip>
+  **REST API:** [PumpFun - Mint](/en/api-reference/endpoint/defi/solana/pumpfun/solana-pumpfun-mint)
+</Tip>
+
+```typescript
+client.pumpfun.pumpfunMint()
+```
+
+## DEX Pool Operations
+
+### Get Pool Details
+Get detailed information about a specific DEX pool.
+
+<Tip>
+  **REST API:** [DEX Pool - Details](/en/api-reference/endpoint/dexpool/dexpools-chain-pooladdress)
+</Tip>
+
+```typescript
+client.dexpool.getDexpool()
+```
+
+### Get Pool Statistics
+Get statistical data for a specific pool.
+
+<Tip>
+  **REST API:** [DEX Pool - Statistics](/en/api-reference/endpoint/dexpool/dexpools-chain-tokenaddress-pooladdress-stats)
+</Tip>
+
+```typescript
+client.dexpool.getDexpoolStats()
 ```

@@ -5,8 +5,8 @@ description: 'WebSocket API Real-time Data Subscription Service'
 
 ## Overview
 
-ChainStream DEX WebSocket API provides real-time data subscription services for the following data types:
-- Candles Data
+ChainStream DEX WebSocket API provides real-time data subscription services, supporting the following data types:
+- Candle Data
 - Token Statistics
 - Token Activities
 - Trade Events
@@ -42,10 +42,10 @@ ws.onopen = () => {
 Choose the data type you want to subscribe to:
 
 ```typescript
-// Example: Subscribe to candle data
+// Example of subscribing to candle data
 ws.send(JSON.stringify({
   type: "subscribe",
-  channel: "dex-candle:solana_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
+  channel: "dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
 }));
 ```
 
@@ -60,27 +60,36 @@ ws.onmessage = (event) => {
 
 ## Data Subscriptions
 
-### Candles Data
+### Candle Data
 
-Real-time price movement data for tokens.
+Get real-time price movement data for tokens.
 
 **Subscription Format**
-\`dex-candle:${chain}_${tokenAddress}_${resolution}\`
+```text
+dex-candle:{chain}_{tokenAddress}_{resolution}
+```
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| chain | Blockchain name | solana |
-| tokenAddress | Token contract address | 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN |
-| resolution | Candle period | 1m, 5m, 15m, 1h, 4h, 1d |
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="resolution" type="string" required>
+  Candle period, supports: 1m, 5m, 15m, 1h, 4h, 1d
+</ParamField>
 
 **Response Data**
 ```typescript
 {
-  "o": number,    // Opening price
-  "c": number,    // Closing price
-  "h": number,    // Highest price
-  "l": number,    // Lowest price
-  "v": number,    // Trading volume
+  "o": number,    // Open price
+  "c": number,    // Close price
+  "h": number,    // High price
+  "l": number,    // Low price
+  "v": number,    // Volume
   "r": string,    // Resolution
   "t": number     // Timestamp
 }
@@ -88,10 +97,21 @@ Real-time price movement data for tokens.
 
 ### Token Statistics
 
-Real-time market statistics for tokens.
+Get real-time market statistics for tokens.
 
 **Subscription Format**
-\`dex-token-stats:${chain}_${tokenAddress}\`
+```text
+dex-token-stats:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 **Response Data**
 ```typescript
@@ -113,17 +133,39 @@ Real-time market statistics for tokens.
 
 ### Token Activities
 
-Real-time token activity data.
+Get real-time token activity data.
 
 **Subscription Format**
-\`dex-token-activities:${chain}_${tokenAddress}\`
+```text
+dex-token-activities:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 ### Trade Events
 
-Real-time trading events for tokens.
+Get real-time token trading events.
 
 **Subscription Format**
-\`dex-trades:${chain}_${tokenAddress}\`
+```text
+dex-trades:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 **Response Data**
 ```typescript
@@ -142,10 +184,21 @@ Real-time trading events for tokens.
 
 ### Wallet Balance
 
-Real-time wallet balance information.
+Get real-time wallet balance information.
 
 **Subscription Format**
-\`dex-wallet-balance:${chain}_${walletAddress}\`
+```text
+dex-wallet-balance:{chain}_{walletAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  Wallet address, e.g., HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+</ParamField>
 
 **Response Data**
 ```typescript
@@ -173,17 +226,43 @@ Real-time wallet balance information.
 
 ### Token Balance
 
-Real-time balance information for specific tokens.
+Get real-time balance information for specific tokens.
 
 **Subscription Format**
-\`dex-token-balance:${chain}_${tokenAddress}_${walletAddress}\`
+```text
+dex-token-balance:{chain}_{tokenAddress}_{walletAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  Wallet address, e.g., HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+</ParamField>
 
 ### Token Holders Statistics
 
-Real-time token holder statistics.
+Get real-time token holder statistics.
 
 **Subscription Format**
-\`dex-token-general-stat-num:${chain}_${tokenAddress}\`
+```text
+dex-token-general-stat-num:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
 
 **Response Data**
 ```typescript
@@ -201,7 +280,7 @@ const streamApi = new StreamApi(context);
 
 // Subscribe to candle data
 streamApi.subscribeTokenCandles({
-  chain: "solana",
+  chain: "sol",
   tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
   resolution: "1m",
   callback: (data) => {
@@ -211,7 +290,7 @@ streamApi.subscribeTokenCandles({
 
 // Subscribe to wallet balance
 streamApi.subscribeWalletBalance({
-  chain: "solana",
+  chain: "sol",
   walletAddress: "YOUR_WALLET_ADDRESS",
   callback: (data) => {
     console.log("Wallet balance:", data);
@@ -219,20 +298,9 @@ streamApi.subscribeWalletBalance({
 });
 ```
 
-## Error Handling
-
-### Error Codes
-
-| Code | Description | Handling Suggestion |
-|------|-------------|-------------------|
-| 1000 | Normal closure | No action needed |
-| 1006 | Abnormal closure | Trigger reconnection |
-| 4001 | Authentication failed | Check token |
-| 4004 | Subscription failed | Check parameters |
-
 ### Reconnection Strategy
 
-Recommended exponential backoff algorithm for reconnection:
+Recommended to use exponential backoff for reconnection:
 
 ```typescript
 function reconnect(attempt) {
@@ -245,11 +313,11 @@ function reconnect(attempt) {
 
 ## Usage Limits
 
-| Item | Limit | Description |
-|------|-------|-------------|
-| Max subscriptions | 100 per connection | Excess will be rejected |
-| Message size | 100KB | Excess will be truncated |
-| Heartbeat interval | 30 seconds | Regular heartbeat required |
+| Limit | Value | Description |
+|-------|-------|-------------|
+| Maximum Subscriptions | 100/connection | Excess will be rejected |
+| Message Size | 100KB | Excess will be truncated |
+| Heartbeat Interval | 30 seconds | Regular heartbeat required |
 
 ## Best Practices
 
@@ -267,55 +335,3 @@ function reconnect(attempt) {
    - Control subscription quantity
    - Implement message queue mechanism
    - Clean up unused subscriptions
-
-## Complete Example
-
-```typescript
-class DexWebSocket {
-  private ws: WebSocket;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private messageHandlers = new Map<string, Set<(data: any) => void>>();
-
-  constructor(
-    private url: string,
-    private accessToken: string
-  ) {
-    this.connect();
-  }
-
-  private connect() {
-    this.ws = new WebSocket(this.url);
-    
-    this.ws.onopen = () => {
-      // Send authentication
-      this.authenticate();
-      // Resubscribe
-      this.resubscribe();
-    };
-
-    this.ws.onmessage = (event) => {
-      this.handleMessage(JSON.parse(event.data));
-    };
-
-    this.ws.onclose = () => {
-      this.reconnect();
-    };
-  }
-
-  private authenticate() {
-    this.send({
-      type: "auth",
-      token: this.accessToken
-    });
-  }
-
-  public subscribe(channel: string, handler: (data: any) => void) {
-    // Subscription implementation
-  }
-
-  public unsubscribe(channel: string) {
-    // Unsubscription implementation
-  }
-}
-```

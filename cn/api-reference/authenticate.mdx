@@ -11,46 +11,29 @@ ChainStream 使用 API 密钥对所有 API 调用进行认证。根据工作区�
 
 每个 API 请求必须包含以下请求头：
 
-* `X-API-Key` - 从 ChainStream 工作区创建的 API 密钥。
 * `Authorization` - 此值应设置为 `Bearer <Access Token>`。访问令牌是一个 Base64 编码的 JSON Web Token (JWT)。
-
-## JWT 结构
-
-`Authorization: Bearer <JWT>`
-
-JWT 的 payload 字段应包含以下内容：
-
-* `uri` - 请求的 URI 部分（例如，/v1/transactions）
-* `nonce` - 唯一的数字或字符串。每个 API 请求都需要有不同的 nonce
-* `iat` - JWT 的签发时间，以 Epoch 秒为单位
-* `exp` - JWT 的过期时间，在此时间之后不得接受处理，以 Epoch 秒为单位（必须小于 `iat`+30秒）
-* `sub` - API 密钥
-* `bodyHash` - 原始 HTTP 请求体的十六进制编码 SHA-256 哈希值
-
-JWT 必须使用 ChainStream API 密钥和 RS256 算法（使用 SHA-256 哈希的 RSASSA-PKCS1-v1_5）进行签名。
 
 ## 生成 JWT 令牌
 
 你可以使用以下代码生成 JWT 令牌：
 
-### JavaScript SDK
+### JavaScript
 
 ```javascript
-const tokenUrl = `https://dex.asia.auth.openweb3.io/oauth/token`;
+import { AuthenticationClient } from 'auth0';
 
-const response = await axios.post(tokenUrl, new URLSearchParams({
-  grant_type: 'client_credentials',
-  client_id: 'your client id',
-  client_secret: 'your client secret',
-  audience: audience,
-}));
+const auth0Client = new AuthenticationClient({
+    domain: `https://dex.asia.auth.openweb3.io/oauth/token`,
+    client_id: 'your client id',
+    client_secret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api-dex.chainstream.io'
+    });
 
 return response.data.access_token;
 ```
-
-<Note>
-JWT 令牌在 30 秒后过期。请为每个请求生成新令牌，或在当前令牌过期时重新生成。
-</Note>
 
 ## 使用 SDK
 
@@ -59,10 +42,11 @@ JWT 令牌在 30 秒后过期。请为每个请求生成新令牌，或在当前
 ### JavaScript SDK
 
 ```javascript
-import { DexSDK } from "@chainstream-io/dex";
+import { DexClient } from "@chainstream-io/dex";
 
-const jwtToken = "your-jwt-token";  // 从上一步生成的令牌
-const dex = new DexSDK(jwtToken);
+const dex = new DexClient({
+  accessToken: "your-jwt-token"  // 从上一步生成的令牌
+  });
 ```
 
 <Note>

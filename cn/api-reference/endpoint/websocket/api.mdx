@@ -9,6 +9,7 @@ ChainStream DEX WebSocket API 提供实时数据订阅服务，支持以下数�
 - K线数据 (Candles)
 - 代币统计 (Token Stats)
 - 交易事件 (Trade Events)
+- 钱包交易事件 (Wallet Trade Event)
 - 钱包余额 (Wallet Balance)
 - 代币持有者 (Token Holders)
 
@@ -274,6 +275,63 @@ dex-trades:{chain}_{tokenAddress}
 
 <ParamField query="tokenAddress" type="string" required>
   代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "bwa": string,     // maker地址
+      "ba": number,      // 基础代币数量
+      "sa": number,      // 报价代币数量
+      "swa": string,     // 报价代币地址
+      "bais": number,    // 美元金额
+      "t": number,       // 时间戳
+      "k": string,       // 事件类型
+      "h": string,       // 交易哈希
+      "a": string        // 代币地址
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "maker": string,        // maker地址
+      "baseAmount": number,   // 基础代币数量
+      "quoteAmount": number,  // 报价代币数量
+      "quoteAddress": string, // 报价代币地址
+      "amountInUsd": number,  // 美元金额
+      "timestamp": number,    // 时间戳
+      "event": string,       // 事件类型
+      "txHash": string,      // 交易哈希
+      "tokenAddress": string  // 代币地址
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### 钱包交易事件
+
+实时获取指定钱包的交易事件。
+
+**订阅格式**
+```text
+dex-wallet-trade:{chain}_{walletAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  钱包地址，例如：GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
 </ParamField>
 
 **响应数据格式**

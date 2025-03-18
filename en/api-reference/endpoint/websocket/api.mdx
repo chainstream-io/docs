@@ -9,6 +9,7 @@ ChainStream DEX WebSocket API provides real-time data subscription services, sup
 - Candle Data 
 - Token Stats
 - Trade Events
+- Wallet Trade Event
 - Wallet Balance
 - Token Holders
 
@@ -274,6 +275,63 @@ dex-trades:{chain}_{tokenAddress}
 
 <ParamField query="tokenAddress" type="string" required>
   Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "bwa": string,     // Maker address
+      "ba": number,      // Base token amount
+      "sa": number,      // Quote token amount
+      "swa": string,     // Quote token address
+      "bais": number,    // USD amount
+      "t": number,       // Timestamp
+      "k": string,       // Event type
+      "h": string,       // Transaction hash
+      "a": string        // Token address
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "maker": string,        // Maker address
+      "baseAmount": number,   // Base token amount
+      "quoteAmount": number,  // Quote token amount
+      "quoteAddress": string, // Quote token address
+      "amountInUsd": number,  // USD amount
+      "timestamp": number,    // Timestamp
+      "event": string,       // Event type
+      "txHash": string,      // Transaction hash
+      "tokenAddress": string  // Token address
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Wallet Trade Event
+
+Get real-time wallet trading event.
+
+**Subscription Format**
+```text
+dex-wallet-trade:{chain}_{walletAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  Token contract address, e.g., GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
 </ParamField>
 
 **Response Data Format**

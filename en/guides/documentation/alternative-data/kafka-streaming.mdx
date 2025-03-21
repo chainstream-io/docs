@@ -1,0 +1,313 @@
+---
+title: 'Kafka Streaming'
+description: 'Guide to implementing Kafka streaming for real-time blockchain data'
+---
+
+## Kafka Advantages
+
+<CardGroup cols={3}>
+  <Card title="Lower Latency" icon="bolt">
+    - Shorter data pipeline
+    - Less processing overhead compared to GraphQL subscriptions
+    - No custom database or additional formatting logic needed
+  </Card>
+  
+  <Card title="Better Reliability" icon="shield-check">
+    - More stable connection protocol than WebSocket
+    - Optimized for persistent connections
+    - Messages can be read from the latest offset
+  </Card>
+  
+  <Card title="Superior Scalability" icon="arrows-up-down-left-right">
+    - Multiple consumers can split the load
+    - Automatic load redistribution
+    - Better handling of high-volume data
+  </Card>
+</CardGroup>
+
+## Kafka Limitations
+
+<CardGroup cols={3}>
+  <Card title="Browser Incompatibility" icon="browser">
+    - Server-side only implementation
+    - No direct browser consumption
+  </Card>
+  
+  <Card title="Limited Filtering" icon="filter">
+    - No pre-filtering capabilities
+    - Pre-defined schema
+    - Client-side post-processing required
+  </Card>
+  
+  <Card title="Development Complexity" icon="code">
+    - No IDE support for streams
+    - Debugging limited to the consumer side
+  </Card>
+</CardGroup>
+
+## Technical Considerations
+
+<Note>
+  When using Kafka Streams, consider message retention policies, latency implications, and partitioning strategies. Messages have a default retention of 24 hours for critical data streams.
+</Note>
+
+## Implementation Guide
+
+### Message Retention
+
+<Card title="Retention Policies" icon="clock">
+  - Protobuf Streams: Retained for 24 hours
+  - DEX Trades (JSON): Retained for 24 hours
+  - Other JSON Streams: Retained for 4 hours
+</Card>
+
+### Connection Setup
+
+<CodeGroup>
+  ```javascript Configuration
+  const sasl_conf = {
+    'bootstrap.servers': 'kfk0.chainstream.io:9093,kfk1.chainstream.io:9093,kfk2.chainstream.io:9093',
+    'security.protocol': 'SASL_SSL',
+    'sasl.mechanism': 'SCRAM-SHA-512',
+    'sasl.username': '<YOUR USERNAME>',
+    'sasl.password': '<YOUR PASSWORD>',
+    'ssl.key.location': 'client.key.pem',
+    'ssl.ca.location': 'server.cer.pem',
+    'ssl.certificate.location': 'client.cer.pem',
+    'ssl.endpoint.identification.algorithm': 'none'
+  }
+  ```
+</CodeGroup>
+
+### Topic Structure
+
+<CodeGroup>
+  ```plaintext Topic Format
+  <BLOCKCHAIN_NAME>.<MESSAGE_TYPE>
+  <BLOCKCHAIN_NAME>.broadcasted.<MESSAGE_TYPE>
+  ```
+</CodeGroup>
+
+<div className="mt-6">
+Message Types:
+
+- `dextrades` - DEX trades
+- `dexorders` - DEX orders
+- `dexpools` - DEX pools
+- `transactions` - Transactions
+- `transfers` - Transfers
+- `instructions` - Instructions
+- `raw` - Raw data
+</div>
+
+## Best Practices for Kafka Streaming
+
+<Card title="Parallel Processing for High Throughput" icon="layer-group">
+  <div className="mt-2">
+    - Distribute consumers across multiple partitions to process data in parallel
+    - Allocate one consumer thread per partition for efficient load balancing
+  </div>
+</Card>
+
+<Card title="Continuous Streaming for Stability" icon="infinity">
+  <div className="mt-2">
+    - Keep Kafka consumers running to ensure seamless data flow
+    - Process messages asynchronously to prevent bottlenecks
+    - Avoid blocking the main consumption loop to maintain optimal throughput
+  </div>
+</Card>
+
+<Card title="Optimized Message Handling" icon="gears">
+  <div className="mt-2">
+    - Implement batch processing where applicable to reduce overhead
+    - Use worker groups to improve concurrency
+    - Continuously monitor processing latency to ensure real-time performance
+  </div>
+</Card>
+
+## Additional Code Examples
+
+### Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="ChainStream Kafka Server Access" icon="server">
+    Access to ChainStream Kafka brokers
+  </Card>
+  <Card title="Authentication Credentials" icon="key">
+    Username and Password for Kafka brokers
+  </Card>
+  <Card title="Topic Subscription" icon="list">
+    Topic name(s) to subscribe to
+  </Card>
+  <Card title="Go Installation" icon="golang">
+    Go Version >= 1.16
+  </Card>
+  <Card title="Kafka Client" icon="plug">
+    Confluent Kafka Go Client library
+  </Card>
+</CardGroup>
+
+### Dependencies Setup
+
+<CodeGroup>
+  ```bash Go Module Init
+  go mod init kafka-consumer
+  ```
+
+  ```bash Install Kafka Client
+  go get github.com/confluentinc/confluent-kafka-go/kafka
+  ```
+</CodeGroup>
+
+### Implementation
+
+<AccordionGroup>
+  <Accordion title="Kafka Client Initialization" icon="gear" defaultOpen={true}>
+    ```go
+    config := &kafka.ConfigMap{
+        "bootstrap.servers":                     "rpk0.chainstream.io:9093,rpk1.chainstream.io:9093,rpk2.chainstream.io:9093",
+        "group.id":                              "solanatest2-group-99",
+        "session.timeout.ms":                    30000,
+        "security.protocol":                     "SASL_SSL",
+        "ssl.ca.location":                       "server.cer.pem",
+        "ssl.key.location":                      "client.key.pem",
+        "ssl.certificate.location":              "client.cer.pem",
+        "ssl.endpoint.identification.algorithm": "none",
+        "sasl.mechanisms":                       "SCRAM-SHA-512",
+        "sasl.username":                         "usernamee",
+        "sasl.password":                         "pwww",
+        "auto.offset.reset":                     "latest",
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Kafka Consumer Setup" icon="play" defaultOpen={true}>
+    ```go
+    consumer, err := kafka.NewConsumer(config)
+    if err != nil {
+        fmt.Printf("Failed to create consumer: %s\n", err)
+        os.Exit(1)
+    }
+
+    topic := "solana.broadcasted.transactions"
+
+    // Subscribe to the topic
+    err = consumer.SubscribeTopics([]string{topic}, nil)
+    if err != nil {
+        fmt.Printf("Failed to subscribe to topic: %s\n", err)
+        os.Exit(1)
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Message Processing Loop" icon="rotate" defaultOpen={true}>
+    ```go
+    // Set up a channel to handle shutdown
+    sigchan := make(chan os.Signal, 1)
+    signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+
+    // Poll messages and process them
+    run := true
+    for run {
+        select {
+        case sig := <-sigchan:
+            fmt.Printf("Caught signal %v: terminating\n", sig)
+            run = false
+        default:
+            ev := consumer.Poll(100)
+            if ev == nil {
+                continue
+            }
+
+            switch e := ev.(type) {
+            case *kafka.Message:
+                processMessage(e)
+
+            case kafka.Error:
+                fmt.Printf("Error: %v\n", e)
+                if e.Code() == kafka.ErrAllBrokersDown {
+                    run = false
+                }
+            default:
+                fmt.Printf("Ignored %v\n", e)
+            }
+        }
+    }
+
+    // Close down consumer
+    consumer.Close()
+    ```
+  </Accordion>
+
+  <Accordion title="Message Processing Function" icon="message-dots" defaultOpen={true}>
+    ```go
+    func processMessage(msg *kafka.Message) {
+        fmt.Printf("Received message on topic %s [%d] at offset %v:\n",
+            *msg.TopicPartition.Topic, msg.TopicPartition.Partition, msg.TopicPartition.Offset)
+
+        // Try to parse the message value as JSON
+        var jsonData interface{}
+        err := json.Unmarshal(msg.Value, &jsonData)
+        if err != nil {
+            fmt.Printf("Error parsing JSON: %v\n", err)
+            fmt.Printf("Raw message: %s\n", string(msg.Value))
+            return
+        }
+
+        // Pretty print the JSON
+        prettyJSON, err := json.MarshalIndent(jsonData, "", "  ")
+        if err != nil {
+            fmt.Printf("Error prettifying JSON: %v\n", err)
+            return
+        }
+
+        fmt.Printf("Parsed JSON:\n%s\n", string(prettyJSON))
+
+        // Log message data
+        logEntry := map[string]interface{}{
+            "topic":     *msg.TopicPartition.Topic,
+            "partition": msg.TopicPartition.Partition,
+            "offset":    msg.TopicPartition.Offset,
+            "key":       string(msg.Key),
+            "value":     string(prettyJSON),
+        }
+        fmt.Printf("Log entry: %+v\n", logEntry)
+        fmt.Println("----------------------------------------")
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Running the Application
+
+<CodeGroup>
+  ```bash Initialize Go Module
+  go mod init kafka-consumer
+  ```
+
+  ```bash Run Application
+  go run consumer.go
+  ```
+</CodeGroup>
+
+### Execution Workflow
+
+<CardGroup cols={2}>
+  <Card title="Kafka Client Initialization" icon="gear">
+    - Initialize with SSL and SASL configurations
+    - Set unique group.id for independent message consumption
+  </Card>
+  <Card title="Consumer Setup" icon="plug">
+    - Create Kafka consumer
+    - Subscribe to specified topic
+  </Card>
+  <Card title="Message Processing" icon="arrows-rotate">
+    - Poll for new messages every 100ms
+    - Parse JSON messages
+    - Log processed data
+  </Card>
+  <Card title="Graceful Shutdown" icon="power-off">
+    - Handle termination signals
+    - Close consumer cleanly
+  </Card>
+</CardGroup> 

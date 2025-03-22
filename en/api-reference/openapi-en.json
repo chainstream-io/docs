@@ -651,34 +651,11 @@
         ]
       }
     },
-    "/trade/token/{chain}/{tokenAddress}": {
+    "/trade": {
       "get": {
-        "description": "Retrieve a list of token transactions",
-        "operationId": "get.trades.by.token",
+        "description": "Retrieve a list of transactions",
+        "operationId": "get.trades",
         "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a token",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          },
           {
             "name": "cursor",
             "required": false,
@@ -689,33 +666,61 @@
             }
           },
           {
-            "name": "parseJupiter",
-            "required": false,
-            "in": "query",
-            "description": "Whether to parse Jupiter trades",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "hideArb",
-            "required": false,
-            "in": "query",
-            "description": "Whether to hide arbitrage trades",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "Number of trades per page",
+            "description": "Number of records per page",
             "schema": {
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "Token address to query trades",
+            "schema": {
+              "default": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": false,
+            "in": "query",
+            "description": "Wallet address to query trades",
+            "schema": {
+              "default": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w",
+              "type": "string"
+            }
+          },
+          {
+            "name": "chain",
+            "required": true,
+            "in": "query",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "default": "sol",
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "direction",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
             }
           }
         ],
@@ -731,189 +736,7 @@
             }
           }
         },
-        "summary": "Trade - Token",
-        "tags": [
-          "Trade"
-        ]
-      }
-    },
-    "/trade/wallet/{chain}/{walletAddress}": {
-      "get": {
-        "description": "Retrieve trading history for a specific wallet",
-        "operationId": "get.trades.by.wallet",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a wallet",
-            "schema": {
-              "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY",
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "Pagination cursor",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "parseJupiter",
-            "required": false,
-            "in": "query",
-            "description": "Whether to parse Jupiter trades",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "hideArb",
-            "required": false,
-            "in": "query",
-            "description": "Whether to hide arbitrage trades",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of trades per page",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WalletTrades"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Trade - Wallet",
-        "tags": [
-          "Trade"
-        ]
-      }
-    },
-    "/trade/tokenAndWallet/{chain}/{tokenAddress}/{walletAddress}": {
-      "get": {
-        "description": "Retrieve trading history for a specific token and wallet",
-        "operationId": "get.trades.by.token.and.wallet",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a token",
-            "schema": {
-              "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
-              "type": "string"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a wallet",
-            "schema": {
-              "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY",
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "Pagination cursor",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "parseJupiter",
-            "required": false,
-            "in": "query",
-            "description": "Whether to parse Jupiter trades",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "hideArb",
-            "required": false,
-            "in": "query",
-            "description": "Whether to hide arbitrage trades",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of trades per page",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TradePage"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Trade - Token And Wallet",
+        "summary": "Trade - List",
         "tags": [
           "Trade"
         ]
@@ -3093,61 +2916,93 @@
       "TradeDetailDTO": {
         "type": "object",
         "properties": {
-          "tx": {
+          "chain": {
             "type": "string",
-            "description": "Transaction hash"
+            "description": "Blockchain network"
           },
-          "amount": {
-            "type": "number",
-            "description": "Trade amount"
-          },
-          "priceUsd": {
-            "type": "number",
-            "description": "Price in USD"
-          },
-          "volume": {
-            "type": "number",
-            "description": "Trade volume"
-          },
-          "volumeSol": {
-            "type": "number",
-            "description": "Volume in SOL"
-          },
-          "type": {
+          "tokenName": {
             "type": "string",
-            "description": "Trade type"
+            "description": "name"
           },
-          "wallet": {
+          "tokenSymbol": {
             "type": "string",
-            "description": "Wallet address"
+            "description": "symbol"
           },
-          "time": {
+          "tokenImageUrl": {
+            "type": "string",
+            "description": "token imageUrl"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token address"
+          },
+          "tokenAmount": {
             "type": "number",
-            "description": "Trade timestamp"
+            "description": "Token amount"
           },
-          "program": {
+          "tokenPriceInUsd": {
+            "type": "number",
+            "description": "price in USD"
+          },
+          "tokenAmountInUsd": {
+            "type": "number",
+            "description": "Token amount in USD"
+          },
+          "sideType": {
             "type": "string",
-            "description": "Program ID"
+            "description": "Trade side type (buy/sell)"
           },
-          "pool": {
-            "description": "Pool addresses",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "sideTokenName": {
+            "type": "string",
+            "description": "name"
+          },
+          "sideTokenSymbol": {
+            "type": "string",
+            "description": "symbol"
+          },
+          "sideTokenImageUrl": {
+            "type": "string",
+            "description": "token imageUrl"
+          },
+          "sideTokenAddress": {
+            "type": "string",
+            "description": "Side token address"
+          },
+          "sideTokenPriceInUsd": {
+            "type": "number",
+            "description": "price in USD"
+          },
+          "sideTokenAmount": {
+            "type": "number",
+            "description": "Side token amount"
+          },
+          "sideTokenAmountInUsd": {
+            "type": "number",
+            "description": "Side token amount in USD"
+          },
+          "status": {
+            "type": "string",
+            "description": "Trade status"
           }
         },
         "required": [
-          "tx",
-          "amount",
-          "priceUsd",
-          "volume",
-          "volumeSol",
-          "type",
-          "wallet",
-          "time",
-          "program",
-          "pool"
+          "chain",
+          "tokenName",
+          "tokenSymbol",
+          "tokenImageUrl",
+          "tokenAddress",
+          "tokenAmount",
+          "tokenPriceInUsd",
+          "tokenAmountInUsd",
+          "sideType",
+          "sideTokenName",
+          "sideTokenSymbol",
+          "sideTokenImageUrl",
+          "sideTokenAddress",
+          "sideTokenPriceInUsd",
+          "sideTokenAmount",
+          "sideTokenAmountInUsd",
+          "status"
         ]
       },
       "TradePage": {
@@ -3160,88 +3015,30 @@
               "$ref": "#/components/schemas/TradeDetailDTO"
             }
           },
+          "startCursor": {
+            "type": "string",
+            "description": "start cursor"
+          },
           "nextCursor": {
             "type": "string",
-            "description": "Next page cursor"
+            "description": "next cursor"
           },
           "hasNextPage": {
             "type": "boolean",
             "description": "Whether there are more trades",
             "default": false
-          }
-        },
-        "required": [
-          "trades"
-        ]
-      },
-      "WalletTradeInfo": {
-        "type": "object",
-        "properties": {
-          "tx": {
-            "type": "string",
-            "description": "Transaction hash"
           },
-          "from": {
-            "type": "object",
-            "description": "From token information"
-          },
-          "to": {
-            "type": "object",
-            "description": "To token information"
-          },
-          "price": {
-            "type": "object",
-            "description": "Price information"
-          },
-          "volume": {
-            "type": "object",
-            "description": "Volume information"
-          },
-          "wallet": {
-            "type": "string",
-            "description": "Wallet address"
-          },
-          "program": {
-            "type": "string",
-            "description": "Program ID"
-          },
-          "time": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Trade timestamp"
-          }
-        },
-        "required": [
-          "tx",
-          "from",
-          "to",
-          "price",
-          "volume",
-          "wallet",
-          "program",
-          "time"
-        ]
-      },
-      "WalletTrades": {
-        "type": "object",
-        "properties": {
-          "trades": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WalletTradeInfo"
-            }
-          },
-          "nextCursor": {
-            "type": "string"
-          },
-          "hasNextPage": {
-            "type": "boolean"
+          "total": {
+            "type": "number",
+            "description": "Total number of trades"
           }
         },
         "required": [
           "trades",
+          "startCursor",
           "nextCursor",
-          "hasNextPage"
+          "hasNextPage",
+          "total"
         ]
       },
       "PlaceOrderInput": {

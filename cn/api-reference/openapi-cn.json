@@ -651,34 +651,11 @@
         ]
       }
     },
-    "/trade/token/{chain}/{tokenAddress}": {
+    "/trade": {
       "get": {
-        "description": "获取代币交易列表",
-        "operationId": "get.trades.by.token",
+        "description": "获取交易列表",
+        "operationId": "get.trades",
         "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "代币地址",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          },
           {
             "name": "cursor",
             "required": false,
@@ -689,33 +666,61 @@
             }
           },
           {
-            "name": "parseJupiter",
-            "required": false,
-            "in": "query",
-            "description": "是否解析Jupiter交易",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "hideArb",
-            "required": false,
-            "in": "query",
-            "description": "是否隐藏套利交易",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "每页交易数量",
+            "description": "每页记录数",
             "schema": {
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "查询交易的代币地址",
+            "schema": {
+              "default": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": false,
+            "in": "query",
+            "description": "查询交易的钱包地址",
+            "schema": {
+              "default": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w",
+              "type": "string"
+            }
+          },
+          {
+            "name": "chain",
+            "required": true,
+            "in": "query",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "default": "sol",
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "方向",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
             }
           }
         ],
@@ -731,189 +736,7 @@
             }
           }
         },
-        "summary": "交易 - 代币",
-        "tags": [
-          "Trade"
-        ]
-      }
-    },
-    "/trade/wallet/{chain}/{walletAddress}": {
-      "get": {
-        "description": "获取指定钱包的交易历史",
-        "operationId": "get.trades.by.wallet",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "钱包地址",
-            "schema": {
-              "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY",
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "分页游标",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "parseJupiter",
-            "required": false,
-            "in": "query",
-            "description": "是否解析Jupiter交易",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "hideArb",
-            "required": false,
-            "in": "query",
-            "description": "是否隐藏套利交易",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "每页交易数量",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WalletTrades"
-                }
-              }
-            }
-          }
-        },
-        "summary": "交易 - 钱包",
-        "tags": [
-          "Trade"
-        ]
-      }
-    },
-    "/trade/tokenAndWallet/{chain}/{tokenAddress}/{walletAddress}": {
-      "get": {
-        "description": "获取指定代币和钱包的交易历史",
-        "operationId": "get.trades.by.token.and.wallet",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "代币地址",
-            "schema": {
-              "example": "74SBV4zDXxTRgv1pEMoECskKBkZHc2yGPnc7GYVepump",
-              "type": "string"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "钱包地址",
-            "schema": {
-              "example": "GC8vnXWCpC5oDZeCTFLCpeBDHbgPczq1TQqziJctDFY",
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "分页游标",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "parseJupiter",
-            "required": false,
-            "in": "query",
-            "description": "是否解析Jupiter交易",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "hideArb",
-            "required": false,
-            "in": "query",
-            "description": "是否隐藏套利交易",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "每页交易数量",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TradePage"
-                }
-              }
-            }
-          }
-        },
-        "summary": "交易 - 代币和钱包",
+        "summary": "交易 - 列表",
         "tags": [
           "Trade"
         ]
@@ -3093,61 +2916,93 @@
       "TradeDetailDTO": {
         "type": "object",
         "properties": {
-          "tx": {
+          "chain": {
             "type": "string",
-            "description": "交易哈希"
+            "description": "区块链网络"
           },
-          "amount": {
+          "tokenName": {
+            "type": "string",
+            "description": "名称"
+          },
+          "tokenSymbol": {
+            "type": "string",
+            "description": "符号"
+          },
+          "tokenImageUrl": {
+            "type": "string",
+            "description": "代币图片链接"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币地址"
+          },
+          "tokenAmount": {
             "type": "number",
-            "description": "交易数量"
+            "description": "代币数量"
           },
-          "priceUsd": {
+          "tokenPriceInUsd": {
             "type": "number",
             "description": "美元价格"
           },
-          "volume": {
+          "tokenAmountInUsd": {
             "type": "number",
-            "description": "交易量"
+            "description": "代币美元价值"
           },
-          "volumeSol": {
+          "sideType": {
+            "type": "string",
+            "description": "交易方向（买入/卖出）"
+          },
+          "sideTokenName": {
+            "type": "string",
+            "description": "名称"
+          },
+          "sideTokenSymbol": {
+            "type": "string",
+            "description": "符号"
+          },
+          "sideTokenImageUrl": {
+            "type": "string",
+            "description": "代币图片链接"
+          },
+          "sideTokenAddress": {
+            "type": "string",
+            "description": "对手方代币地址"
+          },
+          "sideTokenPriceInUsd": {
             "type": "number",
-            "description": "SOL交易量"
+            "description": "美元价格"
           },
-          "type": {
-            "type": "string",
-            "description": "交易类型"
-          },
-          "wallet": {
-            "type": "string",
-            "description": "钱包地址"
-          },
-          "time": {
+          "sideTokenAmount": {
             "type": "number",
-            "description": "交易时间"
+            "description": "对手方代币数量"
           },
-          "program": {
+          "sideTokenAmountInUsd": {
+            "type": "number",
+            "description": "对手方代币美元价值"
+          },
+          "status": {
             "type": "string",
-            "description": "程序ID"
-          },
-          "pool": {
-            "description": "资金池地址",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "description": "交易状态"
           }
         },
         "required": [
-          "tx",
-          "amount",
-          "priceUsd",
-          "volume",
-          "volumeSol",
-          "type",
-          "wallet",
-          "time",
-          "program",
-          "pool"
+          "chain",
+          "tokenName",
+          "tokenSymbol",
+          "tokenImageUrl",
+          "tokenAddress",
+          "tokenAmount",
+          "tokenPriceInUsd",
+          "tokenAmountInUsd",
+          "sideType",
+          "sideTokenName",
+          "sideTokenSymbol",
+          "sideTokenImageUrl",
+          "sideTokenAddress",
+          "sideTokenPriceInUsd",
+          "sideTokenAmount",
+          "sideTokenAmountInUsd",
+          "status"
         ]
       },
       "TradePage": {
@@ -3160,6 +3015,10 @@
               "$ref": "#/components/schemas/TradeDetailDTO"
             }
           },
+          "startCursor": {
+            "type": "string",
+            "description": "起始游标"
+          },
           "nextCursor": {
             "type": "string",
             "description": "下一页游标"
@@ -3168,80 +3027,18 @@
             "type": "boolean",
             "description": "是否有更多交易",
             "default": false
-          }
-        },
-        "required": [
-          "trades"
-        ]
-      },
-      "WalletTradeInfo": {
-        "type": "object",
-        "properties": {
-          "tx": {
-            "type": "string",
-            "description": "交易哈希"
           },
-          "from": {
-            "type": "object",
-            "description": "源代币信息"
-          },
-          "to": {
-            "type": "object",
-            "description": "目标代币信息"
-          },
-          "price": {
-            "type": "object",
-            "description": "价格信息"
-          },
-          "volume": {
-            "type": "object",
-            "description": "交易量信息"
-          },
-          "wallet": {
-            "type": "string",
-            "description": "钱包地址"
-          },
-          "program": {
-            "type": "string",
-            "description": "程序ID"
-          },
-          "time": {
-            "format": "date-time",
-            "type": "string",
-            "description": "交易时间"
-          }
-        },
-        "required": [
-          "tx",
-          "from",
-          "to",
-          "price",
-          "volume",
-          "wallet",
-          "program",
-          "time"
-        ]
-      },
-      "WalletTrades": {
-        "type": "object",
-        "properties": {
-          "trades": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WalletTradeInfo"
-            }
-          },
-          "nextCursor": {
-            "type": "string"
-          },
-          "hasNextPage": {
-            "type": "boolean"
+          "total": {
+            "type": "number",
+            "description": "交易总数"
           }
         },
         "required": [
           "trades",
+          "startCursor",
           "nextCursor",
-          "hasNextPage"
+          "hasNextPage",
+          "total"
         ]
       },
       "PlaceOrderInput": {

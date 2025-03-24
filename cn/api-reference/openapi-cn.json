@@ -359,11 +359,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "DEX - 兑换",
         "tags": [
           "Dex"
@@ -411,11 +406,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "DEX - 路由",
         "tags": [
           "Dex"
@@ -464,11 +454,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "DEX - 铸造",
         "tags": [
           "Dex"
@@ -516,11 +501,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "DEX - 列表",
         "tags": [
           "Dex"
@@ -2297,7 +2277,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2387,7 +2369,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2447,6 +2431,53 @@
           "slippage"
         ]
       },
+      "SwapRouteInfo": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "兑换所在的区块链网络"
+          },
+          "dex": {
+            "type": "string",
+            "description": "兑换使用的 DEX 标识符"
+          },
+          "slippage": {
+            "type": "number",
+            "description": "滑点容忍百分比"
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "输入代币铸造地址"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "输出代币铸造地址"
+          },
+          "amount": {
+            "type": "string",
+            "description": "兑换数量"
+          },
+          "swapMode": {
+            "type": "string",
+            "description": "兑换方向模式",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          }
+        },
+        "required": [
+          "chain",
+          "dex",
+          "slippage",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
+      },
       "SwapRouteResponse": {
         "type": "object",
         "properties": {
@@ -2464,7 +2495,6 @@
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "routeInfo": {
-            "type": "object",
             "description": "详细路由信息",
             "example": {
               "inAmount": "1000000000",
@@ -2474,7 +2504,12 @@
                 "USDC",
                 "SOL"
               ]
-            }
+            },
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SwapRouteInfo"
+              }
+            ]
           },
           "elapsedTime": {
             "type": "number",
@@ -2499,7 +2534,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2650,7 +2687,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2802,7 +2841,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2920,6 +2961,18 @@
             "type": "string",
             "description": "区块链网络"
           },
+          "blockTimestamp": {
+            "type": "number",
+            "description": "区块时间戳"
+          },
+          "accountOwnerAddress": {
+            "type": "string",
+            "description": "钱包地址"
+          },
+          "transactionSignature": {
+            "type": "string",
+            "description": "交易签名"
+          },
           "tokenName": {
             "type": "string",
             "description": "名称"
@@ -2937,15 +2990,15 @@
             "description": "代币地址"
           },
           "tokenAmount": {
-            "type": "number",
+            "type": "string",
             "description": "代币数量"
           },
           "tokenPriceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "美元价格"
           },
           "tokenAmountInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "代币美元价值"
           },
           "sideType": {
@@ -2969,15 +3022,15 @@
             "description": "对手方代币地址"
           },
           "sideTokenPriceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "美元价格"
           },
           "sideTokenAmount": {
-            "type": "number",
+            "type": "string",
             "description": "对手方代币数量"
           },
           "sideTokenAmountInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "对手方代币美元价值"
           },
           "status": {
@@ -2987,6 +3040,9 @@
         },
         "required": [
           "chain",
+          "blockTimestamp",
+          "accountOwnerAddress",
+          "transactionSignature",
           "tokenName",
           "tokenSymbol",
           "tokenImageUrl",

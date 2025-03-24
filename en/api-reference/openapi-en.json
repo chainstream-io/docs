@@ -359,11 +359,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Dex - Swap",
         "tags": [
           "Dex"
@@ -411,11 +406,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Dex - Route",
         "tags": [
           "Dex"
@@ -464,11 +454,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Dex - Mint",
         "tags": [
           "Dex"
@@ -516,11 +501,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Dex - List",
         "tags": [
           "Dex"
@@ -2297,7 +2277,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2387,7 +2369,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2447,6 +2431,53 @@
           "slippage"
         ]
       },
+      "SwapRouteInfo": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network for the swap"
+          },
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier for the swap"
+          },
+          "slippage": {
+            "type": "number",
+            "description": "Slippage tolerance percentage"
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "Input token mint address"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "Output token mint address"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount to swap"
+          },
+          "swapMode": {
+            "type": "string",
+            "description": "Swap direction mode",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          }
+        },
+        "required": [
+          "chain",
+          "dex",
+          "slippage",
+          "inputMint",
+          "outputMint",
+          "amount",
+          "swapMode"
+        ]
+      },
       "SwapRouteResponse": {
         "type": "object",
         "properties": {
@@ -2464,7 +2495,6 @@
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "routeInfo": {
-            "type": "object",
             "description": "Detailed routing information",
             "example": {
               "inAmount": "1000000000",
@@ -2474,7 +2504,12 @@
                 "USDC",
                 "SOL"
               ]
-            }
+            },
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SwapRouteInfo"
+              }
+            ]
           },
           "elapsedTime": {
             "type": "number",
@@ -2499,7 +2534,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2650,7 +2687,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2802,7 +2841,9 @@
             "enum": [
               "raydium",
               "meteora",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "jupiter"
             ]
           },
           "userAddress": {
@@ -2920,6 +2961,18 @@
             "type": "string",
             "description": "Blockchain network"
           },
+          "blockTimestamp": {
+            "type": "number",
+            "description": "Block timestamp"
+          },
+          "accountOwnerAddress": {
+            "type": "string",
+            "description": "wallet address"
+          },
+          "transactionSignature": {
+            "type": "string",
+            "description": "Transaction signature"
+          },
           "tokenName": {
             "type": "string",
             "description": "name"
@@ -2937,15 +2990,15 @@
             "description": "Token address"
           },
           "tokenAmount": {
-            "type": "number",
+            "type": "string",
             "description": "Token amount"
           },
           "tokenPriceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "price in USD"
           },
           "tokenAmountInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Token amount in USD"
           },
           "sideType": {
@@ -2969,15 +3022,15 @@
             "description": "Side token address"
           },
           "sideTokenPriceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "price in USD"
           },
           "sideTokenAmount": {
-            "type": "number",
+            "type": "string",
             "description": "Side token amount"
           },
           "sideTokenAmountInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Side token amount in USD"
           },
           "status": {
@@ -2987,6 +3040,9 @@
         },
         "required": [
           "chain",
+          "blockTimestamp",
+          "accountOwnerAddress",
+          "transactionSignature",
           "tokenName",
           "tokenSymbol",
           "tokenImageUrl",

@@ -803,20 +803,6 @@ dex-wallet-balance:{chain}_{walletAddress}
       "ta": string,     // 代币地址
       "tpiu": number,   // 代币美元价格
       "t": number,      // 时间戳
-      "ba": number,     // 买入数量
-      "baiu": number,   // 买入美元金额
-      "bs": number,     // 买入次数
-      "sa": number,     // 卖出数量
-      "saiu": number,   // 卖出美元金额
-      "ss": number,     // 卖出次数
-      "abp": number,    // 平均买入价格
-      "asp": number,    // 平均卖出价格
-      "upiu": number,   // 未实现盈亏(USD)
-      "upr": number,    // 未实现盈亏率
-      "rpiu": number,   // 已实现盈亏(USD)
-      "rpr": number,    // 已实现盈亏率
-      "trpiu": number,  // 总实现盈亏(USD)
-      "trr": number     // 总实现盈亏率
     }
     ```
   </Tab>
@@ -827,20 +813,6 @@ dex-wallet-balance:{chain}_{walletAddress}
       "tokenAddress": string,     // 代币地址
       "tokenPriceInUsd": number, // 代币美元价格
       "timestamp": number,       // 时间戳
-      "buyAmount": number,      // 买入数量
-      "buyAmountInUsd": number, // 买入美元金额
-      "buys": number,          // 买入次数
-      "sellAmount": number,    // 卖出数量
-      "sellAmountInUsd": number, // 卖出美元金额
-      "sells": number,         // 卖出次数
-      "averageBuyPrice": number,  // 平均买入价格
-      "averageSellPrice": number, // 平均卖出价格
-      "unrealizedProfitInUsd": number, // 未实现盈亏(USD)
-      "unrealizedProfitRatio": number, // 未实现盈亏率
-      "realizedProfitInUsd": number,   // 已实现盈亏(USD)
-      "realizedProfitRatio": number,   // 已实现盈亏率
-      "totalRealizedProfitInUsd": number, // 总实现盈亏(USD)
-      "totalRealizedProfitRatio": number  // 总实现盈亏率
     }
     ```
   </Tab>
@@ -933,6 +905,79 @@ dex-token-supply:{chain}_{tokenAddress}
       "supply": number,          // 供应量
       "marketCapInUsd": number,  // 市值（美元）
       "timestamp": number        // 时间戳
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### 钱包盈亏数据
+
+实时获取钱包的盈亏(PnL)统计数据。
+
+**订阅格式**
+```text
+dex-wallet-pnl-list:{chain}_{walletAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  钱包地址
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // 钱包地址
+      "bs": number,    // 买入次数
+      "ba": number,    // 买入数量
+      "baiu": number,  // 买入美元金额
+      "abpiu": number, // 平均买入美元价格
+      "sa": number,    // 卖出数量
+      "saiu": number,  // 卖出美元金额
+      "ss": number,    // 卖出次数
+      "ws": number,    // 盈利次数
+      "wr": number,    // 胜率
+      "piu": number,   // 美元盈亏
+      "apiu": number,  // 平均美元盈亏
+      "pr": number,    // 盈亏比率
+      "pd": number,    // 盈利天数
+      "ld": number,    // 亏损天数
+      "ts": number,    // 交易代币数
+      "r": string      // 统计周期
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "walletAddress": string,         // 钱包地址
+      "buys": number,                  // 买入次数
+      "buyAmount": number,             // 买入数量
+      "buyAmountInUsd": number,        // 买入美元金额
+      "averageBuyPriceInUsd": number,  // 平均买入美元价格
+      "sellAmount": number,            // 卖出数量
+      "sellAmountInUsd": number,       // 卖出美元金额
+      "sells": number,                 // 卖出次数
+      "wins": number,                  // 盈利次数
+      "winRatio": number,              // 胜率
+      "pnlInUsd": number,              // 美元盈亏
+      "averagePnlInUsd": number,       // 平均美元盈亏
+      "pnlRatio": number,              // 盈亏比率
+      "profitableDays": number,        // 盈利天数
+      "losingDays": number,            // 亏损天数
+      "tokens": number,                // 交易代币数
+      "resolution": string             // 统计周期
     }
     ```
   </Tab>

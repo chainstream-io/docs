@@ -7,11 +7,9 @@ description: 'WebSocket API Real-time Data Subscription Service'
 
 ChainStream DEX WebSocket API provides real-time data subscription services, supporting the following data types:
 - Candle Data 
-- Token Stats
-- Trade Events
-- Wallet Trade Event
-- Wallet Balance
-- Token Holders
+- Token Series
+- Trade Series
+- Wallet Series
 
 **Base URL**
 ```bash
@@ -888,6 +886,149 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
       "tokenAddress": string,    // Token address
       "holders": number,         // Number of holders
       "timestamp": number        // Timestamp
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Token Supply
+
+Get real-time token supply and market cap information.
+
+**Subscription Format**
+```text
+dex-token-supply:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,    // Token address
+      "s": number,    // Supply
+      "mc": number,   // Market cap in USD
+      "ts": number    // Timestamp
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,    // Token address
+      "supply": number,          // Supply
+      "marketCapInUsd": number,  // Market cap in USD
+      "timestamp": number        // Timestamp
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### DEX Pool Balance
+
+Get real-time DEX pool balance information.
+
+**Subscription Format**
+```text
+dex-pool-balance:{chain}_{poolAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="poolAddress" type="string" required>
+  Pool address
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // Pool address
+      "taa": string,   // Token A address
+      "taliu": number, // Token A liquidity in USD
+      "tba": string,   // Token B address
+      "tbliu": number  // Token B liquidity in USD
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "poolAddress": string,           // Pool address
+      "tokenAAddress": string,         // Token A address
+      "tokenALiquidityInUsd": number,  // Token A liquidity in USD
+      "tokenBAddress": string,         // Token B address
+      "tokenBLiquidityInUsd": number   // Token B liquidity in USD
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Token Liquidity
+
+Get real-time token liquidity statistics.
+
+**Subscription Format**
+```text
+dex-token-general-stat-num:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,    // Token address
+      "t": string,    // Metric type
+      "v": number,    // Value
+      "ts": number    // Timestamp
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,  // Token address
+      "metricType": string,    // Metric type
+      "value": number,         // Value
+      "timestamp": number      // Timestamp
     }
     ```
   </Tab>

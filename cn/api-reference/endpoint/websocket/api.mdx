@@ -7,11 +7,9 @@ description: 'WebSocket API 实时数据订阅服务'
 
 ChainStream DEX WebSocket API 提供实时数据订阅服务，支持以下数据类型：
 - K线数据 (Candles)
-- 代币统计 (Token Stats)
-- 交易事件 (Trade Events)
-- 钱包交易事件 (Wallet Trade Event)
-- 钱包余额 (Wallet Balance)
-- 代币持有者 (Token Holders)
+- 代币相关 (Token Series)
+- 交易相关 (Trade Series)
+- 钱包相关 (Wallet Series)
 
 **基础 URL**
 ```bash
@@ -888,6 +886,149 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
       "tokenAddress": string,    // 代币地址
       "holders": number,         // 持有者数量
       "timestamp": number        // 时间戳
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### 代币供应量
+
+实时获取代币的供应量和市值信息。
+
+**订阅格式**
+```text
+dex-token-supply:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址，例如：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,    // 代币地址
+      "s": number,    // 供应量
+      "mc": number,   // 市值（美元）
+      "ts": number    // 时间戳
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,    // 代币地址
+      "supply": number,          // 供应量
+      "marketCapInUsd": number,  // 市值（美元）
+      "timestamp": number        // 时间戳
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### DEX 资金池余额
+
+实时获取 DEX 资金池的余额信息。
+
+**订阅格式**
+```text
+dex-pool-balance:{chain}_{poolAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="poolAddress" type="string" required>
+  资金池地址
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // 资金池地址
+      "taa": string,   // 代币A地址
+      "taliu": number, // 代币A流动性（美元）
+      "tba": string,   // 代币B地址
+      "tbliu": number  // 代币B流动性（美元）
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "poolAddress": string,           // 资金池地址
+      "tokenAAddress": string,         // 代币A地址
+      "tokenALiquidityInUsd": number,  // 代币A流动性（美元）
+      "tokenBAddress": string,         // 代币B地址
+      "tokenBLiquidityInUsd": number   // 代币B流动性（美元）
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### 代币流动性
+
+实时获取代币的流动性统计信息。
+
+**订阅格式**
+```text
+dex-token-general-stat-num:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,    // 代币地址
+      "t": string,    // 指标类型
+      "v": number,    // 数值
+      "ts": number    // 时间戳
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,  // 代币地址
+      "metricType": string,    // 指标类型
+      "value": number,         // 数值
+      "timestamp": number      // 时间戳
     }
     ```
   </Tab>

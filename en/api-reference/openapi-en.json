@@ -19,48 +19,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Job status retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "state": {
-                      "type": "string",
-                      "description": "Current job state",
-                      "example": "completed"
-                    },
-                    "result": {
-                      "type": "object",
-                      "description": "Job execution result"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "number",
-                      "example": 404
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Job not found"
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Job status retrieved successfully"
           }
         },
-        "summary": "Get job status",
+        "summary": "Job - Get",
         "tags": [
           "Jobs"
         ]
@@ -68,7 +30,7 @@
     },
     "/jobs/{id}/streaming": {
       "get": {
-        "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs.",
+        "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs",
         "operationId": "JobController_streaming",
         "parameters": [
           {
@@ -84,56 +46,10 @@
         ],
         "responses": {
           "200": {
-            "description": "SSE stream established successfully",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Job ID",
-                      "example": "12345"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "completed",
-                        "error"
-                      ],
-                      "description": "Current job status"
-                    },
-                    "result": {
-                      "type": "object",
-                      "description": "Job result or error details"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Job not found",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "error"
-                    },
-                    "result": {
-                      "type": "string",
-                      "example": "Job for id 12345 not found."
-                    }
-                  }
-                }
-              }
-            }
+            "description": "SSE stream established successfully"
           }
         },
-        "summary": "Stream job updates",
+        "summary": "Job - Streaming",
         "tags": [
           "Jobs"
         ]
@@ -501,6 +417,15 @@
               "maximum": 100,
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "dexProgram",
+            "required": false,
+            "in": "query",
+            "description": "dex program address",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1661,6 +1586,16 @@
               "example": 1741700970000,
               "type": "number"
             }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "example": 100,
+              "type": "number"
+            }
           }
         ],
         "responses": {
@@ -1788,6 +1723,58 @@
           }
         ],
         "summary": "Token - Market Data",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/security": {
+      "get": {
+        "description": "Get token security information",
+        "operationId": "get.security",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a token",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - Security",
         "tags": [
           "Token"
         ]
@@ -2259,6 +2246,110 @@
           "Wallet"
         ]
       }
+    },
+    "/redpacket/{chain}/create": {
+      "post": {
+        "description": "Create a new red packet with specified amount and quantity",
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRedPacketInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "RedPacket - Create",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/redpacket/{chain}/claim": {
+      "post": {
+        "description": "Claim tokens from an existing red packet",
+        "operationId": "claim",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRedPacketInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "RedPacket - Claim",
+        "tags": [
+          "RedPacket"
+        ]
+      }
     }
   },
   "info": {
@@ -2312,7 +2403,7 @@
           "logoUrl": {
             "type": "string",
             "description": "Blockchain Logo URL",
-            "example": "https://s1.chainstream.io/logos/solana.png"
+            "example": "https://s1.openweb3.io/logos/solana.png"
           }
         },
         "required": [
@@ -2380,11 +2471,17 @@
             "type": "number",
             "description": "Transaction processing time in milliseconds",
             "example": 1500
+          },
+          "jobId": {
+            "type": "string",
+            "description": "job id",
+            "example": "1234567890"
           }
         },
         "required": [
           "signature",
-          "elapsedTime"
+          "elapsedTime",
+          "jobId"
         ]
       },
       "SwapInput": {
@@ -2551,53 +2648,6 @@
           "slippage"
         ]
       },
-      "SwapRouteInfo": {
-        "type": "object",
-        "properties": {
-          "chain": {
-            "type": "string",
-            "description": "Blockchain network for the swap"
-          },
-          "dex": {
-            "type": "string",
-            "description": "DEX identifier for the swap"
-          },
-          "slippage": {
-            "type": "number",
-            "description": "Slippage tolerance percentage"
-          },
-          "inputMint": {
-            "type": "string",
-            "description": "Input token mint address"
-          },
-          "outputMint": {
-            "type": "string",
-            "description": "Output token mint address"
-          },
-          "amount": {
-            "type": "string",
-            "description": "Amount to swap"
-          },
-          "swapMode": {
-            "type": "string",
-            "description": "Swap direction mode",
-            "enum": [
-              "ExactIn",
-              "ExactOut"
-            ],
-            "example": "ExactIn"
-          }
-        },
-        "required": [
-          "chain",
-          "dex",
-          "slippage",
-          "inputMint",
-          "outputMint",
-          "amount",
-          "swapMode"
-        ]
-      },
       "SwapRouteResponse": {
         "type": "object",
         "properties": {
@@ -2615,6 +2665,7 @@
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "routeInfo": {
+            "type": "object",
             "description": "Detailed routing information",
             "example": {
               "inAmount": "1000000000",
@@ -2624,12 +2675,7 @@
                 "USDC",
                 "SOL"
               ]
-            },
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SwapRouteInfo"
-              }
-            ]
+            }
           },
           "elapsedTime": {
             "type": "number",
@@ -3109,6 +3155,14 @@
             "type": "string",
             "description": "Token address"
           },
+          "dappProgramAddress": {
+            "type": "string",
+            "description": "dapp program address"
+          },
+          "dappName": {
+            "type": "string",
+            "description": "dapp name"
+          },
           "tokenAmount": {
             "type": "string",
             "description": "Token amount"
@@ -3167,6 +3221,8 @@
           "tokenSymbol",
           "tokenImageUrl",
           "tokenAddress",
+          "dappProgramAddress",
+          "dappName",
           "tokenAmount",
           "tokenPriceInUsd",
           "tokenAmountInUsd",
@@ -5668,12 +5724,12 @@
             "description": "Number of sell transactions",
             "example": "5"
           },
-          "averageBuyPrice": {
+          "averageBuyPriceInUsd": {
             "type": "number",
             "description": "Average buying price",
             "example": "1.23"
           },
-          "averageSellPrice": {
+          "averageSellPriceInUsd": {
             "type": "number",
             "description": "Average selling price",
             "example": "1.23"
@@ -5725,8 +5781,8 @@
           "sellAmount",
           "sellAmountInUsd",
           "sells",
-          "averageBuyPrice",
-          "averageSellPrice",
+          "averageBuyPriceInUsd",
+          "averageSellPriceInUsd",
           "unrealizedProfitInUsd",
           "unrealizedProfitRatio",
           "realizedProfitInUsd",
@@ -5833,12 +5889,12 @@
             "description": "Total value of tokens sold in USD",
             "example": "615"
           },
-          "averageBuyPrice": {
+          "averageBuyPriceInUsd": {
             "type": "number",
             "description": "Average buying price",
             "example": "1.23"
           },
-          "averageSellPrice": {
+          "averageSellPriceInUsd": {
             "type": "number",
             "description": "Average selling price",
             "example": "1.23"
@@ -5884,8 +5940,8 @@
           "sells",
           "sellAmount",
           "sellAmountInUsd",
-          "averageBuyPrice",
-          "averageSellPrice",
+          "averageBuyPriceInUsd",
+          "averageSellPriceInUsd",
           "realizedProfitInUsd",
           "realizedProfitRatio",
           "totalRealizedProfitInUsd",
@@ -5918,6 +5974,92 @@
           "totalProfitInUsd",
           "balances"
         ]
+      },
+      "CreateRedPacketInput": {
+        "type": "object",
+        "properties": {
+          "creator": {
+            "type": "string",
+            "description": "Creator wallet address of the red packet",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "mint": {
+            "type": "string",
+            "description": "Token mint address for the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "maxRecipients": {
+            "type": "number",
+            "description": "Ouput Mint, the quote token address",
+            "example": 10,
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "totalAmount": {
+            "type": "string",
+            "description": "Total amount of tokens to be distributed",
+            "example": "1000000000"
+          },
+          "fixedAmount": {
+            "format": "int64",
+            "type": "integer",
+            "description": "Fixed amount per claim (for equal distribution)",
+            "example": "1000000000"
+          },
+          "memo": {
+            "type": "string",
+            "description": "Optional memo message for the red packet",
+            "example": "Happy Red Packet"
+          },
+          "password": {
+            "type": "string",
+            "description": "Optional password to claim the red packet",
+            "example": "123456"
+          },
+          "claimAuthority": {
+            "type": "string",
+            "description": "Optional authority address that can claim the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          }
+        },
+        "required": [
+          "totalAmount"
+        ]
+      },
+      "RedPacketReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 encoded transaction",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        },
+        "required": [
+          "serializedTx"
+        ]
+      },
+      "ClaimRedPacketInput": {
+        "type": "object",
+        "properties": {
+          "packetId": {
+            "type": "string",
+            "description": "Unique identifier of the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "password": {
+            "type": "string",
+            "description": "Optional password to claim the red packet",
+            "example": "123456"
+          },
+          "claimer": {
+            "type": "string",
+            "description": "Wallet address of the claimer",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          }
+        }
       },
       "TradeType": {
         "type": "string",

@@ -544,7 +544,7 @@
     },
     "/solana/pumpfun/mint": {
       "post": {
-        "description": "使用 PumpFun 协议创建新代币。\n\n特别说明，由于mintAddress需要传入，所以返回后的交易也需要mintKeypair签名。",
+        "description": "使用 PumpFun 协议创建新代币。\\n\\n特别说明，由于mintAddress需要传入，所以返回后的交易也需要mintKeypair签名。",
         "operationId": "pumpfun.mint",
         "parameters": [],
         "requestBody": {
@@ -2348,6 +2348,246 @@
         "summary": "红包 - 领取",
         "tags": [
           "RedPacket"
+        ]
+      }
+    },
+    "/redpacket/{id}": {
+      "get": {
+        "description": "查询红包信息",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "红包ID",
+            "schema": {
+              "example": "redpacket123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "红包 - 查询",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/redpacket/{id}/claims": {
+      "get": {
+        "description": "查看红包的领取记录",
+        "operationId": "get.claims",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "红包ID",
+            "schema": {
+              "example": "redpacket123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "example": "cursor_123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketClaimsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "红包 - 领取记录",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/redpacket": {
+      "get": {
+        "description": "获取红包列表",
+        "operationId": "get.redpackets",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "example": "cursor_123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页记录数",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "creator",
+            "required": false,
+            "in": "query",
+            "description": "红包创建者的钱包地址",
+            "schema": {
+              "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+              "type": "string"
+            }
+          },
+          {
+            "name": "chain",
+            "required": false,
+            "in": "query",
+            "description": "区块链网络",
+            "schema": {
+              "example": "sol",
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "红包 - 列表",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/user/{chain}/{walletAddress}": {
+      "get": {
+        "description": "只会记录传入的钱包地址的交易记录和盈亏统计",
+        "operationId": "user.login",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "用户 - 登录",
+        "tags": [
+          "User"
         ]
       }
     }
@@ -5990,9 +6230,9 @@
             "description": "红包代币的铸造地址",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           },
-          "maxRecipients": {
+          "maxClaims": {
             "type": "number",
-            "description": "Ouput Mint，报价代币地址",
+            "description": "最大领取人数",
             "example": 10,
             "minLength": 1,
             "maxLength": 100
@@ -6058,6 +6298,146 @@
             "type": "string",
             "description": "领取者的钱包地址",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          }
+        }
+      },
+      "RedPacketDTO": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "支持网络中列出的区块链名称",
+            "example": "sol",
+            "enum": [
+              "sol",
+              "base"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "红包ID",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "creator": {
+            "type": "string",
+            "description": "红包创建者的钱包地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "mint": {
+            "type": "string",
+            "description": "红包代币的铸造地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "totalAmount": {
+            "type": "string",
+            "description": "要分发的代币总量",
+            "example": "1000000000"
+          },
+          "memo": {
+            "type": "string",
+            "description": "红包的可选备注信息",
+            "example": "Happy Red Packet"
+          },
+          "maxClaims": {
+            "type": "number",
+            "description": "最大领取人数",
+            "example": 100
+          },
+          "claimAuthority": {
+            "type": "string",
+            "description": "可以领取红包的可选授权地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "withdrawed": {
+            "type": "boolean",
+            "description": "是否已完成",
+            "example": true
+          },
+          "withdrawedAt": {
+            "type": "number",
+            "description": "完成时间",
+            "example": 1717334400
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "创建时间",
+            "example": 1717334400
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "过期时间",
+            "example": 1717334400
+          }
+        }
+      },
+      "RedPacketClaimDTO": {
+        "type": "object",
+        "properties": {
+          "packetId": {
+            "type": "string",
+            "description": "红包的唯一标识符",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "chain": {
+            "type": "string",
+            "description": "区块链网络",
+            "example": "sol",
+            "enum": [
+              "sol",
+              "base"
+            ]
+          },
+          "claimer": {
+            "type": "string",
+            "description": "领取者的钱包地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "mint": {
+            "type": "string",
+            "description": "红包代币的铸造地址",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "amount": {
+            "type": "string",
+            "description": "领取数量",
+            "example": "1000000000"
+          },
+          "claimedAt": {
+            "type": "number",
+            "description": "领取时间",
+            "example": 1717334400
+          }
+        }
+      },
+      "RedPacketClaimsPage": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "总项目数",
+            "example": 100
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "是否有更多结果",
+            "example": true
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标",
+            "example": "cursor_123"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标",
+            "example": "cursor_456"
+          },
+          "records": {
+            "description": "Array of claim records",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RedPacketClaimDTO"
+            }
           }
         }
       },

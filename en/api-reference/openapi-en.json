@@ -544,7 +544,7 @@
     },
     "/solana/pumpfun/mint": {
       "post": {
-        "description": "Create a new token using the PumpFun protocol.\n\nSpecial note: Since mintAddress needs to be provided, the returned transaction also needs to be signed with mintKeypair.",
+        "description": "Create a new token using the PumpFun protocol.\\n\\nSpecial note: Since mintAddress needs to be provided, the returned transaction also needs to be signed with mintKeypair.",
         "operationId": "pumpfun.mint",
         "parameters": [],
         "requestBody": {
@@ -2348,6 +2348,246 @@
         "summary": "RedPacket - Claim",
         "tags": [
           "RedPacket"
+        ]
+      }
+    },
+    "/redpacket/{id}": {
+      "get": {
+        "description": "Query redpacket information",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Redpacket id",
+            "schema": {
+              "example": "redpacket123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "RedPacket - Get",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/redpacket/{id}/claims": {
+      "get": {
+        "description": "Check the record of redpacket collection",
+        "operationId": "get.claims",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Redpacket id",
+            "schema": {
+              "example": "redpacket123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "example": "cursor_123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of records per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketClaimsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "RedPacket - GetClaims",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/redpacket": {
+      "get": {
+        "description": "Get the redpackets list",
+        "operationId": "get.redpackets",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "example": "cursor_123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of records per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "creator",
+            "required": false,
+            "in": "query",
+            "description": "Creator wallet address of the red packet",
+            "schema": {
+              "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+              "type": "string"
+            }
+          },
+          {
+            "name": "chain",
+            "required": false,
+            "in": "query",
+            "description": "Blockchain network",
+            "schema": {
+              "example": "sol",
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "RedPacket - GetRedpackets",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
+    "/user/{chain}/{walletAddress}": {
+      "get": {
+        "description": "Only the transaction records and PNL of the incoming wallet address will be recorded",
+        "operationId": "user.login",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "User - Login",
+        "tags": [
+          "User"
         ]
       }
     }
@@ -5990,9 +6230,9 @@
             "description": "Token mint address for the red packet",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           },
-          "maxRecipients": {
+          "maxClaims": {
             "type": "number",
-            "description": "Ouput Mint, the quote token address",
+            "description": "Maximum number of recipients",
             "example": 10,
             "minLength": 1,
             "maxLength": 100
@@ -6058,6 +6298,146 @@
             "type": "string",
             "description": "Wallet address of the claimer",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          }
+        }
+      },
+      "RedPacketDTO": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "type": "string",
+            "description": "A chain name listed in supported networks",
+            "example": "sol",
+            "enum": [
+              "sol",
+              "base"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "Redpacket id",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "creator": {
+            "type": "string",
+            "description": "Creator wallet address of the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "mint": {
+            "type": "string",
+            "description": "Token mint address for the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "totalAmount": {
+            "type": "string",
+            "description": "Total amount of tokens to be distributed",
+            "example": "1000000000"
+          },
+          "memo": {
+            "type": "string",
+            "description": "Optional memo message for the red packet",
+            "example": "Happy Red Packet"
+          },
+          "maxClaims": {
+            "type": "number",
+            "description": "Maximum number of recipients",
+            "example": 100
+          },
+          "claimAuthority": {
+            "type": "string",
+            "description": "Optional authority address that can claim the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "withdrawed": {
+            "type": "boolean",
+            "description": "Whether it is completed or not",
+            "example": true
+          },
+          "withdrawedAt": {
+            "type": "number",
+            "description": "Completion time",
+            "example": 1717334400
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Creation time",
+            "example": 1717334400
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "Expiry date",
+            "example": 1717334400
+          }
+        }
+      },
+      "RedPacketClaimDTO": {
+        "type": "object",
+        "properties": {
+          "packetId": {
+            "type": "string",
+            "description": "Unique identifier of the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network",
+            "example": "sol",
+            "enum": [
+              "sol",
+              "base"
+            ]
+          },
+          "claimer": {
+            "type": "string",
+            "description": "Wallet address of the claimer",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "mint": {
+            "type": "string",
+            "description": "Token mint address for the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Claimed amount",
+            "example": "1000000000"
+          },
+          "claimedAt": {
+            "type": "number",
+            "description": "Claimed time",
+            "example": 1717334400
+          }
+        }
+      },
+      "RedPacketClaimsPage": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "Total number of items",
+            "example": 100
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "example": true
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page",
+            "example": "cursor_123"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page",
+            "example": "cursor_456"
+          },
+          "records": {
+            "description": "Array of claim records",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RedPacketClaimDTO"
+            }
           }
         }
       },

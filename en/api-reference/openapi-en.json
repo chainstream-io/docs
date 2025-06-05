@@ -55,132 +55,6 @@
         ]
       }
     },
-    "/realtime/test": {
-      "get": {
-        "operationId": "RealtimeController_test",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Realtime"
-        ]
-      }
-    },
-    "/blockchain/{symbol}": {
-      "get": {
-        "description": "Retrieve information about a specific blockchain.",
-        "operationId": "blockchain.get",
-        "parameters": [
-          {
-            "name": "symbol",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "example": {
-                "SOLANA": "sol",
-                "BASE": "base"
-              },
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BlockchainDTO"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Blockchain - Detail",
-        "tags": [
-          "Blockchain"
-        ]
-      }
-    },
-    "/blockchain": {
-      "get": {
-        "description": "Fetch information about all supported blockchains.",
-        "operationId": "blockchain.list",
-        "parameters": [
-          {
-            "name": "orderBy",
-            "required": false,
-            "in": "query",
-            "description": "Sort field",
-            "schema": {
-              "default": "name",
-              "enum": [
-                "name",
-                "symbol"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "description": "Sort type",
-            "schema": {
-              "default": "asc",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "Pagination cursor",
-            "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of results per page",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "example": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BlockchainPage"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Blockchain - List",
-        "tags": [
-          "Blockchain"
-        ]
-      }
-    },
     "/transaction/{chain}/send": {
       "post": {
         "description": "Submit a signed transaction to the blockchain",
@@ -674,398 +548,6 @@
         "summary": "Trade - List",
         "tags": [
           "Trade"
-        ]
-      }
-    },
-    "/orders/placeOrder": {
-      "post": {
-        "description": "Create a new order on specified DEX",
-        "operationId": "place",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Order parameters",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PlaceOrderInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderReply"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Order - Place",
-        "tags": [
-          "Order"
-        ]
-      }
-    },
-    "/orders/cancelOrder": {
-      "post": {
-        "description": "Cancel an existing order",
-        "operationId": "cancel",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Cancel parameters",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelOrderInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderReply"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Order - Cancel",
-        "tags": [
-          "Order"
-        ]
-      }
-    },
-    "/orders/cancelAllOrders": {
-      "post": {
-        "description": "Cancel all orders",
-        "operationId": "cancelAll",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Required parameters for canceling all orders",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelAllOrdersInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderReply"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Order - Cancel All",
-        "tags": [
-          "Order"
-        ]
-      }
-    },
-    "/orders/takeOrder": {
-      "post": {
-        "description": "Take order interface",
-        "operationId": "take",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Required parameters for taking order",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PlaceOrderInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderReply"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Order - Take",
-        "tags": [
-          "Order"
-        ]
-      }
-    },
-    "/orders/createMarket": {
-      "post": {
-        "description": "Create trading pair",
-        "operationId": "createMarket",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Required parameters for creating trading pair",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMarketInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderReply"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Order - Create Market",
-        "tags": [
-          "Order"
-        ]
-      }
-    },
-    "/orders/closeMarket": {
-      "post": {
-        "description": "Close trading pair",
-        "operationId": "closeMarket",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "description": "Required parameters for closing trading pair",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CloseMarketInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderReply"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Order - Close Market",
-        "tags": [
-          "Order"
-        ]
-      }
-    },
-    "/solana/openbook/markets": {
-      "get": {
-        "description": "Retrieve a list of all available trading pairs on OpenBook",
-        "operationId": "list.markets",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SimpleMarketDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "OpenBook - List",
-        "tags": [
-          "Openbook"
-        ]
-      }
-    },
-    "/solana/openbook/market/{marketAddress}": {
-      "get": {
-        "description": "Retrieve detailed information about a specific market",
-        "operationId": "get.market",
-        "parameters": [
-          {
-            "name": "marketAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a market",
-            "schema": {
-              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MarketInfoDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "OpenBook - Detail",
-        "tags": [
-          "Openbook"
-        ]
-      }
-    },
-    "/solana/openbook/market/{marketAddress}/orderbook": {
-      "get": {
-        "description": "Retrieve current order book state for a specific market",
-        "operationId": "get.orderbook",
-        "parameters": [
-          {
-            "name": "marketAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a market",
-            "schema": {
-              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderBookInfoDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "OpenBook - Orderbook",
-        "tags": [
-          "Openbook"
-        ]
-      }
-    },
-    "/solana/openbook/markets/{marketAddress}/users/{userAddress}/orders": {
-      "get": {
-        "description": "Retrieve all active orders for a specific user in a market",
-        "operationId": "get.user.orders",
-        "parameters": [
-          {
-            "name": "marketAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a market",
-            "schema": {
-              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
-              "type": "string"
-            }
-          },
-          {
-            "name": "userAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a user",
-            "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOrderInfoDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "OpenBook - User Orders",
-        "tags": [
-          "Openbook"
         ]
       }
     },
@@ -1780,61 +1262,6 @@
         ]
       }
     },
-    "/ranking/{chain}/{tokenAddress}/gainers": {
-      "get": {
-        "description": "Get a list of tokens that have gained the most in value.",
-        "operationId": "get.gainers",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a token",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TokenGainersPage"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Ranking - Gainers",
-        "tags": [
-          "Token-Rankings"
-        ]
-      }
-    },
     "/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "Retrieve detailed information about a specific DEX pool",
@@ -2538,58 +1965,6 @@
           "RedPacket"
         ]
       }
-    },
-    "/user/{chain}/{walletAddress}": {
-      "get": {
-        "description": "Only the transaction records and PNL of the incoming wallet address will be recorded",
-        "operationId": "user.login",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a wallet",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "User - Login",
-        "tags": [
-          "User"
-        ]
-      }
     }
   },
   "info": {
@@ -2622,61 +1997,6 @@
       }
     },
     "schemas": {
-      "BlockchainDTO": {
-        "type": "object",
-        "properties": {
-          "symbol": {
-            "type": "string",
-            "description": "Blockchain Symbol",
-            "example": "SOL"
-          },
-          "name": {
-            "type": "string",
-            "description": "Blockchain Name",
-            "example": "Solana"
-          },
-          "explorerUrl": {
-            "type": "string",
-            "description": "Blockchain Explorer URL",
-            "example": "https://explorer.solana.com"
-          },
-          "logoUrl": {
-            "type": "string",
-            "description": "Blockchain Logo URL",
-            "example": "https://s1.openweb3.io/logos/solana.png"
-          }
-        },
-        "required": [
-          "symbol",
-          "name",
-          "explorerUrl",
-          "logoUrl"
-        ]
-      },
-      "BlockchainPage": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "description": "Array of blockchain data",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BlockchainDTO"
-            }
-          },
-          "next": {
-            "type": "string",
-            "description": "Cursor for the next page of results"
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "Indicates if there are more results available",
-            "default": false
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
       "SendTxInput": {
         "type": "object",
         "properties": {
@@ -3513,689 +2833,6 @@
           "total"
         ]
       },
-      "PlaceOrderInput": {
-        "type": "object",
-        "properties": {
-          "chain": {
-            "type": "string",
-            "description": "Blockchain network identifier",
-            "example": "solana",
-            "enum": [
-              "solana",
-              "ethereum"
-            ]
-          },
-          "dex": {
-            "type": "string",
-            "description": "DEX identifier",
-            "example": "raydium",
-            "enum": [
-              "raydium",
-              "openbook",
-              "jupiter"
-            ]
-          },
-          "amount": {
-            "type": "number",
-            "description": "Order amount in base units",
-            "example": 1000000000
-          },
-          "price": {
-            "type": "number",
-            "description": "Order price in quote units",
-            "example": 50.5
-          },
-          "side": {
-            "type": "string",
-            "description": "Order side",
-            "enum": [
-              "bid",
-              "ask"
-            ],
-            "example": "bid"
-          },
-          "marketAddress": {
-            "type": "string",
-            "description": "Market/Pool address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "userAddress": {
-            "type": "string",
-            "description": "Wallet address placing the order",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-          },
-          "priorityFee": {
-            "format": "int64",
-            "type": "integer",
-            "description": "Priority fee in microLamports",
-            "example": "5000",
-            "default": 5000
-          }
-        },
-        "required": [
-          "chain",
-          "dex",
-          "amount",
-          "price",
-          "side",
-          "marketAddress",
-          "userAddress"
-        ]
-      },
-      "OrderReply": {
-        "type": "object",
-        "properties": {
-          "serializedTx": {
-            "type": "string",
-            "description": "Base64 encoded transaction",
-            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-          }
-        },
-        "required": [
-          "serializedTx"
-        ]
-      },
-      "CancelOrderInput": {
-        "type": "object",
-        "properties": {
-          "dex": {
-            "type": "string",
-            "description": "DEX identifier",
-            "example": "openbook",
-            "enum": [
-              "raydium",
-              "openbook",
-              "jupiter"
-            ]
-          },
-          "chain": {
-            "type": "string",
-            "description": "Blockchain network identifier",
-            "example": "solana",
-            "enum": [
-              "solana",
-              "ethereum"
-            ]
-          },
-          "userAddress": {
-            "type": "string",
-            "description": "Wallet address owning the orders",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-          },
-          "marketAddress": {
-            "type": "string",
-            "description": "Market/Pool address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "orderIds": {
-            "description": "List of order IDs to cancel",
-            "example": [
-              "order123",
-              "order456"
-            ],
-            "default": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "clientOrderIds": {
-            "description": "List of client order IDs to cancel",
-            "example": [
-              "client123",
-              "client456"
-            ],
-            "default": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "priorityFee": {
-            "format": "int64",
-            "type": "integer",
-            "description": "Priority fee in microLamports",
-            "example": "5000",
-            "default": 5000
-          },
-          "extra": {
-            "type": "object",
-            "description": "Additional cancellation metadata",
-            "example": {
-              "reason": "user_requested",
-              "timestamp": "2024-03-14T12:00:00Z"
-            }
-          }
-        },
-        "required": [
-          "dex",
-          "chain",
-          "userAddress",
-          "marketAddress"
-        ]
-      },
-      "CancelAllOrdersInput": {
-        "type": "object",
-        "properties": {
-          "chain": {
-            "type": "string",
-            "description": "Blockchain network identifier",
-            "example": "solana",
-            "enum": [
-              "solana",
-              "ethereum"
-            ]
-          },
-          "dex": {
-            "type": "string",
-            "description": "DEX identifier",
-            "example": "openbook",
-            "enum": [
-              "raydium",
-              "openbook",
-              "jupiter"
-            ]
-          },
-          "marketAddress": {
-            "type": "string",
-            "description": "Market/Pool address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "userAddress": {
-            "type": "string",
-            "description": "Wallet address owning the orders",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-          },
-          "side": {
-            "type": "string",
-            "description": "Order side to cancel",
-            "enum": [
-              "bid",
-              "ask"
-            ],
-            "example": "bid"
-          },
-          "limit": {
-            "type": "number",
-            "description": "Maximum number of orders to cancel",
-            "example": 10,
-            "default": 10,
-            "minimum": 1,
-            "maximum": 100
-          },
-          "priorityFee": {
-            "format": "int64",
-            "type": "integer",
-            "description": "Priority fee in microLamports",
-            "example": "5000",
-            "default": 5000
-          }
-        },
-        "required": [
-          "chain",
-          "dex",
-          "marketAddress",
-          "userAddress",
-          "side",
-          "limit"
-        ]
-      },
-      "CreateMarketInput": {
-        "type": "object",
-        "properties": {
-          "chain": {
-            "type": "string",
-            "description": "Blockchain network identifier",
-            "example": "solana",
-            "enum": [
-              "solana",
-              "ethereum"
-            ]
-          },
-          "dex": {
-            "type": "string",
-            "description": "DEX identifier",
-            "example": "openbook",
-            "enum": [
-              "raydium",
-              "openbook",
-              "jupiter"
-            ]
-          },
-          "name": {
-            "type": "string",
-            "description": "Market display name",
-            "example": "SOL/USDC",
-            "minLength": 3,
-            "maxLength": 20
-          },
-          "baseMint": {
-            "type": "string",
-            "description": "Base token mint address",
-            "example": "So11111111111111111111111111111111111111112"
-          },
-          "quoteMint": {
-            "type": "string",
-            "description": "Quote token mint address",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "baseLotSize": {
-            "type": "number",
-            "description": "Minimum tradeable amount of base token",
-            "example": 100000000
-          },
-          "quoteLotSize": {
-            "type": "number",
-            "description": "Minimum tradeable amount of quote token",
-            "example": 100000
-          },
-          "userAddress": {
-            "type": "string",
-            "description": "Market creator wallet address",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-          },
-          "priorityFee": {
-            "format": "int64",
-            "type": "integer",
-            "description": "Priority fee in microLamports",
-            "example": "5000",
-            "default": 5000
-          },
-          "makerFee": {
-            "type": "number",
-            "description": "Maker fee in basis points (1 = 0.01%)",
-            "example": 0,
-            "default": 0,
-            "minimum": 0,
-            "maximum": 10000
-          },
-          "takerFee": {
-            "type": "number",
-            "description": "Taker fee in basis points (1 = 0.01%)",
-            "example": 0,
-            "default": 0,
-            "minimum": 0,
-            "maximum": 10000
-          },
-          "timeExpiry": {
-            "type": "number",
-            "description": "Order expiry time in seconds",
-            "example": 0,
-            "default": 0,
-            "minimum": 0
-          },
-          "oracleA": {
-            "type": "string",
-            "description": "Primary oracle account address",
-            "example": "FmAmfoyPXiA8Vhhe6MZTr3U6rZfEZ1ctEHay1ysqCqcf"
-          },
-          "oracleB": {
-            "type": "string",
-            "description": "Secondary oracle account address",
-            "example": "GwzBgrXb4PG59zjce24SF2b9JXbLEjJJTBkmytuEZj1b"
-          },
-          "extra": {
-            "type": "object",
-            "description": "Additional market creation metadata",
-            "example": {
-              "tags": [
-                "spot",
-                "perpetual"
-              ],
-              "description": "SOL/USDC spot market"
-            }
-          }
-        },
-        "required": [
-          "chain",
-          "dex",
-          "name",
-          "baseMint",
-          "quoteMint",
-          "baseLotSize",
-          "quoteLotSize",
-          "userAddress",
-          "makerFee",
-          "takerFee",
-          "timeExpiry"
-        ]
-      },
-      "CloseMarketInput": {
-        "type": "object",
-        "properties": {
-          "chain": {
-            "type": "string",
-            "description": "Blockchain network identifier",
-            "example": "solana",
-            "enum": [
-              "solana",
-              "ethereum"
-            ]
-          },
-          "dex": {
-            "type": "string",
-            "description": "DEX identifier",
-            "example": "openbook",
-            "enum": [
-              "raydium",
-              "openbook",
-              "jupiter"
-            ]
-          },
-          "marketAddress": {
-            "type": "string",
-            "description": "Market address to close",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "userAddress": {
-            "type": "string",
-            "description": "Market admin wallet address",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-          },
-          "priorityFee": {
-            "format": "int64",
-            "type": "integer",
-            "description": "Priority fee in microLamports",
-            "example": "5000",
-            "default": 5000
-          },
-          "extra": {
-            "type": "object",
-            "description": "Additional market closure metadata",
-            "example": {
-              "reason": "low_volume",
-              "timestamp": "2024-03-14T12:00:00Z"
-            }
-          }
-        },
-        "required": [
-          "chain",
-          "dex",
-          "marketAddress",
-          "userAddress"
-        ]
-      },
-      "SimpleMarketDto": {
-        "type": "object",
-        "properties": {
-          "market": {
-            "type": "string",
-            "description": "Market account address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "baseMint": {
-            "type": "string",
-            "description": "Base token mint address",
-            "example": "So11111111111111111111111111111111111111112"
-          },
-          "quoteMint": {
-            "type": "string",
-            "description": "Quote token mint address",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "name": {
-            "type": "string",
-            "description": "Market display name",
-            "example": "SOL/USDC"
-          },
-          "timestamp": {
-            "type": "object",
-            "description": "Last update timestamp (Unix epoch in seconds)",
-            "example": 1709251200
-          }
-        },
-        "required": [
-          "market",
-          "baseMint",
-          "quoteMint",
-          "name"
-        ]
-      },
-      "MarketInfoDto": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string",
-            "description": "Market account address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "name": {
-            "type": "string",
-            "description": "Market display name",
-            "example": "SOL/USDC"
-          },
-          "baseMint": {
-            "type": "string",
-            "description": "Base token mint address",
-            "example": "So11111111111111111111111111111111111111112"
-          },
-          "quoteMint": {
-            "type": "string",
-            "description": "Quote token mint address",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "baseDecimals": {
-            "type": "number",
-            "description": "Number of decimal places for base token",
-            "example": 9,
-            "minimum": 0,
-            "maximum": 18
-          },
-          "quoteDecimals": {
-            "type": "number",
-            "description": "Number of decimal places for quote token",
-            "example": 6,
-            "minimum": 0,
-            "maximum": 18
-          },
-          "baseLotSize": {
-            "type": "number",
-            "description": "Minimum tradeable amount of base token",
-            "example": 100000000,
-            "minimum": 1
-          },
-          "quoteLotSize": {
-            "type": "number",
-            "description": "Minimum tradeable amount of quote token",
-            "example": 100000,
-            "minimum": 1
-          },
-          "makerFee": {
-            "type": "number",
-            "description": "Fee rate for makers in basis points (1 = 0.01%)",
-            "example": 0,
-            "minimum": 0,
-            "maximum": 10000
-          },
-          "takerFee": {
-            "type": "number",
-            "description": "Fee rate for takers in basis points (1 = 0.01%)",
-            "example": 20,
-            "minimum": 0,
-            "maximum": 10000
-          },
-          "createTime": {
-            "type": "number",
-            "description": "Market creation timestamp (Unix epoch in seconds)",
-            "example": 1709251200
-          },
-          "isExpired": {
-            "type": "boolean",
-            "description": "Whether the market has expired",
-            "example": false
-          },
-          "timeExpiry": {
-            "type": "number",
-            "description": "Market expiry timestamp (Unix epoch in seconds)",
-            "example": 1709337600
-          }
-        },
-        "required": [
-          "address",
-          "name",
-          "baseMint",
-          "quoteMint",
-          "baseDecimals",
-          "quoteDecimals",
-          "baseLotSize",
-          "quoteLotSize",
-          "makerFee",
-          "takerFee",
-          "isExpired",
-          "timeExpiry"
-        ]
-      },
-      "OrderInfoDto": {
-        "type": "object",
-        "properties": {
-          "price": {
-            "type": "number",
-            "description": "Order price in quote token units",
-            "example": 50.5,
-            "minimum": 0
-          },
-          "size": {
-            "type": "number",
-            "description": "Order size in base token units",
-            "example": 1000000000,
-            "minimum": 0
-          },
-          "owner": {
-            "type": "string",
-            "description": "Wallet address of the order owner",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-          }
-        },
-        "required": [
-          "price",
-          "size",
-          "owner"
-        ]
-      },
-      "OrderBookInfoDto": {
-        "type": "object",
-        "properties": {
-          "bids": {
-            "description": "List of buy orders sorted by price (descending)",
-            "example": [
-              {
-                "price": 50.5,
-                "size": 1000000000,
-                "owner": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderInfoDto"
-            }
-          },
-          "asks": {
-            "description": "List of sell orders sorted by price (ascending)",
-            "example": [
-              {
-                "price": 51,
-                "size": 2000000000,
-                "owner": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderInfoDto"
-            }
-          },
-          "bestBid": {
-            "type": "number",
-            "description": "Highest buy order price",
-            "example": 50.5
-          },
-          "bestAsk": {
-            "type": "number",
-            "description": "Lowest sell order price",
-            "example": 51
-          },
-          "spread": {
-            "type": "number",
-            "description": "Price difference between best ask and best bid",
-            "example": 0.5
-          }
-        },
-        "required": [
-          "bids",
-          "asks"
-        ]
-      },
-      "UserOrderDto": {
-        "type": "object",
-        "properties": {
-          "side": {
-            "type": "string",
-            "description": "Order side",
-            "enum": [
-              "bid",
-              "ask"
-            ],
-            "example": "bid"
-          },
-          "price": {
-            "type": "number",
-            "description": "Order price in quote token units",
-            "example": 50.5,
-            "minimum": 0
-          },
-          "size": {
-            "type": "number",
-            "description": "Order size in base token units",
-            "example": 1000000000,
-            "minimum": 0
-          },
-          "clientOrderId": {
-            "type": "string",
-            "description": "Client-assigned order identifier",
-            "example": "client_order_123"
-          },
-          "id": {
-            "type": "string",
-            "description": "OpenBook-assigned order identifier",
-            "example": "order_456"
-          }
-        },
-        "required": [
-          "side",
-          "price",
-          "size",
-          "id"
-        ]
-      },
-      "UserOrderInfoDto": {
-        "type": "object",
-        "properties": {
-          "openOrdersAddress": {
-            "type": "string",
-            "description": "User's OpenBook account address for this market",
-            "example": "DZjbn6f5EebaABXVbYz3UwdJM1sLJkK3wGEZdyUYY1NR"
-          },
-          "orders": {
-            "description": "List of user's active orders",
-            "example": [
-              {
-                "side": "bid",
-                "price": 50.5,
-                "size": 1000000000,
-                "clientOrderId": "client_order_123",
-                "id": "order_456"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserOrderDto"
-            }
-          }
-        },
-        "required": [
-          "openOrdersAddress",
-          "orders"
-        ]
-      },
       "TokenStat": {
         "type": "object",
         "properties": {
@@ -4205,562 +2842,562 @@
             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
           "price1m": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 1 minute",
             "example": "1.234"
           },
           "buys1m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 1 minute",
             "example": "150"
           },
           "sells1m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 1 minute",
             "example": "120"
           },
           "buyVolumes1m": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 1 minute",
             "example": "50000.45"
           },
           "sellsVolumes1m": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 1 minute",
             "example": "45000.32"
           },
           "volumes1m": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 1 minutes",
             "example": "95000.77"
           },
           "buyVolumesInUsd1m": {
-            "type": "number",
+            "type": "string",
             "description": "1m buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd1m": {
-            "type": "number",
+            "type": "string",
             "description": "1m sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd1m": {
-            "type": "number",
+            "type": "string",
             "description": "1m volume in USD",
             "example": "95000.77"
           },
           "buyers1m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 1 minute",
             "example": "50"
           },
           "sellers1m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 1 minute",
             "example": "45"
           },
           "openPriceInUsd1m": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 1 minute",
             "example": "1.255"
           },
           "closePriceInUsd1m": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 1 minute",
             "example": "1.265"
           },
           "priceChangeRatioInUsd1m": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 1 minute",
             "example": "0.01"
           },
           "trades1m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 1 minute",
             "example": "270"
           },
           "traders1m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 1 minute",
             "example": "270"
           },
           "price5m": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 5 minutes",
             "example": "1.245"
           },
           "buys5m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 5 minutes",
             "example": "150"
           },
           "sells5m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 5 minutes",
             "example": "120"
           },
           "buyVolumes5m": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 5 minutes",
             "example": "50000.45"
           },
           "sellsVolumes5m": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 5 minutes",
             "example": "45000.32"
           },
           "volumes5m": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 5 minutes",
             "example": "95000.77"
           },
           "buyVolumesInUsd5m": {
-            "type": "number",
+            "type": "string",
             "description": "5m buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd5m": {
-            "type": "number",
+            "type": "string",
             "description": "5m sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd5m": {
-            "type": "number",
+            "type": "string",
             "description": "5m volume in USD",
             "example": "95000.77"
           },
           "buyers5m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 5 minutes",
             "example": "50"
           },
           "sellers5m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 5 minutes",
             "example": "45"
           },
           "openPriceInUsd5m": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 5 minutes",
             "example": "1.255"
           },
           "closePriceInUsd5m": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 5 minutes",
             "example": "1.265"
           },
           "priceChangeRatioInUsd5m": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 5 minutes",
             "example": "0.01"
           },
           "trades5m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 5 minutes",
             "example": "270"
           },
           "traders5m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 5 minutes",
             "example": "270"
           },
           "price15m": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 15 minutes",
             "example": "1.255"
           },
           "buys15m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 15 minutes",
             "example": "150"
           },
           "sells15m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 15 minutes",
             "example": "120"
           },
           "buyVolumes15m": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 15 minutes",
             "example": "50000.45"
           },
           "sellsVolumes15m": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 15 minutes",
             "example": "45000.32"
           },
           "volumes15m": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 15 minutes",
             "example": "95000.77"
           },
           "buyVolumesInUsd15m": {
-            "type": "number",
+            "type": "string",
             "description": "15m buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd15m": {
-            "type": "number",
+            "type": "string",
             "description": "15m sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd15m": {
-            "type": "number",
+            "type": "string",
             "description": "15m volume in USD",
             "example": "95000.77"
           },
           "buyers15m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 15 minutes",
             "example": "50"
           },
           "sellers15m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 15 minutes",
             "example": "45"
           },
           "openPriceInUsd15m": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 15 minutes",
             "example": "1.255"
           },
           "closePriceInUsd15m": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 15 minutes",
             "example": "1.265"
           },
           "priceChangeRatioInUsd15m": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 15 minutes",
             "example": "0.01"
           },
           "trades15m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 15 minutes",
             "example": "270"
           },
           "traders15m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 15 minutes",
             "example": "270"
           },
           "price30m": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 30 minutes",
             "example": "1.265"
           },
           "buys30m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 30 minutes",
             "example": "150"
           },
           "sells30m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 30 minutes",
             "example": "120"
           },
           "buyVolumes30m": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 30 minutes",
             "example": "50000.45"
           },
           "sellsVolumes30m": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 30 minutes",
             "example": "45000.32"
           },
           "volumes30m": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 30 minutes",
             "example": "95000.77"
           },
           "buyVolumesInUsd30m": {
-            "type": "number",
+            "type": "string",
             "description": "30m buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd30m": {
-            "type": "number",
+            "type": "string",
             "description": "30m sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd30m": {
-            "type": "number",
+            "type": "string",
             "description": "30m volume in USD",
             "example": "95000.77"
           },
           "buyers30m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 30 minutes",
             "example": "50"
           },
           "sellers30m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 30 minutes",
             "example": "45"
           },
           "openPriceInUsd30m": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 30 minutes",
             "example": "1.255"
           },
           "closePriceInUsd30m": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 30 minutes",
             "example": "1.265"
           },
           "priceChangeRatioInUsd30m": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 30 minutes",
             "example": "0.01"
           },
           "trades30m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 30 minutes",
             "example": "270"
           },
           "traders30m": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 30 minutes",
             "example": "270"
           },
           "price1h": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 1 hour",
             "example": "1.275"
           },
           "buys1h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 1 hour",
             "example": "150"
           },
           "sells1h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 1 hour",
             "example": "120"
           },
           "buyVolumes1h": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 1 hour",
             "example": "50000.45"
           },
           "sellsVolumes1h": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 1 hour",
             "example": "45000.32"
           },
           "volumes1h": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 1 hour",
             "example": "95000.77"
           },
           "buyVolumesInUsd1h": {
-            "type": "number",
+            "type": "string",
             "description": "1h buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd1h": {
-            "type": "number",
+            "type": "string",
             "description": "1h sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd1h": {
-            "type": "number",
+            "type": "string",
             "description": "1h volume in USD",
             "example": "95000.77"
           },
           "buyers1h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 1 hour",
             "example": "50"
           },
           "sellers1h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 1 hour",
             "example": "45"
           },
           "openPriceInUsd1h": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 1 hour",
             "example": "1.255"
           },
           "closePriceInUsd1h": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 1 hour",
             "example": "1.265"
           },
           "priceChangeRatioInUsd1h": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 1 hour",
             "example": "0.01"
           },
           "trades1h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 1 hour",
             "example": "270"
           },
           "traders1h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 1 hour",
             "example": "270"
           },
           "price4h": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 4 hours",
             "example": "1.285"
           },
           "buys4h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 4 hours",
             "example": "150"
           },
           "sells4h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 4 hours",
             "example": "120"
           },
           "buyVolumes4h": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 4 hours",
             "example": "50000.45"
           },
           "sellsVolumes4h": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 4 hours",
             "example": "45000.32"
           },
           "volumes4h": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 4 hour",
             "example": "95000.77"
           },
           "buyVolumesInUsd4h": {
-            "type": "number",
+            "type": "string",
             "description": "4h buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd4h": {
-            "type": "number",
+            "type": "string",
             "description": "4h sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd4h": {
-            "type": "number",
+            "type": "string",
             "description": "4h volume in USD",
             "example": "95000.77"
           },
           "buyers4h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 4 hours",
             "example": "50"
           },
           "sellers4h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 4 hours",
             "example": "45"
           },
           "openPriceInUsd4h": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 4 hours",
             "example": "1.255"
           },
           "closePriceInUsd4h": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 4 hours",
             "example": "1.265"
           },
           "priceChangeRatioInUsd4h": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 4 hours",
             "example": "0.01"
           },
           "trades4h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 4 hours",
             "example": "270"
           },
           "traders4h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 4 hours",
             "example": "270"
           },
           "price24h": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in the last 24 hours",
             "example": "1.295"
           },
           "buys24h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy orders in the last 24 hours",
             "example": "150"
           },
           "sells24h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell orders in the last 24 hours",
             "example": "120"
           },
           "buyVolumes24h": {
-            "type": "number",
+            "type": "string",
             "description": "Total buy volume in the last 24 hours",
             "example": "50000.45"
           },
           "sellsVolumes24h": {
-            "type": "number",
+            "type": "string",
             "description": "Total sell volume in the last 24 hours",
             "example": "45000.32"
           },
           "volumes24h": {
-            "type": "number",
+            "type": "string",
             "description": "Total trading volume in the last 24 hour",
             "example": "95000.77"
           },
           "buyVolumesInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "24h buy volume in USD",
             "example": "50000.45"
           },
           "sellVolumesInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "24h sell volume in USD",
             "example": "45000.32"
           },
           "volumesInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "24h volume in USD",
             "example": "95000.77"
           },
           "buyers24h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique buyers in the last 24 hours",
             "example": "50"
           },
           "sellers24h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique sellers in the last 24 hours",
             "example": "45"
           },
           "openPriceInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "Opening price in USD for the last 24 hours",
             "example": "1.255"
           },
           "closePriceInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "Closing price in USD for the last 24 hours",
             "example": "1.265"
           },
           "priceChangeRatioInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "Price change ratio in USD for the last 24 hours",
             "example": "0.01"
           },
           "trades24h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of trades in the last 24 hours",
             "example": "270"
           },
           "traders24h": {
-            "type": "number",
+            "type": "string",
             "description": "Number of unique traders in the last 24 hours",
             "example": "270"
           }
@@ -5069,11 +3706,6 @@
             "description": "Additional metadata",
             "example": "{}"
           },
-          "metadata": {
-            "type": "string",
-            "description": "Full metadata JSON",
-            "example": "{}"
-          },
           "socialMedias": {
             "type": "string",
             "description": "Social media links",
@@ -5380,11 +4012,6 @@
             "description": "Additional metadata",
             "example": "{}"
           },
-          "metadata": {
-            "type": "string",
-            "description": "Full metadata JSON",
-            "example": "{}"
-          },
           "socialMedias": {
             "type": "string",
             "description": "Social media links",
@@ -5458,11 +4085,6 @@
             "type": "number",
             "description": "Total number of items",
             "example": 1000000
-          },
-          "next": {
-            "type": "string",
-            "description": "Cursor for the next page",
-            "example": "eyJpZCI6MTAwfQ=="
           },
           "hasNext": {
             "type": "boolean",
@@ -5555,35 +4177,6 @@
           "volume",
           "resolution",
           "time"
-        ]
-      },
-      "TokenGainers": {
-        "type": "object",
-        "properties": {}
-      },
-      "TokenGainersPage": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "description": "List of token holders",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TokenGainers"
-            }
-          },
-          "next": {
-            "type": "string",
-            "description": "Pagination cursor for next page",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "Indicates if more results are available",
-            "default": false
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "DexPoolStatDTO": {
@@ -6075,17 +4668,17 @@
             "example": "137.15"
           },
           "priceChangeRatioInUsd24h": {
-            "type": "number",
+            "type": "string",
             "description": "24h price change ratio",
             "example": "5.23"
           },
           "unrealizedProfitInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Unrealized profit in USD",
             "example": "123.45"
           },
           "unrealizedProfitRatio": {
-            "type": "number",
+            "type": "string",
             "description": "Unrealized profit ratio",
             "example": "12.34"
           },
@@ -6100,62 +4693,62 @@
             "example": "1741780466000"
           },
           "buys": {
-            "type": "number",
+            "type": "string",
             "description": "Number of buy transactions",
             "example": 10
           },
           "buyAmount": {
-            "type": "number",
+            "type": "string",
             "description": "Total amount of tokens bought",
             "example": "1500"
           },
           "buyAmountInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Total value of tokens bought in USD",
             "example": "1845"
           },
           "sells": {
-            "type": "number",
+            "type": "string",
             "description": "Number of sell transactions",
             "example": 5
           },
           "sellAmount": {
-            "type": "number",
+            "type": "string",
             "description": "Total amount of tokens sold",
             "example": "500"
           },
           "sellAmountInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Total value of tokens sold in USD",
             "example": "615"
           },
           "averageBuyPriceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Average buying price",
             "example": "1.23"
           },
           "averageSellPriceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Average selling price",
             "example": "1.23"
           },
           "realizedProfitInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Realized profit in USD",
             "example": "1234.56"
           },
           "realizedProfitRatio": {
-            "type": "number",
+            "type": "string",
             "description": "Realized profit ratio",
             "example": "12.34"
           },
           "totalRealizedProfitInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Total realized profit in USD",
             "example": "169.12"
           },
           "totalRealizedProfitRatio": {
-            "type": "number",
+            "type": "string",
             "description": "Total realized profit ratio",
             "example": "16.91"
           }

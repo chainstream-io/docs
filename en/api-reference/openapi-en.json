@@ -1926,7 +1926,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RedPacketReply"
+                  "$ref": "#/components/schemas/CreateRedPacketReply"
                 }
               }
             }
@@ -5190,7 +5190,8 @@
             "maxLength": 100
           },
           "totalAmount": {
-            "type": "string",
+            "format": "int64",
+            "type": "integer",
             "description": "Total amount of tokens to be distributed",
             "example": "1000000000"
           },
@@ -5217,20 +5218,28 @@
           }
         },
         "required": [
-          "totalAmount"
+          "creator",
+          "mint",
+          "maxClaims"
         ]
       },
-      "RedPacketReply": {
+      "CreateRedPacketReply": {
         "type": "object",
         "properties": {
-          "serializedTx": {
+          "txSerialize": {
             "type": "string",
             "description": "Base64 encoded transaction",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "shareId": {
+            "type": "string",
+            "description": "redpacket share id",
+            "example": "123456"
           }
         },
         "required": [
-          "serializedTx"
+          "txSerialize",
+          "shareId"
         ]
       },
       "ClaimRedPacketInput": {
@@ -5240,6 +5249,11 @@
             "type": "string",
             "description": "Unique identifier of the red packet",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "shareId": {
+            "type": "string",
+            "description": "redpacket share id",
+            "example": "123456"
           },
           "password": {
             "type": "string",
@@ -5251,7 +5265,23 @@
             "description": "Wallet address of the claimer",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           }
-        }
+        },
+        "required": [
+          "claimer"
+        ]
+      },
+      "RedPacketReply": {
+        "type": "object",
+        "properties": {
+          "txSerialize": {
+            "type": "string",
+            "description": "Base64 encoded transaction",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        },
+        "required": [
+          "txSerialize"
+        ]
       },
       "RedPacketDTO": {
         "type": "object",
@@ -5269,6 +5299,16 @@
             "type": "string",
             "description": "Redpacket id",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "shareId": {
+            "type": "string",
+            "description": "redpacket share id",
+            "example": "123456"
+          },
+          "txHash": {
+            "type": "string",
+            "description": "Transaction hash",
+            "example": "123456"
           },
           "creator": {
             "type": "string",
@@ -5319,8 +5359,36 @@
             "type": "number",
             "description": "Expiry date",
             "example": 1717334400
+          },
+          "claimedCount": {
+            "type": "number",
+            "description": "claimed count",
+            "example": 1717334400
+          },
+          "claimedAmount": {
+            "type": "string",
+            "description": "claimed amount",
+            "example": 1717334400
           }
-        }
+        },
+        "required": [
+          "chain",
+          "id",
+          "shareId",
+          "txHash",
+          "creator",
+          "mint",
+          "totalAmount",
+          "memo",
+          "maxClaims",
+          "claimAuthority",
+          "withdrawed",
+          "withdrawedAt",
+          "createdAt",
+          "expiresAt",
+          "claimedCount",
+          "claimedAmount"
+        ]
       },
       "RedPacketClaimDTO": {
         "type": "object",
@@ -5358,8 +5426,28 @@
             "type": "number",
             "description": "Claimed time",
             "example": 1717334400
+          },
+          "creator": {
+            "type": "string",
+            "description": "Creator wallet address of the red packet",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "txHash": {
+            "type": "string",
+            "description": "Transaction hash",
+            "example": "123456"
           }
-        }
+        },
+        "required": [
+          "packetId",
+          "chain",
+          "claimer",
+          "mint",
+          "amount",
+          "claimedAt",
+          "creator",
+          "txHash"
+        ]
       },
       "RedPacketClaimsPage": {
         "type": "object",
@@ -5391,7 +5479,14 @@
               "$ref": "#/components/schemas/RedPacketClaimDTO"
             }
           }
-        }
+        },
+        "required": [
+          "total",
+          "hasNextPage",
+          "startCursor",
+          "endCursor",
+          "records"
+        ]
       },
       "RedPacketsPage": {
         "type": "object",
@@ -5423,7 +5518,14 @@
               "$ref": "#/components/schemas/RedPacketDTO"
             }
           }
-        }
+        },
+        "required": [
+          "total",
+          "hasNextPage",
+          "startCursor",
+          "endCursor",
+          "records"
+        ]
       },
       "TradeType": {
         "type": "string",

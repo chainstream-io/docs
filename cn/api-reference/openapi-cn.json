@@ -2328,6 +2328,58 @@
         ]
       }
     },
+    "/redpacket/{chain}/send": {
+      "post": {
+        "description": "发送红包相关交易",
+        "operationId": "redpacket.send",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedPacketSendTxInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedPacketSendTxResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "红包 - 发送交易",
+        "tags": [
+          "RedPacket"
+        ]
+      }
+    },
     "/watchlist/{chain}/{walletAddress}": {
       "get": {
         "description": "将钱包地址添加到监视列表中。只有监视列表中的地址才有PNL数据",
@@ -2427,6 +2479,13 @@
               "default",
               "priority"
             ]
+          },
+          "options": {
+            "type": "object",
+            "description": "jito | direct",
+            "example": {
+              "sendMode": "jito | direct"
+            }
           }
         },
         "required": [
@@ -2483,7 +2542,16 @@
           "priorityFee": {
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
-            "example": "0.000001"
+            "example": "1000"
+          },
+          "clientType": {
+            "type": "string",
+            "description": "defalt | jito",
+            "enum": [
+              "default",
+              "jito"
+            ],
+            "example": "default"
           },
           "poolAddress": {
             "type": "string",
@@ -2575,7 +2643,16 @@
           "priorityFee": {
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
-            "example": "0.000001"
+            "example": "1000"
+          },
+          "clientType": {
+            "type": "string",
+            "description": "defalt | jito",
+            "enum": [
+              "default",
+              "jito"
+            ],
+            "example": "default"
           },
           "amount": {
             "type": "string",
@@ -2689,7 +2766,16 @@
           "priorityFee": {
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
-            "example": "0.000001"
+            "example": "1000"
+          },
+          "clientType": {
+            "type": "string",
+            "description": "defalt | jito",
+            "enum": [
+              "default",
+              "jito"
+            ],
+            "example": "default"
           },
           "name": {
             "type": "string",
@@ -2842,7 +2928,16 @@
           "priorityFee": {
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
-            "example": "0.000001"
+            "example": "1000"
+          },
+          "clientType": {
+            "type": "string",
+            "description": "defalt | jito",
+            "enum": [
+              "default",
+              "jito"
+            ],
+            "example": "default"
           },
           "name": {
             "type": "string",
@@ -2996,7 +3091,16 @@
           "priorityFee": {
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
-            "example": "0.000001"
+            "example": "1000"
+          },
+          "clientType": {
+            "type": "string",
+            "description": "defalt | jito",
+            "enum": [
+              "default",
+              "jito"
+            ],
+            "example": "default"
           },
           "twitter": {
             "type": "string",
@@ -3039,11 +3143,10 @@
               "METEORA"
             ]
           },
-          "icon": {
+          "image": {
             "type": "string",
-            "description": "Base64 编码的代币图标图片",
-            "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-            "pattern": "^data:image/"
+            "description": "Base64 编码的代币图片或者图片URL",
+            "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
           },
           "mintAddress": {
             "type": "string",
@@ -3065,7 +3168,7 @@
           "name",
           "symbol",
           "migrationDex",
-          "icon",
+          "image",
           "mintAddress",
           "description"
         ]
@@ -5338,22 +5441,22 @@
             "description": "可以领取红包的可选授权地址",
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           },
-          "withdrawed": {
+          "expired": {
             "type": "boolean",
             "description": "是否已完成",
             "example": true
           },
-          "withdrawedAt": {
+          "expiration": {
             "type": "number",
-            "description": "完成时间",
-            "example": 1717334400
+            "description": "红包的过期时长",
+            "example": 24
           },
           "createdAt": {
             "type": "number",
             "description": "创建时间",
             "example": 1717334400
           },
-          "expiresAt": {
+          "expiredAt": {
             "type": "number",
             "description": "过期时间",
             "example": 1717334400
@@ -5367,6 +5470,11 @@
             "type": "string",
             "description": "已领取金额",
             "example": 1717334400
+          },
+          "refundedAmount": {
+            "type": "string",
+            "description": "回退金额",
+            "example": "123456"
           }
         },
         "required": [
@@ -5380,12 +5488,13 @@
           "memo",
           "maxClaims",
           "claimAuthority",
-          "withdrawed",
-          "withdrawedAt",
+          "expired",
+          "expiration",
           "createdAt",
-          "expiresAt",
+          "expiredAt",
           "claimedCount",
-          "claimedAmount"
+          "claimedAmount",
+          "refundedAmount"
         ]
       },
       "RedPacketClaimDTO": {
@@ -5523,6 +5632,32 @@
           "startCursor",
           "endCursor",
           "records"
+        ]
+      },
+      "RedPacketSendTxInput": {
+        "type": "object",
+        "properties": {
+          "signedTx": {
+            "type": "string",
+            "description": "交易签名",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        },
+        "required": [
+          "signedTx"
+        ]
+      },
+      "RedPacketSendTxResponse": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "description": "交易hash",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          }
+        },
+        "required": [
+          "signature"
         ]
       },
       "TradeType": {

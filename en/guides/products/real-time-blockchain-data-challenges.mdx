@@ -1,0 +1,188 @@
+---
+title: 'The Urgent Need for Real-Time Blockchain Data: Challenges of Latency, Scale, and Accuracy'
+description: 'Understanding the critical challenges in obtaining real-time blockchain data for high-frequency applications'
+---
+
+<Info>
+This page explores the fundamental challenges developers face when building real-time blockchain applications and how ChainStream addresses these critical needs.
+</Info>
+
+> "In high-frequency trading, speed is contested within milliseconds or microseconds—it's the ultimate competitive capability. Failure to be fast enough is lethal."
+> — Edgar Perez, The Speed Traders
+
+High-performance blockchain networks with rapid block production mechanisms have opened up entirely new possibilities for real-time blockchain applications, particularly excelling in trading, payments, and gaming sectors.
+
+Today's decentralized exchange (DEX) ecosystem processes hundreds of billions of dollars in daily trading volume across multiple blockchain networks. Leading decentralized exchanges like Uniswap V3 frequently surpass $1 billion in daily trading volume, while the total value locked (TVL) in the entire DeFi ecosystem has reached hundreds of billions of dollars.
+
+Blockchain technology is driving the development of fast, scalable on-chain trading systems. In the near future, this technology's applications will extend beyond cryptocurrencies—it will enable on-chain trading of stocks, bonds, forex, commodities, and various other assets.
+
+Building such trading systems requires advanced infrastructure comparable to global top-tier exchanges like NASDAQ, where low latency is a non-negotiable core requirement.
+
+To succeed, developers must be able to reliably access real-time, low-latency on-chain data.
+
+This article will explore in depth the main technical approaches for obtaining ultra-low latency data to support large-scale applications. Our focus is on blockchain data reading; transaction execution-related content will be detailed in subsequent articles.
+
+Considering that blockchain validation nodes are distributed globally rather than centrally deployed, efficiently delivering real-time information faces significant challenges. Optimizing network architecture to achieve fast transmission of blockchain data is crucial for numerous applications.
+
+Let's analyze the various technical solutions for obtaining real-time blockchain data one by one.
+
+## Traditional Approach: Self-Built Node Infrastructure
+
+Currently, most blockchain applications still use traditional data acquisition methods:
+
+**Self-Operated Nodes**: Development teams need to maintain dedicated blockchain nodes for applications that require direct access to on-chain events:
+- Account_updates: Account state update events
+- Block_notifications: New block notifications
+- Transaction_events: Transaction processing events
+- State_changes: Metadata for state changes
+
+Some projects also integrate custom plugins to subscribe to data updates, obtain block hashes, slot numbers, and other information.
+
+### What Technical Challenges Exist?
+
+Although this approach is comprehensive, self-built nodes mean independently operating blockchain nodes or validators. This involves continuous infrastructure operations, manual capacity scaling, node security protection, and raw data parsing—tasks that are burdensome even for technically strong teams.
+
+Data filtering capabilities are relatively basic, potentially requiring processing far more data than actually needed, thereby increasing operational costs and system complexity.
+
+In technical communities like Stack Exchange, developers frequently ask about custom data filtering, fully demonstrating the inadequacy of traditional approaches in data processing flexibility.
+
+## ChainStream: Modern Data Solution
+
+ChainStream provides an efficient real-time data streaming system through two convenient interfaces: WebSocket subscription service and Kafka message streams.
+
+**Zero Infrastructure Burden**: No need to operate blockchain nodes independently. Use ChainStream endpoints directly—eliminating server costs, environment configuration, and system upgrade concerns.
+
+**Precise Data Filtering**: Utilize GraphQL's powerful expression filters to precisely obtain needed data (filterable by address, token type, smart contract, transaction amount, etc.). Say goodbye to processing irrelevant data.
+
+**Structured Data Output**: All data is pre-structured, labeled, and enriched (including USD values for tokens/transactions). Focus on feature development, not raw data parsing.
+
+**Comprehensive DEX Support**: Instantly access trading data from mainstream DEXes, covering 50+ blockchain networks without additional data parsing work.
+
+**Historical and Real-time Integration**: Query historical data and real-time event streams through unified API interfaces.
+
+**Professional Operations Assurance**: ChainStream handles system stability, data redundancy, and failover—keeping you away from midnight operations alerts.
+
+**Rapid Deployment**: Start using within minutes, not weeks of preparation time.
+
+## ChainStream WebSocket Data Streams (Powerful Filtering Capabilities)
+
+ChainStream's WebSocket subscription service provides real-time data access with latency under 2 seconds. Query functionality is rich and supports fine filtering, allowing you to precisely obtain needed data streams down to address, smart contract, or transaction amount levels.
+
+**Popular WebSocket Data Streams:**
+- **Candle Data**: Real-time OHLCV candlestick data supporting multiple time periods (1s, 15s, 30s, 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d)
+- **Token Trades**: Real-time token trading data covering all major decentralized exchanges
+- **Wallet Activity**: Monitor specific wallet address transfers, authorizations, and protocol interactions
+- **PnL Series**: Real-time profit/loss tracking supporting real-time P&L calculations for trading positions
+- **Transfers**: Real-time token transfer data (including fungible tokens and NFTs), filterable by address, amount, or specific smart contracts
+- **Balance Updates**: Monitor wallet balance changes, identifying smart contracts that trigger changes
+- **DEXPools**: Real-time tracking of liquidity additions/removals and fund pool analysis data
+- **Instructions**: Smart contract instruction parsing streams—suitable for custom application monitoring and token launch tracking
+- **TokenSupplyUpdates**: Real-time observation of token minting, burning, and supply changes
+- **Transactions**: Real-time data streams for network-wide transactions
+- **Blocks**: Real-time reception of information for each newly generated block
+
+**Custom Data Stream Filtering**
+Create precise data streams for specific business scenarios:
+- Monitor specified wallet addresses for whale tracking and large transaction alerts
+- Custom token data streams filtered by specific smart contracts, transaction amounts, or trading pairs
+- Focus computing resources on relevant data processing, effectively reducing costs and system complexity
+
+## ChainStream Kafka Message Streams
+
+ChainStream's Kafka streams are professional products for obtaining ultra-low latency data directly from blockchain. Based on high-performance Kafka architecture, supporting millions of messages per second processing, providing sub-second event latency and reliable message delivery guarantees.
+
+**Core Technical Features**
+- **Ultra-Low Latency**: Millisecond-level data push supporting high-frequency trading and real-time decisions
+- **High Reliability**: Kafka-based distributed architecture ensuring no message loss
+- **Optimized Format**: Protobuf binary format maximizing transmission efficiency and processing performance
+- **Cross-Chain Standardization**: Unified data structure simplifying multi-chain application development
+- **Flexible Access**: Supporting Kafka native consumption, WebSocket subscriptions, and other integration methods
+
+**Data Quality Assurance**
+- **24-Hour Message Retention**: Supporting data backtracking and failure recovery
+- **Built-in Deduplication**: Avoiding duplicate event processing
+- **Structured Tags**: Each event contains rich metadata and behavioral tags
+- **Real-time Validation**: Ensuring data integrity and type safety
+
+ChainStream provides eight main Kafka streams:
+
+1. **sol.dex.trades.proto** - DEX Trading and Liquidity Pool Change Data Stream
+   - Real-time capture of all decentralized exchange trading activities on Solana chain
+   - Contains token swaps, liquidity pool changes, price fluctuations, and other key market data
+   - Provides millisecond-level latency trading event push supporting high-frequency trading and arbitrage strategies
+   - Data format: Protobuf binary format optimizing transmission efficiency and processing performance
+
+2. **sol.tokens.created.proto** - Token Creation Event Stream
+   - Monitors real-time token creation events in Solana ecosystem
+   - Captures complete lifecycle of token minting, initialization, and deployment
+   - Contains token metadata, creator information, and other key information
+   - Supports new token discovery and early investment opportunity identification
+
+3. **sol.tokens.proto** - Token Update Data Stream
+   - Tracks state changes and metadata updates of existing tokens
+   - Contains token information modifications, permission changes, and other events
+   - Provides complete traceability of token lifecycle
+   - Supports token compliance monitoring and risk assessment
+
+4. **sol.token-supplies.proto** - Token Supply Change Stream
+   - Real-time monitoring of token total supply initialization and changes
+   - Captures minting, burning, and other supply-related operations
+   - Provides basic data for market cap calculation and inflation/deflation analysis
+   - Supports token economic model monitoring and investment decisions
+
+5. **sol.dex.pools.proto** - Liquidity Pool Lifecycle Management Stream
+   - Tracks liquidity pool creation, initialization, injection, and extraction events
+   - Monitors pool parameter changes, fee adjustments, and liquidity fluctuations
+   - Provides DEX ecosystem health and liquidity distribution analysis
+
+6. **sol.balances.proto** - User Balance Change Tracking Stream
+   - Real-time monitoring of wallet address token balance changes
+   - Captures all on-chain activities affecting account balances
+   - Provides complete view of user asset portfolio changes
+
+7. **sol.transfers.proto** - Transfer Record Data Stream
+   - Records all token transfers and asset movement events
+   - Contains sender, receiver, amount, timestamp, and other detailed information
+   - Supports fund flow analysis and transaction pattern identification
+   - Provides anti-money laundering (AML) and know your customer (KYC) compliance support
+
+8. **sol.token-completed-events.proto** - Internal Token Graduation Event Stream
+   - Specifically tracks token "graduation" events from internal trading platforms to mainstream DEXes
+   - Monitors token liquidity achievement, trading volume breakthroughs, and other milestone events
+   - Provides token maturity assessment and investment timing judgment
+   - Supports token lifecycle analysis and market trend prediction
+
+9. **sol.trade-stats.proto** - Trading Statistics Data Stream
+   - Real-time aggregation of token trading statistics, providing multi-timeframe market activity analysis
+   - Contains key metrics including buy count, sell count, number of buyers, number of sellers, buy volume, buy amount, sell volume, and sell amount
+   - Supports multiple time period statistics: 1 minute, 5 minutes, 15 minutes, 30 minutes, 1 hour, 4 hours, and 24 hours
+   - Provides comprehensive data support for trading decisions, market analysis, and risk assessment
+
+## Technical Solution Comparison Analysis
+
+**Core Technical Differences**
+
+Geyser solutions provide entry notification streams for real-time tracking of ledger entry changes.
+
+ChainStream directly processes unconfirmed transactions and typically doesn't provide separate entry notification stream functionality.
+
+Since ChainStream focuses on unconfirmed transaction processing, they can provide block data before final block confirmation, with response speeds typically superior to other technical solutions.
+
+ChainStream's distinctive features include: real-time instruction and log parsing, and instruction-level balance updates (showing balance changes caused by each instruction). Even Geyser cannot natively provide instruction-level balance update functionality.
+
+## ChainStream Subscription Service and Kafka Core Value
+
+**Ultra-Low Latency and Real-Time Data Processing**
+ChainStream's Kafka streams can achieve sub-100 millisecond latency, crucial for high-frequency trading scenarios processing hundreds of billions of dollars in daily trading volume. Accessing unconfirmed transaction data provides early market signals before final block confirmation.
+
+**Enterprise-Grade Scaling Capability**
+ChainStream's Kafka-based distributed architecture can handle massive data throughput, equipped with built-in data replication and automatic failover mechanisms. Can seamlessly scale from thousands of transactions per second to millions of transactions processing capability without additional infrastructure management work.
+
+**Development Efficiency Enhancement**
+ChainStream provides pre-processed, enriched data including USD prices and protocol identification information, significantly reducing complex data parsing workload. Zero node operations means trading systems and DeFi applications can reach market faster.
+
+## Summary
+
+If you're developing blockchain applications, ChainStream's data streaming solutions are designed for developers pursuing excellence—simplified configuration processes, faster response speeds, and rich out-of-the-box data. Through ChainStream's WebSocket subscription service, you can obtain cleaned, filtered, and pre-processed blockchain data within minutes, while Kafka streams provide ultra-low latency and enterprise-grade scaling capabilities for the most demanding real-time application scenarios.
+
+Want to experience the charm of next-generation blockchain data services? Try ChainStream's streaming services and personally experience the difference brought by technological innovation. Your next blockchain project will become more efficient and streamlined. 

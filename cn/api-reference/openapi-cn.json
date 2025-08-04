@@ -55,6 +55,34 @@
         ]
       }
     },
+    "/ipfs/create/url": {
+      "post": {
+        "description": "为IPFS内容创建URL",
+        "operationId": "create.url",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "IPFS - 创建URL",
+        "tags": [
+          "Ipfs"
+        ]
+      }
+    },
     "/transaction/{chain}/send": {
       "post": {
         "description": "提交已签名的交易到区块链",
@@ -68,7 +96,15 @@
             "schema": {
               "example": {
                 "SOLANA": "sol",
-                "BASE": "base"
+                "BASE": "base",
+                "BSC": "bsc",
+                "POLYGON": "polygon",
+                "ARBITRUM": "arbitrum",
+                "OPTIMISM": "optimism",
+                "AVALANCHE": "avalanche",
+                "ETHEREUM": "ethereum",
+                "ZKSYNC": "zksync",
+                "SUI": "sui"
               },
               "type": "string"
             }
@@ -121,7 +157,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -173,7 +217,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -225,7 +277,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -248,7 +308,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SwapReply"
+                  "$ref": "#/components/schemas/MintReply"
                 }
               }
             }
@@ -455,11 +515,17 @@
         ]
       }
     },
-    "/trade": {
+    "/trade/{chain}": {
       "get": {
         "description": "获取交易列表",
         "operationId": "get.trades",
         "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "schema": {}
+          },
           {
             "name": "cursor",
             "required": false,
@@ -473,10 +539,26 @@
             "name": "limit",
             "required": false,
             "in": "query",
-            "description": "每页记录数",
+            "description": "每页结果数量",
             "schema": {
+              "minimum": 1,
+              "maximum": 100,
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
             }
           },
           {
@@ -485,7 +567,7 @@
             "in": "query",
             "description": "查询交易的代币地址",
             "schema": {
-              "default": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
               "type": "string"
             }
           },
@@ -495,36 +577,58 @@
             "in": "query",
             "description": "查询交易的钱包地址",
             "schema": {
-              "default": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w",
+              "example": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w",
               "type": "string"
             }
           },
           {
-            "name": "chain",
-            "required": true,
-            "in": "query",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "default": "sol",
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "direction",
+            "name": "poolAddress",
             "required": false,
             "in": "query",
-            "description": "方向",
+            "description": "筛选交易的资金池地址",
             "schema": {
-              "default": "next",
-              "enum": [
-                "next",
-                "prev"
-              ],
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
               "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选交易的开始时间戳（Unix纪元秒）",
+            "schema": {
+              "example": 1717334400000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选交易的结束时间戳（Unix纪元秒）",
+            "schema": {
+              "example": 1717334400000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "beforeBlockHeight",
+            "required": false,
+            "in": "query",
+            "description": "筛选此区块高度之前的交易",
+            "schema": {
+              "example": 332417228,
+              "type": "number"
+            }
+          },
+          {
+            "name": "afterBlockHeight",
+            "required": false,
+            "in": "query",
+            "description": "筛选此区块高度之后的交易",
+            "schema": {
+              "example": 332417228,
+              "type": "number"
             }
           }
         ],
@@ -534,7 +638,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TradePage"
+                  "$ref": "#/components/schemas/Page"
                 }
               }
             }
@@ -669,6 +773,134 @@
         ]
       }
     },
+    "/token/{chain}/token/multi": {
+      "get": {
+        "description": "获取多个代币的详细信息",
+        "operationId": "get.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的TOKEN字符串地址列表",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "example": "marketData.marketCapInUsd",
+              "enum": [
+                "marketData.priceInUsd",
+                "stats.priceChangeRatioInUsd1m",
+                "stats.priceChangeRatioInUsd5m",
+                "stats.priceChangeRatioInUsd1h",
+                "stats.priceChangeRatioInUsd4h",
+                "stats.priceChangeRatioInUsd24h",
+                "marketData.marketCapInUsd",
+                "marketData.tvlInUsd",
+                "marketData.top10HoldingsRatio",
+                "marketData.top100HoldingsRatio",
+                "marketData.holders",
+                "stats.trades1m",
+                "stats.trades5m",
+                "stats.trades1h",
+                "stats.trades4h",
+                "stats.trades24h",
+                "stats.traders1m",
+                "stats.traders5m",
+                "stats.traders1h",
+                "stats.traders4h",
+                "stats.traders24h",
+                "stats.volumesInUsd1m",
+                "stats.volumesInUsd5m",
+                "stats.volumesInUsd1h",
+                "stats.volumesInUsd4h",
+                "stats.volumesInUsd24h",
+                "tokenCreatedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterBy",
+            "required": false,
+            "in": "query",
+            "description": "筛选字段",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/FilterCondition"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Token"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 详情（多个）",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/token/{chain}/{tokenAddress}": {
       "get": {
         "description": "获取代币详情",
@@ -682,7 +914,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -721,61 +961,6 @@
         ]
       }
     },
-    "/token/{chain}/multi": {
-      "post": {
-        "description": "获取多个代币的详细信息",
-        "operationId": "get.tokens",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "enum": [
-                "sol",
-                "base"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TokenAddressesRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Token"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "代币 - 详情（多个）",
-        "tags": [
-          "Token"
-        ]
-      }
-    },
     "/token/{chain}/{tokenAddress}/metadata": {
       "get": {
         "description": "获取代币元数据",
@@ -789,7 +974,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -828,6 +1021,98 @@
         ]
       }
     },
+    "/token/{chain}/metadata/multi": {
+      "get": {
+        "description": "获取多个代币的元数据",
+        "operationId": "get.metadata.multi",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的TOKEN字符串地址列表",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token metadata map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/TokenMetadata"
+                  },
+                  "example": {
+                    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN": {
+                      "metadataAddress": "H7efTb73LpehuDBaPqZ81Gc585PDf1bCbtQnVb8JpgB8",
+                      "address": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+                      "chain": "solana",
+                      "symbol": "TRUMP",
+                      "updatedAt": "2025-05-09T22:23:42.095771831Z",
+                      "tokenCreators": "[{\"address\":\"5e2qRc1DNEXmyxP8qwPwJhRWjef7usLyi7v5xjqLr5G7\",\"share\":100,\"isVerified\":true}]",
+                      "uri": "https://arweave.net/cSCP0h2n1crjeSWE9KF-XtLciJalDNFs7Vf-Sm0NNY0",
+                      "id": "solana_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+                      "decimals": "6",
+                      "name": "OFFICIAL TRUMP",
+                      "imageUrl": "https://arweave.net/VQrPjACwnQRmxdKBTqNwPiyo65x7LAT773t8Kd7YBzw",
+                      "tokenCreatedAt": 1737165660000,
+                      "extra": "{\"collectionAddress\":\"\",\"editionNonce\":255,\"fungible\":true,\"isMutable\":false,\"key\":\"MetadataV1\",\"isNative\":false,\"primarySaleHappened\":false,\"programAddress\":\"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA\",\"sellerFeeBasisPoints\":0,\"tokenStandard\":\"Fungible\",\"updateAuthority\":\"5e2qRc1DNEXmyxP8qwPwJhRWjef7usLyi7v5xjqLr5G7\",\"isVerifiedCollection\":false,\"isWrapped\":false}"
+                    },
+                    "So11111111111111111111111111111111111111112": {
+                      "address": "So11111111111111111111111111111111111111112",
+                      "chain": "solana",
+                      "symbol": "WSOL",
+                      "updatedAt": "2025-05-09T22:23:17.430130360Z",
+                      "id": "solana_So11111111111111111111111111111111111111112",
+                      "decimals": "9",
+                      "name": "Wrapped Solana",
+                      "imageUrl": "https://blockchains-pub.s3.ap-southeast-1.amazonaws.com/chains/sol/tokens/So11111111111111111111111111111111111111112/image.jpg",
+                      "tokenCreatedAt": 1713733080000,
+                      "extra": "{\"collectionAddress\":\"\",\"fungible\":true,\"isMutable\":false,\"key\":\"\",\"isNative\":false,\"primarySaleHappened\":false,\"programAddress\":\"\",\"sellerFeeBasisPoints\":0,\"updateAuthority\":\"NativeLoader1111111111111111111111111111111\",\"isVerifiedCollection\":false,\"isWrapped\":true}"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 元数据（多个）",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/token/{chain}/{tokenAddress}/pools": {
       "get": {
         "description": "获取包含此代币的所有流动池",
@@ -841,7 +1126,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -896,7 +1189,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -935,6 +1236,200 @@
         ]
       }
     },
+    "/token/{chain}/stats/multi": {
+      "get": {
+        "description": "获取多个代币的统计信息",
+        "operationId": "get.stats.multi",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的TOKEN字符串地址列表",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token stats map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/TokenStat"
+                  },
+                  "example": {
+                    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN": {
+                      "address": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+                      "price1m": "8.815186948575488651564232229541279003943634814590943176562617079141599089428864712036116188352926061",
+                      "buys1m": "18",
+                      "sells1m": "5",
+                      "buyVolumes1m": "71.179564",
+                      "sellsVolumes1m": "136.479116",
+                      "volumes1m": "207.65868",
+                      "buyVolumesInUsd1m": "627.95199169441385373880839999999960265170",
+                      "sellVolumesInUsd1m": "1202.59809399999999999999999999999940081895",
+                      "volumesInUsd1m": "1830.5500856944138537388084",
+                      "buyers1m": "16",
+                      "sellers1m": "4",
+                      "openPriceInUsd1m": "8.80724392631485271869716116401174",
+                      "closePriceInUsd1m": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd1m": "0.0016757132626384252570734774",
+                      "trades1m": "23",
+                      "traders1m": "20",
+                      "highInUsd1m": "8.87704993659737154298787388843961",
+                      "lowInUsd1m": "8.80724392631485271869716116401174",
+                      "price5m": "8.808149102062442826882463193645238457760706376974261480540936502452775730456482037176098553638208242",
+                      "buys5m": "42",
+                      "sells5m": "12",
+                      "buyVolumes5m": "745.821284",
+                      "sellsVolumes5m": "650.499202",
+                      "volumes5m": "1396.320486",
+                      "buyVolumesInUsd5m": "6571.40690198722502862899507142783564462275",
+                      "sellVolumesInUsd5m": "5727.59213296506874175073979999999583030357",
+                      "volumesInUsd5m": "12298.9990349522937703797348714278",
+                      "buyers5m": "31",
+                      "sellers5m": "11",
+                      "openPriceInUsd5m": "8.79680608271458362809810591846652",
+                      "closePriceInUsd5m": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd5m": "0.0028642508221701482211700172",
+                      "trades5m": "54",
+                      "traders5m": "42",
+                      "highInUsd5m": "8.91057427723322225708444032971807",
+                      "lowInUsd5m": "8.79680608271458362809810591846652",
+                      "price15m": "8.833430098128582727092281824842165858026598125573650258853893550349470685835087287378212686676303632",
+                      "buys15m": "181",
+                      "sells15m": "149",
+                      "buyVolumes15m": "5804.508046",
+                      "sellsVolumes15m": "82008.108130",
+                      "volumes15m": "87812.616176",
+                      "buyVolumesInUsd15m": "51254.89909990121472947565271688641452701933",
+                      "sellVolumesInUsd15m": "724431.70762459003617954224769999955774440204",
+                      "volumesInUsd15m": "775686.606724491250909017900416886",
+                      "buyers15m": "77",
+                      "sellers15m": "45",
+                      "openPriceInUsd15m": "8.86827167531671047974646951231043",
+                      "closePriceInUsd15m": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd15m": "-0.0052174014555759354175647754",
+                      "trades15m": "330",
+                      "traders15m": "122",
+                      "highInUsd15m": "8.92106567388180657748944217210311",
+                      "lowInUsd15m": "8.71546900505871105901518478389985",
+                      "price30m": "8.849702635866604996668399970117801226191069158324451786094814549757247787198051664246225485204841829",
+                      "buys30m": "408",
+                      "sells30m": "301",
+                      "buyVolumes30m": "31503.341832",
+                      "sellsVolumes30m": "154703.754813",
+                      "volumes30m": "186207.096645",
+                      "buyVolumesInUsd30m": "278807.50699341613796372538502101514535170147",
+                      "sellVolumesInUsd30m": "1369069.92700290802197894727123222537960855845",
+                      "volumesInUsd30m": "1647877.4339963241599426726562532405",
+                      "buyers30m": "130",
+                      "sellers30m": "97",
+                      "openPriceInUsd30m": "8.88385885979973180604814958705650",
+                      "closePriceInUsd30m": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd30m": "-0.0069627983747206895574521368",
+                      "trades30m": "709",
+                      "traders30m": "227",
+                      "highInUsd30m": "9.20968712394705174488567990373044",
+                      "lowInUsd30m": "8.36905764083978412666666666666647",
+                      "price1h": "8.875440169735286379619813050042901852775954442495447856461882177041400309364018566602161245917438498",
+                      "buys1h": "937",
+                      "sells1h": "479",
+                      "buyVolumes1h": "257999.792353",
+                      "sellsVolumes1h": "318444.812376",
+                      "volumes1h": "576444.604729",
+                      "buyVolumesInUsd1h": "2293498.92403586328521316819508838646465909315",
+                      "sellVolumesInUsd1h": "2822700.67640308254045039237984046999035648366",
+                      "volumesInUsd1h": "5116199.6004389458256635605749288565",
+                      "buyers1h": "251",
+                      "sellers1h": "135",
+                      "openPriceInUsd1h": "8.81673245940448100236377699204366",
+                      "closePriceInUsd1h": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd1h": "0.0005977137663248525851768094",
+                      "trades1h": "1416",
+                      "traders1h": "386",
+                      "highInUsd1h": "9.20968712394705174488567990373044",
+                      "lowInUsd1h": "8.30103447641225972985422191576025",
+                      "price4h": "8.814603172747808167817431028429281316933146242936263494179110242799724853688414957477738479819418718",
+                      "buys4h": "3781",
+                      "sells4h": "1600",
+                      "buyVolumes4h": "1318403.654838",
+                      "sellsVolumes4h": "1172828.708232",
+                      "volumes4h": "2491232.36307",
+                      "buyVolumesInUsd4h": "11631328.41976456808178271203858436312813979841",
+                      "sellVolumesInUsd4h": "10327896.27180427348529215378670625571742536511",
+                      "volumesInUsd4h": "21959224.6915688415670748658252906188",
+                      "buyers4h": "652",
+                      "sellers4h": "347",
+                      "openPriceInUsd4h": "8.84347921005130192359950551972645",
+                      "closePriceInUsd4h": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd4h": "-0.0024285541664893108224962842",
+                      "trades4h": "5381",
+                      "traders4h": "999",
+                      "highInUsd4h": "9.26962320605334839017913096353471",
+                      "lowInUsd4h": "8.30103447641225972985422191576025",
+                      "price24h": "8.906202759617520479333641656883660067314362066058497134219935069287151055056646921304936356091739610",
+                      "buys24h": "21334",
+                      "sells24h": "9335",
+                      "buyVolumes24h": "5936708.767731",
+                      "sellsVolumes24h": "5975976.410999",
+                      "volumes24h": "11912685.17873",
+                      "buyVolumesInUsd24h": "52889082.27361861752422914476626376715579078635",
+                      "sellVolumesInUsd24h": "53207707.33964124365356097346637113020802056875",
+                      "volumesInUsd24h": "106096789.6132598611777901182326348974",
+                      "buyers24h": "2800",
+                      "sellers24h": "2112",
+                      "openPriceInUsd24h": "9.20705723016297054339156913498827",
+                      "closePriceInUsd24h": "8.82200234176947023515322513427532",
+                      "priceChangeRatioInUsd24h": "-0.0418217111904152464185428725",
+                      "trades24h": "30669",
+                      "traders24h": "4912",
+                      "highInUsd24h": "126.65970638348831984032039507296766",
+                      "lowInUsd24h": "4.38187777867482240000000000000000"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 统计（多个）",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/token/{chain}/{tokenAddress}/holders": {
       "get": {
         "description": "获取代币持有者",
@@ -948,7 +1443,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -969,7 +1472,6 @@
             "in": "query",
             "description": "分页游标",
             "schema": {
-              "example": "eyJpZCI6MjAwfQ==",
               "type": "string"
             }
           },
@@ -984,6 +1486,20 @@
               "default": 20,
               "type": "number"
             }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -992,7 +1508,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenHolderPage"
+                  "$ref": "#/components/schemas/Page"
                 }
               }
             }
@@ -1004,6 +1520,79 @@
           }
         ],
         "summary": "代币 - 持有者",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/holders/multi": {
+      "get": {
+        "description": "获取多个钱包地址的持有者信息",
+        "operationId": "get.holders.multi",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的钱包字符串地址列表",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2,2RH6rUTPBJ9rUDPpuV9b8z1YL56k1tYU6Uk5ZoaEFFSK",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenHolder"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 持有者（多个）",
         "tags": [
           "Token"
         ]
@@ -1022,7 +1611,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1116,7 +1713,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1138,7 +1743,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenHolderPage"
+                  "$ref": "#/components/schemas/Page"
                 }
               }
             }
@@ -1168,7 +1773,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1207,6 +1820,436 @@
         ]
       }
     },
+    "/token/{chain}/marketData/multi": {
+      "get": {
+        "description": "获取多个代币的市场数据",
+        "operationId": "get.marketData.multi",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的TOKEN字符串地址列表",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token market data map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/TokenMarketData"
+                  },
+                  "example": {
+                    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN": {
+                      "totalSupply": "999999329.55489600",
+                      "marketCapInSol": "52036822.7610601253815741043536094930639710771200",
+                      "marketCapInUsd": "8803187793.8278295862797957152143077481513221611200",
+                      "top10TotalHoldings": "922068292.28321100",
+                      "top10HoldingsRatio": "0.9220689104797975817945796252",
+                      "top100TotalHoldings": "983096178.40758900",
+                      "top100HoldingsRatio": "0.9830968375200504732013415907",
+                      "holders": "644128",
+                      "priceInSol": "0.05203685764891656364263510306272",
+                      "priceInUsd": "8.80319369588594255667492526316047",
+                      "tvlInSol": "2014433.41314589805325129930935218249614969808",
+                      "tvlInUsd": "336266445.59268312743854221899192252205319411642"
+                    },
+                    "So11111111111111111111111111111111111111112": {
+                      "totalSupply": "10044681215.881224",
+                      "marketCapInSol": "10044681215.881224",
+                      "marketCapInUsd": "1687636765811.4456398255148000696",
+                      "top10TotalHoldings": "0.247650049000",
+                      "top10HoldingsRatio": "0.0000000000246548440590081544",
+                      "top100TotalHoldings": "0.247650049000",
+                      "top100HoldingsRatio": "0.0000000000246548440590081544",
+                      "holders": "23368703",
+                      "priceInSol": "1",
+                      "priceInUsd": "168.0129741841079",
+                      "tvlInSol": "105112644905171226.33289713966106176370214271404616575084385744793118",
+                      "tvlInUsd": "105112687635577198.33605721153961742088001836659648515085724677733850"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 市场数据（多个）",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/prices": {
+      "get": {
+        "description": "获取代币的历史价格数据",
+        "operationId": "get.prices",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 价格",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/price": {
+      "get": {
+        "description": "获取特定时间戳的代币价格",
+        "operationId": "get.price.by.time",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timestamp",
+            "required": true,
+            "in": "query",
+            "description": "价格查询时间戳（Unix纪元秒）",
+            "schema": {
+              "example": 1754055151,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPriceDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 按时间获取价格",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/creation": {
+      "get": {
+        "description": "获取代币创建信息",
+        "operationId": "get.creation",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenCreationDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 创建",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/token/{chain}/{tokenAddress}/mintAndBurn": {
+      "get": {
+        "description": "获取代币的铸造和销毁信息",
+        "operationId": "get.mint.and.burn",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "description": "铸造和销毁操作的筛选类型",
+            "schema": {
+              "enum": [
+                "all",
+                "mint",
+                "burn"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenCreationDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 铸造和销毁",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/token/{chain}/{tokenAddress}/security": {
       "get": {
         "description": "获取代币安全信息",
@@ -1220,7 +2263,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1272,7 +2323,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1324,7 +2383,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1386,7 +2453,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1512,7 +2587,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1622,7 +2705,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1732,7 +2823,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1797,7 +2896,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1852,7 +2959,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1864,6 +2979,16 @@
             "description": "钱包地址",
             "schema": {
               "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "筛选钱包余额的特定代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
               "type": "string"
             }
           }
@@ -1904,7 +3029,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -1956,7 +3089,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -2161,7 +3302,15 @@
               "example": "sol",
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -2341,7 +3490,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -2393,7 +3550,15 @@
             "schema": {
               "enum": [
                 "sol",
-                "base"
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
               ],
               "type": "string"
             }
@@ -2484,7 +3649,7 @@
             "type": "object",
             "description": "jito | direct",
             "example": {
-              "sendMode": "jito | direct"
+              "isAntiMev": true
             }
           }
         },
@@ -2523,13 +3688,10 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "raydium",
+            "example": "jupiter",
             "enum": [
-              "raydium",
-              "meteora",
-              "pumpfun",
-              "moonshot",
-              "jupiter"
+              "jupiter",
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -2544,14 +3706,16 @@
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
           },
-          "clientType": {
+          "tipFee": {
             "type": "string",
-            "description": "defalt | jito",
-            "enum": [
-              "default",
-              "jito"
-            ],
-            "example": "default"
+            "description": "SOL中的小费费用，用于提高交易处理速度",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "是否启用反MEV保护",
+            "example": true,
+            "default": false
           },
           "poolAddress": {
             "type": "string",
@@ -2624,13 +3788,10 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "raydium",
+            "example": "jupiter",
             "enum": [
-              "raydium",
-              "meteora",
-              "pumpfun",
-              "moonshot",
-              "jupiter"
+              "jupiter",
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -2645,14 +3806,16 @@
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
           },
-          "clientType": {
+          "tipFee": {
             "type": "string",
-            "description": "defalt | jito",
-            "enum": [
-              "default",
-              "jito"
-            ],
-            "example": "default"
+            "description": "SOL中的小费费用，用于提高交易处理速度",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "是否启用反MEV保护",
+            "example": true,
+            "default": false
           },
           "amount": {
             "type": "string",
@@ -2689,6 +3852,23 @@
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
             "minLength": 8,
             "maxLength": 64
+          },
+          "recipientAddress": {
+            "type": "string",
+            "description": "兑换接收方钱包地址",
+            "example": "0x0000000000000000000000000000000000000001",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "permit": {
+            "type": "string",
+            "description": "兑换的授权数据",
+            "example": "66c85d1637257e890e581f724f69f4d4fc17eee156c0619c4719ed0c66eed0e9"
+          },
+          "deadline": {
+            "type": "number",
+            "description": "兑换截止时间戳",
+            "example": 1716806400
           }
         },
         "required": [
@@ -2747,13 +3927,10 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "raydium",
+            "example": "jupiter",
             "enum": [
-              "raydium",
-              "meteora",
-              "pumpfun",
-              "moonshot",
-              "jupiter"
+              "jupiter",
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -2768,14 +3945,16 @@
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
           },
-          "clientType": {
+          "tipFee": {
             "type": "string",
-            "description": "defalt | jito",
-            "enum": [
-              "default",
-              "jito"
-            ],
-            "example": "default"
+            "description": "SOL中的小费费用，用于提高交易处理速度",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "是否启用反MEV保护",
+            "example": true,
+            "default": false
           },
           "name": {
             "type": "string",
@@ -2794,8 +3973,12 @@
           "uri": {
             "type": "string",
             "description": "代币元数据 URI (通常指向图像或 JSON)",
-            "example": "https://assets.candyproject.com/token/icon.png",
-            "pattern": "^https?://.+"
+            "example": "https://assets.candyproject.com/token/icon.png"
+          },
+          "image": {
+            "type": "string",
+            "description": "代币图片URL（Base64或HTTPS）",
+            "example": "https://assets.candyproject.com/token/icon.png"
           },
           "mintAddress": {
             "type": "string",
@@ -2803,6 +3986,17 @@
             "example": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
             "minLength": 32,
             "maxLength": 44
+          },
+          "extra": {
+            "type": "object",
+            "description": "创建代币的额外元数据",
+            "example": {
+              "createOnly": true,
+              "decimals": 6,
+              "migrateType": "amm",
+              "slippage": 100,
+              "txVersion": "V0"
+            }
           }
         },
         "required": [
@@ -2810,7 +4004,34 @@
           "userAddress",
           "name",
           "symbol",
-          "uri"
+          "uri",
+          "image",
+          "extra"
+        ]
+      },
+      "MintReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "extra": {
+            "type": "object",
+            "description": "创建代币的额外元数据",
+            "example": {
+              "tokenId": "token_123456",
+              "token": {
+                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "serializedTx",
+          "extra"
         ]
       },
       "DexDTO": {
@@ -2821,10 +4042,15 @@
             "description": "DEX 程序地址",
             "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
           },
-          "dexName": {
+          "protocolFamily": {
             "type": "string",
-            "description": "DEX 名称",
+            "description": "DEX协议族",
             "example": "OrcaWhirpool"
+          },
+          "image": {
+            "type": "string",
+            "description": "DEX标志图片URL",
+            "example": "https://ipfs.io/ipfs/bafkreid7667676767676767676767676767676767676767676767676767676767676767"
           },
           "chain": {
             "type": "string",
@@ -2834,7 +4060,8 @@
         },
         "required": [
           "programAddress",
-          "dexName",
+          "protocolFamily",
+          "image",
           "chain"
         ]
       },
@@ -2855,7 +4082,7 @@
           },
           "hasNext": {
             "type": "boolean",
-            "description": "是否有更多结果",
+            "description": "指示是否有更多结果",
             "default": false
           },
           "startCursor": {
@@ -2909,13 +4136,10 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "raydium",
+            "example": "jupiter",
             "enum": [
-              "raydium",
-              "meteora",
-              "pumpfun",
-              "moonshot",
-              "jupiter"
+              "jupiter",
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -2930,14 +4154,16 @@
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
           },
-          "clientType": {
+          "tipFee": {
             "type": "string",
-            "description": "defalt | jito",
-            "enum": [
-              "default",
-              "jito"
-            ],
-            "example": "default"
+            "description": "SOL中的小费费用，用于提高交易处理速度",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "是否启用反MEV保护",
+            "example": true,
+            "default": false
           },
           "name": {
             "type": "string",
@@ -3016,31 +4242,6 @@
           "tokenAmount"
         ]
       },
-      "MintReply": {
-        "type": "object",
-        "properties": {
-          "serializedTx": {
-            "type": "string",
-            "description": "Base64 编码的交易",
-            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-          },
-          "extra": {
-            "type": "object",
-            "description": "创建代币的额外元数据",
-            "example": {
-              "tokenId": "token_123456",
-              "token": {
-                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-                "decimals": 9
-              }
-            }
-          }
-        },
-        "required": [
-          "serializedTx",
-          "extra"
-        ]
-      },
       "SubmitInput": {
         "type": "object",
         "properties": {
@@ -3072,13 +4273,10 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "raydium",
+            "example": "jupiter",
             "enum": [
-              "raydium",
-              "meteora",
-              "pumpfun",
-              "moonshot",
-              "jupiter"
+              "jupiter",
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -3093,14 +4291,16 @@
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
           },
-          "clientType": {
+          "tipFee": {
             "type": "string",
-            "description": "defalt | jito",
-            "enum": [
-              "default",
-              "jito"
-            ],
-            "example": "default"
+            "description": "SOL中的小费费用，用于提高交易处理速度",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "是否启用反MEV保护",
+            "example": true,
+            "default": false
           },
           "twitter": {
             "type": "string",
@@ -3197,157 +4397,132 @@
           "serializedTx"
         ]
       },
-      "TradeDetailDTO": {
+      "Page": {
         "type": "object",
         "properties": {
-          "chain": {
-            "type": "string",
-            "description": "区块链网络"
-          },
-          "blockTimestamp": {
-            "type": "number",
-            "description": "区块时间戳"
-          },
-          "accountOwnerAddress": {
-            "type": "string",
-            "description": "钱包地址"
-          },
-          "transactionSignature": {
-            "type": "string",
-            "description": "交易签名"
-          },
-          "tokenName": {
-            "type": "string",
-            "description": "名称"
-          },
-          "tokenSymbol": {
-            "type": "string",
-            "description": "符号"
-          },
-          "tokenImageUrl": {
-            "type": "string",
-            "description": "代币图片链接"
-          },
-          "tokenAddress": {
-            "type": "string",
-            "description": "代币地址"
-          },
-          "dappProgramAddress": {
-            "type": "string",
-            "description": "DApp程序地址"
-          },
-          "dappName": {
-            "type": "string",
-            "description": "DApp名称"
-          },
-          "tokenAmount": {
-            "type": "string",
-            "description": "代币数量"
-          },
-          "tokenPriceInUsd": {
-            "type": "string",
-            "description": "美元价格"
-          },
-          "tokenAmountInUsd": {
-            "type": "string",
-            "description": "代币美元价值"
-          },
-          "sideType": {
-            "type": "string",
-            "description": "交易方向（买入/卖出）"
-          },
-          "sideTokenName": {
-            "type": "string",
-            "description": "名称"
-          },
-          "sideTokenSymbol": {
-            "type": "string",
-            "description": "符号"
-          },
-          "sideTokenImageUrl": {
-            "type": "string",
-            "description": "代币图片链接"
-          },
-          "sideTokenAddress": {
-            "type": "string",
-            "description": "对手方代币地址"
-          },
-          "sideTokenPriceInUsd": {
-            "type": "string",
-            "description": "美元价格"
-          },
-          "sideTokenAmount": {
-            "type": "string",
-            "description": "对手方代币数量"
-          },
-          "sideTokenAmountInUsd": {
-            "type": "string",
-            "description": "对手方代币美元价值"
-          },
-          "status": {
-            "type": "string",
-            "description": "交易状态"
-          }
-        },
-        "required": [
-          "chain",
-          "blockTimestamp",
-          "accountOwnerAddress",
-          "transactionSignature",
-          "tokenName",
-          "tokenSymbol",
-          "tokenImageUrl",
-          "tokenAddress",
-          "dappProgramAddress",
-          "dappName",
-          "tokenAmount",
-          "tokenPriceInUsd",
-          "tokenAmountInUsd",
-          "sideType",
-          "sideTokenName",
-          "sideTokenSymbol",
-          "sideTokenImageUrl",
-          "sideTokenAddress",
-          "sideTokenPriceInUsd",
-          "sideTokenAmount",
-          "sideTokenAmountInUsd",
-          "status"
-        ]
-      },
-      "TradePage": {
-        "type": "object",
-        "properties": {
-          "trades": {
-            "description": "交易列表",
+          "data": {
+            "description": "数据项数组",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TradeDetailDTO"
+              "type": "string"
             }
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
           },
           "startCursor": {
             "type": "string",
-            "description": "起始游标"
+            "description": "当前页第一项的游标"
           },
-          "nextCursor": {
+          "endCursor": {
             "type": "string",
-            "description": "下一页游标"
-          },
-          "hasNextPage": {
-            "type": "boolean",
-            "description": "是否有更多交易",
-            "default": false
+            "description": "当前页最后一项的游标"
           },
           "total": {
             "type": "number",
-            "description": "交易总数"
+            "description": "总项目数"
+          }
+        }
+      },
+      "TokenPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "countsByProtocols": {
+            "type": "object",
+            "description": "按协议统计的代币数量",
+            "example": {
+              "uniswap": 500,
+              "sushiswap": 300
+            }
+          }
+        }
+      },
+      "FilterCondition": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "筛选字段名称",
+            "enum": [
+              "marketData.priceInUsd",
+              "stats.priceChangeRatioInUsd1m",
+              "stats.priceChangeRatioInUsd5m",
+              "stats.priceChangeRatioInUsd1h",
+              "stats.priceChangeRatioInUsd4h",
+              "stats.priceChangeRatioInUsd24h",
+              "marketData.marketCapInUsd",
+              "marketData.tvlInUsd",
+              "marketData.top10HoldingsRatio",
+              "marketData.top100HoldingsRatio",
+              "marketData.holders",
+              "stats.trades1m",
+              "stats.trades5m",
+              "stats.trades1h",
+              "stats.trades4h",
+              "stats.trades24h",
+              "stats.traders1m",
+              "stats.traders5m",
+              "stats.traders1h",
+              "stats.traders4h",
+              "stats.traders24h",
+              "stats.volumesInUsd1m",
+              "stats.volumesInUsd5m",
+              "stats.volumesInUsd1h",
+              "stats.volumesInUsd4h",
+              "stats.volumesInUsd24h",
+              "tokenCreatedAt"
+            ],
+            "example": "marketData.marketCapInUsd"
+          },
+          "min": {
+            "type": "string",
+            "description": "筛选最小值",
+            "example": "1000"
+          },
+          "max": {
+            "type": "string",
+            "description": "筛选最大值",
+            "example": "10000"
           }
         },
         "required": [
-          "trades",
-          "startCursor",
-          "nextCursor",
-          "hasNextPage",
-          "total"
+          "field"
         ]
       },
       "TokenStat": {
@@ -3438,6 +4613,16 @@
             "description": "最近1分钟独立交易者数量",
             "example": "270"
           },
+          "highInUsd1m": {
+            "type": "string",
+            "description": "最近1分钟的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd1m": {
+            "type": "string",
+            "description": "最近1分钟的最低美元价格",
+            "example": "1.235"
+          },
           "price5m": {
             "type": "string",
             "description": "代币在最后 5 分钟的价格",
@@ -3517,6 +4702,16 @@
             "type": "string",
             "description": "最近5分钟独立交易者数量",
             "example": "270"
+          },
+          "highInUsd5m": {
+            "type": "string",
+            "description": "最近5分钟的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd5m": {
+            "type": "string",
+            "description": "最近5分钟的最低美元价格",
+            "example": "1.235"
           },
           "price15m": {
             "type": "string",
@@ -3598,6 +4793,16 @@
             "description": "最近15分钟独立交易者数量",
             "example": "270"
           },
+          "highInUsd15m": {
+            "type": "string",
+            "description": "最近15分钟的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd15m": {
+            "type": "string",
+            "description": "最近15分钟的最低美元价格",
+            "example": "1.235"
+          },
           "price30m": {
             "type": "string",
             "description": "代币在最后 30 分钟的价格",
@@ -3677,6 +4882,16 @@
             "type": "string",
             "description": "最近30分钟独立交易者数量",
             "example": "270"
+          },
+          "highInUsd30m": {
+            "type": "string",
+            "description": "最近30分钟的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd30m": {
+            "type": "string",
+            "description": "最近30分钟的最低美元价格",
+            "example": "1.235"
           },
           "price1h": {
             "type": "string",
@@ -3758,6 +4973,16 @@
             "description": "最近1小时独立交易者数量",
             "example": "270"
           },
+          "highInUsd1h": {
+            "type": "string",
+            "description": "最近1小时的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd1h": {
+            "type": "string",
+            "description": "最近1小时的最低美元价格",
+            "example": "1.235"
+          },
           "price4h": {
             "type": "string",
             "description": "代币在最后 4 小时的价格",
@@ -3838,6 +5063,16 @@
             "description": "最近4小时独立交易者数量",
             "example": "270"
           },
+          "highInUsd4h": {
+            "type": "string",
+            "description": "最近4小时的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd4h": {
+            "type": "string",
+            "description": "最近4小时的最低美元价格",
+            "example": "1.235"
+          },
           "price24h": {
             "type": "string",
             "description": "代币在最后 24 小时的价格",
@@ -3917,6 +5152,16 @@
             "type": "string",
             "description": "最近24小时独立交易者数量",
             "example": "270"
+          },
+          "highInUsd24h": {
+            "type": "string",
+            "description": "最近24小时的最高美元价格",
+            "example": "1.275"
+          },
+          "lowInUsd24h": {
+            "type": "string",
+            "description": "最近24小时的最低美元价格",
+            "example": "1.235"
           }
         },
         "required": [
@@ -3930,13 +5175,10 @@
           "buyVolumesInUsd1m",
           "sellVolumesInUsd1m",
           "volumesInUsd1m",
-          "buyers1m",
-          "sellers1m",
           "openPriceInUsd1m",
           "closePriceInUsd1m",
           "priceChangeRatioInUsd1m",
           "trades1m",
-          "traders1m",
           "price5m",
           "buys5m",
           "sells5m",
@@ -3946,29 +5188,10 @@
           "buyVolumesInUsd5m",
           "sellVolumesInUsd5m",
           "volumesInUsd5m",
-          "buyers5m",
-          "sellers5m",
           "openPriceInUsd5m",
           "closePriceInUsd5m",
           "priceChangeRatioInUsd5m",
           "trades5m",
-          "traders5m",
-          "price15m",
-          "buys15m",
-          "sells15m",
-          "buyVolumes15m",
-          "sellsVolumes15m",
-          "volumes15m",
-          "buyVolumesInUsd15m",
-          "sellVolumesInUsd15m",
-          "volumesInUsd15m",
-          "buyers15m",
-          "sellers15m",
-          "openPriceInUsd15m",
-          "closePriceInUsd15m",
-          "priceChangeRatioInUsd15m",
-          "trades15m",
-          "traders15m",
           "price30m",
           "buys30m",
           "sells30m",
@@ -3978,13 +5201,10 @@
           "buyVolumesInUsd30m",
           "sellVolumesInUsd30m",
           "volumesInUsd30m",
-          "buyers30m",
-          "sellers30m",
           "openPriceInUsd30m",
           "closePriceInUsd30m",
           "priceChangeRatioInUsd30m",
           "trades30m",
-          "traders30m",
           "price1h",
           "buys1h",
           "sells1h",
@@ -3994,13 +5214,10 @@
           "buyVolumesInUsd1h",
           "sellVolumesInUsd1h",
           "volumesInUsd1h",
-          "buyers1h",
-          "sellers1h",
           "openPriceInUsd1h",
           "closePriceInUsd1h",
           "priceChangeRatioInUsd1h",
           "trades1h",
-          "traders1h",
           "price4h",
           "buys4h",
           "sells4h",
@@ -4010,13 +5227,10 @@
           "buyVolumesInUsd4h",
           "sellVolumesInUsd4h",
           "volumesInUsd4h",
-          "buyers4h",
-          "sellers4h",
           "openPriceInUsd4h",
           "closePriceInUsd4h",
           "priceChangeRatioInUsd4h",
           "trades4h",
-          "traders4h",
           "price24h",
           "buys24h",
           "sells24h",
@@ -4026,13 +5240,10 @@
           "buyVolumesInUsd24h",
           "sellVolumesInUsd24h",
           "volumesInUsd24h",
-          "buyers24h",
-          "sellers24h",
           "openPriceInUsd24h",
           "closePriceInUsd24h",
           "priceChangeRatioInUsd24h",
-          "trades24h",
-          "traders24h"
+          "trades24h"
         ]
       },
       "DexPoolDTO": {
@@ -4043,10 +5254,15 @@
             "description": "DEX 程序地址",
             "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
           },
-          "dexName": {
+          "protocolFamily": {
             "type": "string",
-            "description": "DEX 名称",
+            "description": "DEX协议族",
             "example": "OrcaWhirpool"
+          },
+          "image": {
+            "type": "string",
+            "description": "DEX标志图片URL",
+            "example": "https://ipfs.io/ipfs/bafkreid7667676767676767676767676767676767676767676767676767676767676767"
           },
           "chain": {
             "type": "string",
@@ -4058,18 +5274,20 @@
             "description": "资金池地址",
             "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
           },
-          "baseTokenAddress": {
+          "protocolName": {
             "type": "string",
-            "description": "基础代币地址",
+            "description": "DEX协议名称",
+            "example": "OrcaWhirpool AMM V2"
+          },
+          "tokenAAddress": {
+            "type": "string",
+            "description": "资金池中的第一个代币",
             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
-          "quoteTokenAddress": {
-            "description": "报价代币地址",
-            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "tokenBAddress": {
+            "type": "string",
+            "description": "资金池中的第二个代币",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           },
           "tvlInUsd": {
             "type": "string",
@@ -4084,11 +5302,13 @@
         },
         "required": [
           "programAddress",
-          "dexName",
+          "protocolFamily",
+          "image",
           "chain",
           "poolAddress",
-          "baseTokenAddress",
-          "quoteTokenAddress"
+          "protocolName",
+          "tokenAAddress",
+          "tokenBAddress"
         ]
       },
       "TokenMarketData": {
@@ -4157,16 +5377,9 @@
         },
         "required": [
           "totalSupply",
-          "marketCapInSol",
           "marketCapInUsd",
-          "top10TotalHoldings",
-          "top10HoldingsRatio",
-          "top100TotalHoldings",
-          "top100HoldingsRatio",
           "holders",
-          "priceInSol",
           "priceInUsd",
-          "tvlInSol",
           "tvlInUsd"
         ]
       },
@@ -4285,195 +5498,9 @@
           "decimals",
           "name",
           "symbol",
-          "metadataAddress",
           "address",
-          "tokenCreators",
-          "tokenCreatedAt",
-          "description",
-          "market",
-          "deployer",
           "stats",
           "marketData"
-        ]
-      },
-      "TokenPage": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "number",
-            "description": "代币总数",
-            "example": 1000
-          },
-          "countsByProtocols": {
-            "type": "object",
-            "description": "按协议统计的代币数量",
-            "example": {
-              "uniswap": 500,
-              "sushiswap": 300
-            }
-          },
-          "data": {
-            "description": "代币列表",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Token"
-            }
-          },
-          "next": {
-            "type": "string",
-            "description": "下一页游标",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "是否有更多结果",
-            "default": false
-          },
-          "hasPrev": {
-            "type": "boolean",
-            "description": "是否有上一页",
-            "default": false
-          },
-          "startCursor": {
-            "type": "object",
-            "description": "当前页第一项的游标",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "endCursor": {
-            "type": "object",
-            "description": "当前页最后一项的游标",
-            "example": "eyJpZCI6MjAwfQ=="
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
-      "FilterCondition": {
-        "type": "object",
-        "properties": {
-          "field": {
-            "type": "string",
-            "description": "筛选字段名称",
-            "enum": [
-              "marketData.priceInUsd",
-              "stats.priceChangeRatioInUsd1m",
-              "stats.priceChangeRatioInUsd5m",
-              "stats.priceChangeRatioInUsd1h",
-              "stats.priceChangeRatioInUsd4h",
-              "stats.priceChangeRatioInUsd24h",
-              "marketData.marketCapInUsd",
-              "marketData.tvlInUsd",
-              "marketData.top10HoldingsRatio",
-              "marketData.top100HoldingsRatio",
-              "marketData.holders",
-              "stats.trades1m",
-              "stats.trades5m",
-              "stats.trades1h",
-              "stats.trades4h",
-              "stats.trades24h",
-              "stats.traders1m",
-              "stats.traders5m",
-              "stats.traders1h",
-              "stats.traders4h",
-              "stats.traders24h",
-              "stats.volumesInUsd1m",
-              "stats.volumesInUsd5m",
-              "stats.volumesInUsd1h",
-              "stats.volumesInUsd4h",
-              "stats.volumesInUsd24h",
-              "tokenCreatedAt"
-            ],
-            "example": "marketData.marketCapInUsd"
-          },
-          "min": {
-            "type": "string",
-            "description": "筛选最小值",
-            "example": "1000"
-          },
-          "max": {
-            "type": "string",
-            "description": "筛选最大值",
-            "example": "10000"
-          }
-        },
-        "required": [
-          "field"
-        ]
-      },
-      "TokenAddressesRequest": {
-        "type": "object",
-        "properties": {
-          "tokenAddresses": {
-            "description": "代币地址数组（最多100个），用逗号分隔",
-            "example": [
-              "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "sortBy": {
-            "type": "string",
-            "description": "排序字段",
-            "enum": [
-              "marketData.priceInUsd",
-              "stats.priceChangeRatioInUsd1m",
-              "stats.priceChangeRatioInUsd5m",
-              "stats.priceChangeRatioInUsd1h",
-              "stats.priceChangeRatioInUsd4h",
-              "stats.priceChangeRatioInUsd24h",
-              "marketData.marketCapInUsd",
-              "marketData.tvlInUsd",
-              "marketData.top10HoldingsRatio",
-              "marketData.top100HoldingsRatio",
-              "marketData.holders",
-              "stats.trades1m",
-              "stats.trades5m",
-              "stats.trades1h",
-              "stats.trades4h",
-              "stats.trades24h",
-              "stats.traders1m",
-              "stats.traders5m",
-              "stats.traders1h",
-              "stats.traders4h",
-              "stats.traders24h",
-              "stats.volumesInUsd1m",
-              "stats.volumesInUsd5m",
-              "stats.volumesInUsd1h",
-              "stats.volumesInUsd4h",
-              "stats.volumesInUsd24h",
-              "tokenCreatedAt"
-            ],
-            "example": "marketData.marketCapInUsd"
-          },
-          "sortDirection": {
-            "type": "string",
-            "description": "排序方向",
-            "enum": [
-              "ASC",
-              "DESC"
-            ],
-            "default": "DESC"
-          },
-          "filterBy": {
-            "description": "筛选字段",
-            "example": [
-              {
-                "field": "marketCap.marketCap",
-                "min": "50000"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FilterCondition"
-            }
-          }
-        },
-        "required": [
-          "tokenAddresses"
         ]
       },
       "TokenMetadata": {
@@ -4550,11 +5577,7 @@
           "decimals",
           "name",
           "symbol",
-          "metadataAddress",
-          "address",
-          "tokenCreators",
-          "tokenCreatedAt",
-          "description"
+          "address"
         ]
       },
       "TokenHolder": {
@@ -4586,46 +5609,6 @@
           "amount",
           "amountInUsd",
           "percentage"
-        ]
-      },
-      "TokenHolderPage": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "description": "代币持有者列表",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TokenHolder"
-            }
-          },
-          "totals": {
-            "type": "number",
-            "description": "总项目数",
-            "example": 1000000
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "是否有更多结果",
-            "default": false
-          },
-          "hasPrev": {
-            "type": "boolean",
-            "description": "是否有上一页",
-            "default": false
-          },
-          "startCursor": {
-            "type": "object",
-            "description": "当前页第一项的游标",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "endCursor": {
-            "type": "object",
-            "description": "当前页最后一项的游标",
-            "example": "eyJpZCI6MjAwfQ=="
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "Resolution": {
@@ -4694,6 +5677,91 @@
           "volume",
           "resolution",
           "time"
+        ]
+      },
+      "TokenPriceDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "priceInUsd": {
+            "type": "number",
+            "description": "代币美元价格",
+            "example": 1000
+          },
+          "priceInNative": {
+            "type": "number",
+            "description": "代币原生货币价格（如SOL）",
+            "example": 1000
+          },
+          "timestamp": {
+            "type": "number",
+            "description": "价格时间戳（Unix纪元秒）",
+            "example": 1754055151
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "priceInUsd",
+          "priceInNative",
+          "timestamp"
+        ]
+      },
+      "TokenCreationDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "blockHeight": {
+            "type": "number",
+            "description": "代币创建时的区块高度",
+            "example": 123456789
+          },
+          "blockSlot": {
+            "type": "number",
+            "description": "代币创建时的区块槽位",
+            "example": 123456789
+          },
+          "blockHash": {
+            "type": "string",
+            "description": "代币创建时的区块哈希",
+            "example": "5J7X9K2M4N6P8Q"
+          },
+          "blockTimestamp": {
+            "type": "number",
+            "description": "代币创建时的区块时间戳",
+            "example": 1754055151
+          },
+          "transactionSignature": {
+            "type": "string",
+            "description": "代币创建的交易签名",
+            "example": "3A7B9C1D2E4F6G8"
+          },
+          "type": {
+            "type": "string",
+            "description": "代币操作类型（create、mint或burn）",
+            "example": "create",
+            "enum": [
+              "create",
+              "mint",
+              "burn"
+            ]
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "blockHeight",
+          "blockSlot",
+          "blockHash",
+          "blockTimestamp",
+          "transactionSignature",
+          "type"
         ]
       },
       "DexPoolStatDTO": {
@@ -5393,7 +6461,15 @@
             "example": "sol",
             "enum": [
               "sol",
-              "base"
+              "base",
+              "bsc",
+              "polygon",
+              "arbitrum",
+              "optimism",
+              "avalanche",
+              "ethereum",
+              "zksync",
+              "sui"
             ]
           },
           "id": {
@@ -5511,7 +6587,15 @@
             "example": "sol",
             "enum": [
               "sol",
-              "base"
+              "base",
+              "bsc",
+              "polygon",
+              "arbitrum",
+              "optimism",
+              "avalanche",
+              "ethereum",
+              "zksync",
+              "sui"
             ]
           },
           "claimer": {
@@ -5566,7 +6650,7 @@
           },
           "hasNextPage": {
             "type": "boolean",
-            "description": "是否有更多结果",
+            "description": "指示是否有更多结果",
             "example": true
           },
           "startCursor": {
@@ -5605,7 +6689,7 @@
           },
           "hasNextPage": {
             "type": "boolean",
-            "description": "是否有更多结果",
+            "description": "指示是否有更多结果",
             "example": true
           },
           "startCursor": {

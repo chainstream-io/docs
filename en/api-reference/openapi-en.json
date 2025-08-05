@@ -83,7 +83,88 @@
         ]
       }
     },
-    "/transaction/v1/{chain}/send": {
+    "/v1/blockchain": {
+      "get": {
+        "description": "Get all supported blockchain networks",
+        "operationId": "get.supported.blockchains",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "BlockChain - Supported",
+        "tags": [
+          "Blockchain"
+        ]
+      }
+    },
+    "/v1/blockchain/{chain}/latest_block": {
+      "get": {
+        "description": "Get the latest block information for a specific blockchain",
+        "operationId": "get.latest.block",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockchainLatestBlockDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "BlockChain - Latest Block",
+        "tags": [
+          "Blockchain"
+        ]
+      }
+    },
+    "/v1/transaction/{chain}/send": {
       "post": {
         "description": "Submit a signed transaction to the blockchain",
         "operationId": "send",
@@ -144,7 +225,7 @@
         ]
       }
     },
-    "/dex/v1/{chain}/swap": {
+    "/v1/dex/{chain}/swap": {
       "post": {
         "description": "Swap parameters including input token, output token, amount and slippage",
         "operationId": "swap",
@@ -204,7 +285,7 @@
         ]
       }
     },
-    "/dex/v1/{chain}/route": {
+    "/v1/dex/{chain}/route": {
       "post": {
         "description": "Calculate the best route for token swap considering price impact and fees. Returns the optimal path and a prepared transaction.",
         "operationId": "route",
@@ -264,7 +345,7 @@
         ]
       }
     },
-    "/dex/v1/{chain}/mint": {
+    "/v1/dex/{chain}/mint": {
       "post": {
         "description": "Create a new token on the specified DEX",
         "operationId": "mint",
@@ -325,7 +406,7 @@
         ]
       }
     },
-    "/dex/v1": {
+    "/v1/dex": {
       "get": {
         "description": "Obtain information about all DEXs on a specified blockchain.",
         "operationId": "list",
@@ -515,7 +596,7 @@
         ]
       }
     },
-    "/trade/v1/{chain}": {
+    "/v1/trade/{chain}": {
       "get": {
         "description": "Retrieve a list of transactions",
         "operationId": "get.trades",
@@ -524,7 +605,22 @@
             "name": "chain",
             "required": true,
             "in": "path",
-            "schema": {}
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
           },
           {
             "name": "cursor",
@@ -655,7 +751,7 @@
         ]
       }
     },
-    "/token/v1/search": {
+    "/v1/token/search": {
       "get": {
         "description": "Search token information by criteria",
         "operationId": "search",
@@ -773,7 +869,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/token/multi": {
+    "/v1/token/{chain}/token/multi": {
       "get": {
         "description": "Get detail of tokens",
         "operationId": "get.tokens",
@@ -901,7 +997,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}": {
+    "/v1/token/{chain}/{tokenAddress}": {
       "get": {
         "description": "Get detail of token",
         "operationId": "get.token",
@@ -961,7 +1057,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/metadata": {
+    "/v1/token/{chain}/{tokenAddress}/metadata": {
       "get": {
         "description": "Get metadata of token",
         "operationId": "get.metadata",
@@ -1021,7 +1117,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/metadata/multi": {
+    "/v1/token/{chain}/metadata/multi": {
       "get": {
         "description": "Get metadata for multiple tokens",
         "operationId": "get.metadata.multi",
@@ -1113,7 +1209,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/pools": {
+    "/v1/token/{chain}/{tokenAddress}/pools": {
       "get": {
         "description": "Get all pools containing this token",
         "operationId": "get.pools",
@@ -1176,7 +1272,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/stats": {
+    "/v1/token/{chain}/{tokenAddress}/stats": {
       "get": {
         "description": "Get token statistics",
         "operationId": "get.stats",
@@ -1236,7 +1332,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/stats/multi": {
+    "/v1/token/{chain}/stats/multi": {
       "get": {
         "description": "Get statistics for multiple tokens",
         "operationId": "get.stats.multi",
@@ -1430,7 +1526,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/holders": {
+    "/v1/token/{chain}/{tokenAddress}/holders": {
       "get": {
         "description": "Get holders of a token",
         "operationId": "get.holders",
@@ -1525,7 +1621,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/holders/multi": {
+    "/v1/token/{chain}/{tokenAddress}/holders/multi": {
       "get": {
         "description": "Get holders information for multiple wallet addresses",
         "operationId": "get.holders.multi",
@@ -1598,7 +1694,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/candles": {
+    "/v1/token/{chain}/{tokenAddress}/candles": {
       "get": {
         "description": "Get token price candles",
         "operationId": "get.candles",
@@ -1700,7 +1796,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/topHolders": {
+    "/v1/token/{chain}/{tokenAddress}/topHolders": {
       "get": {
         "description": "Get the top 20 holders for a token",
         "operationId": "get.top.holders",
@@ -1760,7 +1856,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/marketData": {
+    "/v1/token/{chain}/{tokenAddress}/marketData": {
       "get": {
         "description": "Get the market data of a token",
         "operationId": "get.marketData",
@@ -1820,7 +1916,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/marketData/multi": {
+    "/v1/token/{chain}/marketData/multi": {
       "get": {
         "description": "Get market data for multiple tokens",
         "operationId": "get.marketData.multi",
@@ -1913,7 +2009,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/prices": {
+    "/v1/token/{chain}/{tokenAddress}/prices": {
       "get": {
         "description": "Get historical price data for a token",
         "operationId": "get.prices",
@@ -2008,7 +2104,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/price": {
+    "/v1/token/{chain}/{tokenAddress}/price": {
       "get": {
         "description": "Get token price at a specific timestamp",
         "operationId": "get.price.by.time",
@@ -2078,7 +2174,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/creation": {
+    "/v1/token/{chain}/{tokenAddress}/creation": {
       "get": {
         "description": "Get token creation information",
         "operationId": "get.creation",
@@ -2138,7 +2234,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/mintAndBurn": {
+    "/v1/token/{chain}/{tokenAddress}/mintAndBurn": {
       "get": {
         "description": "Get mint and burn information for a token",
         "operationId": "get.mint.and.burn",
@@ -2250,7 +2346,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/security": {
+    "/v1/token/{chain}/{tokenAddress}/security": {
       "get": {
         "description": "Get token security information",
         "operationId": "get.security",
@@ -2310,7 +2406,7 @@
         ]
       }
     },
-    "/dexpools/v1/{chain}/{poolAddress}": {
+    "/v1/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "Retrieve detailed information about a specific DEX pool",
         "operationId": "get.dexpool",
@@ -2370,7 +2466,7 @@
         ]
       }
     },
-    "/dexpools/v1/{chain}/{tokenAddress}/{poolAddress}/stats": {
+    "/v1/dexpools/{chain}/{tokenAddress}/{poolAddress}/stats": {
       "get": {
         "description": "Retrieve price statistics for a specific pool",
         "operationId": "get.dexpool.stats",
@@ -2440,7 +2536,7 @@
         ]
       }
     },
-    "/ranking/v1/{chain}/hotTokens/{duration}": {
+    "/v1/ranking/{chain}/hotTokens/{duration}": {
       "get": {
         "description": "Retrieve a list of trending tokens",
         "operationId": "get.hot.tokens",
@@ -2574,7 +2670,7 @@
         ]
       }
     },
-    "/ranking/v1/{chain}/newTokens": {
+    "/v1/ranking/{chain}/newTokens": {
       "get": {
         "description": "Return the latest 100 tokens",
         "operationId": "get.new.tokens",
@@ -2692,7 +2788,7 @@
         ]
       }
     },
-    "/ranking/v1/{chain}/stocks": {
+    "/v1/ranking/{chain}/stocks": {
       "get": {
         "description": "Return the stocks tokens",
         "operationId": "get.stocks.tokens",
@@ -2810,7 +2906,7 @@
         ]
       }
     },
-    "/wallet/v1/{chain}/{walletAddress}": {
+    "/v1/wallet/{chain}/{walletAddress}": {
       "get": {
         "description": "Get profit and loss information for wallet tokens",
         "operationId": "get.pnl",
@@ -2883,7 +2979,7 @@
         ]
       }
     },
-    "/wallet/v1/{chain}/{walletAddress}/stats": {
+    "/v1/wallet/{chain}/{walletAddress}/stats": {
       "get": {
         "description": "Get profit and loss stats for wallet",
         "operationId": "get.pnl.stats",
@@ -2946,7 +3042,7 @@
         ]
       }
     },
-    "/wallet/v1/{chain}/{walletAddress}/balance": {
+    "/v1/wallet/{chain}/{walletAddress}/balance": {
       "get": {
         "description": "Get wallet balance information",
         "operationId": "get.balance",
@@ -3016,7 +3112,7 @@
         ]
       }
     },
-    "/redpacket/v1/{chain}/create": {
+    "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "Create a new red packet with specified amount and quantity",
         "operationId": "create",
@@ -3076,7 +3172,7 @@
         ]
       }
     },
-    "/redpacket/v1/{chain}/claim": {
+    "/v1/redpacket/{chain}/claim": {
       "post": {
         "description": "Claim tokens from an existing red packet",
         "operationId": "claim",
@@ -3136,7 +3232,7 @@
         ]
       }
     },
-    "/redpacket/v1/{id}": {
+    "/v1/redpacket/{id}": {
       "get": {
         "description": "Query redpacket information",
         "operationId": "get",
@@ -3175,7 +3271,7 @@
         ]
       }
     },
-    "/redpacket/v1/{id}/claims": {
+    "/v1/redpacket/{id}/claims": {
       "get": {
         "description": "Check the record of redpacket collection",
         "operationId": "get.claims",
@@ -3246,7 +3342,7 @@
         ]
       }
     },
-    "/redpacket/v1": {
+    "/v1/redpacket": {
       "get": {
         "description": "Get the redpackets list",
         "operationId": "get.redpackets",
@@ -3339,7 +3435,7 @@
         ]
       }
     },
-    "/redpacket/v1/wallet/{address}/claims": {
+    "/v1/redpacket/wallet/{address}/claims": {
       "get": {
         "description": "Check the record of redpacket collection by the claimer address",
         "operationId": "get.claims.by.address",
@@ -3408,7 +3504,7 @@
         ]
       }
     },
-    "/redpacket/v1/wallet/{address}/redpackets": {
+    "/v1/redpacket/wallet/{address}/redpackets": {
       "get": {
         "description": "Get the redpackets list by the creator address",
         "operationId": "get.redpackets.by.address",
@@ -3477,7 +3573,7 @@
         ]
       }
     },
-    "/redpacket/v1/{chain}/send": {
+    "/v1/redpacket/{chain}/send": {
       "post": {
         "description": "Transactions related to redpacket",
         "operationId": "redpacket.send",
@@ -3537,7 +3633,7 @@
         ]
       }
     },
-    "/watchlist/v1/{chain}/{walletAddress}": {
+    "/v1/watchlist/{chain}/{walletAddress}": {
       "get": {
         "description": "Add the wallet address to the watchlist. Only the addresses in the watchlist have PNL data",
         "operationId": "watchlist.add",
@@ -3628,6 +3724,25 @@
       }
     },
     "schemas": {
+      "BlockchainLatestBlockDTO": {
+        "type": "object",
+        "properties": {
+          "blockhash": {
+            "type": "string",
+            "description": "Latest block hash",
+            "example": "123"
+          },
+          "lastValidBlockHeight": {
+            "type": "number",
+            "description": "Last valid block height",
+            "example": 123
+          }
+        },
+        "required": [
+          "blockhash",
+          "lastValidBlockHeight"
+        ]
+      },
       "SendTxInput": {
         "type": "object",
         "properties": {

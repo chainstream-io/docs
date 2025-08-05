@@ -83,7 +83,88 @@
         ]
       }
     },
-    "/transaction/v1/{chain}/send": {
+    "/v1/blockchain": {
+      "get": {
+        "description": "获取所有支持的区块链网络",
+        "operationId": "get.supported.blockchains",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "区块链 - 支持的网络",
+        "tags": [
+          "Blockchain"
+        ]
+      }
+    },
+    "/v1/blockchain/{chain}/latest_block": {
+      "get": {
+        "description": "获取特定区块链的最新区块信息",
+        "operationId": "get.latest.block",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlockchainLatestBlockDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "区块链 - 最新区块",
+        "tags": [
+          "Blockchain"
+        ]
+      }
+    },
+    "/v1/transaction/{chain}/send": {
       "post": {
         "description": "提交已签名的交易到区块链",
         "operationId": "send",
@@ -144,7 +225,7 @@
         ]
       }
     },
-    "/dex/v1/{chain}/swap": {
+    "/v1/dex/{chain}/swap": {
       "post": {
         "description": "兑换参数，包括输入代币、输出代币、数量和滑点",
         "operationId": "swap",
@@ -204,7 +285,7 @@
         ]
       }
     },
-    "/dex/v1/{chain}/route": {
+    "/v1/dex/{chain}/route": {
       "post": {
         "description": "计算代币兑换的最佳路由，考虑价格影响和费用。返回最优路径和准备好的交易",
         "operationId": "route",
@@ -264,7 +345,7 @@
         ]
       }
     },
-    "/dex/v1/{chain}/mint": {
+    "/v1/dex/{chain}/mint": {
       "post": {
         "description": "在指定 DEX 上创建新代币",
         "operationId": "mint",
@@ -325,7 +406,7 @@
         ]
       }
     },
-    "/dex/v1": {
+    "/v1/dex": {
       "get": {
         "description": "获取指定区块链上所有 DEX 的信息",
         "operationId": "list",
@@ -515,7 +596,7 @@
         ]
       }
     },
-    "/trade/v1/{chain}": {
+    "/v1/trade/{chain}": {
       "get": {
         "description": "获取交易列表",
         "operationId": "get.trades",
@@ -524,7 +605,22 @@
             "name": "chain",
             "required": true,
             "in": "path",
-            "schema": {}
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
           },
           {
             "name": "cursor",
@@ -655,7 +751,7 @@
         ]
       }
     },
-    "/token/v1/search": {
+    "/v1/token/search": {
       "get": {
         "description": "根据条件搜索代币信息",
         "operationId": "search",
@@ -773,7 +869,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/token/multi": {
+    "/v1/token/{chain}/token/multi": {
       "get": {
         "description": "获取多个代币的详细信息",
         "operationId": "get.tokens",
@@ -901,7 +997,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}": {
+    "/v1/token/{chain}/{tokenAddress}": {
       "get": {
         "description": "获取代币详情",
         "operationId": "get.token",
@@ -961,7 +1057,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/metadata": {
+    "/v1/token/{chain}/{tokenAddress}/metadata": {
       "get": {
         "description": "获取代币元数据",
         "operationId": "get.metadata",
@@ -1021,7 +1117,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/metadata/multi": {
+    "/v1/token/{chain}/metadata/multi": {
       "get": {
         "description": "获取多个代币的元数据",
         "operationId": "get.metadata.multi",
@@ -1113,7 +1209,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/pools": {
+    "/v1/token/{chain}/{tokenAddress}/pools": {
       "get": {
         "description": "获取包含此代币的所有流动池",
         "operationId": "get.pools",
@@ -1176,7 +1272,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/stats": {
+    "/v1/token/{chain}/{tokenAddress}/stats": {
       "get": {
         "description": "获取代币数据统计信息",
         "operationId": "get.stats",
@@ -1236,7 +1332,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/stats/multi": {
+    "/v1/token/{chain}/stats/multi": {
       "get": {
         "description": "获取多个代币的统计信息",
         "operationId": "get.stats.multi",
@@ -1430,7 +1526,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/holders": {
+    "/v1/token/{chain}/{tokenAddress}/holders": {
       "get": {
         "description": "获取代币持有者",
         "operationId": "get.holders",
@@ -1525,7 +1621,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/holders/multi": {
+    "/v1/token/{chain}/{tokenAddress}/holders/multi": {
       "get": {
         "description": "获取多个钱包地址的持有者信息",
         "operationId": "get.holders.multi",
@@ -1598,7 +1694,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/candles": {
+    "/v1/token/{chain}/{tokenAddress}/candles": {
       "get": {
         "description": "获取代币价格K线",
         "operationId": "get.candles",
@@ -1700,7 +1796,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/topHolders": {
+    "/v1/token/{chain}/{tokenAddress}/topHolders": {
       "get": {
         "description": "获取代币前20名持有者",
         "operationId": "get.top.holders",
@@ -1760,7 +1856,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/marketData": {
+    "/v1/token/{chain}/{tokenAddress}/marketData": {
       "get": {
         "description": "获取代币市场数据",
         "operationId": "get.marketData",
@@ -1820,7 +1916,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/marketData/multi": {
+    "/v1/token/{chain}/marketData/multi": {
       "get": {
         "description": "获取多个代币的市场数据",
         "operationId": "get.marketData.multi",
@@ -1913,7 +2009,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/prices": {
+    "/v1/token/{chain}/{tokenAddress}/prices": {
       "get": {
         "description": "获取代币的历史价格数据",
         "operationId": "get.prices",
@@ -2008,7 +2104,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/price": {
+    "/v1/token/{chain}/{tokenAddress}/price": {
       "get": {
         "description": "获取特定时间戳的代币价格",
         "operationId": "get.price.by.time",
@@ -2078,7 +2174,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/creation": {
+    "/v1/token/{chain}/{tokenAddress}/creation": {
       "get": {
         "description": "获取代币创建信息",
         "operationId": "get.creation",
@@ -2138,7 +2234,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/mintAndBurn": {
+    "/v1/token/{chain}/{tokenAddress}/mintAndBurn": {
       "get": {
         "description": "获取代币的铸造和销毁信息",
         "operationId": "get.mint.and.burn",
@@ -2250,7 +2346,7 @@
         ]
       }
     },
-    "/token/v1/{chain}/{tokenAddress}/security": {
+    "/v1/token/{chain}/{tokenAddress}/security": {
       "get": {
         "description": "获取代币安全信息",
         "operationId": "get.security",
@@ -2310,7 +2406,7 @@
         ]
       }
     },
-    "/dexpools/v1/{chain}/{poolAddress}": {
+    "/v1/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "获取特定 DEX 资金池的详细信息",
         "operationId": "get.dexpool",
@@ -2370,7 +2466,7 @@
         ]
       }
     },
-    "/dexpools/v1/{chain}/{tokenAddress}/{poolAddress}/stats": {
+    "/v1/dexpools/{chain}/{tokenAddress}/{poolAddress}/stats": {
       "get": {
         "description": "获取特定资金池的数据统计信息",
         "operationId": "get.dexpool.stats",
@@ -2440,7 +2536,7 @@
         ]
       }
     },
-    "/ranking/v1/{chain}/hotTokens/{duration}": {
+    "/v1/ranking/{chain}/hotTokens/{duration}": {
       "get": {
         "description": "获取热门代币列表",
         "operationId": "get.hot.tokens",
@@ -2574,7 +2670,7 @@
         ]
       }
     },
-    "/ranking/v1/{chain}/newTokens": {
+    "/v1/ranking/{chain}/newTokens": {
       "get": {
         "description": "返回最新的100个代币",
         "operationId": "get.new.tokens",
@@ -2692,7 +2788,7 @@
         ]
       }
     },
-    "/ranking/v1/{chain}/stocks": {
+    "/v1/ranking/{chain}/stocks": {
       "get": {
         "description": "返回股票代币列表",
         "operationId": "get.stocks.tokens",
@@ -2810,7 +2906,7 @@
         ]
       }
     },
-    "/wallet/v1/{chain}/{walletAddress}": {
+    "/v1/wallet/{chain}/{walletAddress}": {
       "get": {
         "description": "获取钱包代币的盈亏信息",
         "operationId": "get.pnl",
@@ -2883,7 +2979,7 @@
         ]
       }
     },
-    "/wallet/v1/{chain}/{walletAddress}/stats": {
+    "/v1/wallet/{chain}/{walletAddress}/stats": {
       "get": {
         "description": "获取钱包的盈亏统计",
         "operationId": "get.pnl.stats",
@@ -2946,7 +3042,7 @@
         ]
       }
     },
-    "/wallet/v1/{chain}/{walletAddress}/balance": {
+    "/v1/wallet/{chain}/{walletAddress}/balance": {
       "get": {
         "description": "获取钱包余额信息",
         "operationId": "get.balance",
@@ -3016,7 +3112,7 @@
         ]
       }
     },
-    "/redpacket/v1/{chain}/create": {
+    "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "创建一个指定金额和数量的新红包",
         "operationId": "create",
@@ -3076,7 +3172,7 @@
         ]
       }
     },
-    "/redpacket/v1/{chain}/claim": {
+    "/v1/redpacket/{chain}/claim": {
       "post": {
         "description": "从现有红包中领取代币",
         "operationId": "claim",
@@ -3136,7 +3232,7 @@
         ]
       }
     },
-    "/redpacket/v1/{id}": {
+    "/v1/redpacket/{id}": {
       "get": {
         "description": "查询红包信息",
         "operationId": "get",
@@ -3175,7 +3271,7 @@
         ]
       }
     },
-    "/redpacket/v1/{id}/claims": {
+    "/v1/redpacket/{id}/claims": {
       "get": {
         "description": "查看红包的领取记录",
         "operationId": "get.claims",
@@ -3246,7 +3342,7 @@
         ]
       }
     },
-    "/redpacket/v1": {
+    "/v1/redpacket": {
       "get": {
         "description": "获取红包列表",
         "operationId": "get.redpackets",
@@ -3339,7 +3435,7 @@
         ]
       }
     },
-    "/redpacket/v1/wallet/{address}/claims": {
+    "/v1/redpacket/wallet/{address}/claims": {
       "get": {
         "description": "查看指定钱包地址的领取记录",
         "operationId": "get.claims.by.address",
@@ -3408,7 +3504,7 @@
         ]
       }
     },
-    "/redpacket/v1/wallet/{address}/redpackets": {
+    "/v1/redpacket/wallet/{address}/redpackets": {
       "get": {
         "description": "获取指定钱包地址的红包创建记录",
         "operationId": "get.redpackets.by.address",
@@ -3477,7 +3573,7 @@
         ]
       }
     },
-    "/redpacket/v1/{chain}/send": {
+    "/v1/redpacket/{chain}/send": {
       "post": {
         "description": "发送红包相关交易",
         "operationId": "redpacket.send",
@@ -3537,7 +3633,7 @@
         ]
       }
     },
-    "/watchlist/v1/{chain}/{walletAddress}": {
+    "/v1/watchlist/{chain}/{walletAddress}": {
       "get": {
         "description": "将钱包地址添加到监视列表中。只有监视列表中的地址才有PNL数据",
         "operationId": "watchlist.add",
@@ -3628,6 +3724,25 @@
       }
     },
     "schemas": {
+      "BlockchainLatestBlockDTO": {
+        "type": "object",
+        "properties": {
+          "blockhash": {
+            "type": "string",
+            "description": "最新区块哈希",
+            "example": "123"
+          },
+          "lastValidBlockHeight": {
+            "type": "number",
+            "description": "最后有效区块高度",
+            "example": 123
+          }
+        },
+        "required": [
+          "blockhash",
+          "lastValidBlockHeight"
+        ]
+      },
       "SendTxInput": {
         "type": "object",
         "properties": {

@@ -467,7 +467,7 @@
         ]
       }
     },
-    "/solana/moonshot/mint": {
+    "/v1/solana/moonshot/mint": {
       "post": {
         "description": "使用 Moonshot 协议在 Solana 上创建新代币",
         "operationId": "moonshot.mint",
@@ -489,7 +489,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MintReply"
+                  "$ref": "#/components/schemas/MoonshotMintReply"
                 }
               }
             }
@@ -506,7 +506,7 @@
         ]
       }
     },
-    "/solana/moonshot/submitMint": {
+    "/v1/solana/moonshot/submitMint": {
       "post": {
         "description": "提交已签名的代币创建交易以完成代币创建",
         "operationId": "moonshot.submitMint",
@@ -557,7 +557,7 @@
         ]
       }
     },
-    "/solana/pumpfun/mint": {
+    "/v1/solana/pumpfun/mint": {
       "post": {
         "description": "使用 PumpFun 协议创建新代币。\\n\\n特别说明，由于mintAddress需要传入，所以返回后的交易也需要mintKeypair签名。",
         "operationId": "pumpfun.mint",
@@ -3910,12 +3910,13 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "jupiter",
+            "example": "raydium",
             "enum": [
-              "jupiter",
-              "kyberswap",
               "raydium",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
             ]
           },
           "userAddress": {
@@ -4015,9 +4016,7 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap",
-              "raydium",
-              "pumpfun"
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -4153,12 +4152,13 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "jupiter",
+            "example": "raydium",
             "enum": [
-              "jupiter",
-              "kyberswap",
               "raydium",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
             ]
           },
           "userAddress": {
@@ -4223,7 +4223,6 @@
               "decimals": 6,
               "migrateType": "amm",
               "slippage": 100,
-              "txVersion": "V0",
               "buyAmount": 0,
               "supply": 1000000000000000,
               "totalSellA": 793100000000000,
@@ -4251,21 +4250,15 @@
             "description": "Base64 编码的交易",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
-          "extra": {
-            "type": "object",
-            "description": "创建代币的额外元数据",
-            "example": {
-              "tokenId": "token_123456",
-              "token": {
-                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-                "decimals": 9
-              }
-            }
+          "mintAddress": {
+            "type": "string",
+            "description": "需要签名的代币铸造地址",
+            "example": "So11111111111111111111111111111111111111112"
           }
         },
         "required": [
           "serializedTx",
-          "extra"
+          "mintAddress"
         ]
       },
       "DexDTO": {
@@ -4370,12 +4363,9 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "jupiter",
+            "example": "moonshot",
             "enum": [
-              "jupiter",
-              "kyberswap",
-              "raydium",
-              "pumpfun"
+              "moonshot"
             ]
           },
           "userAddress": {
@@ -4478,6 +4468,31 @@
           "tokenAmount"
         ]
       },
+      "MoonshotMintReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 编码的交易",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "extra": {
+            "type": "object",
+            "description": "创建代币的额外元数据",
+            "example": {
+              "tokenId": "token_123456",
+              "token": {
+                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "serializedTx",
+          "extra"
+        ]
+      },
       "SubmitInput": {
         "type": "object",
         "properties": {
@@ -4508,11 +4523,8 @@
           "dex": {
             "type": "string",
             "description": "交易的 DEX 标识符",
-            "example": "jupiter",
+            "example": "pumpfun",
             "enum": [
-              "jupiter",
-              "kyberswap",
-              "raydium",
               "pumpfun"
             ]
           },

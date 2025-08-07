@@ -467,7 +467,7 @@
         ]
       }
     },
-    "/solana/moonshot/mint": {
+    "/v1/solana/moonshot/mint": {
       "post": {
         "description": "Create a new token with Moonshot protocol on Solana",
         "operationId": "moonshot.mint",
@@ -489,7 +489,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MintReply"
+                  "$ref": "#/components/schemas/MoonshotMintReply"
                 }
               }
             }
@@ -506,7 +506,7 @@
         ]
       }
     },
-    "/solana/moonshot/submitMint": {
+    "/v1/solana/moonshot/submitMint": {
       "post": {
         "description": "Submit a signed token creation transaction to finalize token creation",
         "operationId": "moonshot.submitMint",
@@ -557,7 +557,7 @@
         ]
       }
     },
-    "/solana/pumpfun/mint": {
+    "/v1/solana/pumpfun/mint": {
       "post": {
         "description": "Create a new token using the PumpFun protocol.\\n\\nSpecial note: Since mintAddress needs to be provided, the returned transaction also needs to be signed with mintKeypair.",
         "operationId": "pumpfun.mint",
@@ -3910,12 +3910,13 @@
           "dex": {
             "type": "string",
             "description": "DEX identifier for the trade",
-            "example": "jupiter",
+            "example": "raydium",
             "enum": [
-              "jupiter",
-              "kyberswap",
               "raydium",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
             ]
           },
           "userAddress": {
@@ -4015,9 +4016,7 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap",
-              "raydium",
-              "pumpfun"
+              "kyberswap"
             ]
           },
           "userAddress": {
@@ -4153,12 +4152,13 @@
           "dex": {
             "type": "string",
             "description": "DEX identifier for the trade",
-            "example": "jupiter",
+            "example": "raydium",
             "enum": [
-              "jupiter",
-              "kyberswap",
               "raydium",
-              "pumpfun"
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
             ]
           },
           "userAddress": {
@@ -4223,7 +4223,6 @@
               "decimals": 6,
               "migrateType": "amm",
               "slippage": 100,
-              "txVersion": "V0",
               "buyAmount": 0,
               "supply": 1000000000000000,
               "totalSellA": 793100000000000,
@@ -4251,21 +4250,15 @@
             "description": "Base64 encoded transaction",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
-          "extra": {
-            "type": "object",
-            "description": "Additional metadata about the created token",
-            "example": {
-              "tokenId": "token_123456",
-              "token": {
-                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-                "decimals": 9
-              }
-            }
+          "mintAddress": {
+            "type": "string",
+            "description": "Token mint address that requires signature for the transaction",
+            "example": "So11111111111111111111111111111111111111112"
           }
         },
         "required": [
           "serializedTx",
-          "extra"
+          "mintAddress"
         ]
       },
       "DexDTO": {
@@ -4370,12 +4363,9 @@
           "dex": {
             "type": "string",
             "description": "DEX identifier for the trade",
-            "example": "jupiter",
+            "example": "moonshot",
             "enum": [
-              "jupiter",
-              "kyberswap",
-              "raydium",
-              "pumpfun"
+              "moonshot"
             ]
           },
           "userAddress": {
@@ -4478,6 +4468,31 @@
           "tokenAmount"
         ]
       },
+      "MoonshotMintReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 encoded transaction",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "extra": {
+            "type": "object",
+            "description": "Additional metadata about the created token",
+            "example": {
+              "tokenId": "token_123456",
+              "token": {
+                "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "serializedTx",
+          "extra"
+        ]
+      },
       "SubmitInput": {
         "type": "object",
         "properties": {
@@ -4508,11 +4523,8 @@
           "dex": {
             "type": "string",
             "description": "DEX identifier for the trade",
-            "example": "jupiter",
+            "example": "pumpfun",
             "enum": [
-              "jupiter",
-              "kyberswap",
-              "raydium",
               "pumpfun"
             ]
           },

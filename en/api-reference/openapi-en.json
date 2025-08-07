@@ -734,7 +734,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TradePage"
                 }
               }
             }
@@ -746,6 +746,116 @@
           }
         ],
         "summary": "Trade - List",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/v1/trade/{chain}/top_traders": {
+      "get": {
+        "description": "Get top traders for a specific token",
+        "operationId": "get.top.traders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "query",
+            "description": "Token address to query trades",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeFrame",
+            "required": true,
+            "in": "query",
+            "description": "Time frame for filtering trades",
+            "schema": {
+              "example": "30m",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": true,
+            "in": "query",
+            "description": "Sort type for trade results",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "description": "Field to sort trades by",
+            "schema": {
+              "example": "volume",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of top traders to return (max 10)",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to skip for pagination",
+            "schema": {
+              "example": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopTradersDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trade - Top Traders",
         "tags": [
           "Trade"
         ]
@@ -1604,7 +1714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TokenHolderPage"
                 }
               }
             }
@@ -1839,7 +1949,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TokenHolderPage"
                 }
               }
             }
@@ -2087,7 +2197,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TokenPricePage"
                 }
               }
             }
@@ -2326,10 +2436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TokenCreationDTO"
-                  }
+                  "$ref": "#/components/schemas/TokenCreationPage"
                 }
               }
             }
@@ -3806,7 +3913,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -3906,7 +4015,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4045,7 +4156,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4110,7 +4223,16 @@
               "decimals": 6,
               "migrateType": "amm",
               "slippage": 100,
-              "txVersion": "V0"
+              "txVersion": "V0",
+              "buyAmount": 0,
+              "supply": 1000000000000000,
+              "totalSellA": 793100000000000,
+              "totalFundRaisingB": 85000000000,
+              "totalLockedAmount": 0,
+              "cliffPeriod": 0,
+              "unlockPeriod": 0,
+              "shareFeeReceiver": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
+              "shareFeeRate": 1000
             }
           }
         },
@@ -4118,10 +4240,7 @@
           "dex",
           "userAddress",
           "name",
-          "symbol",
-          "uri",
-          "image",
-          "extra"
+          "symbol"
         ]
       },
       "MintReply": {
@@ -4254,7 +4373,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4378,8 +4499,7 @@
           }
         },
         "required": [
-          "signedTx",
-          "extra"
+          "signedTx"
         ]
       },
       "PumpMintInput": {
@@ -4391,7 +4511,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4512,132 +4634,242 @@
           "serializedTx"
         ]
       },
-      "Page": {
+      "TradeDetailDTO": {
         "type": "object",
         "properties": {
-          "data": {
-            "description": "Array of data items",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "Indicates if there are more results",
-            "default": false
-          },
-          "hasPrev": {
-            "type": "boolean",
-            "description": "Indicates if there are previous results",
-            "default": false
-          },
-          "startCursor": {
+          "chain": {
             "type": "string",
-            "description": "Cursor for first item in current page"
+            "description": "Blockchain network"
           },
-          "endCursor": {
-            "type": "string",
-            "description": "Cursor for last item in current page"
-          },
-          "total": {
+          "blockHeight": {
             "type": "number",
-            "description": "Total number of items"
-          }
-        }
-      },
-      "TokenPage": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "description": "Array of data items",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "description": "Block height of the trade"
           },
-          "hasNext": {
-            "type": "boolean",
-            "description": "Indicates if there are more results",
-            "default": false
-          },
-          "hasPrev": {
-            "type": "boolean",
-            "description": "Indicates if there are previous results",
-            "default": false
-          },
-          "startCursor": {
-            "type": "string",
-            "description": "Cursor for first item in current page"
-          },
-          "endCursor": {
-            "type": "string",
-            "description": "Cursor for last item in current page"
-          },
-          "total": {
+          "blockTimestamp": {
             "type": "number",
-            "description": "Total number of items"
+            "description": "Block timestamp"
           },
-          "countsByProtocols": {
-            "type": "object",
-            "description": "Token count by protocol",
-            "example": {
-              "uniswap": 500,
-              "sushiswap": 300
-            }
-          }
-        }
-      },
-      "FilterCondition": {
-        "type": "object",
-        "properties": {
-          "field": {
+          "accountOwnerAddress": {
             "type": "string",
-            "description": "Filter field name",
-            "enum": [
-              "marketData.priceInUsd",
-              "stats.priceChangeRatioInUsd1m",
-              "stats.priceChangeRatioInUsd5m",
-              "stats.priceChangeRatioInUsd1h",
-              "stats.priceChangeRatioInUsd4h",
-              "stats.priceChangeRatioInUsd24h",
-              "marketData.marketCapInUsd",
-              "marketData.tvlInUsd",
-              "marketData.top10HoldingsRatio",
-              "marketData.top100HoldingsRatio",
-              "marketData.holders",
-              "stats.trades1m",
-              "stats.trades5m",
-              "stats.trades1h",
-              "stats.trades4h",
-              "stats.trades24h",
-              "stats.traders1m",
-              "stats.traders5m",
-              "stats.traders1h",
-              "stats.traders4h",
-              "stats.traders24h",
-              "stats.volumesInUsd1m",
-              "stats.volumesInUsd5m",
-              "stats.volumesInUsd1h",
-              "stats.volumesInUsd4h",
-              "stats.volumesInUsd24h",
-              "tokenCreatedAt"
-            ],
-            "example": "marketData.marketCapInUsd"
+            "description": "wallet address"
           },
-          "min": {
+          "transactionSignature": {
             "type": "string",
-            "description": "Minimum value for filter",
-            "example": "1000"
+            "description": "Transaction signature"
           },
-          "max": {
+          "tokenName": {
             "type": "string",
-            "description": "Maximum value for filter",
-            "example": "10000"
+            "description": "name"
+          },
+          "tokenSymbol": {
+            "type": "string",
+            "description": "symbol"
+          },
+          "tokenImageUrl": {
+            "type": "string",
+            "description": "token imageUrl"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token address"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "Pool address where the trade occurred"
+          },
+          "dexProgramAddress": {
+            "type": "string",
+            "description": "DEX program address"
+          },
+          "dexProtocolFamily": {
+            "type": "string",
+            "description": "DEX protocol family"
+          },
+          "dexImage": {
+            "type": "string",
+            "description": "DEX logo image URL"
+          },
+          "tokenAmount": {
+            "type": "string",
+            "description": "Token amount"
+          },
+          "tokenPriceInUsd": {
+            "type": "string",
+            "description": "price in USD"
+          },
+          "tokenAmountInUsd": {
+            "type": "string",
+            "description": "Token amount in USD"
+          },
+          "sideType": {
+            "type": "string",
+            "description": "Trade side type (buy/sell)"
+          },
+          "sideTokenName": {
+            "type": "string",
+            "description": "name"
+          },
+          "sideTokenSymbol": {
+            "type": "string",
+            "description": "symbol"
+          },
+          "sideTokenImageUrl": {
+            "type": "string",
+            "description": "token imageUrl"
+          },
+          "sideTokenAddress": {
+            "type": "string",
+            "description": "Side token address"
+          },
+          "sideTokenPriceInUsd": {
+            "type": "string",
+            "description": "price in USD"
+          },
+          "sideTokenAmount": {
+            "type": "string",
+            "description": "Side token amount"
+          },
+          "sideTokenAmountInUsd": {
+            "type": "string",
+            "description": "Side token amount in USD"
+          },
+          "status": {
+            "type": "string",
+            "description": "Trade status"
           }
         },
         "required": [
-          "field"
+          "chain",
+          "blockHeight",
+          "blockTimestamp",
+          "accountOwnerAddress",
+          "transactionSignature",
+          "tokenName",
+          "tokenSymbol",
+          "tokenImageUrl",
+          "tokenAddress",
+          "poolAddress",
+          "dexProgramAddress",
+          "dexProtocolFamily",
+          "dexImage",
+          "tokenAmount",
+          "tokenPriceInUsd",
+          "tokenAmountInUsd",
+          "sideType",
+          "sideTokenName",
+          "sideTokenSymbol",
+          "sideTokenImageUrl",
+          "sideTokenAddress",
+          "sideTokenPriceInUsd",
+          "sideTokenAmount",
+          "sideTokenAmountInUsd",
+          "status"
+        ]
+      },
+      "TradePage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of trade data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TradeDetailDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "TopTradersDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token address for top traders query",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "owner": {
+            "type": "string",
+            "description": "Wallet address of the top trader",
+            "example": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w"
+          },
+          "tags": {
+            "description": "Tags associated with the trader (e.g., whale, active_trader)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of trader (e.g., whale, retail)",
+            "example": "whale"
+          },
+          "volume": {
+            "type": "number",
+            "description": "Total trading volume of the trader",
+            "example": 1
+          },
+          "trade": {
+            "type": "number",
+            "description": "Total number of trades made by the trader",
+            "example": 1
+          },
+          "tradeBuy": {
+            "type": "number",
+            "description": "Number of buy trades made by the trader",
+            "example": 1
+          },
+          "tradeSell": {
+            "type": "number",
+            "description": "Number of sell trades made by the trader",
+            "example": 1
+          },
+          "volumeBuy": {
+            "type": "number",
+            "description": "Total buy volume of the trader",
+            "example": 1
+          },
+          "volumeSell": {
+            "type": "number",
+            "description": "Total sell volume of the trader",
+            "example": 1
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "owner",
+          "tags",
+          "type",
+          "volume",
+          "trade",
+          "tradeBuy",
+          "tradeSell",
+          "volumeBuy",
+          "volumeSell"
         ]
       },
       "TokenStat": {
@@ -5618,6 +5850,103 @@
           "marketData"
         ]
       },
+      "TokenPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "countsByProtocols": {
+            "type": "object",
+            "description": "Token count by protocol",
+            "example": {
+              "uniswap": 500,
+              "sushiswap": 300
+            }
+          },
+          "data": {
+            "description": "Array of token data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "FilterCondition": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Filter field name",
+            "enum": [
+              "marketData.priceInUsd",
+              "stats.priceChangeRatioInUsd1m",
+              "stats.priceChangeRatioInUsd5m",
+              "stats.priceChangeRatioInUsd1h",
+              "stats.priceChangeRatioInUsd4h",
+              "stats.priceChangeRatioInUsd24h",
+              "marketData.marketCapInUsd",
+              "marketData.tvlInUsd",
+              "marketData.top10HoldingsRatio",
+              "marketData.top100HoldingsRatio",
+              "marketData.holders",
+              "stats.trades1m",
+              "stats.trades5m",
+              "stats.trades1h",
+              "stats.trades4h",
+              "stats.trades24h",
+              "stats.traders1m",
+              "stats.traders5m",
+              "stats.traders1h",
+              "stats.traders4h",
+              "stats.traders24h",
+              "stats.volumesInUsd1m",
+              "stats.volumesInUsd5m",
+              "stats.volumesInUsd1h",
+              "stats.volumesInUsd4h",
+              "stats.volumesInUsd24h",
+              "tokenCreatedAt"
+            ],
+            "example": "marketData.marketCapInUsd"
+          },
+          "min": {
+            "type": "string",
+            "description": "Minimum value for filter",
+            "example": "1000"
+          },
+          "max": {
+            "type": "string",
+            "description": "Maximum value for filter",
+            "example": "10000"
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
       "TokenMetadata": {
         "type": "object",
         "properties": {
@@ -5726,6 +6055,43 @@
           "percentage"
         ]
       },
+      "TokenHolderPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of token holder data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenHolder"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "Resolution": {
         "type": "string",
         "enum": [
@@ -5825,6 +6191,43 @@
           "timestamp"
         ]
       },
+      "TokenPricePage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of token price data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenPriceDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenCreationDTO": {
         "type": "object",
         "properties": {
@@ -5877,6 +6280,43 @@
           "blockTimestamp",
           "transactionSignature",
           "type"
+        ]
+      },
+      "TokenCreationPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of token creation data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenCreationDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "DexPoolStatDTO": {

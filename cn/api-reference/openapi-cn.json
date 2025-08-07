@@ -734,7 +734,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TradePage"
                 }
               }
             }
@@ -746,6 +746,116 @@
           }
         ],
         "summary": "交易 - 列表",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/v1/trade/{chain}/top_traders": {
+      "get": {
+        "description": "获取特定代币的顶级交易者",
+        "operationId": "get.top.traders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "query",
+            "description": "查询交易的代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeFrame",
+            "required": true,
+            "in": "query",
+            "description": "筛选交易的时间范围",
+            "schema": {
+              "example": "30m",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": true,
+            "in": "query",
+            "description": "交易结果的排序类型",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "description": "排序交易的字段",
+            "schema": {
+              "example": "volume",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回顶级交易者的最大数量（最多10个）",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "分页跳过的结果数量",
+            "schema": {
+              "example": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopTradersDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易 - 顶级交易者",
         "tags": [
           "Trade"
         ]
@@ -1604,7 +1714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TokenHolderPage"
                 }
               }
             }
@@ -1839,7 +1949,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TokenHolderPage"
                 }
               }
             }
@@ -2087,7 +2197,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page"
+                  "$ref": "#/components/schemas/TokenPricePage"
                 }
               }
             }
@@ -2326,10 +2436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TokenCreationDTO"
-                  }
+                  "$ref": "#/components/schemas/TokenCreationPage"
                 }
               }
             }
@@ -3806,7 +3913,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -3906,7 +4015,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4045,7 +4156,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4110,7 +4223,16 @@
               "decimals": 6,
               "migrateType": "amm",
               "slippage": 100,
-              "txVersion": "V0"
+              "txVersion": "V0",
+              "buyAmount": 0,
+              "supply": 1000000000000000,
+              "totalSellA": 793100000000000,
+              "totalFundRaisingB": 85000000000,
+              "totalLockedAmount": 0,
+              "cliffPeriod": 0,
+              "unlockPeriod": 0,
+              "shareFeeReceiver": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
+              "shareFeeRate": 1000
             }
           }
         },
@@ -4118,10 +4240,7 @@
           "dex",
           "userAddress",
           "name",
-          "symbol",
-          "uri",
-          "image",
-          "extra"
+          "symbol"
         ]
       },
       "MintReply": {
@@ -4254,7 +4373,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4378,8 +4499,7 @@
           }
         },
         "required": [
-          "signedTx",
-          "extra"
+          "signedTx"
         ]
       },
       "PumpMintInput": {
@@ -4391,7 +4511,9 @@
             "example": "jupiter",
             "enum": [
               "jupiter",
-              "kyberswap"
+              "kyberswap",
+              "raydium",
+              "pumpfun"
             ]
           },
           "userAddress": {
@@ -4512,132 +4634,242 @@
           "serializedTx"
         ]
       },
-      "Page": {
+      "TradeDetailDTO": {
         "type": "object",
         "properties": {
-          "data": {
-            "description": "数据项数组",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "指示是否有更多结果",
-            "default": false
-          },
-          "hasPrev": {
-            "type": "boolean",
-            "description": "指示是否有上一页结果",
-            "default": false
-          },
-          "startCursor": {
+          "chain": {
             "type": "string",
-            "description": "当前页第一项的游标"
+            "description": "区块链网络"
           },
-          "endCursor": {
-            "type": "string",
-            "description": "当前页最后一项的游标"
-          },
-          "total": {
+          "blockHeight": {
             "type": "number",
-            "description": "总项目数"
-          }
-        }
-      },
-      "TokenPage": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "description": "数据项数组",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "description": "交易的区块高度"
           },
-          "hasNext": {
-            "type": "boolean",
-            "description": "指示是否有更多结果",
-            "default": false
-          },
-          "hasPrev": {
-            "type": "boolean",
-            "description": "指示是否有上一页结果",
-            "default": false
-          },
-          "startCursor": {
-            "type": "string",
-            "description": "当前页第一项的游标"
-          },
-          "endCursor": {
-            "type": "string",
-            "description": "当前页最后一项的游标"
-          },
-          "total": {
+          "blockTimestamp": {
             "type": "number",
-            "description": "总项目数"
+            "description": "区块时间戳"
           },
-          "countsByProtocols": {
-            "type": "object",
-            "description": "按协议统计的代币数量",
-            "example": {
-              "uniswap": 500,
-              "sushiswap": 300
-            }
-          }
-        }
-      },
-      "FilterCondition": {
-        "type": "object",
-        "properties": {
-          "field": {
+          "accountOwnerAddress": {
             "type": "string",
-            "description": "筛选字段名称",
-            "enum": [
-              "marketData.priceInUsd",
-              "stats.priceChangeRatioInUsd1m",
-              "stats.priceChangeRatioInUsd5m",
-              "stats.priceChangeRatioInUsd1h",
-              "stats.priceChangeRatioInUsd4h",
-              "stats.priceChangeRatioInUsd24h",
-              "marketData.marketCapInUsd",
-              "marketData.tvlInUsd",
-              "marketData.top10HoldingsRatio",
-              "marketData.top100HoldingsRatio",
-              "marketData.holders",
-              "stats.trades1m",
-              "stats.trades5m",
-              "stats.trades1h",
-              "stats.trades4h",
-              "stats.trades24h",
-              "stats.traders1m",
-              "stats.traders5m",
-              "stats.traders1h",
-              "stats.traders4h",
-              "stats.traders24h",
-              "stats.volumesInUsd1m",
-              "stats.volumesInUsd5m",
-              "stats.volumesInUsd1h",
-              "stats.volumesInUsd4h",
-              "stats.volumesInUsd24h",
-              "tokenCreatedAt"
-            ],
-            "example": "marketData.marketCapInUsd"
+            "description": "钱包地址"
           },
-          "min": {
+          "transactionSignature": {
             "type": "string",
-            "description": "筛选最小值",
-            "example": "1000"
+            "description": "交易签名"
           },
-          "max": {
+          "tokenName": {
             "type": "string",
-            "description": "筛选最大值",
-            "example": "10000"
+            "description": "名称"
+          },
+          "tokenSymbol": {
+            "type": "string",
+            "description": "符号"
+          },
+          "tokenImageUrl": {
+            "type": "string",
+            "description": "代币图片链接"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币地址"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "交易发生的资金池地址"
+          },
+          "dexProgramAddress": {
+            "type": "string",
+            "description": "DEX程序地址"
+          },
+          "dexProtocolFamily": {
+            "type": "string",
+            "description": "DEX协议族"
+          },
+          "dexImage": {
+            "type": "string",
+            "description": "DEX标志图片URL"
+          },
+          "tokenAmount": {
+            "type": "string",
+            "description": "代币数量"
+          },
+          "tokenPriceInUsd": {
+            "type": "string",
+            "description": "美元价格"
+          },
+          "tokenAmountInUsd": {
+            "type": "string",
+            "description": "代币美元价值"
+          },
+          "sideType": {
+            "type": "string",
+            "description": "交易方向（买入/卖出）"
+          },
+          "sideTokenName": {
+            "type": "string",
+            "description": "名称"
+          },
+          "sideTokenSymbol": {
+            "type": "string",
+            "description": "符号"
+          },
+          "sideTokenImageUrl": {
+            "type": "string",
+            "description": "代币图片链接"
+          },
+          "sideTokenAddress": {
+            "type": "string",
+            "description": "对手方代币地址"
+          },
+          "sideTokenPriceInUsd": {
+            "type": "string",
+            "description": "美元价格"
+          },
+          "sideTokenAmount": {
+            "type": "string",
+            "description": "对手方代币数量"
+          },
+          "sideTokenAmountInUsd": {
+            "type": "string",
+            "description": "对手方代币美元价值"
+          },
+          "status": {
+            "type": "string",
+            "description": "交易状态"
           }
         },
         "required": [
-          "field"
+          "chain",
+          "blockHeight",
+          "blockTimestamp",
+          "accountOwnerAddress",
+          "transactionSignature",
+          "tokenName",
+          "tokenSymbol",
+          "tokenImageUrl",
+          "tokenAddress",
+          "poolAddress",
+          "dexProgramAddress",
+          "dexProtocolFamily",
+          "dexImage",
+          "tokenAmount",
+          "tokenPriceInUsd",
+          "tokenAmountInUsd",
+          "sideType",
+          "sideTokenName",
+          "sideTokenSymbol",
+          "sideTokenImageUrl",
+          "sideTokenAddress",
+          "sideTokenPriceInUsd",
+          "sideTokenAmount",
+          "sideTokenAmountInUsd",
+          "status"
+        ]
+      },
+      "TradePage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "交易数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TradeDetailDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "TopTradersDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "顶级交易者查询的代币地址",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "owner": {
+            "type": "string",
+            "description": "顶级交易者的钱包地址",
+            "example": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w"
+          },
+          "tags": {
+            "description": "与交易者关联的标签（如：whale, active_trader）",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "type": "string",
+            "description": "交易者类型（如：whale, retail）",
+            "example": "whale"
+          },
+          "volume": {
+            "type": "number",
+            "description": "交易者的总交易量",
+            "example": 1
+          },
+          "trade": {
+            "type": "number",
+            "description": "交易者进行的总交易数量",
+            "example": 1
+          },
+          "tradeBuy": {
+            "type": "number",
+            "description": "交易者进行的买入交易数量",
+            "example": 1
+          },
+          "tradeSell": {
+            "type": "number",
+            "description": "交易者进行的卖出交易数量",
+            "example": 1
+          },
+          "volumeBuy": {
+            "type": "number",
+            "description": "交易者的总买入量",
+            "example": 1
+          },
+          "volumeSell": {
+            "type": "number",
+            "description": "交易者的总卖出量",
+            "example": 1
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "owner",
+          "tags",
+          "type",
+          "volume",
+          "trade",
+          "tradeBuy",
+          "tradeSell",
+          "volumeBuy",
+          "volumeSell"
         ]
       },
       "TokenStat": {
@@ -5618,6 +5850,103 @@
           "marketData"
         ]
       },
+      "TokenPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "countsByProtocols": {
+            "type": "object",
+            "description": "按协议统计的代币数量",
+            "example": {
+              "uniswap": 500,
+              "sushiswap": 300
+            }
+          },
+          "data": {
+            "description": "代币数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "FilterCondition": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "筛选字段名称",
+            "enum": [
+              "marketData.priceInUsd",
+              "stats.priceChangeRatioInUsd1m",
+              "stats.priceChangeRatioInUsd5m",
+              "stats.priceChangeRatioInUsd1h",
+              "stats.priceChangeRatioInUsd4h",
+              "stats.priceChangeRatioInUsd24h",
+              "marketData.marketCapInUsd",
+              "marketData.tvlInUsd",
+              "marketData.top10HoldingsRatio",
+              "marketData.top100HoldingsRatio",
+              "marketData.holders",
+              "stats.trades1m",
+              "stats.trades5m",
+              "stats.trades1h",
+              "stats.trades4h",
+              "stats.trades24h",
+              "stats.traders1m",
+              "stats.traders5m",
+              "stats.traders1h",
+              "stats.traders4h",
+              "stats.traders24h",
+              "stats.volumesInUsd1m",
+              "stats.volumesInUsd5m",
+              "stats.volumesInUsd1h",
+              "stats.volumesInUsd4h",
+              "stats.volumesInUsd24h",
+              "tokenCreatedAt"
+            ],
+            "example": "marketData.marketCapInUsd"
+          },
+          "min": {
+            "type": "string",
+            "description": "筛选最小值",
+            "example": "1000"
+          },
+          "max": {
+            "type": "string",
+            "description": "筛选最大值",
+            "example": "10000"
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
       "TokenMetadata": {
         "type": "object",
         "properties": {
@@ -5726,6 +6055,43 @@
           "percentage"
         ]
       },
+      "TokenHolderPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "代币持有者数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenHolder"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "Resolution": {
         "type": "string",
         "enum": [
@@ -5825,6 +6191,43 @@
           "timestamp"
         ]
       },
+      "TokenPricePage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "代币价格数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenPriceDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenCreationDTO": {
         "type": "object",
         "properties": {
@@ -5877,6 +6280,43 @@
           "blockTimestamp",
           "transactionSignature",
           "type"
+        ]
+      },
+      "TokenCreationPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "代币创建数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenCreationDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "DexPoolStatDTO": {

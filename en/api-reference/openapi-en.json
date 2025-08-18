@@ -751,7 +751,7 @@
         ]
       }
     },
-    "/v1/trade/{chain}/top_traders": {
+    "/v1/trade/{chain}/top-traders": {
       "get": {
         "description": "Get top traders for a specific token",
         "operationId": "get.top.traders",
@@ -773,6 +773,41 @@
                 "ethereum",
                 "zksync",
                 "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of top traders to return (max 10)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
               ],
               "type": "string"
             }
@@ -816,26 +851,6 @@
               "example": "volume",
               "type": "string"
             }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Maximum number of top traders to return (max 10)",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "offset",
-            "required": false,
-            "in": "query",
-            "description": "Number of results to skip for pagination",
-            "schema": {
-              "example": 0,
-              "type": "number"
-            }
           }
         ],
         "responses": {
@@ -844,7 +859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TopTradersDTO"
+                  "$ref": "#/components/schemas/TopTradersPage"
                 }
               }
             }
@@ -856,6 +871,121 @@
           }
         ],
         "summary": "Trade - Top Traders",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/v1/trade/{chain}/gainers-losers": {
+      "get": {
+        "description": "Retrieve detailed information about top gainers/losers",
+        "operationId": "get.gainers.losers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of top traders to return (max 10)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "description": "Specify the type of top gainers/losers. Filter for records with type equal to the specified type",
+            "schema": {
+              "example": "1W",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "description": "Specify the sort field",
+            "schema": {
+              "example": "PnL",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": true,
+            "in": "query",
+            "description": "Specify the sort order",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GainersAndLosersPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trade - Gainers/Losers",
         "tags": [
           "Trade"
         ]
@@ -2419,8 +2549,9 @@
             "name": "type",
             "required": true,
             "in": "query",
-            "description": "Filter type for mint and burn operations",
+            "description": "Type of operation to filter (all, mint, or burn)",
             "schema": {
+              "example": "all",
               "enum": [
                 "all",
                 "mint",
@@ -2448,6 +2579,1314 @@
           }
         ],
         "summary": "Token - Mint and Burn",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/list": {
+      "get": {
+        "description": "Get filtered token list with range conditions",
+        "operationId": "get.token.list",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction",
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort by field",
+            "schema": {
+              "example": "h24VolumeInUsd",
+              "enum": [
+                "h24VolumeInUsd",
+                "h24PriceChangeRatio",
+                "h24Buys",
+                "h24Sells",
+                "h24Trades",
+                "h24Buyers",
+                "h24Sellers",
+                "h24BuyVolumeInUsd",
+                "h24SellVolumeInUsd",
+                "h4VolumeInUsd",
+                "h4PriceChangeRatio",
+                "h4Buys",
+                "h4Sells",
+                "h4Trades",
+                "h4Buyers",
+                "h4Sellers",
+                "h4BuyVolumeInUsd",
+                "h4SellVolumeInUsd",
+                "h1VolumeInUsd",
+                "h1PriceChangeRatio",
+                "h1Buys",
+                "h1Sells",
+                "h1Trades",
+                "h1Buyers",
+                "h1Sellers",
+                "h1BuyVolumeInUsd",
+                "h1SellVolumeInUsd",
+                "m30VolumeInUsd",
+                "m30PriceChangeRatio",
+                "m30Buys",
+                "m30Sells",
+                "m30Trades",
+                "m30Buyers",
+                "m30Sellers",
+                "m30BuyVolumeInUsd",
+                "m30SellVolumeInUsd",
+                "m15VolumeInUsd",
+                "m15PriceChangeRatio",
+                "m15Buys",
+                "m15Sells",
+                "m15Trades",
+                "m15Buyers",
+                "m15Sellers",
+                "m15BuyVolumeInUsd",
+                "m15SellVolumeInUsd",
+                "m5VolumeInUsd",
+                "m5PriceChangeRatio",
+                "m5Buys",
+                "m5Sells",
+                "m5Trades",
+                "m5Buyers",
+                "m5Sellers",
+                "m5BuyVolumeInUsd",
+                "m5SellVolumeInUsd",
+                "m1VolumeInUsd",
+                "m1PriceChangeRatio",
+                "m1Buys",
+                "m1Sells",
+                "m1Trades",
+                "m1Buyers",
+                "m1Sellers",
+                "m1BuyVolumeInUsd",
+                "m1SellVolumeInUsd"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 24h sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 24h sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 4h sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 4h sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1h sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1h sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 30m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 30m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 15m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 15m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 5m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 5m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m price change ratio",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_buys",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_buys",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m buys",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_sells",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_sells",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m sells",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_trades",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_trades",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m trades",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m buyers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m sellers",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m buy volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Minimum 1m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "Maximum 1m sell volume in USD",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenListPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - List (Filtered)",
         "tags": [
           "Token"
         ]
@@ -3219,6 +4658,76 @@
         ]
       }
     },
+    "/v1/wallet/{chain}/{walletAddress}/calculate-pnl": {
+      "post": {
+        "description": "Calculate profit and loss for wallet tokens",
+        "operationId": "calculate.pnl",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculatePnlInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Calculate PNL",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "Create a new red packet with specified amount and quantity",
@@ -3922,7 +5431,7 @@
           "userAddress": {
             "type": "string",
             "description": "Public key of the wallet initiating the transaction",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -3930,17 +5439,6 @@
             "type": "string",
             "description": "Priority fee in SOL to increase transaction processing speed",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "Tip fee in SOL to increase transaction processing speed",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "Whether to enable anti-MEV protection",
-            "example": true,
-            "default": false
           },
           "poolAddress": {
             "type": "string",
@@ -4022,7 +5520,7 @@
           "userAddress": {
             "type": "string",
             "description": "Public key of the wallet initiating the transaction",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4030,17 +5528,6 @@
             "type": "string",
             "description": "Priority fee in SOL to increase transaction processing speed",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "Tip fee in SOL to increase transaction processing speed",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "Whether to enable anti-MEV protection",
-            "example": true,
-            "default": false
           },
           "amount": {
             "type": "string",
@@ -4094,6 +5581,17 @@
             "type": "number",
             "description": "Swap deadline timestamp",
             "example": 1716806400
+          },
+          "tipFee": {
+            "type": "string",
+            "description": "Tip fee in SOL to increase transaction processing speed",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "Whether to enable anti-MEV protection",
+            "example": true,
+            "default": false
           }
         },
         "required": [
@@ -4164,7 +5662,7 @@
           "userAddress": {
             "type": "string",
             "description": "Public key of the wallet initiating the transaction",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4172,17 +5670,6 @@
             "type": "string",
             "description": "Priority fee in SOL to increase transaction processing speed",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "Tip fee in SOL to increase transaction processing speed",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "Whether to enable anti-MEV protection",
-            "example": true,
-            "default": false
           },
           "name": {
             "type": "string",
@@ -4208,13 +5695,6 @@
             "description": "Token image URL (Base64 or HTTPS)",
             "example": "https://assets.candyproject.com/token/icon.png"
           },
-          "mintAddress": {
-            "type": "string",
-            "description": "Token mint address that requires signature for the transaction",
-            "example": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
-            "minLength": 32,
-            "maxLength": 44
-          },
           "extra": {
             "type": "object",
             "description": "Additional metadata about the created token",
@@ -4230,7 +5710,7 @@
               "totalLockedAmount": 0,
               "cliffPeriod": 0,
               "unlockPeriod": 0,
-              "shareFeeReceiver": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
+              "shareFeeReceiver": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
               "shareFeeRate": 1000
             }
           }
@@ -4371,7 +5851,7 @@
           "userAddress": {
             "type": "string",
             "description": "Public key of the wallet initiating the transaction",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4379,17 +5859,6 @@
             "type": "string",
             "description": "Priority fee in SOL to increase transaction processing speed",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "Tip fee in SOL to increase transaction processing speed",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "Whether to enable anti-MEV protection",
-            "example": true,
-            "default": false
           },
           "name": {
             "type": "string",
@@ -4531,7 +6000,7 @@
           "userAddress": {
             "type": "string",
             "description": "Public key of the wallet initiating the transaction",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4539,17 +6008,6 @@
             "type": "string",
             "description": "Priority fee in SOL to increase transaction processing speed",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "Tip fee in SOL to increase transaction processing speed",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "Whether to enable anti-MEV protection",
-            "example": true,
-            "default": false
           },
           "twitter": {
             "type": "string",
@@ -4882,6 +6340,111 @@
           "tradeSell",
           "volumeBuy",
           "volumeSell"
+        ]
+      },
+      "TopTradersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of top traders data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTradersDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "GainersAndLosersDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "An address of a wallet",
+            "example": "FciNKwZAvSzepKH1nFEGeejzbP4k87dJiP9BAzGt2Sm3"
+          },
+          "pnl": {
+            "type": "number",
+            "description": "Profit and loss amount",
+            "example": 1
+          },
+          "tradeCount": {
+            "type": "number",
+            "description": "Number of trades made",
+            "example": 1
+          },
+          "volume": {
+            "type": "number",
+            "description": "Total trading volume",
+            "example": 1
+          }
+        },
+        "required": [
+          "address",
+          "pnl",
+          "tradeCount",
+          "volume"
+        ]
+      },
+      "GainersAndLosersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of gainers and losers data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GainersAndLosersDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "TokenStat": {
@@ -6331,6 +7894,43 @@
           "data"
         ]
       },
+      "TokenListPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of token data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "DexPoolStatDTO": {
         "type": "object",
         "properties": {}
@@ -6592,7 +8192,7 @@
           "walletAddress": {
             "type": "string",
             "description": "Wallet address",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7"
           },
           "tokenAddress": {
             "type": "string",
@@ -6904,6 +8504,22 @@
           "totalProfitInUsd",
           "balances"
         ]
+      },
+      "CalculatePnlInput": {
+        "type": "object",
+        "properties": {
+          "tokenAddresses": {
+            "description": "List of token addresses to calculate PNL for",
+            "example": [
+              "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "CreateRedPacketInput": {
         "type": "object",

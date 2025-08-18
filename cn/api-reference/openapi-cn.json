@@ -751,7 +751,7 @@
         ]
       }
     },
-    "/v1/trade/{chain}/top_traders": {
+    "/v1/trade/{chain}/top-traders": {
       "get": {
         "description": "获取特定代币的顶级交易者",
         "operationId": "get.top.traders",
@@ -773,6 +773,41 @@
                 "ethereum",
                 "zksync",
                 "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回顶级交易者的最大数量（最多10个）",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
               ],
               "type": "string"
             }
@@ -816,26 +851,6 @@
               "example": "volume",
               "type": "string"
             }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "返回顶级交易者的最大数量（最多10个）",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "offset",
-            "required": false,
-            "in": "query",
-            "description": "分页跳过的结果数量",
-            "schema": {
-              "example": 0,
-              "type": "number"
-            }
           }
         ],
         "responses": {
@@ -844,7 +859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TopTradersDTO"
+                  "$ref": "#/components/schemas/TopTradersPage"
                 }
               }
             }
@@ -856,6 +871,121 @@
           }
         ],
         "summary": "交易 - 顶级交易者",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/v1/trade/{chain}/gainers-losers": {
+      "get": {
+        "description": "检索有关顶级赢家/输家的详细信息",
+        "operationId": "get.gainers.losers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回顶级交易者的最大数量（最多10个）",
+            "schema": {
+              "minimum": 1,
+              "maximum": 10,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "description": "指定顶级涨跌幅代币的类型。筛选类型等于指定类型的记录",
+            "schema": {
+              "example": "1W",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "description": "指定排序字段",
+            "schema": {
+              "example": "PnL",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": true,
+            "in": "query",
+            "description": "指定排序顺序",
+            "schema": {
+              "example": "desc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GainersAndLosersPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易 - 盈利者/亏损者",
         "tags": [
           "Trade"
         ]
@@ -2419,8 +2549,9 @@
             "name": "type",
             "required": true,
             "in": "query",
-            "description": "铸造和销毁操作的筛选类型",
+            "description": "筛选操作类型（all、mint或burn）",
             "schema": {
+              "example": "all",
               "enum": [
                 "all",
                 "mint",
@@ -2448,6 +2579,1314 @@
           }
         ],
         "summary": "代币 - 铸造和销毁",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/list": {
+      "get": {
+        "description": "获取带范围条件的筛选代币列表",
+        "operationId": "get.token.list",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "example": "h24VolumeInUsd",
+              "enum": [
+                "h24VolumeInUsd",
+                "h24PriceChangeRatio",
+                "h24Buys",
+                "h24Sells",
+                "h24Trades",
+                "h24Buyers",
+                "h24Sellers",
+                "h24BuyVolumeInUsd",
+                "h24SellVolumeInUsd",
+                "h4VolumeInUsd",
+                "h4PriceChangeRatio",
+                "h4Buys",
+                "h4Sells",
+                "h4Trades",
+                "h4Buyers",
+                "h4Sellers",
+                "h4BuyVolumeInUsd",
+                "h4SellVolumeInUsd",
+                "h1VolumeInUsd",
+                "h1PriceChangeRatio",
+                "h1Buys",
+                "h1Sells",
+                "h1Trades",
+                "h1Buyers",
+                "h1Sellers",
+                "h1BuyVolumeInUsd",
+                "h1SellVolumeInUsd",
+                "m30VolumeInUsd",
+                "m30PriceChangeRatio",
+                "m30Buys",
+                "m30Sells",
+                "m30Trades",
+                "m30Buyers",
+                "m30Sellers",
+                "m30BuyVolumeInUsd",
+                "m30SellVolumeInUsd",
+                "m15VolumeInUsd",
+                "m15PriceChangeRatio",
+                "m15Buys",
+                "m15Sells",
+                "m15Trades",
+                "m15Buyers",
+                "m15Sellers",
+                "m15BuyVolumeInUsd",
+                "m15SellVolumeInUsd",
+                "m5VolumeInUsd",
+                "m5PriceChangeRatio",
+                "m5Buys",
+                "m5Sells",
+                "m5Trades",
+                "m5Buyers",
+                "m5Sellers",
+                "m5BuyVolumeInUsd",
+                "m5SellVolumeInUsd",
+                "m1VolumeInUsd",
+                "m1PriceChangeRatio",
+                "m1Buys",
+                "m1Sells",
+                "m1Trades",
+                "m1Buyers",
+                "m1Sellers",
+                "m1BuyVolumeInUsd",
+                "m1SellVolumeInUsd"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_buys",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_buys",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_sells",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_sells",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_trades",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_trades",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_buyers",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_buyers",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_sellers",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_sellers",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h24_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "24小时最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h24_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "24小时最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_buys",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_buys",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_sells",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_sells",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_trades",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_trades",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_buyers",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_buyers",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_sellers",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_sellers",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h4_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "4小时最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h4_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "4小时最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_buys",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_buys",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_sells",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_sells",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_trades",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_trades",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_h1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1小时最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_h1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1小时最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_buys",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_buys",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_sells",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_sells",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_trades",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_trades",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_buyers",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_buyers",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_sellers",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_sellers",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m30_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m30_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "30分钟最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_buys",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_buys",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_sells",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_sells",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_trades",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_trades",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_buyers",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_buyers",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_sellers",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_sellers",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m15_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m15_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "15分钟最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_buys",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_buys",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_sells",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_sells",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_trades",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_trades",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_buyers",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_buyers",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_sellers",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_sellers",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m5_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m5_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "5分钟最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大交易量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_price_change_ratio",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大价格变化比率",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_buys",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_buys",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大买入次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_sells",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_sells",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大卖出次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_trades",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_trades",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大交易次数",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_buyers",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大买家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_sellers",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大卖家数量",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_buy_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大买入量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_m1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最小卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max_m1_sell_volume_in_usd",
+            "required": false,
+            "in": "query",
+            "description": "1分钟最大卖出量（美元）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenListPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 列表（筛选）",
         "tags": [
           "Token"
         ]
@@ -3219,6 +4658,76 @@
         ]
       }
     },
+    "/v1/wallet/{chain}/{walletAddress}/calculate-pnl": {
+      "post": {
+        "description": "计算钱包代币的盈亏",
+        "operationId": "calculate.pnl",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculatePnlInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 计算盈亏",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "创建一个指定金额和数量的新红包",
@@ -3922,7 +5431,7 @@
           "userAddress": {
             "type": "string",
             "description": "发起交易的钱包公钥",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -3930,17 +5439,6 @@
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "SOL中的小费费用，用于提高交易处理速度",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "是否启用反MEV保护",
-            "example": true,
-            "default": false
           },
           "poolAddress": {
             "type": "string",
@@ -4022,7 +5520,7 @@
           "userAddress": {
             "type": "string",
             "description": "发起交易的钱包公钥",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4030,17 +5528,6 @@
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "SOL中的小费费用，用于提高交易处理速度",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "是否启用反MEV保护",
-            "example": true,
-            "default": false
           },
           "amount": {
             "type": "string",
@@ -4094,6 +5581,17 @@
             "type": "number",
             "description": "兑换截止时间戳",
             "example": 1716806400
+          },
+          "tipFee": {
+            "type": "string",
+            "description": "SOL中的小费费用，用于提高交易处理速度",
+            "example": "1000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "是否启用反MEV保护",
+            "example": true,
+            "default": false
           }
         },
         "required": [
@@ -4164,7 +5662,7 @@
           "userAddress": {
             "type": "string",
             "description": "发起交易的钱包公钥",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4172,17 +5670,6 @@
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "SOL中的小费费用，用于提高交易处理速度",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "是否启用反MEV保护",
-            "example": true,
-            "default": false
           },
           "name": {
             "type": "string",
@@ -4208,13 +5695,6 @@
             "description": "代币图片URL（Base64或HTTPS）",
             "example": "https://assets.candyproject.com/token/icon.png"
           },
-          "mintAddress": {
-            "type": "string",
-            "description": "需要签名的代币铸造地址",
-            "example": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
-            "minLength": 32,
-            "maxLength": 44
-          },
           "extra": {
             "type": "object",
             "description": "创建代币的额外元数据",
@@ -4230,7 +5710,7 @@
               "totalLockedAmount": 0,
               "cliffPeriod": 0,
               "unlockPeriod": 0,
-              "shareFeeReceiver": "CandYQn9W1KTTN8QBN4mYwFDvJyYvHmKgkYhvJK3K8Jd",
+              "shareFeeReceiver": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
               "shareFeeRate": 1000
             }
           }
@@ -4371,7 +5851,7 @@
           "userAddress": {
             "type": "string",
             "description": "发起交易的钱包公钥",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4379,17 +5859,6 @@
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "SOL中的小费费用，用于提高交易处理速度",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "是否启用反MEV保护",
-            "example": true,
-            "default": false
           },
           "name": {
             "type": "string",
@@ -4531,7 +6000,7 @@
           "userAddress": {
             "type": "string",
             "description": "发起交易的钱包公钥",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
             "minLength": 8,
             "maxLength": 64
           },
@@ -4539,17 +6008,6 @@
             "type": "string",
             "description": "优先费用，以 SOL 增加交易处理速度",
             "example": "1000"
-          },
-          "tipFee": {
-            "type": "string",
-            "description": "SOL中的小费费用，用于提高交易处理速度",
-            "example": "1000"
-          },
-          "isAntiMev": {
-            "type": "boolean",
-            "description": "是否启用反MEV保护",
-            "example": true,
-            "default": false
           },
           "twitter": {
             "type": "string",
@@ -4882,6 +6340,111 @@
           "tradeSell",
           "volumeBuy",
           "volumeSell"
+        ]
+      },
+      "TopTradersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "顶级交易者数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTradersDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "GainersAndLosersDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "FciNKwZAvSzepKH1nFEGeejzbP4k87dJiP9BAzGt2Sm3"
+          },
+          "pnl": {
+            "type": "number",
+            "description": "盈亏金额",
+            "example": 1
+          },
+          "tradeCount": {
+            "type": "number",
+            "description": "交易次数",
+            "example": 1
+          },
+          "volume": {
+            "type": "number",
+            "description": "总交易量",
+            "example": 1
+          }
+        },
+        "required": [
+          "address",
+          "pnl",
+          "tradeCount",
+          "volume"
+        ]
+      },
+      "GainersAndLosersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "涨跌幅数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GainersAndLosersDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "TokenStat": {
@@ -6331,6 +7894,43 @@
           "data"
         ]
       },
+      "TokenListPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "代币数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "DexPoolStatDTO": {
         "type": "object",
         "properties": {}
@@ -6592,7 +8192,7 @@
           "walletAddress": {
             "type": "string",
             "description": "钱包地址",
-            "example": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH"
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7"
           },
           "tokenAddress": {
             "type": "string",
@@ -6904,6 +8504,22 @@
           "totalProfitInUsd",
           "balances"
         ]
+      },
+      "CalculatePnlInput": {
+        "type": "object",
+        "properties": {
+          "tokenAddresses": {
+            "description": "要计算盈亏的代币地址列表",
+            "example": [
+              "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "CreateRedPacketInput": {
         "type": "object",

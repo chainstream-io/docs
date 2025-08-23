@@ -55,7 +55,7 @@
         ]
       }
     },
-    "/ipfs/create/url": {
+    "/v1/ipfs/create/url": {
       "post": {
         "description": "Create a URL for IPFS content",
         "operationId": "create.url",
@@ -78,6 +78,34 @@
           }
         ],
         "summary": "IPFS - Create URL",
+        "tags": [
+          "Ipfs"
+        ]
+      }
+    },
+    "/v1/ipfs/upload/file": {
+      "post": {
+        "description": "Upload a file to IPFS using multipart form data",
+        "operationId": "upload.file",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpfsUploadResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "IPFS - Upload File",
         "tags": [
           "Ipfs"
         ]
@@ -4188,6 +4216,22 @@
                 "$ref": "#/components/schemas/FilterCondition"
               }
             }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Token tag filter for specific protocols or categories",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4305,6 +4349,22 @@
               "items": {
                 "$ref": "#/components/schemas/FilterCondition"
               }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Token tag filter for specific protocols or categories",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
             }
           }
         ],
@@ -4424,6 +4484,22 @@
                 "$ref": "#/components/schemas/FilterCondition"
               }
             }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Token tag filter for specific protocols or categories",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4447,6 +4523,274 @@
           }
         ],
         "summary": "Ranking - Stocks Tokens",
+        "tags": [
+          "Ranking"
+        ]
+      }
+    },
+    "/v1/ranking/{chain}/graduated": {
+      "get": {
+        "description": "Return the graduated tokens that have completed their initial launch phase",
+        "operationId": "get.graduated.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": {
+              "example": "marketData.marketCapInUsd",
+              "enum": [
+                "marketData.priceInUsd",
+                "stats.priceChangeRatioInUsd1m",
+                "stats.priceChangeRatioInUsd5m",
+                "stats.priceChangeRatioInUsd1h",
+                "stats.priceChangeRatioInUsd4h",
+                "stats.priceChangeRatioInUsd24h",
+                "marketData.marketCapInUsd",
+                "marketData.tvlInUsd",
+                "marketData.top10HoldingsRatio",
+                "marketData.top100HoldingsRatio",
+                "marketData.holders",
+                "stats.trades1m",
+                "stats.trades5m",
+                "stats.trades1h",
+                "stats.trades4h",
+                "stats.trades24h",
+                "stats.traders1m",
+                "stats.traders5m",
+                "stats.traders1h",
+                "stats.traders4h",
+                "stats.traders24h",
+                "stats.volumesInUsd1m",
+                "stats.volumesInUsd5m",
+                "stats.volumesInUsd1h",
+                "stats.volumesInUsd4h",
+                "stats.volumesInUsd24h",
+                "tokenCreatedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "description": "Sort Direction",
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterBy",
+            "required": false,
+            "in": "query",
+            "description": "Filter field",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/FilterCondition"
+              }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Token tag filter for specific protocols or categories",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RankingToken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ranking - Graduated Tokens",
+        "tags": [
+          "Ranking"
+        ]
+      }
+    },
+    "/v1/ranking/{chain}/completed": {
+      "get": {
+        "description": "Return the completed tokens that have finished their lifecycle",
+        "operationId": "get.completed.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": {
+              "example": "marketData.marketCapInUsd",
+              "enum": [
+                "marketData.priceInUsd",
+                "stats.priceChangeRatioInUsd1m",
+                "stats.priceChangeRatioInUsd5m",
+                "stats.priceChangeRatioInUsd1h",
+                "stats.priceChangeRatioInUsd4h",
+                "stats.priceChangeRatioInUsd24h",
+                "marketData.marketCapInUsd",
+                "marketData.tvlInUsd",
+                "marketData.top10HoldingsRatio",
+                "marketData.top100HoldingsRatio",
+                "marketData.holders",
+                "stats.trades1m",
+                "stats.trades5m",
+                "stats.trades1h",
+                "stats.trades4h",
+                "stats.trades24h",
+                "stats.traders1m",
+                "stats.traders5m",
+                "stats.traders1h",
+                "stats.traders4h",
+                "stats.traders24h",
+                "stats.volumesInUsd1m",
+                "stats.volumesInUsd5m",
+                "stats.volumesInUsd1h",
+                "stats.volumesInUsd4h",
+                "stats.volumesInUsd24h",
+                "tokenCreatedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "description": "Sort Direction",
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterBy",
+            "required": false,
+            "in": "query",
+            "description": "Filter field",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/FilterCondition"
+              }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Token tag filter for specific protocols or categories",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RankingToken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ranking - Completed Tokens",
         "tags": [
           "Ranking"
         ]
@@ -5250,7 +5594,7 @@
       }
     },
     "/v1/watchlist/{chain}/{walletAddress}": {
-      "get": {
+      "post": {
         "description": "Add the wallet address to the watchlist. Only the addresses in the watchlist have PNL data",
         "operationId": "watchlist.add",
         "parameters": [
@@ -5340,6 +5684,43 @@
       }
     },
     "schemas": {
+      "IpfsUploadResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "IPFS access URL",
+            "example": "https://ipfs.io/ipfs/QmXxxx..."
+          },
+          "name": {
+            "type": "string",
+            "description": "File name",
+            "example": "image.png"
+          },
+          "cid": {
+            "type": "string",
+            "description": "IPFS content identifier",
+            "example": "QmXxxx..."
+          },
+          "size": {
+            "type": "number",
+            "description": "File size in bytes",
+            "example": 1024
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "MIME type",
+            "example": "image/png"
+          }
+        },
+        "required": [
+          "url",
+          "name",
+          "cid",
+          "size",
+          "mimeType"
+        ]
+      },
       "BlockchainLatestBlockDTO": {
         "type": "object",
         "properties": {
@@ -5699,7 +6080,6 @@
             "type": "object",
             "description": "Additional metadata about the created token",
             "example": {
-              "createOnly": true,
               "decimals": 6,
               "migrateType": "amm",
               "slippage": 100,

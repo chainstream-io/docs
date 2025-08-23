@@ -55,7 +55,7 @@
         ]
       }
     },
-    "/ipfs/create/url": {
+    "/v1/ipfs/create/url": {
       "post": {
         "description": "为IPFS内容创建URL",
         "operationId": "create.url",
@@ -78,6 +78,34 @@
           }
         ],
         "summary": "IPFS - 创建URL",
+        "tags": [
+          "Ipfs"
+        ]
+      }
+    },
+    "/v1/ipfs/upload/file": {
+      "post": {
+        "description": "使用多部分表单数据上传文件到IPFS",
+        "operationId": "upload.file",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpfsUploadResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "IPFS - 上传文件",
         "tags": [
           "Ipfs"
         ]
@@ -4188,6 +4216,22 @@
                 "$ref": "#/components/schemas/FilterCondition"
               }
             }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "代币标签筛选器，用于特定协议或类别",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4305,6 +4349,22 @@
               "items": {
                 "$ref": "#/components/schemas/FilterCondition"
               }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "代币标签筛选器，用于特定协议或类别",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
             }
           }
         ],
@@ -4424,6 +4484,22 @@
                 "$ref": "#/components/schemas/FilterCondition"
               }
             }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "代币标签筛选器，用于特定协议或类别",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4447,6 +4523,274 @@
           }
         ],
         "summary": "排名 - 股票",
+        "tags": [
+          "Ranking"
+        ]
+      }
+    },
+    "/v1/ranking/{chain}/graduated": {
+      "get": {
+        "description": "返回即将毕业的代币列表",
+        "operationId": "get.graduated.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "example": "marketData.marketCapInUsd",
+              "enum": [
+                "marketData.priceInUsd",
+                "stats.priceChangeRatioInUsd1m",
+                "stats.priceChangeRatioInUsd5m",
+                "stats.priceChangeRatioInUsd1h",
+                "stats.priceChangeRatioInUsd4h",
+                "stats.priceChangeRatioInUsd24h",
+                "marketData.marketCapInUsd",
+                "marketData.tvlInUsd",
+                "marketData.top10HoldingsRatio",
+                "marketData.top100HoldingsRatio",
+                "marketData.holders",
+                "stats.trades1m",
+                "stats.trades5m",
+                "stats.trades1h",
+                "stats.trades4h",
+                "stats.trades24h",
+                "stats.traders1m",
+                "stats.traders5m",
+                "stats.traders1h",
+                "stats.traders4h",
+                "stats.traders24h",
+                "stats.volumesInUsd1m",
+                "stats.volumesInUsd5m",
+                "stats.volumesInUsd1h",
+                "stats.volumesInUsd4h",
+                "stats.volumesInUsd24h",
+                "tokenCreatedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterBy",
+            "required": false,
+            "in": "query",
+            "description": "筛选字段",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/FilterCondition"
+              }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "代币标签筛选器，用于特定协议或类别",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RankingToken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "排名 - 即将毕业代币",
+        "tags": [
+          "Ranking"
+        ]
+      }
+    },
+    "/v1/ranking/{chain}/completed": {
+      "get": {
+        "description": "返回已毕业代币列表",
+        "operationId": "get.completed.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "example": "marketData.marketCapInUsd",
+              "enum": [
+                "marketData.priceInUsd",
+                "stats.priceChangeRatioInUsd1m",
+                "stats.priceChangeRatioInUsd5m",
+                "stats.priceChangeRatioInUsd1h",
+                "stats.priceChangeRatioInUsd4h",
+                "stats.priceChangeRatioInUsd24h",
+                "marketData.marketCapInUsd",
+                "marketData.tvlInUsd",
+                "marketData.top10HoldingsRatio",
+                "marketData.top100HoldingsRatio",
+                "marketData.holders",
+                "stats.trades1m",
+                "stats.trades5m",
+                "stats.trades1h",
+                "stats.trades4h",
+                "stats.trades24h",
+                "stats.traders1m",
+                "stats.traders5m",
+                "stats.traders1h",
+                "stats.traders4h",
+                "stats.traders24h",
+                "stats.volumesInUsd1m",
+                "stats.volumesInUsd5m",
+                "stats.volumesInUsd1h",
+                "stats.volumesInUsd4h",
+                "stats.volumesInUsd24h",
+                "tokenCreatedAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "required": false,
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterBy",
+            "required": false,
+            "in": "query",
+            "description": "筛选字段",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/FilterCondition"
+              }
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "代币标签筛选器，用于特定协议或类别",
+            "schema": {
+              "enum": [
+                "pump_fun",
+                "raydium_launchpad",
+                "meteora_dynamic_bounding_curve",
+                "bonk_fun",
+                "moonit_fun"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RankingToken"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "排名 - 已毕业代币",
         "tags": [
           "Ranking"
         ]
@@ -5250,7 +5594,7 @@
       }
     },
     "/v1/watchlist/{chain}/{walletAddress}": {
-      "get": {
+      "post": {
         "description": "将钱包地址添加到监视列表中。只有监视列表中的地址才有PNL数据",
         "operationId": "watchlist.add",
         "parameters": [
@@ -5340,6 +5684,43 @@
       }
     },
     "schemas": {
+      "IpfsUploadResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "IPFS访问URL",
+            "example": "https://ipfs.io/ipfs/QmXxxx..."
+          },
+          "name": {
+            "type": "string",
+            "description": "文件名",
+            "example": "image.png"
+          },
+          "cid": {
+            "type": "string",
+            "description": "IPFS内容标识符",
+            "example": "QmXxxx..."
+          },
+          "size": {
+            "type": "number",
+            "description": "文件大小（字节）",
+            "example": 1024
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "MIME类型",
+            "example": "image/png"
+          }
+        },
+        "required": [
+          "url",
+          "name",
+          "cid",
+          "size",
+          "mimeType"
+        ]
+      },
       "BlockchainLatestBlockDTO": {
         "type": "object",
         "properties": {
@@ -5699,7 +6080,6 @@
             "type": "object",
             "description": "创建代币的额外元数据",
             "example": {
-              "createOnly": true,
               "decimals": 6,
               "migrateType": "amm",
               "slippage": 100,

@@ -4012,76 +4012,6 @@
         ]
       }
     },
-    "/v1/dexpools/{chain}/{tokenAddress}/{poolAddress}/stats": {
-      "get": {
-        "description": "Retrieve price statistics for a specific pool",
-        "operationId": "get.dexpool.stats",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a token",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          },
-          {
-            "name": "poolAddress",
-            "required": true,
-            "in": "path",
-            "description": "A pool address",
-            "schema": {
-              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DexPoolStatDTO"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "DexPool - Stats",
-        "tags": [
-          "DexPool"
-        ]
-      }
-    },
     "/v1/ranking/{chain}/hotTokens/{duration}": {
       "get": {
         "description": "Retrieve a list of trending tokens",
@@ -6762,6 +6692,181 @@
           "data"
         ]
       },
+      "TokenCreatorsDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Creator wallet address",
+            "example": "5e2qRc1DNEXmyxP8qwPwJhRWjef7usLyi7v5xjqLr5G7"
+          },
+          "share": {
+            "type": "number",
+            "description": "Creator share percentage (0-100)",
+            "example": 100
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "Whether the creator is verified",
+            "example": true
+          }
+        }
+      },
+      "TokenExtraDTO": {
+        "type": "object",
+        "properties": {
+          "collectionAddress": {
+            "type": "string",
+            "description": "The unique identification address of an NFT Collection",
+            "example": "ABCDE"
+          },
+          "editionNonce": {
+            "type": "number",
+            "description": "Version number, used to identify the version or serial number of an NFT",
+            "example": 1
+          },
+          "fungible": {
+            "type": "boolean",
+            "description": "Whether it is a convertible token: If true, it indicates that the token is convertible (such as SPL tokens, like USDC or SOL).If false, it indicates that the token is non-interchangeable (such as NFTS, each token has unique metadata)",
+            "example": true
+          },
+          "isMutable": {
+            "type": "boolean",
+            "description": "Indicates whether the metadata of the token can be changed",
+            "example": true
+          },
+          "key": {
+            "type": "string",
+            "description": "The key type of a token indicates the type or role of the token.Common values include:Mint: Indicates the minting account of the token;Metadata: Represents a Metaplex metadata account;MasterEdition: Indicates the main version of the NFT;Edition: Indicates a limited edition copy.",
+            "example": "Mint"
+          },
+          "isNative": {
+            "type": "boolean",
+            "description": "Indicates whether the token is native token",
+            "example": false
+          },
+          "primarySaleHappened": {
+            "type": "boolean",
+            "description": "Indicates whether the NFT has completed its first sale",
+            "example": false
+          },
+          "outerProgramAddress": {
+            "type": "string",
+            "description": "External program address (the address that drives program_address)",
+            "example": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+          },
+          "programAddress": {
+            "type": "string",
+            "description": "Program address",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          "sellerFeeBasisPoints": {
+            "type": "number",
+            "description": "The seller's fee basis point indicates the royalty ratio of the creator at the time of secondary sales (in basis points, 1% = 100 basis points)",
+            "example": 100
+          },
+          "tokenStandard": {
+            "type": "string",
+            "description": "The standard type of token describes the protocol or specification that the token follows",
+            "example": "Fungible"
+          },
+          "mintAuthority": {
+            "type": "string",
+            "description": "Mint authority address",
+            "example": "B61ZzjjZskE9yur2CBe4H4NFS3XHdEZdatKNegC9smUV"
+          },
+          "freezeAuthority": {
+            "type": "string",
+            "description": "Freeze authority address",
+            "example": "B61ZzjjZskE9yur2CBe4H4NFS3XHdEZdatKNegC9smUV"
+          },
+          "updateAuthority": {
+            "type": "string",
+            "description": "Update authority address",
+            "example": "B61ZzjjZskE9yur2CBe4H4NFS3XHdEZdatKNegC9smUV"
+          },
+          "isVerifiedCollection": {
+            "type": "boolean",
+            "description": "Indicates whether the NFT belongs to a verified collection",
+            "example": true
+          },
+          "isWrapped": {
+            "type": "boolean",
+            "description": "Indicates whether the Token is a Wrapped token (Wrapped Token)",
+            "example": false
+          }
+        }
+      },
+      "TokenSocialMediasDTO": {
+        "type": "object",
+        "properties": {
+          "twitter": {
+            "type": "string",
+            "description": "Twitter account or profile link",
+            "example": "@circle"
+          },
+          "telegram": {
+            "type": "string",
+            "description": "Telegram group or channel link",
+            "example": "https://t.me/circle"
+          },
+          "website": {
+            "type": "string",
+            "description": "Official website URL",
+            "example": "https://www.circle.com"
+          },
+          "tiktok": {
+            "type": "string",
+            "description": "TikTok account or profile link",
+            "example": "@circle"
+          },
+          "discord": {
+            "type": "string",
+            "description": "Discord server invite link",
+            "example": "https://discord.gg/circle"
+          },
+          "facebook": {
+            "type": "string",
+            "description": "Facebook page or profile link",
+            "example": "https://facebook.com/circle"
+          },
+          "github": {
+            "type": "string",
+            "description": "GitHub repository or profile link",
+            "example": "https://github.com/circle"
+          },
+          "instagram": {
+            "type": "string",
+            "description": "Instagram account or profile link",
+            "example": "@circle"
+          },
+          "linkedin": {
+            "type": "string",
+            "description": "LinkedIn company or profile link",
+            "example": "https://linkedin.com/company/circle"
+          },
+          "medium": {
+            "type": "string",
+            "description": "Medium blog or publication link",
+            "example": "https://medium.com/@circle"
+          },
+          "reddit": {
+            "type": "string",
+            "description": "Reddit community or profile link",
+            "example": "https://reddit.com/r/circle"
+          },
+          "youtube": {
+            "type": "string",
+            "description": "YouTube channel or video link",
+            "example": "https://youtube.com/@circle"
+          },
+          "bitbucket": {
+            "type": "string",
+            "description": "Bitbucket repository or profile link",
+            "example": "https://bitbucket.org/circle"
+          }
+        }
+      },
       "TokenStat": {
         "type": "object",
         "properties": {
@@ -7615,6 +7720,21 @@
             "type": "string",
             "description": "Graduation completion progress",
             "example": "0.1"
+          },
+          "creatorsCount": {
+            "type": "number",
+            "description": "Number of token creators",
+            "example": 1
+          },
+          "creatorHoldings": {
+            "type": "string",
+            "description": "Total amount held by creators",
+            "example": "10000"
+          },
+          "creatorHoldingRatio": {
+            "type": "string",
+            "description": "Ratio of tokens held by creators",
+            "example": "0.5"
           }
         },
         "required": [
@@ -7659,9 +7779,12 @@
             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
           "tokenCreators": {
-            "type": "string",
             "description": "Token creator addresses",
-            "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenCreatorsDTO"
+              }
+            ]
           },
           "imageUrl": {
             "type": "string",
@@ -7674,14 +7797,20 @@
             "example": "https://..."
           },
           "extra": {
-            "type": "string",
             "description": "Additional metadata",
-            "example": "{}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenExtraDTO"
+              }
+            ]
           },
           "socialMedias": {
-            "type": "string",
             "description": "Social media links",
-            "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenSocialMediasDTO"
+              }
+            ]
           },
           "tokenCreatedAt": {
             "type": "number",
@@ -7876,9 +8005,12 @@
             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
           "tokenCreators": {
-            "type": "string",
             "description": "Token creator addresses",
-            "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenCreatorsDTO"
+              }
+            ]
           },
           "imageUrl": {
             "type": "string",
@@ -7891,14 +8023,20 @@
             "example": "https://..."
           },
           "extra": {
-            "type": "string",
             "description": "Additional metadata",
-            "example": "{}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenExtraDTO"
+              }
+            ]
           },
           "socialMedias": {
-            "type": "string",
             "description": "Social media links",
-            "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenSocialMediasDTO"
+              }
+            ]
           },
           "tokenCreatedAt": {
             "type": "number",
@@ -8251,10 +8389,6 @@
           "data"
         ]
       },
-      "DexPoolStatDTO": {
-        "type": "object",
-        "properties": {}
-      },
       "RankingTokenStat": {
         "type": "object",
         "properties": {
@@ -8419,6 +8553,11 @@
             "type": "string",
             "description": "TVL in USD",
             "example": "0.00000261383847574915906643405542"
+          },
+          "completionRatio": {
+            "type": "string",
+            "description": "Graduation completion progress",
+            "example": "0.1"
           }
         },
         "required": [

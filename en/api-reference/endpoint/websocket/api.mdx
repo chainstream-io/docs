@@ -8,9 +8,10 @@ description: 'WebSocket API Real-time Data Subscription Service'
 ChainStream DEX WebSocket API provides real-time data subscription services, supporting the following data types:
 - Candle Data 
 - Token Series
-- Trade Series
 - Wallet Series
-- Pnl Series
+- Ranking Series
+- Trade Series
+- DexPool Series
 
 **Base URL**
 ```bash
@@ -58,7 +59,9 @@ ws.onmessage = (event) => {
 
 ## Data Subscriptions
 
-### Candles Data
+### Candles
+
+#### Candles Data
 
 Get real-time price movement data for tokens.
 
@@ -78,6 +81,10 @@ dex-candle:{chain}_{tokenAddress}_{resolution}
 
 <ParamField query="resolution" type="string" required>
   Candle period, supports: 1m, 5m, 15m, 1h, 4h, 1d
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: volume > 1000
 </ParamField>
 
 **Response Data Format**
@@ -115,7 +122,9 @@ dex-candle:{chain}_{tokenAddress}_{resolution}
   </Tab>
 </Tabs>
 
-### Token Stats
+### Token Series
+
+#### Token Stats
 
 Get real-time market statistics for tokens.
 
@@ -133,143 +142,8 @@ dex-token-stats:{chain}_{tokenAddress}
   Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
-**Response Data Format**
-
-<Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
-</Tip>
-
-<Tabs>
-  <Tab title="WebSocket API">
-    ```typescript
-    {
-      "a": string,      // Token address
-      "t": number,      // Timestamp
-      "b1m": number,    // Buys in 1m
-      "s1m": number,    // Sells in 1m
-      "be1m": number,   // Buyers in 1m
-      "se1m": number,   // Sellers in 1m
-      "bviu1m": number, // Buy volume in USD 1m
-      "sviu1m": number, // Sell volume in USD 1m
-      "p1m": number,    // Price 1m
-      "b5m": number,    // Buys in 5m
-      "s5m": number,    // Sells in 5m
-      "be5m": number,   // Buyers in 5m
-      "se5m": number,   // Sellers in 5m
-      "bviu5m": number, // Buy volume in USD 5m
-      "sviu5m": number, // Sell volume in USD 5m
-      "p5m": number,    // Price 5m
-      "b15m": number,   // Buys in 15m
-      "s15m": number,   // Sells in 15m
-      "be15m": number,  // Buyers in 15m
-      "se15m": number,  // Sellers in 15m
-      "bviu15m": number,// Buy volume in USD 15m
-      "sviu15m": number,// Sell volume in USD 15m
-      "p15m": number,   // Price 15m
-      "b30m": number,   // Buys in 30m
-      "s30m": number,   // Sells in 30m
-      "be30m": number,  // Buyers in 30m
-      "se30m": number,  // Sellers in 30m
-      "bviu30m": number,// Buy volume in USD 30m
-      "sviu30m": number,// Sell volume in USD 30m
-      "p30m": number,   // Price 30m
-      "b1h": number,    // Buys in 1h
-      "s1h": number,    // Sells in 1h
-      "be1h": number,   // Buyers in 1h
-      "se1h": number,   // Sellers in 1h
-      "bviu1h": number, // Buy volume in USD 1h
-      "sviu1h": number, // Sell volume in USD 1h
-      "p1h": number,    // Price 1h
-      "b4h": number,    // Buys in 4h
-      "s4h": number,    // Sells in 4h
-      "be4h": number,   // Buyers in 4h
-      "se4h": number,   // Sellers in 4h
-      "bviu4h": number, // Buy volume in USD 4h
-      "sviu4h": number, // Sell volume in USD 4h
-      "p4h": number,    // Price 4h
-      "b24h": number,   // Buys in 24h
-      "s24h": number,   // Sells in 24h
-      "be24h": number,  // Buyers in 24h
-      "se24h": number,  // Sellers in 24h
-      "bviu24h": number,// Buy volume in USD 24h
-      "sviu24h": number,// Sell volume in USD 24h
-      "p24h": number,   // Price 24h
-      "p": number       // Current price
-    }
-    ```
-  </Tab>
-  <Tab title="SDK">
-    ```typescript
-    {
-      "address": string,           // Token address
-      "timestamp": number,         // Timestamp
-      "buys1m": number,           // Buys in 1m
-      "sells1m": number,          // Sells in 1m
-      "buyers1m": number,         // Buyers in 1m
-      "sellers1m": number,        // Sellers in 1m
-      "buyVolumeInUsd1m": number, // Buy volume in USD 1m
-      "sellVolumeInUsd1m": number,// Sell volume in USD 1m
-      "price1m": number,          // Price 1m
-      "buys5m": number,           // Buys in 5m
-      "sells5m": number,          // Sells in 5m
-      "buyers5m": number,         // Buyers in 5m
-      "sellers5m": number,        // Sellers in 5m
-      "buyVolumeInUsd5m": number, // Buy volume in USD 5m
-      "sellVolumeInUsd5m": number,// Sell volume in USD 5m
-      "price5m": number,          // Price 5m
-      "buys15m": number,          // Buys in 15m
-      "sells15m": number,         // Sells in 15m
-      "buyers15m": number,        // Buyers in 15m
-      "sellers15m": number,       // Sellers in 15m
-      "buyVolumeInUsd15m": number,// Buy volume in USD 15m
-      "sellVolumeInUsd15m": number,// Sell volume in USD 15m
-      "price15m": number,         // Price 15m
-      "buys30m": number,          // Buys in 30m
-      "sells30m": number,         // Sells in 30m
-      "buyers30m": number,        // Buyers in 30m
-      "sellers30m": number,       // Sellers in 30m
-      "buyVolumeInUsd30m": number,// Buy volume in USD 30m
-      "sellVolumeInUsd30m": number,// Sell volume in USD 30m
-      "price30m": number,         // Price 30m
-      "buys1h": number,           // Buys in 1h
-      "sells1h": number,          // Sells in 1h
-      "buyers1h": number,         // Buyers in 1h
-      "sellers1h": number,        // Sellers in 1h
-      "buyVolumeInUsd1h": number, // Buy volume in USD 1h
-      "sellVolumeInUsd1h": number,// Sell volume in USD 1h
-      "price1h": number,          // Price 1h
-      "buys4h": number,           // Buys in 4h
-      "sells4h": number,          // Sells in 4h
-      "buyers4h": number,         // Buyers in 4h
-      "sellers4h": number,        // Sellers in 4h
-      "buyVolumeInUsd4h": number, // Buy volume in USD 4h
-      "sellVolumeInUsd4h": number,// Sell volume in USD 4h
-      "price4h": number,          // Price 4h
-      "buys24h": number,          // Buys in 24h
-      "sells24h": number,         // Sells in 24h
-      "buyers24h": number,        // Buyers in 24h
-      "sellers24h": number,       // Sellers in 24h
-      "buyVolumeInUsd24h": number,// Buy volume in USD 24h
-      "sellVolumeInUsd24h": number,// Sell volume in USD 24h
-      "price24h": number,         // Price 24h
-      "price": number            // Current price
-    }
-    ```
-  </Tab>
-</Tabs>
-
-### Hot Tokens Stats
-
-Get real-time market statistics for trending tokens.
-
-**Subscription Format**
-```text
-dex-ranking-trending-tokens-stats:{chain}
-```
-
-**Parameters**
-<ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: price > 0.01
 </ParamField>
 
 **Response Data Format**
@@ -291,6 +165,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu1m": number, // Buy volume in USD 1m
       "sviu1m": number, // Sell volume in USD 1m
       "p1m": number,    // Price 1m
+      "oiu1m": number,  // Open price in USD 1m
+      "ciu1m": number,  // Close price in USD 1m
       "b5m": number,    // Buys in 5m
       "s5m": number,    // Sells in 5m
       "be5m": number,   // Buyers in 5m
@@ -298,6 +174,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu5m": number, // Buy volume in USD 5m
       "sviu5m": number, // Sell volume in USD 5m
       "p5m": number,    // Price 5m
+      "oiu5m": number,  // Open price in USD 5m
+      "ciu5m": number,  // Close price in USD 5m
       "b15m": number,   // Buys in 15m
       "s15m": number,   // Sells in 15m
       "be15m": number,  // Buyers in 15m
@@ -305,6 +183,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu15m": number,// Buy volume in USD 15m
       "sviu15m": number,// Sell volume in USD 15m
       "p15m": number,   // Price 15m
+      "oiu15m": number, // Open price in USD 15m
+      "ciu15m": number, // Close price in USD 15m
       "b30m": number,   // Buys in 30m
       "s30m": number,   // Sells in 30m
       "be30m": number,  // Buyers in 30m
@@ -312,6 +192,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu30m": number,// Buy volume in USD 30m
       "sviu30m": number,// Sell volume in USD 30m
       "p30m": number,   // Price 30m
+      "oiu30m": number, // Open price in USD 30m
+      "ciu30m": number, // Close price in USD 30m
       "b1h": number,    // Buys in 1h
       "s1h": number,    // Sells in 1h
       "be1h": number,   // Buyers in 1h
@@ -319,6 +201,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu1h": number, // Buy volume in USD 1h
       "sviu1h": number, // Sell volume in USD 1h
       "p1h": number,    // Price 1h
+      "oiu1h": number,  // Open price in USD 1h
+      "ciu1h": number,  // Close price in USD 1h
       "b4h": number,    // Buys in 4h
       "s4h": number,    // Sells in 4h
       "be4h": number,   // Buyers in 4h
@@ -326,6 +210,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu4h": number, // Buy volume in USD 4h
       "sviu4h": number, // Sell volume in USD 4h
       "p4h": number,    // Price 4h
+      "oiu4h": number,  // Open price in USD 4h
+      "ciu4h": number,  // Close price in USD 4h
       "b24h": number,   // Buys in 24h
       "s24h": number,   // Sells in 24h
       "be24h": number,  // Buyers in 24h
@@ -333,6 +219,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "bviu24h": number,// Buy volume in USD 24h
       "sviu24h": number,// Sell volume in USD 24h
       "p24h": number,   // Price 24h
+      "oiu24h": number, // Open price in USD 24h
+      "ciu24h": number, // Close price in USD 24h
       "p": number       // Current price
     }
     ```
@@ -349,6 +237,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd1m": number, // Buy volume in USD 1m
       "sellVolumeInUsd1m": number,// Sell volume in USD 1m
       "price1m": number,          // Price 1m
+      "openInUsd1m": number,      // Open price in USD 1m
+      "closeInUsd1m": number,     // Close price in USD 1m
       "buys5m": number,           // Buys in 5m
       "sells5m": number,          // Sells in 5m
       "buyers5m": number,         // Buyers in 5m
@@ -356,6 +246,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd5m": number, // Buy volume in USD 5m
       "sellVolumeInUsd5m": number,// Sell volume in USD 5m
       "price5m": number,          // Price 5m
+      "openInUsd5m": number,      // Open price in USD 5m
+      "closeInUsd5m": number,     // Close price in USD 5m
       "buys15m": number,          // Buys in 15m
       "sells15m": number,         // Sells in 15m
       "buyers15m": number,        // Buyers in 15m
@@ -363,6 +255,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd15m": number,// Buy volume in USD 15m
       "sellVolumeInUsd15m": number,// Sell volume in USD 15m
       "price15m": number,         // Price 15m
+      "openInUsd15m": number,     // Open price in USD 15m
+      "closeInUsd15m": number,    // Close price in USD 15m
       "buys30m": number,          // Buys in 30m
       "sells30m": number,         // Sells in 30m
       "buyers30m": number,        // Buyers in 30m
@@ -370,6 +264,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd30m": number,// Buy volume in USD 30m
       "sellVolumeInUsd30m": number,// Sell volume in USD 30m
       "price30m": number,         // Price 30m
+      "openInUsd30m": number,     // Open price in USD 30m
+      "closeInUsd30m": number,    // Close price in USD 30m
       "buys1h": number,           // Buys in 1h
       "sells1h": number,          // Sells in 1h
       "buyers1h": number,         // Buyers in 1h
@@ -377,6 +273,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd1h": number, // Buy volume in USD 1h
       "sellVolumeInUsd1h": number,// Sell volume in USD 1h
       "price1h": number,          // Price 1h
+      "openInUsd1h": number,      // Open price in USD 1h
+      "closeInUsd1h": number,     // Close price in USD 1h
       "buys4h": number,           // Buys in 4h
       "sells4h": number,          // Sells in 4h
       "buyers4h": number,         // Buyers in 4h
@@ -384,6 +282,8 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd4h": number, // Buy volume in USD 4h
       "sellVolumeInUsd4h": number,// Sell volume in USD 4h
       "price4h": number,          // Price 4h
+      "openInUsd4h": number,      // Open price in USD 4h
+      "closeInUsd4h": number,     // Close price in USD 4h
       "buys24h": number,          // Buys in 24h
       "sells24h": number,         // Sells in 24h
       "buyers24h": number,        // Buyers in 24h
@@ -391,24 +291,34 @@ dex-ranking-trending-tokens-stats:{chain}
       "buyVolumeInUsd24h": number,// Buy volume in USD 24h
       "sellVolumeInUsd24h": number,// Sell volume in USD 24h
       "price24h": number,         // Price 24h
+      "openInUsd24h": number,     // Open price in USD 24h
+      "closeInUsd24h": number,    // Close price in USD 24h
       "price": number            // Current price
     }
     ```
   </Tab>
 </Tabs>
 
-### New Tokens Stats
+#### Token Holders Statistics
 
-Get real-time market statistics for newly listed tokens.
+Get real-time token holder statistics.
 
 **Subscription Format**
 ```text
-dex-ranking-new-tokens-stats:{chain}
+dex-token-holding:{chain}_{tokenAddress}
 ```
 
 **Parameters**
 <ParamField query="chain" type="string" required>
   Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: holders > 200
 </ParamField>
 
 **Response Data Format**
@@ -422,121 +332,35 @@ dex-ranking-new-tokens-stats:{chain}
     ```typescript
     {
       "a": string,      // Token address
-      "t": number,      // Timestamp
-      "b1m": number,    // Buys in 1m
-      "s1m": number,    // Sells in 1m
-      "be1m": number,   // Buyers in 1m
-      "se1m": number,   // Sellers in 1m
-      "bviu1m": number, // Buy volume in USD 1m
-      "sviu1m": number, // Sell volume in USD 1m
-      "p1m": number,    // Price 1m
-      "b5m": number,    // Buys in 5m
-      "s5m": number,    // Sells in 5m
-      "be5m": number,   // Buyers in 5m
-      "se5m": number,   // Sellers in 5m
-      "bviu5m": number, // Buy volume in USD 5m
-      "sviu5m": number, // Sell volume in USD 5m
-      "p5m": number,    // Price 5m
-      "b15m": number,   // Buys in 15m
-      "s15m": number,   // Sells in 15m
-      "be15m": number,  // Buyers in 15m
-      "se15m": number,  // Sellers in 15m
-      "bviu15m": number,// Buy volume in USD 15m
-      "sviu15m": number,// Sell volume in USD 15m
-      "p15m": number,   // Price 15m
-      "b30m": number,   // Buys in 30m
-      "s30m": number,   // Sells in 30m
-      "be30m": number,  // Buyers in 30m
-      "se30m": number,  // Sellers in 30m
-      "bviu30m": number,// Buy volume in USD 30m
-      "sviu30m": number,// Sell volume in USD 30m
-      "p30m": number,   // Price 30m
-      "b1h": number,    // Buys in 1h
-      "s1h": number,    // Sells in 1h
-      "be1h": number,   // Buyers in 1h
-      "se1h": number,   // Sellers in 1h
-      "bviu1h": number, // Buy volume in USD 1h
-      "sviu1h": number, // Sell volume in USD 1h
-      "p1h": number,    // Price 1h
-      "b4h": number,    // Buys in 4h
-      "s4h": number,    // Sells in 4h
-      "be4h": number,   // Buyers in 4h
-      "se4h": number,   // Sellers in 4h
-      "bviu4h": number, // Buy volume in USD 4h
-      "sviu4h": number, // Sell volume in USD 4h
-      "p4h": number,    // Price 4h
-      "b24h": number,   // Buys in 24h
-      "s24h": number,   // Sells in 24h
-      "be24h": number,  // Buyers in 24h
-      "se24h": number,  // Sellers in 24h
-      "bviu24h": number,// Buy volume in USD 24h
-      "sviu24h": number,// Sell volume in USD 24h
-      "p24h": number,   // Price 24h
-      "p": number       // Current price
+      "h": number,      // Number of holders
+      "t100a": number,  // Top 100 holders total amount
+      "t10a": number,   // Top 10 holders total amount
+      "t100h": number,  // Top 100 holders count
+      "t10h": number,   // Top 10 holders count
+      "t100r": number,  // Top 100 holders ratio
+      "t10r": number,   // Top 10 holders ratio
+      "ts": number      // Timestamp
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "address": string,           // Token address
-      "timestamp": number,         // Timestamp
-      "buys1m": number,           // Buys in 1m
-      "sells1m": number,          // Sells in 1m
-      "buyers1m": number,         // Buyers in 1m
-      "sellers1m": number,        // Sellers in 1m
-      "buyVolumeInUsd1m": number, // Buy volume in USD 1m
-      "sellVolumeInUsd1m": number,// Sell volume in USD 1m
-      "price1m": number,          // Price 1m
-      "buys5m": number,           // Buys in 5m
-      "sells5m": number,          // Sells in 5m
-      "buyers5m": number,         // Buyers in 5m
-      "sellers5m": number,        // Sellers in 5m
-      "buyVolumeInUsd5m": number, // Buy volume in USD 5m
-      "sellVolumeInUsd5m": number,// Sell volume in USD 5m
-      "price5m": number,          // Price 5m
-      "buys15m": number,          // Buys in 15m
-      "sells15m": number,         // Sells in 15m
-      "buyers15m": number,        // Buyers in 15m
-      "sellers15m": number,       // Sellers in 15m
-      "buyVolumeInUsd15m": number,// Buy volume in USD 15m
-      "sellVolumeInUsd15m": number,// Sell volume in USD 15m
-      "price15m": number,         // Price 15m
-      "buys30m": number,          // Buys in 30m
-      "sells30m": number,         // Sells in 30m
-      "buyers30m": number,        // Buyers in 30m
-      "sellers30m": number,       // Sellers in 30m
-      "buyVolumeInUsd30m": number,// Buy volume in USD 30m
-      "sellVolumeInUsd30m": number,// Sell volume in USD 30m
-      "price30m": number,         // Price 30m
-      "buys1h": number,           // Buys in 1h
-      "sells1h": number,          // Sells in 1h
-      "buyers1h": number,         // Buyers in 1h
-      "sellers1h": number,        // Sellers in 1h
-      "buyVolumeInUsd1h": number, // Buy volume in USD 1h
-      "sellVolumeInUsd1h": number,// Sell volume in USD 1h
-      "price1h": number,          // Price 1h
-      "buys4h": number,           // Buys in 4h
-      "sells4h": number,          // Sells in 4h
-      "buyers4h": number,         // Buyers in 4h
-      "sellers4h": number,        // Sellers in 4h
-      "buyVolumeInUsd4h": number, // Buy volume in USD 4h
-      "sellVolumeInUsd4h": number,// Sell volume in USD 4h
-      "price4h": number,          // Price 4h
-      "buys24h": number,          // Buys in 24h
-      "sells24h": number,         // Sells in 24h
-      "buyers24h": number,        // Buyers in 24h
-      "sellers24h": number,       // Sellers in 24h
-      "buyVolumeInUsd24h": number,// Buy volume in USD 24h
-      "sellVolumeInUsd24h": number,// Sell volume in USD 24h
-      "price24h": number,         // Price 24h
-      "price": number            // Current price
+      "tokenAddress": string,    // Token address
+      "holders": number,         // Number of holders
+      "top100Amount": number,    // Top 100 holders total amount
+      "top10Amount": number,     // Top 10 holders total amount
+      "top100Holders": number,   // Top 100 holders count
+      "top10Holders": number,    // Top 10 holders count
+      "top100Ratio": number,     // Top 100 holders ratio
+      "top10Ratio": number,      // Top 10 holders ratio
+      "timestamp": number        // Timestamp
     }
     ```
   </Tab>
 </Tabs>
 
-### New Tokens Metadata
+#### New Token Metadata
 
 Get real-time metadata for newly listed tokens.
 
@@ -550,6 +374,10 @@ dex-new-tokens-metadata:{chain}
   Blockchain name, e.g., sol
 </ParamField>
 
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: name == "USDC"
+</ParamField>
+
 **Response Data Format**
 
 <Tip>
@@ -559,67 +387,71 @@ dex-new-tokens-metadata:{chain}
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
-    {
-      "a": string,      // Token address
-      "n": string,      // Name
-      "s": string,      // Symbol
-      "iu": string,     // Image URL
-      "de": string,     // Description
-      "sm": {           // Social media
-        "tw": string,   // Twitter
-        "tg": string,   // Telegram
-        "w": string,    // Website
-        "tt": string,   // TikTok
-        "dc": string,   // Discord
-        "fb": string,   // Facebook
-        "gh": string,   // GitHub
-        "ig": string,   // Instagram
-        "li": string,   // LinkedIn
-        "md": string,   // Medium
-        "rd": string,   // Reddit
-        "yt": string,   // YouTube
-        "bb": string    // BitBucket
-      },
-      "cts": number     // Created timestamp (ms)
-    }
+    [
+      {
+        "a": string,      // Token address
+        "n": string,      // Name
+        "s": string,      // Symbol
+        "iu": string,     // Image URL
+        "de": string,     // Description
+        "sm": {           // Social media
+          "tw": string,   // Twitter
+          "tg": string,   // Telegram
+          "w": string,    // Website
+          "tt": string,   // TikTok
+          "dc": string,   // Discord
+          "fb": string,   // Facebook
+          "gh": string,   // GitHub
+          "ig": string,   // Instagram
+          "li": string,   // LinkedIn
+          "md": string,   // Medium
+          "rd": string,   // Reddit
+          "yt": string,   // YouTube
+          "bb": string    // BitBucket
+        },
+        "cts": number     // Created timestamp (ms)
+      }
+    ]
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
-    {
-      "tokenAddress": string,     // Token address
-      "name": string,             // Name
-      "symbol": string,           // Symbol
-      "imageUrl": string,         // Image URL
-      "description": string,      // Description
-      "socialMedia": {            // Social media
-        "twitter": string,        // Twitter
-        "telegram": string,       // Telegram
-        "website": string,        // Website
-        "tiktok": string,         // TikTok
-        "discord": string,        // Discord
-        "facebook": string,       // Facebook
-        "github": string,         // GitHub
-        "instagram": string,      // Instagram
-        "linkedin": string,       // LinkedIn
-        "medium": string,         // Medium
-        "reddit": string,         // Reddit
-        "youtube": string,        // YouTube
-        "bitbucket": string       // BitBucket
-      },
-      "createdAtMs": number       // Created timestamp (ms)
-    }
+    [
+      {
+        "tokenAddress": string,     // Token address
+        "name": string,             // Name
+        "symbol": string,           // Symbol
+        "imageUrl": string,         // Image URL
+        "description": string,      // Description
+        "socialMedia": {            // Social media
+          "twitter": string,        // Twitter
+          "telegram": string,       // Telegram
+          "website": string,        // Website
+          "tiktok": string,         // TikTok
+          "discord": string,        // Discord
+          "facebook": string,       // Facebook
+          "github": string,         // GitHub
+          "instagram": string,      // Instagram
+          "linkedin": string,       // LinkedIn
+          "medium": string,         // Medium
+          "reddit": string,         // Reddit
+          "youtube": string,        // YouTube
+          "bitbucket": string       // BitBucket
+        },
+        "createdAtMs": number       // Created timestamp (ms)
+      }
+    ]
     ```
   </Tab>
 </Tabs>
 
-### New Tokens
+#### New Token
 
-Get real-time information about newly created tokens.
+Get information about newly created token.
 
 **Subscription Format**
 ```text
-dex-new-tokens:{chain}
+dex-new-token:{chain}
 ```
 
 **Parameters**
@@ -640,7 +472,6 @@ dex-new-tokens:{chain}
       "a": string,      // Token address
       "n": string,      // Name
       "s": string,      // Symbol
-      "de": string,     // Description
       "cts": number     // Created timestamp (ms)
     }
     ```
@@ -651,59 +482,13 @@ dex-new-tokens:{chain}
       "tokenAddress": string,     // Token address
       "name": string,             // Name
       "symbol": string,           // Symbol
-      "description": string,      // Description
       "createdAtMs": number       // Created timestamp (ms)
     }
     ```
   </Tab>
 </Tabs>
 
-### Token Holders Statistics
-
-Get real-time token holder statistics.
-
-**Subscription Format**
-```text
-dex-token-general-stat-num:{chain}_{tokenAddress}
-```
-
-**Parameters**
-<ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
-</ParamField>
-
-<ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
-</ParamField>
-
-**Response Data Format**
-
-<Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
-</Tip>
-
-<Tabs>
-  <Tab title="WebSocket API">
-    ```typescript
-    {
-      "a": string,    // Token address
-      "v": number,    // Number of holders
-      "ts": number    // Timestamp
-    }
-    ```
-  </Tab>
-  <Tab title="SDK">
-    ```typescript
-    {
-      "tokenAddress": string,    // Token address
-      "holders": number,         // Number of holders
-      "timestamp": number        // Timestamp
-    }
-    ```
-  </Tab>
-</Tabs>
-
-### Token Supply
+#### Token Supply
 
 Get real-time token supply and market cap information.
 
@@ -719,6 +504,10 @@ dex-token-supply:{chain}_{tokenAddress}
 
 <ParamField query="tokenAddress" type="string" required>
   Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: supply > 1000000
 </ParamField>
 
 **Response Data Format**
@@ -750,7 +539,7 @@ dex-token-supply:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-### Token Liquidity
+#### Token Liquidity
 
 Get real-time token liquidity statistics.
 
@@ -766,6 +555,10 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
 
 <ParamField query="tokenAddress" type="string" required>
   Token contract address
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: value > 1000000
 </ParamField>
 
 **Response Data Format**
@@ -797,13 +590,741 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-### Token Trade
+### Ranking Series
+
+#### Ranking Token Statistics
+
+Get real-time market statistics for ranking tokens.
+
+**Subscription Format**
+```text
+dex-ranking-token-stats-list:{chain}_{channelType}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="channelType" type="string" required>
+  Channel type, support：new、trending、us_stocks、completed、graduated
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,      // Token address
+        "t": number,      // Timestamp
+        "b1m": number,    // Buys in 1m
+        "s1m": number,    // Sells in 1m
+        "be1m": number,   // Buyers in 1m
+        "se1m": number,   // Sellers in 1m
+        "bviu1m": number, // Buy volume in USD 1m
+        "sviu1m": number, // Sell volume in USD 1m
+        "p1m": number,    // Price 1m
+        "oiu1m": number,  // Open price in USD 1m
+        "ciu1m": number,  // Close price in USD 1m
+        "b5m": number,    // Buys in 5m
+        "s5m": number,    // Sells in 5m
+        "be5m": number,   // Buyers in 5m
+        "se5m": number,   // Sellers in 5m
+        "bviu5m": number, // Buy volume in USD 5m
+        "sviu5m": number, // Sell volume in USD 5m
+        "p5m": number,    // Price 5m
+        "oiu5m": number,  // Open price in USD 5m
+        "ciu5m": number,  // Close price in USD 5m
+        "b15m": number,   // Buys in 15m
+        "s15m": number,   // Sells in 15m
+        "be15m": number,  // Buyers in 15m
+        "se15m": number,  // Sellers in 15m
+        "bviu15m": number,// Buy volume in USD 15m
+        "sviu15m": number,// Sell volume in USD 15m
+        "p15m": number,   // Price 15m
+        "oiu15m": number, // Open price in USD 15m
+        "ciu15m": number, // Close price in USD 15m
+        "b30m": number,   // Buys in 30m
+        "s30m": number,   // Sells in 30m
+        "be30m": number,  // Buyers in 30m
+        "se30m": number,  // Sellers in 30m
+        "bviu30m": number,// Buy volume in USD 30m
+        "sviu30m": number,// Sell volume in USD 30m
+        "p30m": number,   // Price 30m
+        "oiu30m": number, // Open price in USD 30m
+        "ciu30m": number, // Close price in USD 30m
+        "b1h": number,    // Buys in 1h
+        "s1h": number,    // Sells in 1h
+        "be1h": number,   // Buyers in 1h
+        "se1h": number,   // Sellers in 1h
+        "bviu1h": number, // Buy volume in USD 1h
+        "sviu1h": number, // Sell volume in USD 1h
+        "p1h": number,    // Price 1h
+        "oiu1h": number,  // Open price in USD 1h
+        "ciu1h": number,  // Close price in USD 1h
+        "b4h": number,    // Buys in 4h
+        "s4h": number,    // Sells in 4h
+        "be4h": number,   // Buyers in 4h
+        "se4h": number,   // Sellers in 4h
+        "bviu4h": number, // Buy volume in USD 4h
+        "sviu4h": number, // Sell volume in USD 4h
+        "p4h": number,    // Price 4h
+        "oiu4h": number,  // Open price in USD 4h
+        "ciu4h": number,  // Close price in USD 4h
+        "b24h": number,   // Buys in 24h
+        "s24h": number,   // Sells in 24h
+        "be24h": number,  // Buyers in 24h
+        "se24h": number,  // Sellers in 24h
+        "bviu24h": number,// Buy volume in USD 24h
+        "sviu24h": number,// Sell volume in USD 24h
+        "p24h": number,   // Price 24h
+        "oiu24h": number, // Open price in USD 24h
+        "ciu24h": number, // Close price in USD 24h
+        "p": number       // Current price
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "address": string,           // Token address
+        "timestamp": number,         // Timestamp
+        "buys1m": number,           // Buys in 1m
+        "sells1m": number,          // Sells in 1m
+        "buyers1m": number,         // Buyers in 1m
+        "sellers1m": number,        // Sellers in 1m
+        "buyVolumeInUsd1m": number, // Buy volume in USD 1m
+        "sellVolumeInUsd1m": number,// Sell volume in USD 1m
+        "price1m": number,          // Price 1m
+        "openInUsd1m": number,      // Open price in USD 1m
+        "closeInUsd1m": number,     // Close price in USD 1m
+        "buys5m": number,           // Buys in 5m
+        "sells5m": number,          // Sells in 5m
+        "buyers5m": number,         // Buyers in 5m
+        "sellers5m": number,        // Sellers in 5m
+        "buyVolumeInUsd5m": number, // Buy volume in USD 5m
+        "sellVolumeInUsd5m": number,// Sell volume in USD 5m
+        "price5m": number,          // Price 5m
+        "openInUsd5m": number,      // Open price in USD 5m
+        "closeInUsd5m": number,     // Close price in USD 5m
+        "buys15m": number,          // Buys in 15m
+        "sells15m": number,         // Sells in 15m
+        "buyers15m": number,        // Buyers in 15m
+        "sellers15m": number,       // Sellers in 15m
+        "buyVolumeInUsd15m": number,// Buy volume in USD 15m
+        "sellVolumeInUsd15m": number,// Sell volume in USD 15m
+        "price15m": number,         // Price 15m
+        "openInUsd15m": number,     // Open price in USD 15m
+        "closeInUsd15m": number,    // Close price in USD 15m
+        "buys30m": number,          // Buys in 30m
+        "sells30m": number,         // Sells in 30m
+        "buyers30m": number,        // Buyers in 30m
+        "sellers30m": number,       // Sellers in 30m
+        "buyVolumeInUsd30m": number,// Buy volume in USD 30m
+        "sellVolumeInUsd30m": number,// Sell volume in USD 30m
+        "price30m": number,         // Price 30m
+        "openInUsd30m": number,     // Open price in USD 30m
+        "closeInUsd30m": number,    // Close price in USD 30m
+        "buys1h": number,           // Buys in 1h
+        "sells1h": number,          // Sells in 1h
+        "buyers1h": number,         // Buyers in 1h
+        "sellers1h": number,        // Sellers in 1h
+        "buyVolumeInUsd1h": number, // Buy volume in USD 1h
+        "sellVolumeInUsd1h": number,// Sell volume in USD 1h
+        "price1h": number,          // Price 1h
+        "openInUsd1h": number,      // Open price in USD 1h
+        "closeInUsd1h": number,     // Close price in USD 1h
+        "buys4h": number,           // Buys in 4h
+        "sells4h": number,          // Sells in 4h
+        "buyers4h": number,         // Buyers in 4h
+        "sellers4h": number,        // Sellers in 4h
+        "buyVolumeInUsd4h": number, // Buy volume in USD 4h
+        "sellVolumeInUsd4h": number,// Sell volume in USD 4h
+        "price4h": number,          // Price 4h
+        "openInUsd4h": number,      // Open price in USD 4h
+        "closeInUsd4h": number,     // Close price in USD 4h
+        "buys24h": number,          // Buys in 24h
+        "sells24h": number,         // Sells in 24h
+        "buyers24h": number,        // Buyers in 24h
+        "sellers24h": number,       // Sellers in 24h
+        "buyVolumeInUsd24h": number,// Buy volume in USD 24h
+        "sellVolumeInUsd24h": number,// Sell volume in USD 24h
+        "price24h": number,         // Price 24h
+        "openInUsd24h": number,     // Open price in USD 24h
+        "closeInUsd24h": number,    // Close price in USD 24h
+        "price": number            // Current price
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+#### Ranking Token Holders Statistics
+
+Get real-time token holder statistics for ranking tokens.
+
+**Subscription Format**
+```text
+dex-ranking-token-holding-list:{chain}_{channelType}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="channelType" type="string" required>
+  Channel type, support：new、trending、us_stocks、completed、graduated
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,      // Token address
+        "h": number,      // Number of holders
+        "t100a": number,  // Top 100 holders total amount
+        "t10a": number,   // Top 10 holders total amount
+        "t100h": number,  // Top 100 holders count
+        "t10h": number,   // Top 10 holders count
+        "t100r": number,  // Top 100 holders ratio
+        "t10r": number,   // Top 10 holders ratio
+        "ts": number      // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "tokenAddress": string,    // Token address
+        "holders": number,         // Number of holders
+        "top100Amount": number,    // Top 100 holders total amount
+        "top10Amount": number,     // Top 10 holders total amount
+        "top100Holders": number,   // Top 100 holders count
+        "top10Holders": number,    // Top 10 holders count
+        "top100Ratio": number,     // Top 100 holders ratio
+        "top10Ratio": number,      // Top 10 holders ratio
+        "timestamp": number        // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+#### Ranking Token Supply Data
+
+Get real-time supply and market cap information for ranking tokens.
+
+**Subscription Format**
+```text
+dex-ranking-token-supply-list:{chain}_{channelType}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="channelType" type="string" required>
+  Channel type, support：new、trending、us_stocks、completed、graduated
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,    // Token address
+        "s": number,    // Supply
+        "mc": number,   // Market cap in USD
+        "ts": number    // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "tokenAddress": string,    // Token address
+        "supply": number,          // Supply
+        "marketCapInUsd": number,  // Market cap in USD
+        "timestamp": number        // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+#### Ranking Token Liquidity Data
+
+Get real-time liquidity statistics for ranking tokens.
+
+**Subscription Format**
+```text
+dex-ranking-token-general_stat_num-list:{chain}_{channelType}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="channelType" type="string" required>
+  Channel type, support：new、trending、us_stocks、completed、graduated
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,    // Token address
+        "t": string,    // Metric type
+        "v": number,    // Value
+        "ts": number    // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "tokenAddress": string,  // Token address
+        "metricType": string,    // Metric type
+        "value": number,         // Value
+        "timestamp": number      // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+#### Ranking Token List
+
+Get real-time complete information list for ranking tokens, including metadata, holder statistics, supply and market data.
+
+**Subscription Format**
+```text
+dex-ranking-list:{chain}_{ranking_type}
+# Or specify DEX
+dex-ranking-list:{chain}_{ranking_type}_{dex}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="ranking_type" type="string" required>
+  Ranking type, support：new、trending、us_stocks、completed、graduated
+</ParamField>
+
+<ParamField query="dex" type="string" required={false}>
+  Optional DEX platform, support：pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        // TokenMetadata (t)
+        "t": {
+          "a": string,      // Token address
+          "n": string,      // Name
+          "s": string,      // Symbol
+          "iu": string,     // Image URL
+          "de": string,     // Description
+          "sm": {           // Social media
+            "tw": string,   // Twitter
+            "tg": string,   // Telegram
+            "w": string,    // Website
+            "tt": string,   // TikTok
+            "dc": string,   // Discord
+            "fb": string,   // Facebook
+            "gh": string,   // GitHub
+            "ig": string,   // Instagram
+            "li": string,   // LinkedIn
+            "md": string,   // Medium
+            "rd": string,   // Reddit
+            "yt": string,   // YouTube
+            "bb": string    // BitBucket
+          },
+          "cts": number     // Created timestamp (ms)
+        },
+        // TokenHolder (h)
+        "h": {
+          "a": string,      // Token address
+          "h": number,      // Number of holders
+          "t100a": number,  // Top 100 holders total amount
+          "t10a": number,   // Top 10 holders total amount
+          "t100h": number,  // Top 100 holders count
+          "t10h": number,   // Top 10 holders count
+          "t100r": number,  // Top 100 holders ratio
+          "t10r": number,   // Top 10 holders ratio
+          "ts": number      // Timestamp
+        },
+        // TokenSupply (s)
+        "s": {
+          "a": string,    // Token address
+          "s": number,    // Supply
+          "mc": number,   // Market cap in USD
+          "ts": number    // Timestamp
+        },
+        // TokenStat (ts)
+        "ts": {
+          "a": string,      // Token address
+          "t": number,      // Timestamp
+          "b1m": number,    // Buys in 1m
+          "s1m": number,    // Sells in 1m
+          "be1m": number,   // Buyers in 1m
+          "se1m": number,   // Sellers in 1m
+          "bviu1m": number, // Buy volume in USD 1m
+          "sviu1m": number, // Sell volume in USD 1m
+          "p1m": number,    // Price 1m
+          "oiu1m": number,  // Open price in USD 1m
+          "ciu1m": number,  // Close price in USD 1m
+          // ... Other time period data (5m, 15m, 30m, 1h, 4h, 24h)
+          "p": number       // Current price
+        }
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        // Token metadata
+        "tokenAddress": string,     // Token address
+        "name": string,             // Name
+        "symbol": string,           // Symbol
+        "imageUrl": string,         // Image URL
+        "description": string,      // Description
+        "socialMedia": {            // Social media
+          "twitter": string,        // Twitter
+          "telegram": string,       // Telegram
+          "website": string,        // Website
+          "tiktok": string,         // TikTok
+          "discord": string,        // Discord
+          "facebook": string,       // Facebook
+          "github": string,         // GitHub
+          "instagram": string,      // Instagram
+          "linkedin": string,       // LinkedIn
+          "medium": string,         // Medium
+          "reddit": string,         // Reddit
+          "youtube": string,        // YouTube
+          "bitbucket": string       // BitBucket
+        },
+        "createdAtMs": number,      // Created timestamp (ms)
+        
+        // Holder statistics
+        "holders": number,          // Number of holders
+        "top100Amount": number,     // Top 100 holders total amount
+        "top10Amount": number,      // Top 10 holders total amount
+        "top100Holders": number,    // Top 100 holders count
+        "top10Holders": number,     // Top 10 holders count
+        "top100Ratio": number,      // Top 100 holders ratio
+        "top10Ratio": number,       // Top 10 holders ratio
+        
+        // Supply information
+        "supply": number,           // Supply
+        "marketCapInUsd": number,   // Market cap in USD
+        
+        // Market statistics
+        "buys1m": number,           // Buys in 1m
+        "sells1m": number,          // Sells in 1m
+        "buyers1m": number,         // Buyers in 1m
+        "sellers1m": number,        // Sellers in 1m
+        "buyVolumeInUsd1m": number, // Buy volume in USD 1m
+        "sellVolumeInUsd1m": number,// Sell volume in USD 1m
+        "price1m": number,          // Price 1m
+        "openInUsd1m": number,      // Open price in USD 1m
+        "closeInUsd1m": number,     // Close price in USD 1m
+        // ... Other time period data (5m, 15m, 30m, 1h, 4h, 24h)
+        "price": number            // Current price
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+### Wallet Series
+
+#### Wallet Balance
+
+Get real-time wallet balance information.
+
+**Subscription Format**
+```text
+dex-wallet-balance:{chain}_{walletAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  Wallet address, e.g., HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: balance > 1000
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,      // Wallet address
+        "ta": string,     // Token address
+        "tpiu": number,   // Token price in USD
+        "b": number,      // Balance
+        "t": number       // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "walletAddress": string,    // Wallet address
+        "tokenAddress": string,     // Token address
+        "tokenPriceInUsd": number, // Token price in USD
+        "balance": number,          // Balance
+        "timestamp": number         // Timestamp
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+#### Wallet PnL Data (Token Level)
+
+Get real-time wallet profit and loss (PnL) statistics.
+
+**Subscription Format**
+```text
+dex-wallet-token-pnl:{chain}_{walletAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  Wallet address
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: buyAmount > 1000
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,      // Wallet address
+      "ta": string,     // Token address
+      "tpiu": number,   // Token price in USD
+      "t": number,      // Timestamp
+      "ot": number,     // Open time
+      "lt": number,     // Last time
+      "ct": number,     // Close time
+      "ba": number,     // Buy amount
+      "baiu": number,   // Buy amount in USD
+      "bs": number,     // Buy count
+      "bs30d": number,  // Buy count 30d
+      "bs7d": number,   // Buy count 7d
+      "sa": number,     // Sell amount
+      "saiu": number,   // Sell amount in USD
+      "ss": number,     // Sell count
+      "ss30d": number,  // Sell count 30d
+      "ss7d": number,   // Sell count 7d
+      "hdts": number,   // Held duration timestamp
+      "abpiu": number,  // Average buy price in USD
+      "aspiu": number,  // Average sell price in USD
+      "upiu": number,   // Unrealized profit in USD
+      "upr": number,    // Unrealized profit ratio
+      "rpiu": number,   // Realized profit in USD
+      "rpr": number,    // Realized profit ratio
+      "trpiu": number,  // Total realized profit in USD
+      "trr": number     // Total realized profit ratio
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "walletAddress": string,         // Wallet address
+      "tokenAddress": string,          // Token address
+      "tokenPriceInUsd": number,       // Token price in USD
+      "timestamp": number,             // Timestamp
+      "opentime": number,              // Open time
+      "lasttime": number,              // Last time
+      "closetime": number,             // Close time
+      "buyAmount": number,             // Buy amount
+      "buyAmountInUsd": number,        // Buy amount in USD
+      "buyCount": number,              // Buy count
+      "buyCount30d": number,           // Buy count 30d
+      "buyCount7d": number,            // Buy count 7d
+      "sellAmount": number,            // Sell amount
+      "sellAmountInUsd": number,       // Sell amount in USD
+      "sellCount": number,             // Sell count
+      "sellCount30d": number,          // Sell count 30d
+      "sellCount7d": number,           // Sell count 7d
+      "heldDurationTimestamp": number, // Held duration timestamp
+      "averageBuyPriceInUsd": number,  // Average buy price in USD
+      "averageSellPriceInUsd": number, // Average sell price in USD
+      "unrealizedProfitInUsd": number, // Unrealized profit in USD
+      "unrealizedProfitRatio": number, // Unrealized profit ratio
+      "realizedProfitInUsd": number,   // Realized profit in USD
+      "realizedProfitRatio": number,   // Realized profit ratio
+      "totalRealizedProfitInUsd": number, // Total realized profit in USD
+      "totalRealizedProfitRatio": number  // Total realized profit ratio
+    }
+    ```
+  </Tab>
+</Tabs>
+
+#### Wallet PnL Data (Wallet Level)
+
+Get real-time wallet overall profit and loss statistics.
+
+**Subscription Format**
+```text
+dex-wallet-pnl-list:{chain}_{walletAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="walletAddress" type="string" required>
+  Wallet address
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,     // Wallet address
+        "bs": number,    // Number of buys
+        "ba": number,    // Buy amount
+        "baiu": number,  // Buy amount in USD
+        "abpiu": number, // Average buy price in USD
+        "sa": number,    // Sell amount
+        "saiu": number,  // Sell amount in USD
+        "ss": number,    // Number of sells
+        "ws": number,    // Number of wins
+        "wr": number,    // Win ratio
+        "piu": number,   // PnL in USD
+        "apiu": number,  // Average PnL in USD
+        "pr": number,    // PnL ratio
+        "pd": number,    // Profitable days
+        "ld": number,    // Losing days
+        "ts": number,    // Number of tokens traded
+        "r": string      // Resolution
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "walletAddress": string,         // Wallet address
+        "buys": number,                  // Number of buys
+        "buyAmount": number,             // Buy amount
+        "buyAmountInUsd": number,        // Buy amount in USD
+        "averageBuyPriceInUsd": number,  // Average buy price in USD
+        "sellAmount": number,            // Sell amount
+        "sellAmountInUsd": number,       // Sell amount in USD
+        "sells": number,                 // Number of sells
+        "wins": number,                  // Number of wins
+        "winRatio": number,              // Win ratio
+        "pnlInUsd": number,              // PnL in USD
+        "averagePnlInUsd": number,       // Average PnL in USD
+        "pnlRatio": number,              // PnL ratio
+        "profitableDays": number,        // Profitable days
+        "losingDays": number,            // Losing days
+        "tokens": number,                // Number of tokens traded
+        "resolution": string             // Resolution
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+### Trade Series
+#### Token Trade
 
 Get real-time token trading events.
 
 **Subscription Format**
 ```text
-dex-trades:{chain}_{tokenAddress}
+dex-trade:{chain}_{tokenAddress}
 ```
 
 **Parameters**
@@ -813,6 +1334,10 @@ dex-trades:{chain}_{tokenAddress}
 
 <ParamField query="tokenAddress" type="string" required>
   Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: buyAmount > 100
 </ParamField>
 
 **Response Data Format**
@@ -825,36 +1350,50 @@ dex-trades:{chain}_{tokenAddress}
   <Tab title="WebSocket API">
     ```typescript
     {
-      "bwa": string,     // Maker address
-      "ba": number,      // Base token amount
-      "sa": number,      // Quote token amount
-      "swa": string,     // Quote token address
-      "bais": number,    // USD amount
-      "t": number,       // Timestamp
-      "k": string,       // Event type
-      "h": string,       // Transaction hash
-      "a": string        // Token address
+      "a": string,      // Token address
+      "t": number,      // Timestamp
+      "k": string,      // Trade type
+      "ba": number,     // Buy amount
+      "baiu": number,   // Buy amount in USD
+      "btma": string,   // Buy token address
+      "btn": string,    // Buy token name
+      "bts": string,    // Buy token symbol
+      "bwa": string,    // Buy wallet address
+      "sa": number,     // Sell amount
+      "saiu": number,   // Sell amount in USD
+      "stma": string,   // Sell token address
+      "stn": string,    // Sell token name
+      "sts": string,    // Sell token symbol
+      "swa": string,    // Sell wallet address
+      "h": string       // Transaction hash
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "maker": string,        // Maker address
-      "baseAmount": number,   // Base token amount
-      "quoteAmount": number,  // Quote token amount
-      "quoteAddress": string, // Quote token address
-      "amountInUsd": number,  // USD amount
-      "timestamp": number,    // Timestamp
-      "event": string,       // Event type
-      "txHash": string,      // Transaction hash
-      "tokenAddress": string  // Token address
+      "tokenAddress": string,    // Token address
+      "timestamp": number,       // Timestamp
+      "kind": string,            // Trade type
+      "buyAmount": number,       // Buy amount
+      "buyAmountInUsd": number,  // Buy amount in USD
+      "buyTokenAddress": string, // Buy token address
+      "buyTokenName": string,    // Buy token name
+      "buyTokenSymbol": string,  // Buy token symbol
+      "buyWalletAddress": string,// Buy wallet address
+      "sellAmount": number,      // Sell amount
+      "sellAmountInUsd": number,// Sell amount in USD
+      "sellTokenAddress": string,// Sell token address
+      "sellTokenName": string,   // Sell token name
+      "sellTokenSymbol": string,// Sell token symbol
+      "sellWalletAddress": string,// Sell wallet address
+      "txHash": string          // Transaction hash
     }
     ```
   </Tab>
 </Tabs>
 
-### Wallet Trade
+#### Wallet Trade
 
 Get real-time wallet trading event.
 
@@ -911,127 +1450,9 @@ dex-wallet-trade:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-### Wallet Balance
+### DexPool Series
 
-Get real-time wallet balance information.
-
-**Subscription Format**
-```text
-dex-wallet-balance:{chain}_{walletAddress}
-```
-
-**Parameters**
-<ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
-</ParamField>
-
-<ParamField query="walletAddress" type="string" required>
-  Wallet address, e.g., HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
-</ParamField>
-
-**Response Data Format**
-
-<Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
-</Tip>
-
-<Tabs>
-  <Tab title="WebSocket API">
-    ```typescript
-    {
-      "a": string,      // Wallet address
-      "ta": string,     // Token address
-      "tpiu": number,   // Token price in USD
-      "t": number,      // Timestamp
-    }
-    ```
-  </Tab>
-  <Tab title="SDK">
-    ```typescript
-    {
-      "walletAddress": string,    // Wallet address
-      "tokenAddress": string,     // Token address
-      "tokenPriceInUsd": number, // Token price in USD
-      "timestamp": number,       // Timestamp
-    }
-    ```
-  </Tab>
-</Tabs>
-
-### Wallet PnL Data
-
-Get real-time wallet profit and loss (PnL) statistics.
-
-**Subscription Format**
-```text
-dex-wallet-pnl-list:{chain}_{walletAddress}
-```
-
-**Parameters**
-<ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
-</ParamField>
-
-<ParamField query="walletAddress" type="string" required>
-  Wallet address
-</ParamField>
-
-**Response Data Format**
-
-<Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
-</Tip>
-
-<Tabs>
-  <Tab title="WebSocket API">
-    ```typescript
-    {
-      "a": string,     // Wallet address
-      "bs": number,    // Number of buys
-      "ba": number,    // Buy amount
-      "baiu": number,  // Buy amount in USD
-      "abpiu": number, // Average buy price in USD
-      "sa": number,    // Sell amount
-      "saiu": number,  // Sell amount in USD
-      "ss": number,    // Number of sells
-      "ws": number,    // Number of wins
-      "wr": number,    // Win ratio
-      "piu": number,   // PnL in USD
-      "apiu": number,  // Average PnL in USD
-      "pr": number,    // PnL ratio
-      "pd": number,    // Profitable days
-      "ld": number,    // Losing days
-      "ts": number,    // Number of tokens traded
-      "r": string      // Resolution
-    }
-    ```
-  </Tab>
-  <Tab title="SDK">
-    ```typescript
-    {
-      "walletAddress": string,         // Wallet address
-      "buys": number,                  // Number of buys
-      "buyAmount": number,             // Buy amount
-      "buyAmountInUsd": number,        // Buy amount in USD
-      "averageBuyPriceInUsd": number,  // Average buy price in USD
-      "sellAmount": number,            // Sell amount
-      "sellAmountInUsd": number,       // Sell amount in USD
-      "sells": number,                 // Number of sells
-      "wins": number,                  // Number of wins
-      "winRatio": number,              // Win ratio
-      "pnlInUsd": number,              // PnL in USD
-      "averagePnlInUsd": number,       // Average PnL in USD
-      "pnlRatio": number,              // PnL ratio
-      "profitableDays": number,        // Profitable days
-      "losingDays": number,            // Losing days
-      "tokens": number,                // Number of tokens traded
-      "resolution": string             // Resolution
-    }
-    ```
-  </Tab>
-</Tabs>
-
-### DEX Pool Balance
+#### DEX Pool Balance
 
 Get real-time DEX pool balance information.
 

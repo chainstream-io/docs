@@ -4012,76 +4012,6 @@
         ]
       }
     },
-    "/v1/dexpools/{chain}/{tokenAddress}/{poolAddress}/stats": {
-      "get": {
-        "description": "获取特定资金池的数据统计信息",
-        "operationId": "get.dexpool.stats",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "代币地址",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          },
-          {
-            "name": "poolAddress",
-            "required": true,
-            "in": "path",
-            "description": "资金池地址",
-            "schema": {
-              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DexPoolStatDTO"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "DEX 资金池 - 数据统计",
-        "tags": [
-          "DexPool"
-        ]
-      }
-    },
     "/v1/ranking/{chain}/hotTokens/{duration}": {
       "get": {
         "description": "获取热门代币列表",
@@ -6762,6 +6692,181 @@
           "data"
         ]
       },
+      "TokenCreatorsDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "创作者钱包地址",
+            "example": "5e2qRc1DNEXmyxP8qwPwJhRWjef7usLyi7v5xjqLr5G7"
+          },
+          "share": {
+            "type": "number",
+            "description": "创作者份额百分比（0-100）",
+            "example": 100
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "创作者是否已验证",
+            "example": true
+          }
+        }
+      },
+      "TokenExtraDTO": {
+        "type": "object",
+        "properties": {
+          "collectionAddress": {
+            "type": "string",
+            "description": "NFT集合的唯一标识地址",
+            "example": "ABCDE"
+          },
+          "editionNonce": {
+            "type": "number",
+            "description": "版本号，用于标识NFT的版本或序列号",
+            "example": 1
+          },
+          "fungible": {
+            "type": "boolean",
+            "description": "是否为可互换代币：如果为true，表示代币是可互换的（如SPL代币，如USDC或SOL）。如果为false，表示代币是不可互换的（如NFT，每个代币都有唯一的元数据）",
+            "example": true
+          },
+          "isMutable": {
+            "type": "boolean",
+            "description": "表示代币的元数据是否可以更改",
+            "example": true
+          },
+          "key": {
+            "type": "string",
+            "description": "代币的键类型，表示代币的类型或角色。常见值包括：Mint：表示代币的铸造账户;Metadata;表示Metaplex元数据账户;MasterEdition：表示NFT的主版本;Edition：表示限量版副本。",
+            "example": "Mint"
+          },
+          "isNative": {
+            "type": "boolean",
+            "description": "表示代币是否为原生代币",
+            "example": false
+          },
+          "primarySaleHappened": {
+            "type": "boolean",
+            "description": "表示NFT是否已完成首次销售",
+            "example": false
+          },
+          "outerProgramAddress": {
+            "type": "string",
+            "description": "外部程序地址（驱动program_address的地址）",
+            "example": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+          },
+          "programAddress": {
+            "type": "string",
+            "description": "程序地址",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          "sellerFeeBasisPoints": {
+            "type": "number",
+            "description": "卖方的费用基点，表示创作者在二次销售时的版税比例（以基点为单位，1% = 100基点）",
+            "example": 100
+          },
+          "tokenStandard": {
+            "type": "string",
+            "description": "代币的标准类型，描述代币遵循的协议或规范",
+            "example": "Fungible"
+          },
+          "mintAuthority": {
+            "type": "string",
+            "description": "铸造权限地址",
+            "example": "B61ZzjjZskE9yur2CBe4H4NFS3XHdEZdatKNegC9smUV"
+          },
+          "freezeAuthority": {
+            "type": "string",
+            "description": "冻结权限地址",
+            "example": "B61ZzjjZskE9yur2CBe4H4NFS3XHdEZdatKNegC9smUV"
+          },
+          "updateAuthority": {
+            "type": "string",
+            "description": "更新权限地址",
+            "example": "B61ZzjjZskE9yur2CBe4H4NFS3XHdEZdatKNegC9smUV"
+          },
+          "isVerifiedCollection": {
+            "type": "boolean",
+            "description": "表示NFT是否属于已验证的集合",
+            "example": true
+          },
+          "isWrapped": {
+            "type": "boolean",
+            "description": "表示代币是否为包装代币（Wrapped Token）",
+            "example": false
+          }
+        }
+      },
+      "TokenSocialMediasDTO": {
+        "type": "object",
+        "properties": {
+          "twitter": {
+            "type": "string",
+            "description": "Twitter账户或个人资料链接",
+            "example": "@circle"
+          },
+          "telegram": {
+            "type": "string",
+            "description": "Telegram群组或频道链接",
+            "example": "https://t.me/circle"
+          },
+          "website": {
+            "type": "string",
+            "description": "官方网站URL",
+            "example": "https://www.circle.com"
+          },
+          "tiktok": {
+            "type": "string",
+            "description": "TikTok账户或个人资料链接",
+            "example": "@circle"
+          },
+          "discord": {
+            "type": "string",
+            "description": "Discord服务器邀请链接",
+            "example": "https://discord.gg/circle"
+          },
+          "facebook": {
+            "type": "string",
+            "description": "Facebook页面或个人资料链接",
+            "example": "https://facebook.com/circle"
+          },
+          "github": {
+            "type": "string",
+            "description": "GitHub仓库或个人资料链接",
+            "example": "https://github.com/circle"
+          },
+          "instagram": {
+            "type": "string",
+            "description": "Instagram账户或个人资料链接",
+            "example": "@circle"
+          },
+          "linkedin": {
+            "type": "string",
+            "description": "LinkedIn公司或个人资料链接",
+            "example": "https://linkedin.com/company/circle"
+          },
+          "medium": {
+            "type": "string",
+            "description": "Medium博客或发布链接",
+            "example": "https://medium.com/@circle"
+          },
+          "reddit": {
+            "type": "string",
+            "description": "Reddit社区或个人资料链接",
+            "example": "https://reddit.com/r/circle"
+          },
+          "youtube": {
+            "type": "string",
+            "description": "YouTube频道或视频链接",
+            "example": "https://youtube.com/@circle"
+          },
+          "bitbucket": {
+            "type": "string",
+            "description": "Bitbucket仓库或个人资料链接",
+            "example": "https://bitbucket.org/circle"
+          }
+        }
+      },
       "TokenStat": {
         "type": "object",
         "properties": {
@@ -7615,6 +7720,21 @@
             "type": "string",
             "description": "毕业完成进度",
             "example": "0.1"
+          },
+          "creatorsCount": {
+            "type": "number",
+            "description": "代币创作者数量",
+            "example": 1
+          },
+          "creatorHoldings": {
+            "type": "string",
+            "description": "创作者持有的总数量",
+            "example": "10000"
+          },
+          "creatorHoldingRatio": {
+            "type": "string",
+            "description": "创作者持有的代币比例",
+            "example": "0.5"
           }
         },
         "required": [
@@ -7659,9 +7779,12 @@
             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
           "tokenCreators": {
-            "type": "string",
             "description": "代币创建者地址",
-            "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenCreatorsDTO"
+              }
+            ]
           },
           "imageUrl": {
             "type": "string",
@@ -7674,14 +7797,20 @@
             "example": "https://..."
           },
           "extra": {
-            "type": "string",
             "description": "额外元数据",
-            "example": "{}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenExtraDTO"
+              }
+            ]
           },
           "socialMedias": {
-            "type": "string",
             "description": "社交媒体链接",
-            "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenSocialMediasDTO"
+              }
+            ]
           },
           "tokenCreatedAt": {
             "type": "number",
@@ -7876,9 +8005,12 @@
             "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
           "tokenCreators": {
-            "type": "string",
             "description": "代币创建者地址",
-            "example": "[\"FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw\"]"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenCreatorsDTO"
+              }
+            ]
           },
           "imageUrl": {
             "type": "string",
@@ -7891,14 +8023,20 @@
             "example": "https://..."
           },
           "extra": {
-            "type": "string",
             "description": "额外元数据",
-            "example": "{}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenExtraDTO"
+              }
+            ]
           },
           "socialMedias": {
-            "type": "string",
             "description": "社交媒体链接",
-            "example": "{\"twitter\":\"@circle\",\"website\":\"https://www.circle.com\"}"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenSocialMediasDTO"
+              }
+            ]
           },
           "tokenCreatedAt": {
             "type": "number",
@@ -8251,10 +8389,6 @@
           "data"
         ]
       },
-      "DexPoolStatDTO": {
-        "type": "object",
-        "properties": {}
-      },
       "RankingTokenStat": {
         "type": "object",
         "properties": {
@@ -8419,6 +8553,11 @@
             "type": "string",
             "description": "总流动性价值(单位:USD)",
             "example": "0.00000261383847574915906643405542"
+          },
+          "completionRatio": {
+            "type": "string",
+            "description": "毕业完成进度",
+            "example": "0.1"
           }
         },
         "required": [

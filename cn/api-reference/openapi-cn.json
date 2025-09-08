@@ -345,10 +345,10 @@
         ]
       }
     },
-    "/v1/dex/{chain}/mint": {
+    "/v1/dex/{chain}/create": {
       "post": {
-        "description": "在指定 DEX 上创建新代币",
-        "operationId": "mint",
+        "description": "在指定的DEX上创建新代币",
+        "operationId": "create.token",
         "parameters": [
           {
             "name": "chain",
@@ -378,7 +378,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DexMintInput"
+                "$ref": "#/components/schemas/DexCreateTokenInput"
               }
             }
           }
@@ -389,7 +389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MintReply"
+                  "$ref": "#/components/schemas/CreateTokenReply"
                 }
               }
             }
@@ -400,7 +400,7 @@
             "bearer": []
           }
         ],
-        "summary": "DEX - 铸造",
+        "summary": "Dex - 创建代币",
         "tags": [
           "Dex"
         ]
@@ -467,10 +467,10 @@
         ]
       }
     },
-    "/v1/solana/moonshot/mint": {
+    "/v1/solana/moonshot/create": {
       "post": {
-        "description": "使用 Moonshot 协议在 Solana 上创建新代币",
-        "operationId": "moonshot.mint",
+        "description": "使用Moonshot协议在Solana上创建新代币",
+        "operationId": "moonshot.create.token",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -478,7 +478,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MintInput"
+                "$ref": "#/components/schemas/MoonshotCreateTokenInput"
               }
             }
           }
@@ -489,7 +489,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MoonshotMintReply"
+                  "$ref": "#/components/schemas/MoonshotCreateTokenReply"
                 }
               }
             }
@@ -500,16 +500,16 @@
             "bearer": []
           }
         ],
-        "summary": "Moonshot - 铸造",
+        "summary": "Moonshot - 创建代币",
         "tags": [
           "Defi/solana/Moonshot"
         ]
       }
     },
-    "/v1/solana/moonshot/submitMint": {
+    "/v1/solana/moonshot/submitCreateToken": {
       "post": {
-        "description": "提交已签名的代币创建交易以完成代币创建",
-        "operationId": "moonshot.submitMint",
+        "description": "提交已签名的代币创建交易以完成Moonshot代币创建",
+        "operationId": "moonshot.submit.create.token",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -517,7 +517,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SubmitInput"
+                "$ref": "#/components/schemas/MoonshotSubmitCreateTokenInput"
               }
             }
           }
@@ -551,16 +551,16 @@
             "bearer": []
           }
         ],
-        "summary": "Moonshot - 提交铸造",
+        "summary": "Moonshot - 提交创建代币",
         "tags": [
           "Defi/solana/Moonshot"
         ]
       }
     },
-    "/v1/solana/pumpfun/mint": {
+    "/v1/solana/pumpfun/create": {
       "post": {
-        "description": "使用 PumpFun 协议创建新代币。\\n\\n特别说明，由于mintAddress需要传入，所以返回后的交易也需要mintKeypair签名。",
-        "operationId": "pumpfun.mint",
+        "description": "使用PumpFun协议创建新代币",
+        "operationId": "pumpfun.create.token",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -568,7 +568,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PumpMintInput"
+                "$ref": "#/components/schemas/PumpCreateTokenInput"
               }
             }
           }
@@ -579,7 +579,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PumpMintReply"
+                  "$ref": "#/components/schemas/PumpCreateTokenReply"
                 }
               }
             }
@@ -590,7 +590,7 @@
             "bearer": []
           }
         ],
-        "summary": "PumpFun - 铸造",
+        "summary": "PumpFun - 创建代币",
         "tags": [
           "Defi/solana/Pumpfun"
         ]
@@ -6238,7 +6238,7 @@
           "elapsedTime"
         ]
       },
-      "DexMintInput": {
+      "DexCreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {
@@ -6315,17 +6315,17 @@
           "symbol"
         ]
       },
-      "MintReply": {
+      "CreateTokenReply": {
         "type": "object",
         "properties": {
           "serializedTx": {
             "type": "string",
-            "description": "Base64 编码的交易",
+            "description": "用于代币创建的Base64编码交易",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "mintAddress": {
             "type": "string",
-            "description": "需要签名的代币铸造地址",
+            "description": "需要交易签名的代币铸造地址",
             "example": "So11111111111111111111111111111111111111112"
           }
         },
@@ -6430,7 +6430,7 @@
           "label"
         ]
       },
-      "MintInput": {
+      "MoonshotCreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {
@@ -6530,17 +6530,17 @@
           "tokenAmount"
         ]
       },
-      "MoonshotMintReply": {
+      "MoonshotCreateTokenReply": {
         "type": "object",
         "properties": {
           "serializedTx": {
             "type": "string",
-            "description": "Base64 编码的交易",
+            "description": "用于Moonshot代币创建的Base64编码交易",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "extra": {
             "type": "object",
-            "description": "创建代币的额外元数据",
+            "description": "关于创建的Moonshot代币的额外元数据",
             "example": {
               "tokenId": "token_123456",
               "token": {
@@ -6555,17 +6555,17 @@
           "extra"
         ]
       },
-      "SubmitInput": {
+      "MoonshotSubmitCreateTokenInput": {
         "type": "object",
         "properties": {
           "signedTx": {
             "type": "string",
-            "description": "Base64 格式的已签名交易",
+            "description": "用于Moonshot代币创建的Base64格式签名交易",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "extra": {
             "type": "object",
-            "description": "交易提交所需的额外数据",
+            "description": "Moonshot代币创建交易提交所需的额外数据",
             "example": {
               "tokenId": "token_123456",
               "token": {
@@ -6579,7 +6579,7 @@
           "signedTx"
         ]
       },
-      "PumpMintInput": {
+      "PumpCreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {
@@ -6673,7 +6673,7 @@
           "description"
         ]
       },
-      "PumpMintReply": {
+      "PumpCreateTokenReply": {
         "type": "object",
         "properties": {
           "serializedTx": {

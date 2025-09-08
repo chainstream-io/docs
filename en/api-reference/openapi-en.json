@@ -345,10 +345,10 @@
         ]
       }
     },
-    "/v1/dex/{chain}/mint": {
+    "/v1/dex/{chain}/create": {
       "post": {
         "description": "Create a new token on the specified DEX",
-        "operationId": "mint",
+        "operationId": "create.token",
         "parameters": [
           {
             "name": "chain",
@@ -378,7 +378,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DexMintInput"
+                "$ref": "#/components/schemas/DexCreateTokenInput"
               }
             }
           }
@@ -389,7 +389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MintReply"
+                  "$ref": "#/components/schemas/CreateTokenReply"
                 }
               }
             }
@@ -400,7 +400,7 @@
             "bearer": []
           }
         ],
-        "summary": "Dex - Mint",
+        "summary": "Dex - Create Token",
         "tags": [
           "Dex"
         ]
@@ -467,10 +467,10 @@
         ]
       }
     },
-    "/v1/solana/moonshot/mint": {
+    "/v1/solana/moonshot/create": {
       "post": {
         "description": "Create a new token with Moonshot protocol on Solana",
-        "operationId": "moonshot.mint",
+        "operationId": "moonshot.create.token",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -478,7 +478,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MintInput"
+                "$ref": "#/components/schemas/MoonshotCreateTokenInput"
               }
             }
           }
@@ -489,7 +489,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MoonshotMintReply"
+                  "$ref": "#/components/schemas/MoonshotCreateTokenReply"
                 }
               }
             }
@@ -500,16 +500,16 @@
             "bearer": []
           }
         ],
-        "summary": "Moonshot - Mint",
+        "summary": "Moonshot - Create Token",
         "tags": [
           "Defi/solana/Moonshot"
         ]
       }
     },
-    "/v1/solana/moonshot/submitMint": {
+    "/v1/solana/moonshot/submitCreateToken": {
       "post": {
-        "description": "Submit a signed token creation transaction to finalize token creation",
-        "operationId": "moonshot.submitMint",
+        "description": "Submit a signed token creation transaction to finalize token creation with Moonshot",
+        "operationId": "moonshot.submit.create.token",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -517,7 +517,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SubmitInput"
+                "$ref": "#/components/schemas/MoonshotSubmitCreateTokenInput"
               }
             }
           }
@@ -551,16 +551,16 @@
             "bearer": []
           }
         ],
-        "summary": "Moonshot - Submit Mint",
+        "summary": "Moonshot - Submit Create Token",
         "tags": [
           "Defi/solana/Moonshot"
         ]
       }
     },
-    "/v1/solana/pumpfun/mint": {
+    "/v1/solana/pumpfun/create": {
       "post": {
-        "description": "Create a new token using the PumpFun protocol.\\n\\nSpecial note: Since mintAddress needs to be provided, the returned transaction also needs to be signed with mintKeypair.",
-        "operationId": "pumpfun.mint",
+        "description": "Create a new token with PumpFun protocol",
+        "operationId": "pumpfun.create.token",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -568,7 +568,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PumpMintInput"
+                "$ref": "#/components/schemas/PumpCreateTokenInput"
               }
             }
           }
@@ -579,7 +579,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PumpMintReply"
+                  "$ref": "#/components/schemas/PumpCreateTokenReply"
                 }
               }
             }
@@ -590,7 +590,7 @@
             "bearer": []
           }
         ],
-        "summary": "PumpFun - Mint",
+        "summary": "PumpFun - Create Token",
         "tags": [
           "Defi/solana/Pumpfun"
         ]
@@ -6238,7 +6238,7 @@
           "elapsedTime"
         ]
       },
-      "DexMintInput": {
+      "DexCreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {
@@ -6315,12 +6315,12 @@
           "symbol"
         ]
       },
-      "MintReply": {
+      "CreateTokenReply": {
         "type": "object",
         "properties": {
           "serializedTx": {
             "type": "string",
-            "description": "Base64 encoded transaction",
+            "description": "Base64 encoded transaction for token creation",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "mintAddress": {
@@ -6430,7 +6430,7 @@
           "label"
         ]
       },
-      "MintInput": {
+      "MoonshotCreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {
@@ -6530,17 +6530,17 @@
           "tokenAmount"
         ]
       },
-      "MoonshotMintReply": {
+      "MoonshotCreateTokenReply": {
         "type": "object",
         "properties": {
           "serializedTx": {
             "type": "string",
-            "description": "Base64 encoded transaction",
+            "description": "Base64 encoded transaction for Moonshot token creation",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "extra": {
             "type": "object",
-            "description": "Additional metadata about the created token",
+            "description": "Additional metadata about the created Moonshot token",
             "example": {
               "tokenId": "token_123456",
               "token": {
@@ -6555,17 +6555,17 @@
           "extra"
         ]
       },
-      "SubmitInput": {
+      "MoonshotSubmitCreateTokenInput": {
         "type": "object",
         "properties": {
           "signedTx": {
             "type": "string",
-            "description": "Signed transaction in Base64 format",
+            "description": "Signed transaction in Base64 format for Moonshot token creation",
             "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
           },
           "extra": {
             "type": "object",
-            "description": "Additional data required for transaction submission",
+            "description": "Additional data required for Moonshot token creation transaction submission",
             "example": {
               "tokenId": "token_123456",
               "token": {
@@ -6579,7 +6579,7 @@
           "signedTx"
         ]
       },
-      "PumpMintInput": {
+      "PumpCreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {
@@ -6673,7 +6673,7 @@
           "description"
         ]
       },
-      "PumpMintReply": {
+      "PumpCreateTokenReply": {
         "type": "object",
         "properties": {
           "serializedTx": {

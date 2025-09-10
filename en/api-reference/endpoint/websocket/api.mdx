@@ -339,6 +339,9 @@ dex-token-holding:{chain}_{tokenAddress}
       "t10h": number,   // Top 10 holders count
       "t100r": number,  // Top 100 holders ratio
       "t10r": number,   // Top 10 holders ratio
+      "ch": number,     // Creators holders count
+      "ca": number,     // Creators amount
+      "cr": number,     // Creators ratio
       "ts": number      // Timestamp
     }
     ```
@@ -354,6 +357,9 @@ dex-token-holding:{chain}_{tokenAddress}
       "top10Holders": number,    // Top 10 holders count
       "top100Ratio": number,     // Top 100 holders ratio
       "top10Ratio": number,      // Top 10 holders ratio
+      "creatorsHolders": number, // Creators holders count
+      "creatorsAmount": number,  // Creators amount
+      "creatorsRatio": number,   // Creators ratio
       "timestamp": number        // Timestamp
     }
     ```
@@ -972,6 +978,18 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
           "s": string,      // Symbol
           "iu": string,     // Image URL
           "de": string,     // Description
+          "dec": number,    // Decimals
+          "cts": number,    // Created timestamp (ms)
+          "lf": {           // Launch from information
+            "pa": string,   // Program address
+            "pf": string,   // Protocol family
+            "pn": string    // Protocol name
+          },
+          "mt": {           // Migrated to information
+            "pa": string,   // Program address
+            "pf": string,   // Protocol family
+            "pn": string    // Protocol name
+          },
           "sm": {           // Social media
             "tw": string,   // Twitter
             "tg": string,   // Telegram
@@ -986,8 +1004,11 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
             "rd": string,   // Reddit
             "yt": string,   // YouTube
             "bb": string    // BitBucket
-          },
-          "cts": number     // Created timestamp (ms)
+          }
+        },
+        // TokenBondingCurve (bc)
+        "bc": {
+          "pr": number      // Progress ratio
         },
         // TokenHolder (h)
         "h": {
@@ -1021,7 +1042,60 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
           "p1m": number,    // Price 1m
           "oiu1m": number,  // Open price in USD 1m
           "ciu1m": number,  // Close price in USD 1m
-          // ... Other time period data (5m, 15m, 30m, 1h, 4h, 24h)
+          "b5m": number,    // Buys in 5m
+          "s5m": number,    // Sells in 5m
+          "be5m": number,   // Buyers in 5m
+          "se5m": number,   // Sellers in 5m
+          "bviu5m": number, // Buy volume in USD 5m
+          "sviu5m": number, // Sell volume in USD 5m
+          "p5m": number,    // Price 5m
+          "oiu5m": number,  // Open price in USD 5m
+          "ciu5m": number,  // Close price in USD 5m
+          "b15m": number,   // Buys in 15m
+          "s15m": number,   // Sells in 15m
+          "be15m": number,  // Buyers in 15m
+          "se15m": number,  // Sellers in 15m
+          "bviu15m": number,// Buy volume in USD 15m
+          "sviu15m": number,// Sell volume in USD 15m
+          "p15m": number,   // Price 15m
+          "oiu15m": number, // Open price in USD 15m
+          "ciu15m": number, // Close price in USD 15m
+          "b30m": number,   // Buys in 30m
+          "s30m": number,   // Sells in 30m
+          "be30m": number,  // Buyers in 30m
+          "se30m": number,  // Sellers in 30m
+          "bviu30m": number,// Buy volume in USD 30m
+          "sviu30m": number,// Sell volume in USD 30m
+          "p30m": number,   // Price 30m
+          "oiu30m": number, // Open price in USD 30m
+          "ciu30m": number, // Close price in USD 30m
+          "b1h": number,    // Buys in 1h
+          "s1h": number,    // Sells in 1h
+          "be1h": number,   // Buyers in 1h
+          "se1h": number,   // Sellers in 1h
+          "bviu1h": number, // Buy volume in USD 1h
+          "sviu1h": number, // Sell volume in USD 1h
+          "p1h": number,    // Price 1h
+          "oiu1h": number,  // Open price in USD 1h
+          "ciu1h": number,  // Close price in USD 1h
+          "b4h": number,    // Buys in 4h
+          "s4h": number,    // Sells in 4h
+          "be4h": number,   // Buyers in 4h
+          "se4h": number,   // Sellers in 4h
+          "bviu4h": number, // Buy volume in USD 4h
+          "sviu4h": number, // Sell volume in USD 4h
+          "p4h": number,    // Price 4h
+          "oiu4h": number,  // Open price in USD 4h
+          "ciu4h": number,  // Close price in USD 4h
+          "b24h": number,   // Buys in 24h
+          "s24h": number,   // Sells in 24h
+          "be24h": number,  // Buyers in 24h
+          "se24h": number,  // Sellers in 24h
+          "bviu24h": number,// Buy volume in USD 24h
+          "sviu24h": number,// Sell volume in USD 24h
+          "p24h": number,   // Price 24h
+          "oiu24h": number, // Open price in USD 24h
+          "ciu24h": number, // Close price in USD 24h
           "p": number       // Current price
         }
       }
@@ -1033,53 +1107,136 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
     [
       {
         // Token metadata
-        "tokenAddress": string,     // Token address
-        "name": string,             // Name
-        "symbol": string,           // Symbol
-        "imageUrl": string,         // Image URL
-        "description": string,      // Description
-        "socialMedia": {            // Social media
-          "twitter": string,        // Twitter
-          "telegram": string,       // Telegram
-          "website": string,        // Website
-          "tiktok": string,         // TikTok
-          "discord": string,        // Discord
-          "facebook": string,       // Facebook
-          "github": string,         // GitHub
-          "instagram": string,      // Instagram
-          "linkedin": string,       // LinkedIn
-          "medium": string,         // Medium
-          "reddit": string,         // Reddit
-          "youtube": string,        // YouTube
-          "bitbucket": string       // BitBucket
+        "metadata": {
+          "tokenAddress": string,     // Token address
+          "name": string,             // Name
+          "symbol": string,           // Symbol
+          "imageUrl": string,         // Image URL
+          "description": string,      // Description
+          "decimals": number,         // Decimals
+          "createdAtMs": number,      // Created timestamp (ms)
+          "launchFrom": {             // Launch from information
+            "programAddress": string, // Program address
+            "protocolFamily": string, // Protocol family
+            "protocolName": string    // Protocol name
+          },
+          "migratedTo": {             // Migrated to information
+            "programAddress": string, // Program address
+            "protocolFamily": string, // Protocol family
+            "protocolName": string    // Protocol name
+          },
+          "socialMedia": {            // Social media
+            "twitter": string,        // Twitter
+            "telegram": string,       // Telegram
+            "website": string,        // Website
+            "tiktok": string,         // TikTok
+            "discord": string,        // Discord
+            "facebook": string,       // Facebook
+            "github": string,         // GitHub
+            "instagram": string,      // Instagram
+            "linkedin": string,       // LinkedIn
+            "medium": string,         // Medium
+            "reddit": string,         // Reddit
+            "youtube": string,        // YouTube
+            "bitbucket": string       // BitBucket
+          }
         },
-        "createdAtMs": number,      // Created timestamp (ms)
+        
+        // Bonding curve information
+        "bondingCurve": {
+          "progressRatio": number     // Progress ratio
+        },
         
         // Holder statistics
-        "holders": number,          // Number of holders
-        "top100Amount": number,     // Top 100 holders total amount
-        "top10Amount": number,      // Top 10 holders total amount
-        "top100Holders": number,    // Top 100 holders count
-        "top10Holders": number,     // Top 10 holders count
-        "top100Ratio": number,      // Top 100 holders ratio
-        "top10Ratio": number,       // Top 10 holders ratio
+        "holder": {
+          "tokenAddress": string,     // Token address
+          "timestamp": number,        // Timestamp
+          "holders": number,          // Number of holders
+          "top100Amount": number,     // Top 100 holders total amount
+          "top10Amount": number,      // Top 10 holders total amount
+          "top100Holders": number,    // Top 100 holders count
+          "top10Holders": number,     // Top 10 holders count
+          "top100Ratio": number,      // Top 100 holders ratio
+          "top10Ratio": number        // Top 10 holders ratio
+        },
         
         // Supply information
-        "supply": number,           // Supply
-        "marketCapInUsd": number,   // Market cap in USD
+        "supply": {
+          "tokenAddress": string,     // Token address
+          "timestamp": number,        // Timestamp
+          "supply": number,           // Supply
+          "marketCapInUsd": number    // Market cap in USD
+        },
         
         // Market statistics
-        "buys1m": number,           // Buys in 1m
-        "sells1m": number,          // Sells in 1m
-        "buyers1m": number,         // Buyers in 1m
-        "sellers1m": number,        // Sellers in 1m
-        "buyVolumeInUsd1m": number, // Buy volume in USD 1m
-        "sellVolumeInUsd1m": number,// Sell volume in USD 1m
-        "price1m": number,          // Price 1m
-        "openInUsd1m": number,      // Open price in USD 1m
-        "closeInUsd1m": number,     // Close price in USD 1m
-        // ... Other time period data (5m, 15m, 30m, 1h, 4h, 24h)
-        "price": number            // Current price
+        "stat": {
+          "address": string,          // Token address
+          "timestamp": number,        // Timestamp
+          "buys1m": number,           // Buys in 1m
+          "sells1m": number,          // Sells in 1m
+          "buyers1m": number,         // Buyers in 1m
+          "sellers1m": number,        // Sellers in 1m
+          "buyVolumeInUsd1m": number, // Buy volume in USD 1m
+          "sellVolumeInUsd1m": number,// Sell volume in USD 1m
+          "price1m": number,          // Price 1m
+          "openInUsd1m": number,      // Open price in USD 1m
+          "closeInUsd1m": number,     // Close price in USD 1m
+          "buys5m": number,           // Buys in 5m
+          "sells5m": number,          // Sells in 5m
+          "buyers5m": number,         // Buyers in 5m
+          "sellers5m": number,        // Sellers in 5m
+          "buyVolumeInUsd5m": number, // Buy volume in USD 5m
+          "sellVolumeInUsd5m": number,// Sell volume in USD 5m
+          "price5m": number,          // Price 5m
+          "openInUsd5m": number,      // Open price in USD 5m
+          "closeInUsd5m": number,     // Close price in USD 5m
+          "buys15m": number,          // Buys in 15m
+          "sells15m": number,         // Sells in 15m
+          "buyers15m": number,        // Buyers in 15m
+          "sellers15m": number,       // Sellers in 15m
+          "buyVolumeInUsd15m": number,// Buy volume in USD 15m
+          "sellVolumeInUsd15m": number,// Sell volume in USD 15m
+          "price15m": number,         // Price 15m
+          "openInUsd15m": number,     // Open price in USD 15m
+          "closeInUsd15m": number,    // Close price in USD 15m
+          "buys30m": number,          // Buys in 30m
+          "sells30m": number,         // Sells in 30m
+          "buyers30m": number,        // Buyers in 30m
+          "sellers30m": number,       // Sellers in 30m
+          "buyVolumeInUsd30m": number,// Buy volume in USD 30m
+          "sellVolumeInUsd30m": number,// Sell volume in USD 30m
+          "price30m": number,         // Price 30m
+          "openInUsd30m": number,     // Open price in USD 30m
+          "closeInUsd30m": number,    // Close price in USD 30m
+          "buys1h": number,           // Buys in 1h
+          "sells1h": number,          // Sells in 1h
+          "buyers1h": number,         // Buyers in 1h
+          "sellers1h": number,        // Sellers in 1h
+          "buyVolumeInUsd1h": number, // Buy volume in USD 1h
+          "sellVolumeInUsd1h": number,// Sell volume in USD 1h
+          "price1h": number,          // Price 1h
+          "openInUsd1h": number,      // Open price in USD 1h
+          "closeInUsd1h": number,     // Close price in USD 1h
+          "buys4h": number,           // Buys in 4h
+          "sells4h": number,          // Sells in 4h
+          "buyers4h": number,         // Buyers in 4h
+          "sellers4h": number,        // Sellers in 4h
+          "buyVolumeInUsd4h": number, // Buy volume in USD 4h
+          "sellVolumeInUsd4h": number,// Sell volume in USD 4h
+          "price4h": number,          // Price 4h
+          "openInUsd4h": number,      // Open price in USD 4h
+          "closeInUsd4h": number,     // Close price in USD 4h
+          "buys24h": number,          // Buys in 24h
+          "sells24h": number,         // Sells in 24h
+          "buyers24h": number,        // Buyers in 24h
+          "sellers24h": number,       // Sellers in 24h
+          "buyVolumeInUsd24h": number,// Buy volume in USD 24h
+          "sellVolumeInUsd24h": number,// Sell volume in USD 24h
+          "price24h": number,         // Price 24h
+          "openInUsd24h": number,     // Open price in USD 24h
+          "closeInUsd24h": number,    // Close price in USD 24h
+          "price": number             // Current price
+        }
       }
     ]
     ```

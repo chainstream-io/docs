@@ -345,6 +345,121 @@
         ]
       }
     },
+    "/v1/dex/{chain}/quote": {
+      "get": {
+        "description": "Get DEX trading quote information",
+        "operationId": "quote",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "dex",
+            "required": true,
+            "in": "query",
+            "description": "DEX protocol type",
+            "schema": {
+              "example": "raydium",
+              "enum": [
+                "raydium",
+                "pumpfun"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "amount",
+            "required": true,
+            "in": "query",
+            "description": "Trading amount",
+            "schema": {
+              "example": "1000000000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "inputMint",
+            "required": true,
+            "in": "query",
+            "description": "Input token address",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "outputMint",
+            "required": true,
+            "in": "query",
+            "description": "Output token address",
+            "schema": {
+              "example": "So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          },
+          {
+            "name": "exactIn",
+            "required": true,
+            "in": "query",
+            "description": "Exact input mode",
+            "schema": {
+              "default": true,
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "slippage",
+            "required": true,
+            "in": "query",
+            "description": "Slippage tolerance",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dex - Get Quote",
+        "tags": [
+          "Dex"
+        ]
+      }
+    },
     "/v1/dex/{chain}/create": {
       "post": {
         "description": "Create a new token on the specified DEX",
@@ -378,7 +493,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DexCreateTokenInput"
+                "$ref": "#/components/schemas/CreateTokenInput"
               }
             }
           }
@@ -684,6 +799,27 @@
             "description": "Pool address to filter trades",
             "schema": {
               "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sideType",
+            "required": false,
+            "in": "query",
+            "description": "Trading side type",
+            "schema": {
+              "example": "BUY",
+              "enum": [
+                "BUY",
+                "SELL",
+                "LIQUIDITY_INITIALIZE",
+                "LIQUIDITY_ADD",
+                "LIQUIDITY_REMOVE",
+                "RED_PACKET_CREATE",
+                "RED_PACKET_CLAIM",
+                "RED_PACKET_COMPLETE",
+                "RED_PACKET_REFUND"
+              ],
               "type": "string"
             }
           },
@@ -6238,7 +6374,39 @@
           "elapsedTime"
         ]
       },
-      "DexCreateTokenInput": {
+      "QuoteResponse": {
+        "type": "object",
+        "properties": {
+          "amountOut": {
+            "type": "string",
+            "description": "Output amount",
+            "example": "1000000000"
+          },
+          "minAmountOut": {
+            "type": "string",
+            "description": "Minimum output amount"
+          },
+          "currentPrice": {
+            "type": "string",
+            "description": "Current price"
+          },
+          "executionPrice": {
+            "type": "string",
+            "description": "Execution price"
+          },
+          "priceImpact": {
+            "type": "string",
+            "description": "Price impact",
+            "example": "10.5"
+          },
+          "fee": {
+            "type": "string",
+            "description": "Trading fee",
+            "example": "1000000000"
+          }
+        }
+      },
+      "CreateTokenInput": {
         "type": "object",
         "properties": {
           "dex": {

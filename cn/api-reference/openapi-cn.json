@@ -803,23 +803,171 @@
             }
           },
           {
-            "name": "sideType",
+            "name": "beforeTimestamp",
             "required": false,
             "in": "query",
-            "description": "交易方向类型",
+            "description": "筛选交易的开始时间戳（Unix纪元秒）",
+            "schema": {
+              "example": 1717334400000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选交易的结束时间戳（Unix纪元秒）",
+            "schema": {
+              "example": 1717334400000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "beforeBlockHeight",
+            "required": false,
+            "in": "query",
+            "description": "筛选此区块高度之前的交易",
+            "schema": {
+              "example": 332417228,
+              "type": "number"
+            }
+          },
+          {
+            "name": "afterBlockHeight",
+            "required": false,
+            "in": "query",
+            "description": "筛选此区块高度之后的交易",
+            "schema": {
+              "example": 332417228,
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "交易类型",
             "schema": {
               "example": "BUY",
               "enum": [
                 "BUY",
-                "SELL",
-                "LIQUIDITY_INITIALIZE",
-                "LIQUIDITY_ADD",
-                "LIQUIDITY_REMOVE",
-                "RED_PACKET_CREATE",
-                "RED_PACKET_CLAIM",
-                "RED_PACKET_COMPLETE",
-                "RED_PACKET_REFUND"
+                "SELL"
               ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradePage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易 - 列表",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
+    "/v1/trade/{chain}/activities": {
+      "get": {
+        "description": "获取代币活动信息，包括交易、流动性操作和其他代币相关活动",
+        "operationId": "get.activities",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "enum": [
+                "sol",
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "ethereum",
+                "zksync",
+                "sui"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "查询交易的代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": false,
+            "in": "query",
+            "description": "查询交易的钱包地址",
+            "schema": {
+              "example": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w",
+              "type": "string"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": false,
+            "in": "query",
+            "description": "筛选交易的资金池地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
               "type": "string"
             }
           },
@@ -862,6 +1010,27 @@
               "example": 332417228,
               "type": "number"
             }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "活动类型",
+            "schema": {
+              "example": "BUY",
+              "enum": [
+                "BUY",
+                "SELL",
+                "LIQUIDITY_INITIALIZE",
+                "LIQUIDITY_ADD",
+                "LIQUIDITY_REMOVE",
+                "RED_PACKET_CREATE",
+                "RED_PACKET_CLAIM",
+                "RED_PACKET_COMPLETE",
+                "RED_PACKET_REFUND"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -881,7 +1050,7 @@
             "bearer": []
           }
         ],
-        "summary": "交易 - 列表",
+        "summary": "活动 - 列表",
         "tags": [
           "Trade"
         ]
@@ -6932,9 +7101,9 @@
             "type": "string",
             "description": "代币美元价值"
           },
-          "sideType": {
+          "type": {
             "type": "string",
-            "description": "交易方向（买入/卖出）"
+            "description": "交易类型"
           },
           "sideTokenName": {
             "type": "string",
@@ -6986,7 +7155,7 @@
           "tokenAmount",
           "tokenPriceInUsd",
           "tokenAmountInUsd",
-          "sideType",
+          "type",
           "sideTokenName",
           "sideTokenSymbol",
           "sideTokenImageUrl",

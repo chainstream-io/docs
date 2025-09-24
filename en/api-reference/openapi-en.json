@@ -85,7 +85,7 @@
     },
     "/v1/blockchain": {
       "get": {
-        "description": "Get all supported blockchain networks",
+        "description": "Get list of supported blockchains",
         "operationId": "get.supported.blockchains",
         "parameters": [],
         "responses": {
@@ -96,7 +96,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/BlockchainDTO"
                   }
                 }
               }
@@ -108,7 +108,7 @@
             "bearer": []
           }
         ],
-        "summary": "BlockChain - Supported",
+        "summary": "Blockchain - List",
         "tags": [
           "Blockchain"
         ]
@@ -158,7 +158,7 @@
             "bearer": []
           }
         ],
-        "summary": "BlockChain - Latest Block",
+        "summary": "Blockchain - Latest Block",
         "tags": [
           "Blockchain"
         ]
@@ -6207,6 +6207,290 @@
           "Watchlist"
         ]
       }
+    },
+    "/v1/webhook/endpoint": {
+      "get": {
+        "description": "Get list of webhook endpoints",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Limit",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "iterator",
+            "required": false,
+            "in": "query",
+            "description": "Iterator",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "Order",
+            "schema": {
+              "default": "ascending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "webhook.read"
+            ]
+          }
+        ],
+        "summary": "Endpoint - List",
+        "tags": [
+          "Endpoint"
+        ]
+      },
+      "post": {
+        "description": "Create a new webhook endpoint",
+        "operationId": "create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEndpointInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Endpoint - Create",
+        "tags": [
+          "Endpoint"
+        ]
+      }
+    },
+    "/v1/webhook/endpoint/{id}": {
+      "get": {
+        "description": "Get webhook endpoint details",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Endpoint - Get",
+        "tags": [
+          "Endpoint"
+        ]
+      },
+      "delete": {
+        "description": "Delete a webhook endpoint",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointOperationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Endpoint - Delete",
+        "tags": [
+          "Endpoint"
+        ]
+      },
+      "patch": {
+        "description": "Update webhook endpoint configuration",
+        "operationId": "update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEndpointInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Endpoint - Update",
+        "tags": [
+          "Endpoint"
+        ]
+      }
+    },
+    "/v1/webhook/endpoint/{id}/secret": {
+      "get": {
+        "description": "Get webhook endpoint secret",
+        "operationId": "get.secret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointSecretResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Endpoint - Get Secret",
+        "tags": [
+          "Endpoint"
+        ]
+      }
+    },
+    "/v1/webhook/endpoint/{id}/secret/rotate": {
+      "post": {
+        "description": "Rotate the secret key for a webhook endpoint",
+        "operationId": "rotate.secret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointOperationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Endpoint - Rotate Secret",
+        "tags": [
+          "Endpoint"
+        ]
+      }
     }
   },
   "info": {
@@ -6239,6 +6523,37 @@
       }
     },
     "schemas": {
+      "BlockchainDTO": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Blockchain symbol",
+            "example": "SOL"
+          },
+          "name": {
+            "type": "string",
+            "description": "Blockchain name",
+            "example": "Solana"
+          },
+          "explorerUrl": {
+            "type": "string",
+            "description": "Blockchain explorer URL",
+            "example": "https://explorer.solana.com"
+          },
+          "chainId": {
+            "type": "number",
+            "description": "Blockchain chain ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "symbol",
+          "name",
+          "explorerUrl",
+          "chainId"
+        ]
+      },
       "BlockchainLatestBlockDTO": {
         "type": "object",
         "properties": {
@@ -8352,7 +8667,6 @@
         "required": [
           "chain",
           "poolAddress",
-          "protocolName",
           "tokenAAddress",
           "tokenBAddress"
         ]
@@ -8530,11 +8844,6 @@
             "type": "string",
             "description": "Market identifier",
             "example": "USDC-SOL"
-          },
-          "deployer": {
-            "type": "string",
-            "description": "Token deployer address",
-            "example": "FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw"
           },
           "extension": {
             "type": "object",
@@ -9858,6 +10167,223 @@
         "required": [
           "signature"
         ]
+      },
+      "EndpointResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Endpoint ID",
+            "example": "123"
+          },
+          "url": {
+            "type": "string",
+            "description": "Endpoint URL",
+            "example": "https://example.com"
+          },
+          "description": {
+            "type": "string",
+            "description": "Endpoint description",
+            "example": "Webhook description"
+          },
+          "filterTypes": {
+            "description": "Filter types",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channels": {
+            "description": "Endpoint channels",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Endpoint disabled status",
+            "example": false
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Endpoint metadata",
+            "example": {
+              "key": "value"
+            }
+          },
+          "rateLimit": {
+            "type": "number",
+            "description": "Rate limit",
+            "example": 1000
+          },
+          "filter": {
+            "type": "string",
+            "description": "Endpoint filter"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Created at",
+            "example": "2021-01-01"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Updated at",
+            "example": "2021-01-01"
+          }
+        }
+      },
+      "EndpointListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Page data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndpointResponse"
+            }
+          },
+          "done": {
+            "type": "boolean",
+            "description": "Page done",
+            "example": false
+          },
+          "iterator": {
+            "type": "string",
+            "description": "Page iterator",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "prevIterator": {
+            "type": "string",
+            "description": "Previous page iterator",
+            "example": "eyJpZCI6MTAwfQ=="
+          }
+        }
+      },
+      "EndpointSecretResponse": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "Endpoint secret",
+            "example": "whsec_abcdXXX"
+          }
+        }
+      },
+      "EndpointOperationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Success status",
+            "example": true
+          }
+        }
+      },
+      "CreateEndpointInput": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "description": "Endpoint channels",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "Endpoint description",
+            "example": "Webhook description"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Endpoint disabled status",
+            "default": false
+          },
+          "filterTypes": {
+            "description": "Filter types",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Endpoint metadata",
+            "example": {
+              "key": "value"
+            }
+          },
+          "rateLimit": {
+            "type": "number",
+            "description": "Rate limit",
+            "example": 1000
+          },
+          "url": {
+            "type": "string",
+            "description": "Endpoint URL",
+            "example": "https://example.com"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Endpoint filter"
+          }
+        }
+      },
+      "UpdateEndpointInput": {
+        "type": "object",
+        "properties": {
+          "endpointId": {
+            "type": "string",
+            "description": "Endpoint ID",
+            "example": "123"
+          },
+          "channels": {
+            "description": "Endpoint channels",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "Endpoint description",
+            "example": "Webhook description"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "Endpoint disabled status",
+            "default": false
+          },
+          "filterTypes": {
+            "description": "Filter types",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Endpoint metadata",
+            "example": {
+              "key": "value"
+            }
+          },
+          "rateLimit": {
+            "type": "number",
+            "description": "Rate limit",
+            "example": 1000
+          },
+          "url": {
+            "type": "string",
+            "description": "Endpoint URL",
+            "example": "https://example.com"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Endpoint filter"
+          }
+        }
       },
       "TradeType": {
         "type": "string",

@@ -85,7 +85,7 @@
     },
     "/v1/blockchain": {
       "get": {
-        "description": "获取所有支持的区块链网络",
+        "description": "获取支持的区块链列表",
         "operationId": "get.supported.blockchains",
         "parameters": [],
         "responses": {
@@ -96,7 +96,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/BlockchainDTO"
                   }
                 }
               }
@@ -108,7 +108,7 @@
             "bearer": []
           }
         ],
-        "summary": "区块链 - 支持的网络",
+        "summary": "区块链 - 列表",
         "tags": [
           "Blockchain"
         ]
@@ -6207,6 +6207,290 @@
           "Watchlist"
         ]
       }
+    },
+    "/v1/webhook/endpoint": {
+      "get": {
+        "description": "获取Webhook端点列表",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "限制",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "iterator",
+            "required": false,
+            "in": "query",
+            "description": "迭代器",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "排序",
+            "schema": {
+              "default": "ascending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "webhook.read"
+            ]
+          }
+        ],
+        "summary": "端点 - 列表",
+        "tags": [
+          "Endpoint"
+        ]
+      },
+      "post": {
+        "description": "创建新的Webhook端点",
+        "operationId": "create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEndpointInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 创建",
+        "tags": [
+          "Endpoint"
+        ]
+      }
+    },
+    "/v1/webhook/endpoint/{id}": {
+      "get": {
+        "description": "获取Webhook端点详情",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 获取",
+        "tags": [
+          "Endpoint"
+        ]
+      },
+      "delete": {
+        "description": "删除Webhook端点",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointOperationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 删除",
+        "tags": [
+          "Endpoint"
+        ]
+      },
+      "patch": {
+        "description": "更新Webhook端点配置",
+        "operationId": "update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEndpointInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 更新",
+        "tags": [
+          "Endpoint"
+        ]
+      }
+    },
+    "/v1/webhook/endpoint/{id}/secret": {
+      "get": {
+        "description": "获取Webhook端点密钥",
+        "operationId": "get.secret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointSecretResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 获取密钥",
+        "tags": [
+          "Endpoint"
+        ]
+      }
+    },
+    "/v1/webhook/endpoint/{id}/secret/rotate": {
+      "post": {
+        "description": "轮换Webhook端点的密钥",
+        "operationId": "rotate.secret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointOperationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 轮换密钥",
+        "tags": [
+          "Endpoint"
+        ]
+      }
     }
   },
   "info": {
@@ -6239,6 +6523,37 @@
       }
     },
     "schemas": {
+      "BlockchainDTO": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "区块链符号",
+            "example": "SOL"
+          },
+          "name": {
+            "type": "string",
+            "description": "区块链名称",
+            "example": "Solana"
+          },
+          "explorerUrl": {
+            "type": "string",
+            "description": "区块链浏览器URL",
+            "example": "https://explorer.solana.com"
+          },
+          "chainId": {
+            "type": "number",
+            "description": "区块链链ID",
+            "example": 1
+          }
+        },
+        "required": [
+          "symbol",
+          "name",
+          "explorerUrl",
+          "chainId"
+        ]
+      },
       "BlockchainLatestBlockDTO": {
         "type": "object",
         "properties": {
@@ -8352,7 +8667,6 @@
         "required": [
           "chain",
           "poolAddress",
-          "protocolName",
           "tokenAAddress",
           "tokenBAddress"
         ]
@@ -8530,11 +8844,6 @@
             "type": "string",
             "description": "市场标识符",
             "example": "USDC-SOL"
-          },
-          "deployer": {
-            "type": "string",
-            "description": "代币部署者地址",
-            "example": "FEwwZPKvLFUy3o1qK1b167qDLLNvk7wd7YeupR7LhRWw"
           },
           "extension": {
             "type": "object",
@@ -9858,6 +10167,223 @@
         "required": [
           "signature"
         ]
+      },
+      "EndpointResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "端点ID",
+            "example": "123"
+          },
+          "url": {
+            "type": "string",
+            "description": "端点URL",
+            "example": "https://example.com"
+          },
+          "description": {
+            "type": "string",
+            "description": "端点描述",
+            "example": "Webhook description"
+          },
+          "filterTypes": {
+            "description": "过滤类型",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "channels": {
+            "description": "端点频道",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "端点禁用状态",
+            "example": false
+          },
+          "metadata": {
+            "type": "object",
+            "description": "端点元数据",
+            "example": {
+              "key": "value"
+            }
+          },
+          "rateLimit": {
+            "type": "number",
+            "description": "速率限制",
+            "example": 1000
+          },
+          "filter": {
+            "type": "string",
+            "description": "端点过滤器"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "创建时间",
+            "example": "2021-01-01"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "更新时间",
+            "example": "2021-01-01"
+          }
+        }
+      },
+      "EndpointListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "页面数据",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndpointResponse"
+            }
+          },
+          "done": {
+            "type": "boolean",
+            "description": "页面完成",
+            "example": false
+          },
+          "iterator": {
+            "type": "string",
+            "description": "页面迭代器",
+            "example": "eyJpZCI6MTAwfQ=="
+          },
+          "prevIterator": {
+            "type": "string",
+            "description": "上一页迭代器",
+            "example": "eyJpZCI6MTAwfQ=="
+          }
+        }
+      },
+      "EndpointSecretResponse": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "端点密钥",
+            "example": "whsec_abcdXXX"
+          }
+        }
+      },
+      "EndpointOperationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "成功状态",
+            "example": true
+          }
+        }
+      },
+      "CreateEndpointInput": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "description": "端点频道",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "端点描述",
+            "example": "Webhook description"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "端点禁用状态",
+            "default": false
+          },
+          "filterTypes": {
+            "description": "过滤类型",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "端点元数据",
+            "example": {
+              "key": "value"
+            }
+          },
+          "rateLimit": {
+            "type": "number",
+            "description": "速率限制",
+            "example": 1000
+          },
+          "url": {
+            "type": "string",
+            "description": "端点URL",
+            "example": "https://example.com"
+          },
+          "filter": {
+            "type": "string",
+            "description": "端点过滤器"
+          }
+        }
+      },
+      "UpdateEndpointInput": {
+        "type": "object",
+        "properties": {
+          "endpointId": {
+            "type": "string",
+            "description": "端点ID",
+            "example": "123"
+          },
+          "channels": {
+            "description": "端点频道",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "端点描述",
+            "example": "Webhook description"
+          },
+          "disabled": {
+            "type": "boolean",
+            "description": "端点禁用状态",
+            "default": false
+          },
+          "filterTypes": {
+            "description": "过滤类型",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "description": "端点元数据",
+            "example": {
+              "key": "value"
+            }
+          },
+          "rateLimit": {
+            "type": "number",
+            "description": "速率限制",
+            "example": 1000
+          },
+          "url": {
+            "type": "string",
+            "description": "端点URL",
+            "example": "https://example.com"
+          },
+          "filter": {
+            "type": "string",
+            "description": "端点过滤器"
+          }
+        }
       },
       "TradeType": {
         "type": "string",

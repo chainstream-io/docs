@@ -4,7 +4,7 @@
     "/jobs/{id}": {
       "get": {
         "description": "通过任务ID获取当前任务状态和结果",
-        "operationId": "JobController_getJob",
+        "operationId": "get",
         "parameters": [
           {
             "name": "id",
@@ -19,9 +19,21 @@
         ],
         "responses": {
           "200": {
-            "description": "任务状态获取成功"
+            "description": "任务状态获取成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDTO"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "任务 - 获取",
         "tags": [
           "Jobs"
@@ -31,7 +43,7 @@
     "/jobs/{id}/streaming": {
       "get": {
         "description": "通过服务器发送事件（SSE）订阅实时任务状态更新。连接将保持打开状态直到任务完成或发生错误",
-        "operationId": "JobController_streaming",
+        "operationId": "streaming",
         "parameters": [
           {
             "name": "id",
@@ -46,9 +58,21 @@
         ],
         "responses": {
           "200": {
-            "description": "SSE流建立成功"
+            "description": "SSE流建立成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStreamingDTO"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "任务 - 流式更新",
         "tags": [
           "Jobs"
@@ -1129,30 +1153,33 @@
           },
           {
             "name": "timeFrame",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "筛选交易的时间范围",
             "schema": {
+              "default": "30m",
               "example": "30m",
               "type": "string"
             }
           },
           {
             "name": "sortType",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "交易结果的排序类型",
             "schema": {
+              "default": "desc",
               "example": "desc",
               "type": "string"
             }
           },
           {
             "name": "sortBy",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "排序交易的字段",
             "schema": {
+              "default": "volume",
               "example": "volume",
               "type": "string"
             }
@@ -1244,30 +1271,33 @@
           },
           {
             "name": "type",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "指定顶级涨跌幅代币的类型。筛选类型等于指定类型的记录",
             "schema": {
+              "default": "1W",
               "example": "1W",
               "type": "string"
             }
           },
           {
             "name": "sortBy",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "指定排序字段",
             "schema": {
+              "default": "PnL",
               "example": "PnL",
               "type": "string"
             }
           },
           {
             "name": "sortType",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "指定排序顺序",
             "schema": {
+              "default": "desc",
               "example": "desc",
               "type": "string"
             }
@@ -6521,6 +6551,58 @@
       }
     },
     "schemas": {
+      "JobDTO": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "任务状态",
+            "example": "completed"
+          },
+          "result": {
+            "type": "object",
+            "description": "任务结果",
+            "example": {
+              "success": true,
+              "data": {
+                "message": "Job completed successfully"
+              }
+            }
+          }
+        },
+        "required": [
+          "state",
+          "result"
+        ]
+      },
+      "JobStreamingDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "流式任务ID",
+            "example": 1
+          },
+          "data": {
+            "type": "object",
+            "description": "流式数据",
+            "example": {
+              "id": "5rKfmXQyMhz7F2zRE6SpWWx3YkSxtA4gFqZD8CwGRYMx5YLTB8NhbiM9xEHG9jruiWdUyUz7Fpz8jmB8SKcjsLqe",
+              "status": "completed",
+              "result": {
+                "success": true,
+                "data": {
+                  "message": "Job completed successfully"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "data"
+        ]
+      },
       "BlockchainDTO": {
         "type": "object",
         "properties": {
@@ -7015,37 +7097,34 @@
       "DexPage": {
         "type": "object",
         "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
           "data": {
             "description": "DEX 信息数组",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DexDTO"
             }
-          },
-          "next": {
-            "type": "string",
-            "description": "下一页游标",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "指示是否有更多结果",
-            "default": false
-          },
-          "startCursor": {
-            "type": "object",
-            "description": "当前页第一项的游标",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "endCursor": {
-            "type": "object",
-            "description": "当前页最后一项的游标",
-            "example": "eyJpZCI6MjAwfQ=="
-          },
-          "total": {
-            "type": "number",
-            "description": "总项目数",
-            "example": 1000
           }
         },
         "required": [
@@ -7567,6 +7646,16 @@
             "type": "number",
             "description": "交易者的总卖出量",
             "example": 1
+          },
+          "isScaledUiToken": {
+            "type": "boolean",
+            "description": "是否为缩放UI代币",
+            "example": true
+          },
+          "multiplier": {
+            "type": "string",
+            "description": "乘数",
+            "example": "1.234"
           }
         },
         "required": [
@@ -7579,7 +7668,8 @@
           "tradeBuy",
           "tradeSell",
           "volumeBuy",
-          "volumeSell"
+          "volumeSell",
+          "isScaledUiToken"
         ]
       },
       "TopTradersPage": {
@@ -8796,11 +8886,10 @@
           },
           "tokenCreators": {
             "description": "代币创建者地址",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TokenCreatorsDTO"
-              }
-            ]
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenCreatorsDTO"
+            }
           },
           "imageUrl": {
             "type": "string",
@@ -9032,11 +9121,10 @@
           },
           "tokenCreators": {
             "description": "代币创建者地址",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TokenCreatorsDTO"
-              }
-            ]
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenCreatorsDTO"
+            }
           },
           "imageUrl": {
             "type": "string",

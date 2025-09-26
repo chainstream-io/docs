@@ -4,7 +4,7 @@
     "/jobs/{id}": {
       "get": {
         "description": "Retrieve the current status and result of a job by its ID",
-        "operationId": "JobController_getJob",
+        "operationId": "get",
         "parameters": [
           {
             "name": "id",
@@ -19,9 +19,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Job status retrieved successfully"
+            "description": "Job status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDTO"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Job - Get",
         "tags": [
           "Jobs"
@@ -31,7 +43,7 @@
     "/jobs/{id}/streaming": {
       "get": {
         "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs",
-        "operationId": "JobController_streaming",
+        "operationId": "streaming",
         "parameters": [
           {
             "name": "id",
@@ -46,9 +58,21 @@
         ],
         "responses": {
           "200": {
-            "description": "SSE stream established successfully"
+            "description": "SSE stream established successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStreamingDTO"
+                }
+              }
+            }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Job - Streaming",
         "tags": [
           "Jobs"
@@ -1129,30 +1153,33 @@
           },
           {
             "name": "timeFrame",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Time frame for filtering trades",
             "schema": {
+              "default": "30m",
               "example": "30m",
               "type": "string"
             }
           },
           {
             "name": "sortType",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Sort type for trade results",
             "schema": {
+              "default": "desc",
               "example": "desc",
               "type": "string"
             }
           },
           {
             "name": "sortBy",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Field to sort trades by",
             "schema": {
+              "default": "volume",
               "example": "volume",
               "type": "string"
             }
@@ -1244,30 +1271,33 @@
           },
           {
             "name": "type",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Specify the type of top gainers/losers. Filter for records with type equal to the specified type",
             "schema": {
+              "default": "1W",
               "example": "1W",
               "type": "string"
             }
           },
           {
             "name": "sortBy",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Specify the sort field",
             "schema": {
+              "default": "PnL",
               "example": "PnL",
               "type": "string"
             }
           },
           {
             "name": "sortType",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Specify the sort order",
             "schema": {
+              "default": "desc",
               "example": "desc",
               "type": "string"
             }
@@ -6521,6 +6551,58 @@
       }
     },
     "schemas": {
+      "JobDTO": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "Job state",
+            "example": "completed"
+          },
+          "result": {
+            "type": "object",
+            "description": "Job result",
+            "example": {
+              "success": true,
+              "data": {
+                "message": "Job completed successfully"
+              }
+            }
+          }
+        },
+        "required": [
+          "state",
+          "result"
+        ]
+      },
+      "JobStreamingDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Streaming job ID",
+            "example": 1
+          },
+          "data": {
+            "type": "object",
+            "description": "Streaming data",
+            "example": {
+              "id": "5rKfmXQyMhz7F2zRE6SpWWx3YkSxtA4gFqZD8CwGRYMx5YLTB8NhbiM9xEHG9jruiWdUyUz7Fpz8jmB8SKcjsLqe",
+              "status": "completed",
+              "result": {
+                "success": true,
+                "data": {
+                  "message": "Job completed successfully"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "data"
+        ]
+      },
       "BlockchainDTO": {
         "type": "object",
         "properties": {
@@ -7015,37 +7097,34 @@
       "DexPage": {
         "type": "object",
         "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
           "data": {
             "description": "Array of DEX information",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DexDTO"
             }
-          },
-          "next": {
-            "type": "string",
-            "description": "Cursor for the next page",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "hasNext": {
-            "type": "boolean",
-            "description": "Indicates if there are more results",
-            "default": false
-          },
-          "startCursor": {
-            "type": "object",
-            "description": "Cursor for first item in current page",
-            "example": "eyJpZCI6MTAwfQ=="
-          },
-          "endCursor": {
-            "type": "object",
-            "description": "Cursor for last item in current page",
-            "example": "eyJpZCI6MjAwfQ=="
-          },
-          "total": {
-            "type": "number",
-            "description": "Total number of items",
-            "example": 1000
           }
         },
         "required": [
@@ -7567,6 +7646,16 @@
             "type": "number",
             "description": "Total sell volume of the trader",
             "example": 1
+          },
+          "isScaledUiToken": {
+            "type": "boolean",
+            "description": "Is scaled UI token",
+            "example": true
+          },
+          "multiplier": {
+            "type": "string",
+            "description": "Multiplier",
+            "example": "1.234"
           }
         },
         "required": [
@@ -7579,7 +7668,8 @@
           "tradeBuy",
           "tradeSell",
           "volumeBuy",
-          "volumeSell"
+          "volumeSell",
+          "isScaledUiToken"
         ]
       },
       "TopTradersPage": {
@@ -8796,11 +8886,10 @@
           },
           "tokenCreators": {
             "description": "Token creator addresses",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TokenCreatorsDTO"
-              }
-            ]
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenCreatorsDTO"
+            }
           },
           "imageUrl": {
             "type": "string",
@@ -9032,11 +9121,10 @@
           },
           "tokenCreators": {
             "description": "Token creator addresses",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TokenCreatorsDTO"
-              }
-            ]
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenCreatorsDTO"
+            }
           },
           "imageUrl": {
             "type": "string",

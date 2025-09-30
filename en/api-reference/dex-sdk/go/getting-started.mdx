@@ -1,0 +1,102 @@
+---
+title: 'Getting Started'
+description: 'Go SDK Quick Start Guide'
+---
+
+## Installation
+
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+
+## Initialization
+
+```go
+package main
+
+import (
+    "log"
+    "github.com/chainstream-io/chainstream-go-sdk"
+)
+
+func main() {
+    // Initialize the client
+    client, err := chainstream.NewDexClient("YOUR_ACCESS_TOKEN", &chainstream.DexAggregatorOptions{
+        ServerUrl: "https://api-dex.chainstream.io",
+        StreamUrl: "wss://realtime-dex.chainstream.io/connection/websocket",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+}
+```
+
+## Basic Usage
+
+### Query Token Information
+```go
+// Get token details
+tokenInfo, err := client.Token.GetToken(context.Background(), "sol", "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+### Subscribe to Real-time Data
+```go
+// Subscribe to candle data
+unsubscribe, err := client.Stream.SubscribeTokenCandles(&api.SubscribeTokenCandlesRequest{
+    Chain:        "sol",
+    TokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    Resolution:   "1m",
+    Callback: func(candle *api.TokenCandle) {
+        log.Printf("New candle: %+v", candle)
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+defer unsubscribe()
+```
+
+## Configuration Options
+
+<ParamField path="accessToken" type="string" required>
+  API access token
+</ParamField>
+
+<ParamField path="options.ServerUrl" type="string">
+  API server URL (default: https://api-dex.chainstream.io)
+</ParamField>
+
+<ParamField path="options.StreamUrl" type="string">
+  WebSocket stream URL (default: wss://realtime-dex.chainstream.io/connection/websocket)
+</ParamField>
+
+<ParamField path="options.Debug" type="bool">
+  Enable debug mode
+</ParamField>
+
+## Token Provider
+
+For dynamic token management, you can use a token provider:
+
+```go
+type MyTokenProvider struct {
+    // Your token provider implementation
+}
+
+func (p *MyTokenProvider) GetToken() (string, error) {
+    // Return current token
+    return "your-current-token", nil
+}
+
+// Initialize with token provider
+client, err := chainstream.NewDexClientWithTokenProvider(&MyTokenProvider{}, &chainstream.DexAggregatorOptions{})
+```
+
+## Next Steps
+
+- Check the [API Reference](./api-reference) for all available methods
+- Learn about [WebSocket Subscriptions](./websocket) for real-time data

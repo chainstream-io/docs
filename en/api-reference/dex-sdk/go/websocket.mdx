@@ -1,0 +1,107 @@
+---
+title: 'WebSocket'
+description: 'WebSocket Real-time Data Subscription Service'
+---
+
+This document describes the WebSocket subscription methods provided by the ChainStream Go SDK. Each method is a wrapper for the corresponding WebSocket API. For detailed parameter descriptions and return value structures, please click the corresponding API link.
+
+## Candles
+- <code>[client.Stream.SubscribeTokenCandles()](/en/api-reference/endpoint/websocket/api#candles-data)</code>
+
+## Token
+- <code>[client.Stream.SubscribeTokenStats()](/en/api-reference/endpoint/websocket/api#token-stats)</code>
+- <code>[client.Stream.SubscribeTokenHolders()](/en/api-reference/endpoint/websocket/api#token-holders-statistics)</code>
+- <code>[client.Stream.SubscribeNewToken()](/en/api-reference/endpoint/websocket/api#new-token)</code>
+- <code>[client.Stream.SubscribeNewTokensMetadata()](/en/api-reference/endpoint/websocket/api#new-token-metadata)</code>
+- <code>[client.Stream.SubscribeTokenSupply()](/en/api-reference/endpoint/websocket/api#token-supply)</code>
+- <code>[client.Stream.SubscribeTokenLiquidity()](/en/api-reference/endpoint/websocket/api#token-liquidity)</code>
+
+## Ranking
+- <code>[client.Stream.SubscribeRankingTokensLiquidity()](/en/api-reference/endpoint/websocket/api#ranking-token-liquidity-data)</code>
+- <code>[client.Stream.SubscribeRankingTokensList()](/en/api-reference/endpoint/websocket/api#ranking-token-list)</code>
+- <code>[client.Stream.SubscribeRankingTokensStats()](/en/api-reference/endpoint/websocket/api#ranking-token-statistics)</code>
+- <code>[client.Stream.SubscribeRankingTokensHolders()](/en/api-reference/endpoint/websocket/api#ranking-token-holders-statistics)</code>
+- <code>[client.Stream.SubscribeRankingTokensSupply()](/en/api-reference/endpoint/websocket/api#ranking-token-supply-data)</code>
+
+## Wallet
+- <code>[client.Stream.SubscribeWalletBalance()](/en/api-reference/endpoint/websocket/api#wallet-balance)</code>
+- <code>[client.Stream.SubscribeWalletPnl()](/en/api-reference/endpoint/websocket/api#wallet-pnl-data-token-level)</code>
+- <code>[client.Stream.SubscribeWalletPnlList()](/en/api-reference/endpoint/websocket/api#wallet-pnl-data-wallet-level)</code>
+
+## Trade
+- <code>[client.Stream.SubscribeTokenTrade()](/en/api-reference/endpoint/websocket/api#token-trade)</code>
+- <code>[client.Stream.SubscribeWalletTrade()](/en/api-reference/endpoint/websocket/api#wallet-trade)</code>
+
+## DexPool
+- <code>[client.Stream.SubscribeDexPoolBalance()](/en/api-reference/endpoint/websocket/api#dex-pool-balance)</code>
+
+## Connection Management
+
+### Establish Connection
+```go
+err := client.Stream.Connect()
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+All subscription methods return an `Unsubscribe` function that can be used to cancel subscriptions:
+
+```go
+unsubscribe, err := client.Stream.SubscribeTokenCandles(&api.SubscribeTokenCandlesRequest{
+    Chain:        "sol",
+    TokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    Resolution:   "1m",
+    Callback: func(candle *api.TokenCandle) {
+        log.Printf("New candle: %+v", candle)
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// Cancel subscription
+unsubscribe()
+```
+
+## Batch Subscription
+
+Batch subscribe to multiple data streams
+
+### Usage Example
+
+```go
+unsubscribes, err := client.Stream.BatchSubscribe(func() []func() {
+    return []func(){
+        func() {
+            client.Stream.SubscribeWalletBalance(&api.SubscribeWalletBalanceRequest{
+                Chain:         "sol",
+                WalletAddress: "wallet address 1",
+                Callback: func(data []*api.WalletBalance) {
+                    // todo
+                },
+            })
+        },
+        
+        func() {
+            client.Stream.SubscribeWalletBalance(&api.SubscribeWalletBalanceRequest{
+                Chain:         "sol",
+                WalletAddress: "wallet address 2",
+                Callback: func(data []*api.WalletBalance) {
+                    // todo
+                },
+            })
+        },
+    }
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// Cancel all subscriptions
+for _, unsubscribe := range unsubscribes {
+    unsubscribe()
+}
+```
+
+For detailed parameter descriptions, data formats, and error handling, please refer to the [WebSocket API Documentation](/en/api-reference/endpoint/websocket/api).

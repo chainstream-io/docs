@@ -1,0 +1,102 @@
+---
+title: '快速开始'
+description: 'Go SDK 快速开始指南'
+---
+
+## 安装
+
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+
+## 初始化
+
+```go
+package main
+
+import (
+    "log"
+    "github.com/chainstream-io/chainstream-go-sdk"
+)
+
+func main() {
+    // 初始化客户端
+    client, err := chainstream.NewDexClient("YOUR_ACCESS_TOKEN", &chainstream.DexAggregatorOptions{
+        ServerUrl: "https://api-dex.chainstream.io",
+        StreamUrl: "wss://realtime-dex.chainstream.io/connection/websocket",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+}
+```
+
+## 基本用法
+
+### 查询代币信息
+```go
+// 获取代币详情
+tokenInfo, err := client.Token.GetToken(context.Background(), "sol", "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+### 订阅实时数据
+```go
+// 订阅K线数据
+unsubscribe, err := client.Stream.SubscribeTokenCandles(&api.SubscribeTokenCandlesRequest{
+    Chain:        "sol",
+    TokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    Resolution:   "1m",
+    Callback: func(candle *api.TokenCandle) {
+        log.Printf("新K线: %+v", candle)
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+defer unsubscribe()
+```
+
+## 配置选项
+
+<ParamField path="accessToken" type="string" required>
+  API访问令牌
+</ParamField>
+
+<ParamField path="options.ServerUrl" type="string">
+  API服务器URL (默认: https://api-dex.chainstream.io)
+</ParamField>
+
+<ParamField path="options.StreamUrl" type="string">
+  WebSocket流URL (默认: wss://realtime-dex.chainstream.io/connection/websocket)
+</ParamField>
+
+<ParamField path="options.Debug" type="bool">
+  启用调试模式
+</ParamField>
+
+## 令牌提供者
+
+对于动态令牌管理，您可以使用令牌提供者：
+
+```go
+type MyTokenProvider struct {
+    // 您的令牌提供者实现
+}
+
+func (p *MyTokenProvider) GetToken() (string, error) {
+    // 返回当前令牌
+    return "your-current-token", nil
+}
+
+// 使用令牌提供者初始化
+client, err := chainstream.NewDexClientWithTokenProvider(&MyTokenProvider{}, &chainstream.DexAggregatorOptions{})
+```
+
+## 下一步
+
+- 查看 [API 参考](./api-reference) 了解所有可用方法
+- 学习 [WebSocket 订阅](./websocket) 获取实时数据

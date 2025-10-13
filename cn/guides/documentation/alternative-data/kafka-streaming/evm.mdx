@@ -1,0 +1,93 @@
+---
+title: 'EVM 数据流'
+description: '通过 Kafka 提供的 EVM 区块链 Protobuf 数据流'
+---
+
+本节详细介绍了 ChainStream 通过 Kafka 提供的 EVM 数据流。顶层 Kafka 部分解释了我们如何使用 Kafka Streams 来传输数据。
+
+EVM 区块链根据网络的不同以不同的间隔产生区块。以太坊主网目标是每个区块约 12 秒，而其他 EVM 链可能有不同的区块时间。
+
+## 链上数据结构
+
+EVM Protobuf 数据流为不同的使用场景提供两种主要消息类型：
+
+- `BlockMessage`: 包含详细交易追踪的完整区块
+- `TransfersMessage`: 专注于代币转账和货币元数据
+
+### 区块级别数据
+
+数据流中的每个区块都包含一个 `BlockHeader`，其字段包括：
+
+- `Hash`: 区块的唯一标识符
+- `ParentHash`: 前一个区块的哈希
+- `Number`: 区块编号/链上高度
+- `GasLimit`: 此区块允许的最大 gas
+- `GasUsed`: 交易实际消耗的 gas
+- `Time`: 区块时间戳
+- `BaseFee`: 每 gas 的基础费用（EIP-1559）
+
+`BlockMessage` 还包括：
+
+- `Chain`: 区块链信息（ChainId、Config）
+- `Uncles`: 叔块/ommer 区块（以太坊 PoW）
+- `Transactions`: 区块中的所有交易
+- `L1Header`: 对于 Layer 2 链，对应的 L1 区块信息
+
+### 交易级别数据
+
+交易包括：
+
+**TransactionHeader**: 核心交易数据
+- `Hash`: 交易哈希
+- `Gas`: 此交易的 gas 限制
+- `Value`: 转移的原生货币数量
+- `Data`: 合约交互的调用数据
+- `From`/`To`: 发送者和接收者地址
+- `GasPrice`、`GasFeeCap`、`GasTipCap`: 费用参数
+- EIP-4844 blob 交易的特殊字段
+
+**Signature**: 交易签名（R、S、V 值）
+
+**Receipt**: 执行结果
+- `Status`: 成功或失败
+- `GasUsed`: 实际消耗的 gas
+- `Logs`: 发出的事件日志
+
+**Trace**: 详细的执行追踪
+- `Calls`: 内部合约调用
+- `CaptureStates`: 状态修改
+
+### 转账数据
+
+`TransfersMessage` 数据流提供代币转账信息：
+
+**TokenTransfer**: 记录代币移动：
+- `Sender`: 发送代币的地址
+- `Receiver`: 接收代币的地址
+- `Amount`: 转移的代币数量
+- `Id`: 代币 ID（用于非同质化代币）
+- `Currency`: 详细的代币信息
+- `Success`: 转账是否成功
+
+**TokenInfo**: 每个代币的元数据：
+- `SmartContract`: 代币合约地址
+- `Name`: 代币名称
+- `Symbol`: 代币符号
+- `Decimals`: 代币小数位数
+- `Fungible`: 代币是否为同质化代币（ERC-20）或非同质化代币（ERC-721/1155）
+
+### Layer 2 支持
+
+EVM Protobuf 数据流为 Layer 2 链提供专用字段：
+
+- `L1Header`: 对应的 L1 区块信息
+- Optimism 特定字段：`SequenceNumber`、`BatcherAddr`、`L1FeeOverhead` 等
+- Arbitrum 特定字段：用于 L1 数据成本的 `GasL1`
+
+## 使用数据流
+
+### 主题名称
+
+EVM 数据流在不同的主题下可用：
+
+- `eth.v1.transfers.proto` → `TransfersMessage`

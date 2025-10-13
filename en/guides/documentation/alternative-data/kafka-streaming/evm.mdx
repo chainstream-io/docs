@@ -1,0 +1,93 @@
+---
+title: 'EVM Streams'
+description: 'EVM Blockchain Protobuf Data Streams via Kafka'
+---
+
+This section provides details about ChainStream's EVM Streams via Kafka. The top-level Kafka section explains how we use Kafka Streams to deliver data.
+
+EVM blockchains produce blocks at varying intervals depending on the network. Ethereum mainnet targets ~12 seconds per block, while other EVM chains may have different block times.
+
+## Structure of On-Chain Data
+
+The EVM Protobuf Streams provide three main message types for different use cases:
+
+- `BlockMessage`: Full blocks with detailed transaction traces
+- `TransfersMessage`: Focused on token transfers with currency metadata
+
+### Block-Level Data
+
+Each block in the stream includes a `BlockHeader` with fields such as:
+
+- `Hash`: The unique identifier of the block
+- `ParentHash`: Hash of the previous block
+- `Number`: Block number/height in the chain
+- `GasLimit`: Maximum gas allowed in this block
+- `GasUsed`: Actual gas consumed by transactions
+- `Time`: Block timestamp
+- `BaseFee`: Base fee per gas (EIP-1559)
+
+The `BlockMessage` also includes:
+
+- `Chain`: Information about the blockchain (ChainId, Config)
+- `Uncles`: Uncle/ommer blocks (Ethereum PoW)
+- `Transactions`: All transactions in the block
+- `L1Header`: For Layer 2 chains, information about the corresponding L1 block
+
+### Transaction-Level Data
+
+Transactions include:
+
+**TransactionHeader**: Core transaction data
+- `Hash`: Transaction hash
+- `Gas`: Gas limit for this transaction
+- `Value`: Amount of native currency transferred
+- `Data`: Call data for contract interactions
+- `From`/`To`: Sender and recipient addresses
+- `GasPrice`, `GasFeeCap`, `GasTipCap`: Fee parameters
+- Special fields for EIP-4844 blob transactions
+
+**Signature**: Transaction signature (R, S, V values)
+
+**Receipt**: Execution results
+- `Status`: Success or failure
+- `GasUsed`: Actual gas consumed
+- `Logs`: Event logs emitted
+
+**Trace**: Detailed execution trace
+- `Calls`: Internal contract calls
+- `CaptureStates`: State modifications
+
+### Transfer Data
+
+The `TransfersMessage` stream provides information about token transfers:
+
+**TokenTransfer**: Records token movements with:
+- `Sender`: Address sending tokens
+- `Receiver`: Address receiving tokens
+- `Amount`: Amount of tokens transferred
+- `Id`: Token ID (for non-fungible tokens)
+- `Currency`: Detailed token information
+- `Success`: Whether the transfer succeeded
+
+**TokenInfo**: Metadata about each token:
+- `SmartContract`: Token contract address
+- `Name`: Token name
+- `Symbol`: Token symbol
+- `Decimals`: Token decimal places
+- `Fungible`: Whether token is fungible (ERC-20) or non-fungible (ERC-721/1155)
+
+### Layer 2 Support
+
+EVM Protobuf Streams provide dedicated fields for Layer 2 chains:
+
+- `L1Header`: Corresponding L1 block information
+- Optimism-specific fields: `SequenceNumber`, `BatcherAddr`, `L1FeeOverhead`, etc.
+- Arbitrum-specific fields: `GasL1` for L1 data costs
+
+## Using This Stream
+
+### Topic Names
+
+The EVM streams are available under different topics:
+
+- `eth.v1.transfers.proto` → `TransfersMessage`

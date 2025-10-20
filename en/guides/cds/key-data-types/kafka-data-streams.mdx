@@ -1,6 +1,6 @@
 ---
-title: 'Key Data Streams'
-description: 'Chainstream supports multiple structured data formats tailored for real-time streaming'
+title: "Key Data Streams"
+description: "Chainstream supports multiple structured data formats tailored for real-time streaming"
 ---
 
 ### Kafka Data Streams
@@ -15,6 +15,7 @@ Kafka Streams deliver real-time, high-performance blockchain data. Available for
     - `solana.dextrades.proto`
     - `solana.tokens.proto`
     - `solana.transactions.proto`
+
   </Accordion>
 </AccordionGroup>
 
@@ -26,32 +27,23 @@ This guide walks through the implementation of a Kafka consumer in Go to subscri
 
 <Steps>
   <Step title="Configuration">
-    Create a configuration file `config.yml`:
+     `config.yml`：
 
     ```yaml
-    kafka:
-      bootstrap.servers: "rpk0.chainstream.io:9093,rpk1.chainstream.io:9093,rpk2.chainstream.io:9093"
-      security.protocol: "SASL_SSL"
-      sasl.mechanism: "SCRAM-SHA-512"
-      sasl.username: "<your_username_here>"
-      sasl.password: "<your_password_here>"
+      bootstrap_servers: "kafka.chainstream.io:9099"
+      username: "<your_username_here>"
+      password: "<your_password_here>"
       group.id: "<username_group-number>"
-      ssl.key.location: "ssl/client.key.pem"
-      ssl.certificate.location: "ssl/client.cer.pem"
-      ssl.ca.location: "ssl/server.cer.pem"
-      ssl.endpoint.identification.algorithm: "none"
-      enable.auto.commit: false
 
-    consumer:
-      topic: solana.dextrades.proto
-      partitioned: true
-
-    processor:
-      buffer: 100
-      workers: 8
-
-    log_level: "debug"
+      topics:
+        - "eth.v1.transfers.proto"
+        - "bsc.v1.transfers.proto"
+      ssl:
+        ca_cert: "server-ca-bundle.pem"
+        client_cert: "client.crt"
+        client_key: "client.key"
     ```
+
   </Step>
 
   <Step title="Consumer Implementation">
@@ -61,124 +53,88 @@ This guide walks through the implementation of a Kafka consumer in Go to subscri
     package main
 
     import (
-            "context"
-            "fmt"
-            "github.com/confluentinc/confluent-kafka-go/v2/kafka"
-            "golang.org/x/sync/errgroup"
-            "log"
-            "sync"
-            "time"
+        "fmt"
+        "os"
+        "os/signal"
+        "syscall"
+
+        "io/ioutil"
+
+        "github.com/confluentinc/confluent-kafka-go/kafka"
+        "gopkg.in/yaml.v3"
     )
 
-    type Consumer interface {
-            waitMessages(ctx context.Context, listener Listener)
-            close()
+    type Config struct {
+        BootstrapServers string   `yaml:"bootstrap_servers"`
+        Username         string   `yaml:"username"`
+        Password         string   `yaml:"password"`
+        GroupID          string   `yaml:"group_id"`
+        Topics           []string `yaml:"topics"`
+        SSL              struct {
+                CACert     string `yaml:"ca_cert"`
+                ClientCert string `yaml:"client_cert"`
+                ClientKey  string `yaml:"client_key"`
+        } `yaml:"ssl"`
     }
 
-    type SimpleConsumer struct {
-            kafkaConsumer *kafka.Consumer
+    func LoadConfig(path string) (*Config, error) {
+        data, err := ioutil.ReadFile(path)
+        if err != nil {
+                return nil, err
+        }
+        var cfg Config
+        if err := yaml.Unmarshal(data, &cfg); err != nil {
+                return nil, err
+        }
+        return &cfg, nil
     }
 
-    func newSimpleConsumer(config *Config) (*SimpleConsumer, error) {
-            kafkaConsumer, err := kafka.NewConsumer(&config.Kafka)
-            if err != nil {
-                    return nil, err
-            }
-
-            err = kafkaConsumer.Subscribe(config.Consumer.Topic, nil)
-            if err != nil {
-                    return nil, err
-            }
-
-            return &SimpleConsumer{kafkaConsumer}, nil
+    func NewConsumer(cfg *Config) (*kafka.Consumer, error) {
+        return kafka.NewConsumer(&kafka.ConfigMap{
+                "bootstrap.servers":                   cfg.BootstrapServers,
+                "group.id":                            cfg.GroupID,
+                "auto.offset.reset":                   "earliest",
+                "security.protocol":                   "SASL_SSL",
+                "sasl.mechanisms":                     "SCRAM-SHA-512",
+                "sasl.username":                       cfg.Username,
+                "sasl.password":                       cfg.Password,
+                "ssl.ca.location":                     cfg.SSL.CACert,
+                "ssl.certificate.location":            cfg.SSL.ClientCert,
+                "ssl.key.location":                    cfg.SSL.ClientKey,
+                "enable.ssl.certificate.verification": true,
+        })
     }
 
-    func (c *SimpleConsumer) waitMessages(ctx context.Context, listener Listener) {
-            for {
-                    select {
-                    case <-ctx.Done():
-                            return
-                    default:
-                            msg, err := c.kafkaConsumer.ReadMessage(-1)
-                            if err != nil {
-                                    log.Printf("Consumer error: %v (%v)\n", err, msg)
-                                    continue
-                            }
-                            listener.onMessage(msg)
-                    }
-            }
-    }
+    func RunConsumer(c *kafka.Consumer, topics []string) {
+        if err := c.SubscribeTopics(topics, nil); err != nil {
+                fmt.Fprintf(os.Stderr, "Failed to subscribe topics: %v\n", err)
+                return
+        }
 
-    func (c *SimpleConsumer) close() {
-            c.kafkaConsumer.Close()
-    }
+        sigchan := make(chan os.Signal, 1)
+        signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
-    type PartitionedConsumer struct {
-            kafkaConsumer *kafka.Consumer
-            wg           sync.WaitGroup
-    }
-
-    func newPartitionedConsumer(config *Config) (*PartitionedConsumer, error) {
-            kafkaConsumer, err := kafka.NewConsumer(&config.Kafka)
-            if err != nil {
-                    return nil, err
-            }
-
-            metadata, err := kafkaConsumer.GetMetadata(&config.Consumer.Topic, false, 5000)
-            if err != nil {
-                    return nil, err
-            }
-
-            topicMetadata := metadata.Topics[config.Consumer.Topic]
-            if topicMetadata == nil {
-                    return nil, fmt.Errorf("topic %s not found", config.Consumer.Topic)
-            }
-
-            partitions := make([]int32, 0, len(topicMetadata.Partitions))
-            for _, partition := range topicMetadata.Partitions {
-                    partitions = append(partitions, partition.ID)
-            }
-
-            err = kafkaConsumer.Assign(createTopicPartitions(config.Consumer.Topic, partitions))
-            if err != nil {
-                    return nil, err
-            }
-
-            return &PartitionedConsumer{kafkaConsumer: kafkaConsumer}, nil
-    }
-
-    func createTopicPartitions(topic string, partitions []int32) []kafka.TopicPartition {
-            topicPartitions := make([]kafka.TopicPartition, len(partitions))
-            for i, partition := range partitions {
-                    topicPartitions[i] = kafka.TopicPartition{
-                            Topic:     &topic,
-                            Partition: partition,
-                            Offset:    kafka.OffsetStored,
-                    }
-            }
-            return topicPartitions
-    }
-
-    func (c *PartitionedConsumer) waitMessages(ctx context.Context, listener Listener) {
-            for {
-                    select {
-                    case <-ctx.Done():
-                            return
-                    default:
-                            msg, err := c.kafkaConsumer.ReadMessage(-1)
-                            if err != nil {
-                                    log.Printf("Consumer error: %v (%v)\n", err, msg)
-                                    continue
-                            }
-                            listener.onMessage(msg)
-                    }
-            }
-    }
-
-    func (c *PartitionedConsumer) close() {
-            c.kafkaConsumer.Close()
+        run := true
+        for run {
+                select {
+                case sig := <-sigchan:
+                        fmt.Printf("Caught signal %v: terminating\n", sig)
+                        run = false
+                default:
+                        ev := c.Poll(100)
+                        switch e := ev.(type) {
+                        case *kafka.Message:
+                                topic := *e.TopicPartition.Topic
+                                ProcessMessage(topic, e.Value)
+                        case kafka.Error:
+                                fmt.Fprintf(os.Stderr, "Error: %v\n", e)
+                        }
+                }
+        }
+        c.Close()
     }
     ```
+
   </Step>
 
   <Step title="Processor Implementation">
@@ -188,116 +144,46 @@ This guide walks through the implementation of a Kafka consumer in Go to subscri
     package main
 
     import (
-            "context"
-            "fmt"
-            "github.com/confluentinc/confluent-kafka-go/v2/kafka"
-            "github.com/jellydator/ttlcache/v3"
-            "golang.org/x/sync/errgroup"
-            "log"
-            "sync/atomic"
-            "time"
+        evm "chainstream/evm"
+        "fmt"
+
+        "google.golang.org/protobuf/proto"
     )
 
-    type Processor struct {
-            queue     chan (*kafka.Message)
-            wg        errgroup.Group
-            config    ProcessorConfig
-            processFn processFn
-            stat      *Statistics
-            dedup     *dedupCache
+    func ProcessMessage(topic string, msg []byte) {
+        fmt.Printf("\n[DEBUG] Got message from topic=%s, size=%d bytes\n", topic, len(msg))
+
+        switch topic {
+        case "eth.v1.transfers.proto":
+                processEvmTransfers(msg, "eth")
+        case "bsc.v1.transfers.proto":
+                processEvmTransfers(msg, "bsc")
+        default:
+                fmt.Printf("[WARN] Unknown topic %s, raw head=%x\n", topic, msg[:min(32, len(msg))])
+        }
     }
 
-    type processFn func(*kafka.Message) error
+    func processEvmTransfers(msg []byte, chain string) {
+        var transfers evm.TransfersMessage
+        if err := proto.Unmarshal(msg, &transfers); err != nil {
+                fmt.Println("[ERROR] Failed to decode EVM TransfersMessage:", err)
+                return
+        }
 
-    func newProcessor(config *Config) (*Processor, error) {
-            processor := &Processor{
-                    queue:  make(chan *kafka.Message, config.Processor.Buffer),
-                    config: config.Processor,
-                    stat:   newStatistics(),
-                    dedup: &dedupCache{
-                            cache: ttlcache.New[string, bool](
-                                    ttlcache.WithTTL[string, bool](time.Second * time.Duration(240)),
-                            ),
-                    },
-            }
-
-            switch config.Consumer.Topic {
-            case "solana.dextrades.proto":
-                    processor.processFn = processor.dexTradesMessageHandler
-            case "solana.transactions.proto":
-                    processor.processFn = processor.transactionsMessageHandler
-            default:
-                    return nil, fmt.Errorf("unknown topic: %s", config.Consumer.Topic)
-            }
-
-            return processor, nil
-    }
-
-    func (p *Processor) start(ctx context.Context) {
-            for i := 0; i < p.config.Workers; i++ {
-                    p.wg.Go(func() error {
-                            return p.worker(ctx)
-                    })
-            }
-
-            p.wg.Go(func() error {
-                    ticker := time.NewTicker(time.Second)
-                    defer ticker.Stop()
-
-                    for {
-                            select {
-                            case <-ctx.Done():
-                                    return nil
-                            case <-ticker.C:
-                                    p.stat.report()
-                            }
-                    }
-            })
-    }
-
-    func (p *Processor) worker(ctx context.Context) error {
-            for {
-                    select {
-                    case <-ctx.Done():
-                            return nil
-                    case msg := <-p.queue:
-                            if err := p.processFn(msg); err != nil {
-                                    log.Printf("Error processing message: %v", err)
-                            }
-                    }
-            }
-    }
-
-    func (p *Processor) onMessage(msg *kafka.Message) {
-            p.queue <- msg
-    }
-
-    func (p *Processor) close() error {
-            close(p.queue)
-            return p.wg.Wait()
-    }
-
-    type Statistics struct {
-            processed uint64
-            duplicated uint64
-            errors uint64
-    }
-
-    func newStatistics() *Statistics {
-            return &Statistics{}
-    }
-
-    func (s *Statistics) report() {
-            processed := atomic.LoadUint64(&s.processed)
-            duplicated := atomic.LoadUint64(&s.duplicated)
-            errors := atomic.LoadUint64(&s.errors)
-
-            if processed > 0 || duplicated > 0 || errors > 0 {
-                    log.Printf("Statistics - Processed: %d, Duplicated: %d, Errors: %d",
-                            processed, duplicated, errors)
-            }
+        for _, t := range transfers.Transfers {
+                fmt.Printf("Chain %s Tx %s: %s -> %s, Amount=%s %s (Success=%v)\n",
+                        chain,
+                        t.TransactionHeader.Hash,
+                        t.Sender,
+                        t.Receiver,
+                        t.Amount,
+                        t.Currency.Symbol,
+                        t.Success,
+                )
+        }
     }
     ```
+
   </Step>
 
   <Step title="Main Application">
@@ -306,61 +192,54 @@ This guide walks through the implementation of a Kafka consumer in Go to subscri
     ```go
     package main
 
-    import (
-            "context"
-            "log"
-            "os"
-            "os/signal"
-            "syscall"
-    )
+    import "log"
 
     func main() {
-            config := loadConfig("config.yml")
+        cfg, err := LoadConfig("config.yml")
+        if err != nil {
+                log.Fatalf("Failed to load config: %v", err)
+        }
 
-            var consumer Consumer
-            var err error
-            if config.Consumer.Partitioned {
-                    consumer, err = newPartitionedConsumer(&config)
-            } else {
-                    consumer, err = newSimpleConsumer(&config)
-            }
-            if err != nil {
-                    log.Fatalf("Failed to create consumer: %v", err)
-            }
-            defer consumer.close()
+        consumer, err := NewConsumer(cfg)
+        if err != nil {
+                log.Fatalf("Failed to create consumer: %v", err)
+        }
 
-            processor, err := newProcessor(&config)
-            if err != nil {
-                    log.Fatalf("Failed to create processor: %v", err)
-            }
-            defer processor.close()
-
-            ctx, cancel := context.WithCancel(context.Background())
-            defer cancel()
-
-            sigChan := make(chan os.Signal, 1)
-            signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-            go func() {
-                    <-sigChan
-                    cancel()
-            }()
-
-            processor.start(ctx)
-            consumer.waitMessages(ctx, processor)
+        RunConsumer(consumer, cfg.Topics)
     }
+
     ```
+
   </Step>
 
   <Step title="Running the Application">
     ```bash
     # Setup Configuration
     cp config_example.yml config.yml
-    # Edit config.yml with your credentials
+    # Edit config.yml with your credentials and topics list
+
+    # Example config.yml
+    bootstrap_servers: "kafka.chainstream.io:9099"
+    username: "app_xxx"
+    password: "xxx"
+    group_id: "app_xxx-consumer-1"
+
+    topics:
+      - "eth.v1.transfers.proto"
+      - "bsc.v1.transfers.proto"
+      - "polygon.v1.transfers.proto"
+      - "tron.v1.transfers.proto"
+
+    ssl:
+      ca_cert: "server-ca-bundle.pem"
+      client_cert: "client.crt"
+      client_key: "client.key"
 
     # Build and Run
-    go build
-    ./stream_protobuf_example
+    go build -o stream_consumer
+    ./stream_consumer
     ```
-  </Step>
-</Steps> 
+
+</Step>
+
+</Steps>

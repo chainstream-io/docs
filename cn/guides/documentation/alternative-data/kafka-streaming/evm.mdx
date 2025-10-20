@@ -1,6 +1,6 @@
 ---
-title: 'EVM 数据流'
-description: '通过 Kafka 提供的 EVM 区块链 Protobuf 数据流'
+title: "EVM 数据流"
+description: "通过 Kafka 提供的 EVM 区块链 Protobuf 数据流"
 ---
 
 本节详细介绍了 ChainStream 通过 Kafka 提供的 EVM 数据流。顶层 Kafka 部分解释了我们如何使用 Kafka Streams 来传输数据。
@@ -11,83 +11,135 @@ EVM 区块链根据网络的不同以不同的间隔产生区块。以太坊主�
 
 EVM Protobuf 数据流为不同的使用场景提供两种主要消息类型：
 
-- `BlockMessage`: 包含详细交易追踪的完整区块
+- `BlockMessage`: 包含完整区块和交易头信息
 - `TransfersMessage`: 专注于代币转账和货币元数据
 
-### 区块级别数据
+---
 
-数据流中的每个区块都包含一个 `BlockHeader`，其字段包括：
+### 区块级别数据（BlockHeader）
+
+每个区块包含一个 `BlockHeader`，字段包括：
 
 - `Hash`: 区块的唯一标识符
 - `ParentHash`: 前一个区块的哈希
-- `Number`: 区块编号/链上高度
-- `GasLimit`: 此区块允许的最大 gas
-- `GasUsed`: 交易实际消耗的 gas
+- `UncleHash`: 叔块/ommer 区块哈希
+- `Root`: 状态根
+- `TxHash`: 交易根哈希
+- `ReceiptHash`: 收据根哈希
+- `MixDigest`: 工作量证明混合摘要（PoW）
+- `Coinbase`: 出块者地址
+- `Bloom`: 日志布隆过滤器
+- `Extra`: 附加数据
+- `Nonce`: 区块随机数（PoW）
+- `Difficulty`: 挖矿难度（PoW）
+- `Number`: 区块高度
+- `GasLimit`: 区块允许的最大 gas
+- `GasUsed`: 实际消耗的 gas
 - `Time`: 区块时间戳
 - `BaseFee`: 每 gas 的基础费用（EIP-1559）
+- `SequenceNumber`: Optimism 专用序列号
+- `BatcherAddr`: Optimism 专用批处理地址
+- `L1FeeOverhead`: Optimism 专用 L1 费用开销
+- `L1FeeScalar`: Optimism 专用 L1 费用系数
 
-`BlockMessage` 还包括：
+---
 
-- `Chain`: 区块链信息（ChainId、Config）
-- `Uncles`: 叔块/ommer 区块（以太坊 PoW）
-- `Transactions`: 区块中的所有交易
-- `L1Header`: 对于 Layer 2 链，对应的 L1 区块信息
+### 交易级别数据（TransactionHeader）
 
-### 交易级别数据
+`TransactionHeader` 提供交易的核心信息：
 
-交易包括：
-
-**TransactionHeader**: 核心交易数据
+- `Index`: 交易在区块中的索引
 - `Hash`: 交易哈希
-- `Gas`: 此交易的 gas 限制
-- `Value`: 转移的原生货币数量
-- `Data`: 合约交互的调用数据
-- `From`/`To`: 发送者和接收者地址
-- `GasPrice`、`GasFeeCap`、`GasTipCap`: 费用参数
-- EIP-4844 blob 交易的特殊字段
-
-**Signature**: 交易签名（R、S、V 值）
-
-**Receipt**: 执行结果
-- `Status`: 成功或失败
 - `GasUsed`: 实际消耗的 gas
-- `Logs`: 发出的事件日志
+- `GasLimit`: 交易指定的 gas 上限
+- `Value`: 转移的原生货币数量
+- `Data`: 调用数据
+- `Nonce`: 发送方账户 nonce
+- `ChainId`: 链 ID
+- `Cost`: 交易总成本
+- `GasFeeCap`: 最大 gas 费用上限（EIP-1559）
+- `GasPrice`: 传统 gas 价格
+- `GasTipCap`: 最大优先费
+- `Protected`: 是否启用重放保护
+- `Type`: 交易类型（如 2 = EIP-1559，3 = EIP-4844）
+- `To`: 接收方地址
+- `From`: 发送方地址
+- `ToCode`: 接收方合约代码信息
+- `AccessList`: 访问列表（EIP-2930）
+- `GasL1`: Arbitrum 专用 L1 gas 消耗
+- `IsSystemTx`: Optimism 系统交易标记
+- `EffectiveNonce`: Optimism 有效 nonce
+- `SourceHash`: Optimism 源哈希
+- `Time`: 广播时间戳（可选）
+- `Blob`: EIP-4844 Blob 数据（哈希、证明、承诺、gas、费用上限）
 
-**Trace**: 详细的执行追踪
-- `Calls`: 内部合约调用
-- `CaptureStates`: 状态修改
+---
 
-### 转账数据
+### 转账数据（Transfer）
 
-`TransfersMessage` 数据流提供原生代币和代币转账信息：
+`TransfersMessage` 中的 `Transfer` 记录代币或原生货币的转账：
 
-**TokenTransfer**: 记录原生代币和代币转账：
-- `Sender`: 发送代币的地址
-- `Receiver`: 接收代币的地址
-- `Amount`: 转移的代币数量
-- `Id`: 代币 ID（用于非同质化代币）
-- `Currency`: 详细的代币信息
+- `CallIndex`: 调用索引
+- `LogIndex`: 日志索引
+- `Sender`: 发送地址
+- `Receiver`: 接收地址
+- `Amount`: 转账数量（字符串表示，保证精度）
+- `Id`: 代币 ID（NFT 使用）
+- `URI`: 代币 URI（NFT 元数据）
+- `Currency`: `TokenInfo` 代币元数据
 - `Success`: 转账是否成功
+- `Data`: 原始事件数据
+- `Index`: 转账在消息中的索引
+- `TransactionHeader`: 所属交易的上下文
 
-**TokenInfo**: 每个代币的元数据：
+---
+
+### 代币信息（TokenInfo）
+
+`TokenInfo` 提供代币的详细元数据：
+
 - `SmartContract`: 代币合约地址
+- `Delegated`: 是否被委托
+- `DelegatedTo`: 委托目标地址
+- `ProtocolName`: 协议/项目名称
 - `Name`: 代币名称
 - `Symbol`: 代币符号
-- `Decimals`: 代币小数位数
-- `Fungible`: 代币是否为同质化代币（ERC-20）或非同质化代币（ERC-721/1155）
+- `Decimals`: 小数位数
+- `HasURI`: 是否包含 URI
+- `Fungible`: 是否为同质化代币
+- `AssetId`: 唯一资产标识符
+- `Standard`: 代币标准（NATIVE、ERC20、ERC721、ERC1155）
+
+---
+
+### TransfersMessage
+
+顶层转账消息：
+
+- `Chain`: 区块链元数据（ChainId、Config）
+- `Header`: 当前区块头
+- `Transfers`: 转账记录列表
+- `L1Header`: 对应的 L1 区块头（仅 L2 链）
+
+---
 
 ### Layer 2 支持
 
 EVM Protobuf 数据流为 Layer 2 链提供专用字段：
 
 - `L1Header`: 对应的 L1 区块信息
-- Optimism 特定字段：`SequenceNumber`、`BatcherAddr`、`L1FeeOverhead` 等
-- Arbitrum 特定字段：用于 L1 数据成本的 `GasL1`
+- Optimism 专用：`SequenceNumber`、`BatcherAddr`、`L1FeeOverhead`、`L1FeeScalar`、`IsSystemTx`、`EffectiveNonce`、`SourceHash`
+- Arbitrum 专用：`GasL1`
+- EIP-4844：`Blob` 结构
+
+---
 
 ## 使用数据流
 
 ### 主题名称
 
-EVM 数据流在不同的主题下可用：
+EVM 数据流在不同的 Kafka 主题下可用：
 
 - `eth.v1.transfers.proto` → `TransfersMessage`
+- `bsc.v1.transfers.proto` → `TransfersMessage`
+- `polygon.v1.transfers.proto` → `TransfersMessage`

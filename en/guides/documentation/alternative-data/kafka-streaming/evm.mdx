@@ -1,6 +1,6 @@
 ---
-title: 'EVM Streams'
-description: 'EVM Blockchain Protobuf Data Streams via Kafka'
+title: "EVM Streams"
+description: "EVM Blockchain Protobuf Data Streams via Kafka"
 ---
 
 This section provides details about ChainStream's EVM Streams via Kafka. The top-level Kafka section explains how we use Kafka Streams to deliver data.
@@ -9,80 +9,147 @@ EVM blockchains produce blocks at varying intervals depending on the network. Et
 
 ## Structure of On-Chain Data
 
-The EVM Protobuf Streams provide three main message types for different use cases:
+The EVM Protobuf Streams provide two main message types for different use cases:
 
-- `BlockMessage`: Full blocks with detailed transaction traces
+- `BlockMessage`: Full blocks with detailed transaction and header data
 - `TransfersMessage`: Focused on token transfers with currency metadata
 
-### Block-Level Data
+---
 
-Each block in the stream includes a `BlockHeader` with fields such as:
+### BlockHeader
 
-- `Hash`: The unique identifier of the block
-- `ParentHash`: Hash of the previous block
-- `Number`: Block number/height in the chain
+Represents metadata about a block.
+
+- `Hash`: Unique identifier of the block
+- `ParentHash`: Hash of the parent block
+- `UncleHash`: Hash of uncle/ommer blocks (Ethereum PoW)
+- `Root`: State root of the block
+- `TxHash`: Root hash of all transactions
+- `ReceiptHash`: Root hash of all receipts
+- `MixDigest`: Proof-of-work mix digest (legacy)
+- `Coinbase`: Miner/validator address
+- `Bloom`: Bloom filter for logs
+- `Extra`: Extra data field
+- `Nonce`: Block nonce (legacy PoW)
+- `Difficulty`: Mining difficulty (legacy PoW)
+- `Number`: Block height
 - `GasLimit`: Maximum gas allowed in this block
-- `GasUsed`: Actual gas consumed by transactions
-- `Time`: Block timestamp
-- `BaseFee`: Base fee per gas (EIP-1559)
-
-The `BlockMessage` also includes:
-
-- `Chain`: Information about the blockchain (ChainId, Config)
-- `Uncles`: Uncle/ommer blocks (Ethereum PoW)
-- `Transactions`: All transactions in the block
-- `L1Header`: For Layer 2 chains, information about the corresponding L1 block
-
-### Transaction-Level Data
-
-Transactions include:
-
-**TransactionHeader**: Core transaction data
-- `Hash`: Transaction hash
-- `Gas`: Gas limit for this transaction
-- `Value`: Amount of native currency transferred
-- `Data`: Call data for contract interactions
-- `From`/`To`: Sender and recipient addresses
-- `GasPrice`, `GasFeeCap`, `GasTipCap`: Fee parameters
-- Special fields for EIP-4844 blob transactions
-
-**Signature**: Transaction signature (R, S, V values)
-
-**Receipt**: Execution results
-- `Status`: Success or failure
 - `GasUsed`: Actual gas consumed
-- `Logs`: Event logs emitted
+- `Time`: Block timestamp (seconds since epoch)
+- `BaseFee`: Base fee per gas (EIP-1559)
+- `SequenceNumber`: Optimism-specific sequence number
+- `BatcherAddr`: Optimism-specific batcher address
+- `L1FeeOverhead`: Optimism-specific L1 fee overhead
+- `L1FeeScalar`: Optimism-specific L1 fee scalar
 
-**Trace**: Detailed execution trace
-- `Calls`: Internal contract calls
-- `CaptureStates`: State modifications
+---
 
-### Transfer Data
+### TransactionHeader
 
-The `TransfersMessage` stream provides information about native token and token transfers:
+Represents metadata about a transaction.
 
-**TokenTransfer**: Records native token and token movements with:
+- `Index`: Transaction index in the block
+- `Hash`: Transaction hash
+- `GasUsed`: Gas actually consumed
+- `GasLimit`: Gas limit specified
+- `Value`: Amount of native currency transferred
+- `Data`: Input call data
+- `Nonce`: Sender account nonce
+- `ChainId`: Chain ID of the transaction
+- `Cost`: Total cost (gas × price + value)
+- `GasFeeCap`: Max fee per gas (EIP-1559)
+- `GasPrice`: Legacy gas price
+- `GasTipCap`: Max priority fee per gas
+- `Protected`: Whether replay protection is enabled
+- `Type`: Transaction type (e.g. 2 for EIP-1559, 3 for EIP-4844)
+- `To`: Recipient address
+- `From`: Sender address
+- `ToCode`: Code metadata of the recipient contract
+- `AccessList`: Access list (EIP-2930)
+- `GasL1`: Arbitrum-specific L1 gas usage
+- `IsSystemTx`: Optimism-specific system transaction flag
+- `EffectiveNonce`: Optimism-specific effective nonce
+- `SourceHash`: Optimism-specific source hash
+- `Time`: Broadcast timestamp (optional)
+- `Blob`: EIP-4844 blob data (hashes, proofs, commitments, gas, fee cap)
+
+---
+
+### Transfer
+
+Represents a token or native currency transfer.
+
+- `CallIndex`: Index of the call within the transaction
+- `LogIndex`: Index of the log within the block
 - `Sender`: Address sending tokens
 - `Receiver`: Address receiving tokens
-- `Amount`: Amount of tokens transferred
-- `Id`: Token ID (for non-fungible tokens)
-- `Currency`: Detailed token information
+- `Amount`: Amount of tokens transferred (string for precision)
+- `Id`: Token ID (for NFTs)
+- `URI`: Token URI (for NFTs with metadata)
+- `Currency`: `TokenInfo` metadata about the token
 - `Success`: Whether the transfer succeeded
+- `Data`: Raw event data
+- `Index`: Transfer index within the message
+- `TransactionHeader`: Transaction context for this transfer
 
-**TokenInfo**: Metadata about each token:
+---
+
+### TokenInfo
+
+Metadata about a token.
+
 - `SmartContract`: Token contract address
+- `Delegated`: Whether the token is delegated
+- `DelegatedTo`: Address to which it is delegated
+- `ProtocolName`: Protocol/project name
 - `Name`: Token name
 - `Symbol`: Token symbol
-- `Decimals`: Token decimal places
-- `Fungible`: Whether token is fungible (ERC-20) or non-fungible (ERC-721/1155)
+- `Decimals`: Number of decimal places
+- `HasURI`: Whether the token has a URI field
+- `Fungible`: Whether the token is fungible (ERC-20) or non-fungible (ERC-721/1155)
+- `AssetId`: Unique asset identifier
+- `Standard`: Token standard (`NATIVE`, `ERC20`, `ERC721`, `ERC1155`)
 
-### Layer 2 Support
+---
+
+### TransfersMessage
+
+Top-level message for transfer streams.
+
+- `Chain`: Blockchain metadata (ChainId, Config)
+- `Header`: Block header of the current block
+- `Transfers`: List of `Transfer` records
+- `L1Header`: Optional L1 block header (for L2 chains)
+
+---
+
+### Chain
+
+- `ChainId`: Unique identifier of the blockchain
+- `Config`: Chain configuration string
+
+---
+
+### Blob (EIP-4844)
+
+- `Hashes`: Blob hashes
+- `Proofs`: Blob proofs
+- `Commitments`: Blob commitments
+- `BlobGas`: Gas used for blobs
+- `BlobGasFeeCap`: Fee cap for blob gas
+
+---
+
+## Layer 2 Support
 
 EVM Protobuf Streams provide dedicated fields for Layer 2 chains:
 
 - `L1Header`: Corresponding L1 block information
-- Optimism-specific fields: `SequenceNumber`, `BatcherAddr`, `L1FeeOverhead`, etc.
-- Arbitrum-specific fields: `GasL1` for L1 data costs
+- Optimism-specific: `SequenceNumber`, `BatcherAddr`, `L1FeeOverhead`, `L1FeeScalar`, `IsSystemTx`, `EffectiveNonce`, `SourceHash`
+- Arbitrum-specific: `GasL1`
+- EIP-4844: `Blob` structure for blob-carrying transactions
+
+---
 
 ## Using This Stream
 
@@ -91,3 +158,5 @@ EVM Protobuf Streams provide dedicated fields for Layer 2 chains:
 The EVM streams are available under different topics:
 
 - `eth.v1.transfers.proto` → `TransfersMessage`
+- `bsc.v1.transfers.proto` → `TransfersMessage`
+- `polygon.v1.transfers.proto` → `TransfersMessage`

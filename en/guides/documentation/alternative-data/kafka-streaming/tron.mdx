@@ -1,0 +1,105 @@
+---
+title: "Tron Streams"
+description: "EVM-like blockchain data stream for Tron provided via Kafka and Protobuf"
+---
+
+This section introduces the Tron data stream provided by ChainStream through Kafka. At the top level, Kafka Streams are used to transport data efficiently.
+
+The Tron blockchain produces blocks roughly every 3 seconds, which is faster than Ethereum and many other EVM-compatible chains, making it suitable for high-frequency applications.
+
+## On-Chain Data Structures
+
+The Tron Protobuf data stream provides two main message types for different use cases:
+
+- `BlockHeader`: Core block metadata
+- `TransfersMessage`: Focused on token transfers and currency metadata
+
+---
+
+### Block-Level Data (BlockHeader)
+
+Each block contains a `BlockHeader` with the following fields:
+
+- `Number`: Block height
+- `Hash`: Block hash
+- `Timestamp`: Block timestamp
+- `ParentHash`: Parent block hash
+- `ParentNumber`: Parent block height
+- `Version`: Block version
+- `TxTrieRoot`: Transaction trie root
+- `AccountStateRoot`: Account state root (optional)
+- `TransactionsCount`: Number of transactions in the block
+
+---
+
+### Transaction-Level Data (TransactionHeader)
+
+`TransactionHeader` provides the core information of a transaction:
+
+- `Hash`: Transaction hash
+- `Fee`: Actual fee consumed
+- `Index`: Transaction index within the block
+- `Expiration`: Transaction expiration time
+- `Data`: Raw call data
+- `FeeLimit`: Maximum fee limit specified
+- `Timestamp`: Transaction timestamp
+- `Signatures`: List of signatures
+- `Time`: Broadcast timestamp (optional)
+- `FeePayer`: Address paying the transaction fee
+
+---
+
+### Transfer Data (Transfer)
+
+A `Transfer` within `TransfersMessage` records token or native currency transfers:
+
+- `CallIndex`: Call index
+- `LogIndex`: Log index
+- `Sender`: Sender address
+- `Receiver`: Receiver address
+- `Amount`: Transfer amount (string for precision)
+- `Id`: Token ID (used for NFTs)
+- `URI`: Token URI (NFT metadata)
+- `Currency`: `TokenInfo` metadata of the token
+- `Success`: Whether the transfer succeeded
+- `Data`: Raw event data
+- `Index`: Transfer index within the message
+- `TransactionHeader`: Context of the parent transaction
+
+---
+
+### Token Information (TokenInfo)
+
+`TokenInfo` provides detailed metadata about a token:
+
+- `SmartContract`: Token contract address
+- `Delegated`: Whether delegated
+- `DelegatedTo`: Delegation target address
+- `ProtocolName`: Protocol/project name
+- `Name`: Token name
+- `Symbol`: Token symbol
+- `Decimals`: Number of decimals
+- `HasURI`: Whether URI is included
+- `Fungible`: Whether the token is fungible
+- `AssetId`: Unique asset identifier
+- `Standard`: Token standard (NATIVE, TRC10, TRC20, TRC721, TRC1155)
+
+---
+
+### TransfersMessage
+
+The top-level transfer message includes:
+
+- `Chain`: Blockchain metadata (ChainId)
+- `Header`: Current block header
+- `Transfers`: List of transfer records
+
+---
+
+## Using the Data Stream
+
+### Topic Names
+
+The Tron data stream is available under the following Kafka topic:
+
+- `tron.v1.transfers.proto` → `TransfersMessage`

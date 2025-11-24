@@ -30,3 +30,8 @@ Install our Github App to auto propagate changes from your repo to your deployme
 
 - Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
 - Page loads as a 404 - Make sure you are running in a folder with `docs.json`
+
+
+git add . 
+git commit -m "XXXXXXXXXXXX"
+git push -u origin main

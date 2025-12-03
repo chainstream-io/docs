@@ -149,19 +149,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -207,7 +195,7 @@
                 "ARBITRUM": "arbitrum",
                 "OPTIMISM": "optimism",
                 "AVALANCHE": "avalanche",
-                "ETHEREUM": "ethereum",
+                "ETHEREUM": "eth",
                 "ZKSYNC": "zksync",
                 "SUI": "sui"
               },
@@ -249,6 +237,113 @@
         ]
       }
     },
+    "/v1/transaction/{chain}/gas-price": {
+      "get": {
+        "description": "Get the current gas price for the specified chain",
+        "operationId": "get.gasPrice",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "eth",
+                "zksync"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GasPriceResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transaction - Get Gas Price",
+        "tags": [
+          "Transaction"
+        ]
+      }
+    },
+    "/v1/transaction/{chain}/estimate-gas-limit": {
+      "post": {
+        "description": "Estimate the gas limit required for a transaction",
+        "operationId": "estimate.gasLimit",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "base",
+                "bsc",
+                "polygon",
+                "arbitrum",
+                "optimism",
+                "avalanche",
+                "eth",
+                "zksync"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Transaction parameters for gas estimation",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateGasLimitInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateGasLimitResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transaction - Estimate Gas Limit",
+        "tags": [
+          "Transaction"
+        ]
+      }
+    },
     "/v1/dex/{chain}/swap": {
       "post": {
         "description": "Swap parameters including input token, output token, amount and slippage",
@@ -260,19 +355,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -320,19 +403,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -380,19 +451,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -415,7 +474,7 @@
             "in": "query",
             "description": "Trading amount",
             "schema": {
-              "example": "1000000000",
+              "example": 1000000000,
               "type": "string"
             }
           },
@@ -495,19 +554,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -548,7 +595,7 @@
     "/v1/dex": {
       "get": {
         "description": "Obtain information about all DEXs on a specified blockchain.",
-        "operationId": "list",
+        "operationId": "list.dex",
         "parameters": [
           {
             "name": "chains",
@@ -746,19 +793,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -864,6 +899,16 @@
             "schema": {
               "example": 332417228,
               "type": "number"
+            }
+          },
+          {
+            "name": "transactionsSignature",
+            "required": false,
+            "in": "query",
+            "description": "Transaction signature/hash",
+            "schema": {
+              "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F,3QF8Fn4ReoEjQhfZHvJy8ykodBJRZktcP21j1bQ8aM6uFXQV1CuqUoPDLNGJpkUC6bLhghxWcf54VYzRaPM66GwH",
+              "type": "string"
             }
           },
           {
@@ -915,19 +960,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1033,6 +1066,16 @@
             "schema": {
               "example": 332417228,
               "type": "number"
+            }
+          },
+          {
+            "name": "transactionsSignature",
+            "required": false,
+            "in": "query",
+            "description": "Transaction signature/hash",
+            "schema": {
+              "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F,3QF8Fn4ReoEjQhfZHvJy8ykodBJRZktcP21j1bQ8aM6uFXQV1CuqUoPDLNGJpkUC6bLhghxWcf54VYzRaPM66GwH",
+              "type": "string"
             }
           },
           {
@@ -1091,19 +1134,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1159,6 +1190,16 @@
             "schema": {
               "default": "30m",
               "example": "30m",
+              "enum": [
+                "30m",
+                "1h",
+                "2h",
+                "4h",
+                "6h",
+                "8h",
+                "12h",
+                "24h"
+              ],
               "type": "string"
             }
           },
@@ -1170,6 +1211,10 @@
             "schema": {
               "default": "desc",
               "example": "desc",
+              "enum": [
+                "desc",
+                "asc"
+              ],
               "type": "string"
             }
           },
@@ -1181,6 +1226,10 @@
             "schema": {
               "default": "volume",
               "example": "volume",
+              "enum": [
+                "volume",
+                "trade"
+              ],
               "type": "string"
             }
           }
@@ -1219,19 +1268,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1277,6 +1314,11 @@
             "schema": {
               "default": "1W",
               "example": "1W",
+              "enum": [
+                "1W",
+                "today",
+                "yesterday"
+              ],
               "type": "string"
             }
           },
@@ -1288,6 +1330,9 @@
             "schema": {
               "default": "PnL",
               "example": "PnL",
+              "enum": [
+                "PnL"
+              ],
               "type": "string"
             }
           },
@@ -1299,6 +1344,10 @@
             "schema": {
               "default": "desc",
               "example": "desc",
+              "enum": [
+                "desc",
+                "asc"
+              ],
               "type": "string"
             }
           }
@@ -1455,19 +1504,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1590,66 +1627,6 @@
         ]
       }
     },
-    "/v1/token/{chain}/{tokenAddress}": {
-      "get": {
-        "description": "Get detail of token",
-        "operationId": "get.token",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a token",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Token"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Token - Detail",
-        "tags": [
-          "Token"
-        ]
-      }
-    },
     "/v1/token/{chain}/{tokenAddress}/metadata": {
       "get": {
         "description": "Get metadata of token",
@@ -1661,19 +1638,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1721,19 +1686,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1813,19 +1766,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1876,19 +1817,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -1936,19 +1865,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2130,19 +2047,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2225,19 +2130,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2298,19 +2191,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2400,19 +2281,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2460,19 +2329,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2520,19 +2377,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2613,19 +2458,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2708,19 +2541,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2778,19 +2599,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2838,19 +2647,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -2900,10 +2697,11 @@
           },
           {
             "name": "type",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "Type of operation to filter (all, mint, or burn)",
             "schema": {
+              "default": "all",
               "example": "all",
               "enum": [
                 "all",
@@ -2940,7 +2738,7 @@
     "/v1/token/{chain}/list": {
       "get": {
         "description": "Get filtered token list with range conditions",
-        "operationId": "get.token.list",
+        "operationId": "list.token",
         "parameters": [
           {
             "name": "chain",
@@ -2948,19 +2746,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -4256,19 +4042,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -4305,6 +4079,105 @@
         ]
       }
     },
+    "/v1/token/{chain}/{tokenAddress}": {
+      "get": {
+        "description": "Get detail of token",
+        "operationId": "get.token",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a token",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - Detail",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/dev/{devAddress}/tokens": {
+      "get": {
+        "description": "Retrieve all tokens created by a specific developer address",
+        "operationId": "get.dev.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "devAddress",
+            "required": true,
+            "in": "path",
+            "description": "Developer address",
+            "schema": {
+              "example": "3NUHqNG2Big2WxbYnaBzSNmxwE4NrxgckJuoiyGxu3Am",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DevTokenDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - Get Dev Tokens",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/v1/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "Retrieve detailed information about a specific DEX pool",
@@ -4316,19 +4189,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -4376,19 +4237,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -4592,19 +4441,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -4792,19 +4629,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -4992,19 +4817,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -5192,19 +5005,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -5392,19 +5193,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -5465,19 +5254,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -5528,19 +5305,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -5598,19 +5363,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -5640,7 +5393,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "$ref": "#/components/schemas/BooleanResultDTO"
                 }
               }
             }
@@ -5660,7 +5413,7 @@
     "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "Create a new red packet with specified amount and quantity",
-        "operationId": "create",
+        "operationId": "create.redpacket",
         "parameters": [
           {
             "name": "chain",
@@ -5668,19 +5421,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -5720,7 +5461,7 @@
     "/v1/redpacket/{chain}/claim": {
       "post": {
         "description": "Claim tokens from an existing red packet",
-        "operationId": "claim",
+        "operationId": "claim.redpacket",
         "parameters": [
           {
             "name": "chain",
@@ -5728,19 +5469,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -5780,7 +5509,7 @@
     "/v1/redpacket/{id}": {
       "get": {
         "description": "Query redpacket information",
-        "operationId": "get",
+        "operationId": "get.redpacket",
         "parameters": [
           {
             "name": "id",
@@ -5949,7 +5678,7 @@
                 "arbitrum",
                 "optimism",
                 "avalanche",
-                "ethereum",
+                "eth",
                 "zksync",
                 "sui"
               ],
@@ -6129,19 +5858,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           }
         ],
@@ -6189,19 +5906,7 @@
             "in": "path",
             "description": "A chain name listed in supported networks",
             "schema": {
-              "enum": [
-                "sol",
-                "base",
-                "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "ethereum",
-                "zksync",
-                "sui"
-              ],
-              "type": "string"
+              "$ref": "#/components/schemas/ChainSymbol"
             }
           },
           {
@@ -6221,7 +5926,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/BooleanResultDTO"
                 }
               }
             }
@@ -6238,10 +5943,281 @@
         ]
       }
     },
+    "/v1/kyt/transfer": {
+      "post": {
+        "description": "Register a transfer for KYT (Know Your Transaction) analysis",
+        "operationId": "register.transfer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KYTRegisterTransferRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferBaseResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Register Transfer",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
+    "/v1/kyt/transfers/{transferId}/summary": {
+      "get": {
+        "description": "Retrieve summary information for a registered transfer",
+        "operationId": "get.transfer.summary",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "description": "转账ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferBaseResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Get Transfer Summary",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
+    "/v1/kyt/transfers/{transferId}/exposures/direct": {
+      "get": {
+        "description": "Get direct exposure information for a transfer",
+        "operationId": "get.transfer.direct.exposure",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "description": "转账ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferDirectExposureResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Get Transfer Direct Exposure",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
+    "/v1/kyt/transfers/{transferId}/alerts": {
+      "get": {
+        "description": "Retrieve alerts associated with a transfer",
+        "operationId": "get.transfer.alerts",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "description": "转账ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferAlertsResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Get Transfer Alerts",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
+    "/v1/kyt/transfers/{transferId}/network-identifications": {
+      "get": {
+        "description": "Get network identifications for a transfer",
+        "operationId": "get.transfer.network.identifications",
+        "parameters": [
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "description": "转账ID",
+            "schema": {
+              "example": "123e4567-e89b-12d3-a456-426614174000",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferNetworkIdentificationsResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Get Transfer Network Identifications",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
+    "/v1/kyt/addresses": {
+      "post": {
+        "description": "Register an address for KYT monitoring",
+        "operationId": "register.address",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAddressRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterAddressResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Register Address",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
+    "/v1/kyt/addresses/{address}/risk": {
+      "get": {
+        "description": "Retrieve risk assessment for a registered address",
+        "operationId": "get.address.risk",
+        "parameters": [
+          {
+            "name": "address",
+            "required": true,
+            "in": "path",
+            "description": "地址",
+            "schema": {
+              "example": "0x0038AC785dfB6C82b2c9A7B3B6854e08a10cb9f1",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressRiskResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "KYT - Get Address Risk",
+        "tags": [
+          "KYT"
+        ]
+      }
+    },
     "/v1/webhook/endpoint": {
       "get": {
         "description": "Get list of webhook endpoints",
-        "operationId": "list",
+        "operationId": "list.endpoints",
         "parameters": [
           {
             "name": "limit",
@@ -6303,7 +6279,7 @@
       },
       "post": {
         "description": "Create a new webhook endpoint",
-        "operationId": "create",
+        "operationId": "create.endpoint",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6341,7 +6317,7 @@
     "/v1/webhook/endpoint/{id}": {
       "get": {
         "description": "Get webhook endpoint details",
-        "operationId": "get",
+        "operationId": "get.endpoint",
         "parameters": [
           {
             "name": "id",
@@ -6376,7 +6352,7 @@
       },
       "delete": {
         "description": "Delete a webhook endpoint",
-        "operationId": "delete",
+        "operationId": "delete.endpoint",
         "parameters": [
           {
             "name": "id",
@@ -6411,7 +6387,7 @@
       },
       "patch": {
         "description": "Update webhook endpoint configuration",
-        "operationId": "update",
+        "operationId": "update.endpoint",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6449,7 +6425,7 @@
     "/v1/webhook/endpoint/{id}/secret": {
       "get": {
         "description": "Get webhook endpoint secret",
-        "operationId": "get.secret",
+        "operationId": "get.endpoint.secret",
         "parameters": [
           {
             "name": "id",
@@ -6486,7 +6462,7 @@
     "/v1/webhook/endpoint/{id}/secret/rotate": {
       "post": {
         "description": "Rotate the secret key for a webhook endpoint",
-        "operationId": "rotate.secret",
+        "operationId": "rotate.endpoint.secret",
         "parameters": [
           {
             "name": "id",
@@ -6634,6 +6610,21 @@
           "chainId"
         ]
       },
+      "ChainSymbol": {
+        "type": "string",
+        "enum": [
+          "sol",
+          "base",
+          "bsc",
+          "polygon",
+          "arbitrum",
+          "optimism",
+          "avalanche",
+          "eth",
+          "zksync",
+          "sui"
+        ]
+      },
       "BlockchainLatestBlockDTO": {
         "type": "object",
         "properties": {
@@ -6707,6 +6698,74 @@
           "jobId"
         ]
       },
+      "GasPriceResponse": {
+        "type": "object",
+        "properties": {
+          "gasPrice": {
+            "type": "string",
+            "description": "Current gas price in wei (hex string)",
+            "example": "0x5d21dba00"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Chain symbol",
+            "example": "ethereum"
+          }
+        },
+        "required": [
+          "gasPrice",
+          "chain"
+        ]
+      },
+      "EstimateGasLimitInput": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "From address",
+            "example": "0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8"
+          },
+          "to": {
+            "type": "string",
+            "description": "To address",
+            "example": "0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8"
+          },
+          "data": {
+            "type": "string",
+            "description": "Transaction data (hex)",
+            "example": "0xa9059cbb000000000000000000000000742d35cc6634c0532925a3b8d8c9c4b8a8d4c8b80000000000000000000000000000000000000000000000000de0b6b3a7640000"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value to send (in wei, hex string)",
+            "example": "0x0"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "data"
+        ]
+      },
+      "EstimateGasLimitResponse": {
+        "type": "object",
+        "properties": {
+          "gasLimit": {
+            "type": "string",
+            "description": "Estimated gas limit (hex string)",
+            "example": "0x5208"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Chain symbol",
+            "example": "ethereum"
+          }
+        },
+        "required": [
+          "gasLimit",
+          "chain"
+        ]
+      },
       "SwapInput": {
         "type": "object",
         "properties": {
@@ -6737,9 +6796,7 @@
           "poolAddress": {
             "type": "string",
             "description": "DEX pool address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
-            "minLength": 8,
-            "maxLength": 64
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
           },
           "amount": {
             "type": "string",
@@ -6848,23 +6905,17 @@
           "inputMint": {
             "type": "string",
             "description": "Input Mint, the base token address",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-            "minLength": 8,
-            "maxLength": 64
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
           },
           "outputMint": {
             "type": "string",
             "description": "Ouput Mint, the quote token address",
-            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-            "minLength": 8,
-            "maxLength": 64
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           },
           "recipientAddress": {
             "type": "string",
             "description": "Recipient wallet address for the swap",
-            "example": "0x0000000000000000000000000000000000000001",
-            "minLength": 8,
-            "maxLength": 64
+            "example": "0x0000000000000000000000000000000000000001"
           },
           "permit": {
             "type": "string",
@@ -6879,7 +6930,7 @@
           "tipFee": {
             "type": "string",
             "description": "Tip fee in SOL to increase transaction processing speed",
-            "example": "1000"
+            "example": "1000000"
           },
           "isAntiMev": {
             "type": "boolean",
@@ -7217,16 +7268,6 @@
           },
           "links": {
             "description": "Social and website links",
-            "example": [
-              {
-                "label": "website",
-                "url": "https://mytoken.com"
-              },
-              {
-                "label": "twitter",
-                "url": "https://twitter.com/mytoken"
-              }
-            ],
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Link"
@@ -8970,7 +9011,6 @@
           "name",
           "symbol",
           "address",
-          "stats",
           "marketData"
         ]
       },
@@ -9316,12 +9356,12 @@
             "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
           },
           "priceInUsd": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in USD",
             "example": 1000
           },
           "priceInNative": {
-            "type": "number",
+            "type": "string",
             "description": "Token price in native currency (e.g., SOL)",
             "example": 1000
           },
@@ -9424,7 +9464,6 @@
           "blockHeight",
           "blockSlot",
           "blockHash",
-          "blockTimestamp",
           "transactionSignature",
           "type"
         ]
@@ -9501,6 +9540,45 @@
         },
         "required": [
           "data"
+        ]
+      },
+      "DevTokenDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Token address"
+          },
+          "metadata": {
+            "description": "Token metadata",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenMetadata"
+              }
+            ]
+          },
+          "marketData": {
+            "description": "Token market data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenMarketData"
+              }
+            ]
+          },
+          "stats": {
+            "description": "Token stats",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TokenStat"
+              }
+            ]
+          }
+        },
+        "required": [
+          "address",
+          "metadata",
+          "marketData",
+          "stats"
         ]
       },
       "WalletPnlDTO": {
@@ -9848,9 +9926,39 @@
           }
         }
       },
+      "BooleanResultDTO": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Success status",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
       "CreateRedPacketInput": {
         "type": "object",
         "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network",
+            "example": "sol",
+            "enum": [
+              "sol",
+              "base",
+              "bsc",
+              "polygon",
+              "arbitrum",
+              "optimism",
+              "avalanche",
+              "eth",
+              "zksync",
+              "sui"
+            ]
+          },
           "creator": {
             "type": "string",
             "description": "Creator wallet address of the red packet",
@@ -9867,8 +9975,8 @@
             "type": "number",
             "description": "Maximum number of recipients",
             "example": 10,
-            "minLength": 1,
-            "maxLength": 100
+            "minimum": 1,
+            "maximum": 100
           },
           "totalAmount": {
             "type": "string",
@@ -9897,6 +10005,7 @@
           }
         },
         "required": [
+          "chain",
           "creator",
           "mint",
           "maxClaims"
@@ -9924,6 +10033,23 @@
       "ClaimRedPacketInput": {
         "type": "object",
         "properties": {
+          "chain": {
+            "type": "string",
+            "description": "Blockchain network",
+            "example": "sol",
+            "enum": [
+              "sol",
+              "base",
+              "bsc",
+              "polygon",
+              "arbitrum",
+              "optimism",
+              "avalanche",
+              "eth",
+              "zksync",
+              "sui"
+            ]
+          },
           "packetId": {
             "type": "string",
             "description": "Unique identifier of the red packet",
@@ -9946,6 +10072,7 @@
           }
         },
         "required": [
+          "chain",
           "claimer"
         ]
       },
@@ -9962,24 +10089,31 @@
           "txSerialize"
         ]
       },
+      "Chain": {
+        "type": "string",
+        "enum": [
+          "sol",
+          "base",
+          "bsc",
+          "polygon",
+          "arbitrum",
+          "optimism",
+          "avalanche",
+          "eth",
+          "zksync",
+          "sui"
+        ]
+      },
       "RedPacketDTO": {
         "type": "object",
         "properties": {
           "chain": {
-            "type": "string",
             "description": "A chain name listed in supported networks",
             "example": "sol",
-            "enum": [
-              "sol",
-              "base",
-              "bsc",
-              "polygon",
-              "arbitrum",
-              "optimism",
-              "avalanche",
-              "ethereum",
-              "zksync",
-              "sui"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Chain"
+              }
             ]
           },
           "id": {
@@ -10050,12 +10184,12 @@
           "claimedCount": {
             "type": "number",
             "description": "claimed count",
-            "example": 1717334400
+            "example": 100
           },
           "claimedAmount": {
             "type": "string",
             "description": "claimed amount",
-            "example": 1717334400
+            "example": "100000000"
           },
           "refundedAmount": {
             "type": "string",
@@ -10092,20 +10226,12 @@
             "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
           },
           "chain": {
-            "type": "string",
             "description": "Blockchain network",
             "example": "sol",
-            "enum": [
-              "sol",
-              "base",
-              "bsc",
-              "polygon",
-              "arbitrum",
-              "optimism",
-              "avalanche",
-              "ethereum",
-              "zksync",
-              "sui"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Chain"
+              }
             ]
           },
           "claimer": {
@@ -10252,6 +10378,390 @@
         },
         "required": [
           "signature"
+        ]
+      },
+      "KYTRegisterTransferRequest": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "description": "转账网络",
+            "enum": [
+              "bitcoin",
+              "ethereum",
+              "Solana"
+            ],
+            "example": "Solana"
+          },
+          "asset": {
+            "type": "string",
+            "description": "资产类型",
+            "example": "SOL"
+          },
+          "transferReference": {
+            "type": "string",
+            "description": "转账哈希/交易ID",
+            "example": "39z5QAprVrzaFzfHu1JHPgBf9dSqYdNYhH31d3PEd4hWiWL1LML7qCct5MHGxaRAgjjj1nC3XUyLwtzGQmYqUk4y:7xfh4GGMbM3bjpWsTsmBTCfSyuvXFuqnC89fShAqk5Nj"
+          },
+          "direction": {
+            "type": "string",
+            "description": "转账方向",
+            "enum": [
+              "sent",
+              "received"
+            ],
+            "example": "sent"
+          }
+        },
+        "required": [
+          "network",
+          "asset",
+          "transferReference",
+          "direction"
+        ]
+      },
+      "TransferBaseResponseDTO": {
+        "type": "object",
+        "properties": {
+          "updatedAt": {
+            "type": "string",
+            "description": "更新时间",
+            "nullable": true,
+            "example": "2022-03-16T16:17:19.613215"
+          },
+          "asset": {
+            "type": "string",
+            "description": "资产类型",
+            "example": "BTC"
+          },
+          "assetId": {
+            "type": "string",
+            "description": "资产ID",
+            "nullable": true,
+            "example": null
+          },
+          "network": {
+            "type": "string",
+            "description": "区块链网络",
+            "example": "BITCOIN"
+          },
+          "transferReference": {
+            "type": "string",
+            "description": "转账引用（交易哈希和地址）",
+            "example": "9f318afbad2a183f97750bc51a75b582ad8f9e9cbfb50401148857ca27cde10c:17A16QmavnUfCW11DAApiJxp7ARnxN5pGX"
+          },
+          "memo": {
+            "type": "string",
+            "description": "备注信息",
+            "nullable": true,
+            "example": null
+          },
+          "tx": {
+            "type": "string",
+            "description": "交易哈希",
+            "nullable": true,
+            "example": "9f318afbad2a183f97750bc51a75b582ad8f9e9cbfb50401148857ca27cde10c"
+          },
+          "idx": {
+            "type": "number",
+            "description": "索引",
+            "nullable": true,
+            "example": 2
+          },
+          "usdAmount": {
+            "type": "number",
+            "description": "USD金额",
+            "nullable": true,
+            "example": 722091.75
+          },
+          "assetAmount": {
+            "type": "number",
+            "description": "资产金额",
+            "nullable": true,
+            "example": 11.35113454
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "时间戳",
+            "nullable": true,
+            "example": "2021-11-16T18:33:33.000+00:00"
+          },
+          "outputAddress": {
+            "type": "string",
+            "description": "输出地址",
+            "nullable": true,
+            "example": "17A16QmavnUfCW11DAApiJxp7ARnxN5pGX"
+          },
+          "externalId": {
+            "type": "string",
+            "description": "外部ID（UUID）",
+            "example": "393905a7-bb96-394b-9e20-3645298c1079"
+          }
+        },
+        "required": [
+          "updatedAt",
+          "asset",
+          "assetId",
+          "network",
+          "transferReference",
+          "memo",
+          "tx",
+          "idx",
+          "usdAmount",
+          "assetAmount",
+          "timestamp",
+          "outputAddress",
+          "externalId"
+        ]
+      },
+      "DirectExposureDetail": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "名称",
+            "example": "BitPay.com"
+          },
+          "categoryId": {
+            "type": "number",
+            "description": "类别ID",
+            "example": 17
+          }
+        },
+        "required": [
+          "name",
+          "categoryId"
+        ]
+      },
+      "TransferDirectExposureResponseDTO": {
+        "type": "object",
+        "properties": {
+          "direct": {
+            "description": "直接暴露信息",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DirectExposureDetail"
+              }
+            ]
+          }
+        },
+        "required": [
+          "direct"
+        ]
+      },
+      "AlertDetail": {
+        "type": "object",
+        "properties": {
+          "alertLevel": {
+            "type": "string",
+            "description": "警报级别",
+            "example": "SEVERE"
+          },
+          "service": {
+            "type": "string",
+            "description": "服务名称",
+            "example": "OFAC SDN Blender.io 2022-05-06"
+          },
+          "externalId": {
+            "type": "string",
+            "description": "外部ID",
+            "example": "b7d17de0-f890-11ec-83bd-c37b1b9f5365"
+          },
+          "alertAmount": {
+            "type": "number",
+            "description": "警报金额",
+            "example": 8868.24
+          },
+          "exposureType": {
+            "type": "string",
+            "description": "暴露类型",
+            "example": "DIRECT"
+          },
+          "categoryId": {
+            "type": "number",
+            "description": "类别ID",
+            "example": 3
+          },
+          "memo": {
+            "type": "string",
+            "description": "备注",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "alertLevel",
+          "service",
+          "externalId",
+          "alertAmount",
+          "exposureType",
+          "categoryId",
+          "memo"
+        ]
+      },
+      "TransferAlertsResponseDTO": {
+        "type": "object",
+        "properties": {
+          "alerts": {
+            "description": "警报列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertDetail"
+            }
+          }
+        },
+        "required": [
+          "alerts"
+        ]
+      },
+      "NetworkIdentificationOrg": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "组织名称",
+            "example": "XYZ Cryptocurrency Exchange"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "TransferNetworkIdentificationsResponseDTO": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "识别数量",
+            "example": 1
+          },
+          "networkIdentificationOrgs": {
+            "description": "网络识别组织列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkIdentificationOrg"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "networkIdentificationOrgs"
+        ]
+      },
+      "RegisterAddressRequest": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "地址",
+            "example": "0x0038AC785dfB6C82b2c9A7B3B6854e08a10cb9f1"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "RegisterAddressResponseDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "地址",
+            "example": "0x0038AC785dfB6C82b2c9A7B3B6854e08a10cb9f1"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "AddressExposure": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "类别",
+            "example": "exchange"
+          },
+          "value": {
+            "type": "number",
+            "description": "值",
+            "example": 424895.68594
+          }
+        },
+        "required": [
+          "category",
+          "value"
+        ]
+      },
+      "AddressRiskResponseDTO": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "地址",
+            "example": "0x0038AC785dfB6C82b2c9A7B3B6854e08a10cb9f1"
+          },
+          "risk": {
+            "type": "string",
+            "description": "风险级别",
+            "example": "Low"
+          },
+          "riskReason": {
+            "type": "string",
+            "description": "风险原因",
+            "nullable": true,
+            "example": null
+          },
+          "addressType": {
+            "type": "string",
+            "description": "地址类型",
+            "example": "PRIVATE_WALLET"
+          },
+          "cluster": {
+            "type": "string",
+            "description": "集群",
+            "nullable": true,
+            "example": null
+          },
+          "addressIdentifications": {
+            "description": "地址识别列表",
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "exposures": {
+            "description": "暴露列表",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddressExposure"
+            }
+          },
+          "triggers": {
+            "description": "触发器列表",
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "example": "COMPLETE"
+          }
+        },
+        "required": [
+          "address",
+          "risk",
+          "riskReason",
+          "addressType",
+          "cluster",
+          "addressIdentifications",
+          "exposures",
+          "triggers",
+          "status"
         ]
       },
       "EndpointResponse": {

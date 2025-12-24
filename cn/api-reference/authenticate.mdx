@@ -15,9 +15,24 @@ ChainStream 使用 API 密钥对所有 API 调用进行认证。根据工作区�
 
 ## 生成 JWT 令牌
 
-你可以使用以下代码生成 JWT 令牌：
+你可以使用以下代码生成 JWT 令牌。`scope` 参数是可选的，用于控制特定 API 模块的访问权限。
+
+### 可用的 Scope
+
+当前支持以下 scope：
+
+- `webhook.read` - Webhook API 端点的读取权限
+- `webhook.write` - Webhook API 端点的写入权限  
+- `kyt.read` - KYT（了解您的交易）API 端点的读取权限
+- `kyt.write` - KYT API 端点的写入权限
+
+<Note>
+如果不指定 scope，令牌将可以访问所有通用 API 端点。仅在访问受保护的 Webhook 或 KYT 端点时才需要 scope。
+</Note>
 
 ### JavaScript
+
+**示例 1：不使用 scope（通用 API 访问）**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -30,6 +45,63 @@ const auth0Client = new AuthenticationClient({
 
 const response = await auth0Client.oauth.clientCredentialsGrant({
       audience: 'https://api.dex.chainstream.io'
+    });
+
+return response.data.access_token;
+```
+
+**示例 2：使用 Webhook 访问权限**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: ['webhook.read', 'webhook.write']
+    });
+
+return response.data.access_token;
+```
+
+**示例 3：使用 KYT 访问权限**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: ['kyt.read', 'kyt.write']
+    });
+
+return response.data.access_token;
+```
+
+**示例 4：使用多个 scope**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: ['webhook.read', 'webhook.write', 'kyt.read', 'kyt.write']
     });
 
 return response.data.access_token;

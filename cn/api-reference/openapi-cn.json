@@ -4178,6 +4178,66 @@
         ]
       }
     },
+    "/v1/token/{chain}/{tokenAddress}/traders/{tag}": {
+      "get": {
+        "description": "根据标签（fresh、sandwish、bundle、sniper、dev、pro、insider）获取代币的交易者",
+        "operationId": "get.token.traders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "required": true,
+            "in": "path",
+            "description": "Token trader tag",
+            "schema": {
+              "$ref": "#/components/schemas/TokenTraderTag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TokenTrader"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 获取代币交易者",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/v1/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "获取特定 DEX 资金池的详细信息",
@@ -8868,20 +8928,150 @@
             "description": "毕业完成进度",
             "example": "0.1"
           },
-          "devTeamCount": {
-            "type": "number",
-            "description": "代币创作者数量",
-            "example": 1
-          },
-          "devTeamAmount": {
+          "top50TotalHoldings": {
             "type": "string",
-            "description": "创作者持有的总数量",
+            "description": "前50名持有者总持有量",
+            "example": "300000"
+          },
+          "top50HoldingsRatio": {
+            "type": "string",
+            "description": "前50名持有者持有量占比",
+            "example": "0.3"
+          },
+          "bluechipTotalHolders": {
+            "type": "string",
+            "description": "蓝筹持有者总数",
+            "example": "10"
+          },
+          "bluechipTotalHoldings": {
+            "type": "string",
+            "description": "蓝筹持有者总持有量",
+            "example": "50000"
+          },
+          "bluechipHoldingsRatio": {
+            "type": "string",
+            "description": "蓝筹持有者持有量占比",
+            "example": "0.05"
+          },
+          "kolTotalHolders": {
+            "type": "string",
+            "description": "KOL持有者总数",
+            "example": "20"
+          },
+          "kolTotalHoldings": {
+            "type": "string",
+            "description": "KOL持有者总持有量",
+            "example": "30000"
+          },
+          "kolHoldingsRatio": {
+            "type": "string",
+            "description": "KOL持有者持有量占比",
+            "example": "0.03"
+          },
+          "sniperTotalHolders": {
+            "type": "string",
+            "description": "狙击手持有者总数",
+            "example": "15"
+          },
+          "sniperTotalHoldings": {
+            "type": "string",
+            "description": "狙击手持有者总持有量",
+            "example": "25000"
+          },
+          "sniperHoldingsRatio": {
+            "type": "string",
+            "description": "狙击手持有者持有量占比",
+            "example": "0.025"
+          },
+          "proTotalHolders": {
+            "type": "string",
+            "description": "专业持有者总数",
+            "example": "25"
+          },
+          "proTotalHoldings": {
+            "type": "string",
+            "description": "专业持有者总持有量",
+            "example": "40000"
+          },
+          "proHoldingsRatio": {
+            "type": "string",
+            "description": "专业持有者持有量占比",
+            "example": "0.04"
+          },
+          "insiderTotalHolders": {
+            "type": "string",
+            "description": "内部人士持有者总数",
+            "example": "5"
+          },
+          "insiderTotalHoldings": {
+            "type": "string",
+            "description": "内部人士持有者总持有量",
+            "example": "20000"
+          },
+          "insiderHoldingsRatio": {
+            "type": "string",
+            "description": "内部人士持有者持有量占比",
+            "example": "0.02"
+          },
+          "sandwishTotalHolders": {
+            "type": "string",
+            "description": "三明治攻击者持有者总数",
+            "example": "8"
+          },
+          "sandwishTotalHoldings": {
+            "type": "string",
+            "description": "三明治攻击者持有者总持有量",
+            "example": "15000"
+          },
+          "sandwishHoldingsRatio": {
+            "type": "string",
+            "description": "三明治攻击者持有者持有量占比",
+            "example": "0.015"
+          },
+          "freshTotalHolders": {
+            "type": "string",
+            "description": "新钱包持有者总数",
+            "example": "30"
+          },
+          "freshTotalHoldings": {
+            "type": "string",
+            "description": "新钱包持有者总持有量",
             "example": "10000"
           },
-          "devTeamRatio": {
+          "freshHoldingsRatio": {
             "type": "string",
-            "description": "创作者持有的代币比例",
-            "example": "0.5"
+            "description": "新钱包持有者持有量占比",
+            "example": "0.01"
+          },
+          "bundleTotalHolders": {
+            "type": "string",
+            "description": "批量交易者持有者总数",
+            "example": "12"
+          },
+          "bundleTotalHoldings": {
+            "type": "string",
+            "description": "批量交易者持有者总持有量",
+            "example": "18000"
+          },
+          "bundleHoldingsRatio": {
+            "type": "string",
+            "description": "批量交易者持有者持有量占比",
+            "example": "0.018"
+          },
+          "devTotalHolders": {
+            "type": "string",
+            "description": "开发者持有者总数",
+            "example": "3"
+          },
+          "devTotalHoldings": {
+            "type": "string",
+            "description": "开发者持有者总持有量",
+            "example": "5000"
+          },
+          "devHoldingsRatio": {
+            "type": "string",
+            "description": "开发者持有者持有量占比",
+            "example": "0.005"
           }
         },
         "required": [
@@ -8967,6 +9157,16 @@
             "type": "string",
             "description": "代币描述",
             "example": "USDC is a stablecoin pegged to the US dollar"
+          },
+          "devTotalTokens": {
+            "type": "number",
+            "description": "开发者创建的代币总数",
+            "example": 163
+          },
+          "devLastTokenCreatedAt": {
+            "type": "string",
+            "description": "开发者最后创建代币的时间戳",
+            "example": "2025-12-03T09:23:34.000Z"
           },
           "market": {
             "type": "string",
@@ -9201,6 +9401,16 @@
             "type": "string",
             "description": "代币描述",
             "example": "USDC is a stablecoin pegged to the US dollar"
+          },
+          "devTotalTokens": {
+            "type": "number",
+            "description": "开发者创建的代币总数",
+            "example": 163
+          },
+          "devLastTokenCreatedAt": {
+            "type": "string",
+            "description": "开发者最后创建代币的时间戳",
+            "example": "2025-12-03T09:23:34.000Z"
           }
         },
         "required": [
@@ -9547,10 +9757,10 @@
         "properties": {
           "address": {
             "type": "string",
-            "description": "Token address"
+            "description": "代币地址"
           },
           "metadata": {
-            "description": "Token metadata",
+            "description": "代币元数据",
             "allOf": [
               {
                 "$ref": "#/components/schemas/TokenMetadata"
@@ -9558,7 +9768,7 @@
             ]
           },
           "marketData": {
-            "description": "Token market data",
+            "description": "代币市场数据",
             "allOf": [
               {
                 "$ref": "#/components/schemas/TokenMarketData"
@@ -9566,7 +9776,7 @@
             ]
           },
           "stats": {
-            "description": "Token stats",
+            "description": "代币统计数据",
             "allOf": [
               {
                 "$ref": "#/components/schemas/TokenStat"
@@ -9579,6 +9789,81 @@
           "metadata",
           "marketData",
           "stats"
+        ]
+      },
+      "TokenTraderTag": {
+        "type": "string",
+        "enum": [
+          "fresh",
+          "sandwish",
+          "bundle",
+          "sniper",
+          "dev",
+          "pro",
+          "insider",
+          "kol",
+          "bluechip"
+        ]
+      },
+      "TokenTrader": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "账户地址"
+          },
+          "transactionSignature": {
+            "type": "string",
+            "description": "交易签名（用于交易标签）"
+          },
+          "blockHash": {
+            "type": "string",
+            "description": "区块哈希"
+          },
+          "blockHeight": {
+            "type": "number",
+            "description": "区块高度"
+          },
+          "blockSlot": {
+            "type": "number",
+            "description": "区块插槽"
+          },
+          "blockTimestamp": {
+            "format": "date-time",
+            "type": "string",
+            "description": "区块时间戳"
+          },
+          "onchainCreatedAt": {
+            "type": "object",
+            "description": "链上创建时间戳"
+          },
+          "tradeCount": {
+            "type": "number",
+            "description": "交易次数"
+          },
+          "tradeAmountInNative": {
+            "type": "number",
+            "description": "原生货币交易金额"
+          },
+          "tradeAmountInUsd": {
+            "type": "number",
+            "description": "美元交易金额"
+          },
+          "percentileRankTradeCount": {
+            "type": "number",
+            "description": "交易次数百分位排名"
+          },
+          "percentileRankTradeAmountInUsd": {
+            "type": "number",
+            "description": "美元交易金额百分位排名"
+          },
+          "rankTradeAmountInUsd": {
+            "type": "number",
+            "description": "美元交易金额排名"
+          }
+        },
+        "required": [
+          "address"
         ]
       },
       "WalletPnlDTO": {

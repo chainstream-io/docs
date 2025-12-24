@@ -15,9 +15,24 @@ Each API request must include the following headers:
 
 ## Generating JWT Token
 
-You can generate a JWT token using the following code:
+You can generate a JWT token using the following code. The `scope` parameter is optional and controls access permissions for specific API modules.
+
+### Available Scopes
+
+The following scopes are currently supported:
+
+- `webhook.read` - Read access to Webhook API endpoints
+- `webhook.write` - Write access to Webhook API endpoints  
+- `kyt.read` - Read access to KYT (Know Your Transaction) API endpoints
+- `kyt.write` - Write access to KYT API endpoints
+
+<Note>
+If no scope is specified, the token will have access to all general API endpoints. Scopes are only required when accessing protected Webhook or KYT endpoints.
+</Note>
 
 ### JavaScript
+
+**Example 1: Without scope (general API access)**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -30,6 +45,63 @@ const auth0Client = new AuthenticationClient({
 
 const response = await auth0Client.oauth.clientCredentialsGrant({
       audience: 'https://api.dex.chainstream.io'
+    });
+
+return response.data.access_token;
+```
+
+**Example 2: With Webhook access**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: ['webhook.read', 'webhook.write']
+    });
+
+return response.data.access_token;
+```
+
+**Example 3: With KYT access**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: ['kyt.read', 'kyt.write']
+    });
+
+return response.data.access_token;
+```
+
+**Example 4: With multiple scopes**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: ['webhook.read', 'webhook.write', 'kyt.read', 'kyt.write']
     });
 
 return response.data.access_token;

@@ -17,9 +17,7 @@ yarn add @chainstream-io/sdk
 import { DexClient } from '@chainstream-io/sdk';
 
 // Initialize the client
-const client = new DexClient({
-  accessToken: 'YOUR_ACCESS_TOKEN'
-});
+const client = new DexClient('YOUR_ACCESS_TOKEN');
 ```
 
 ## Basic Usage
@@ -35,15 +33,20 @@ const tokenInfo = await client.token.getToken({
 
 ### Subscribe to Real-time Data
 ```javascript
+import { Resolution } from '@chainstream-io/sdk/openapi';
+
 // Subscribe to candle data
-const unsubscribe = client.stream.subscribeTokenCandles({
+const subscription = client.stream.subscribeTokenCandles({
   chain: 'sol',
   tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
-  resolution: '1m',
+  resolution: Resolution._1m,
   callback: (candle) => {
     console.log('New candle:', candle);
   }
 });
+
+// Unsubscribe
+subscription.unsubscribe();
 ```
 
 ## Configuration Options

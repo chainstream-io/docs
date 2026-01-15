@@ -22,19 +22,70 @@ wss://realtime-dex.chainstream.io/connection/websocket
 
 ### 1. Establish Connection
 
-First, create a WebSocket connection and authenticate:
+First, create a WebSocket connection. WebSocket connections require the `Authorization` header for authentication.
 
-```typescript
-const ws = new WebSocket("wss://realtime-dex.chainstream.io/connection/websocket");
+<Tabs>
+  <Tab title="Using SDK (Recommended)">
+    If using the Go or JavaScript SDK, authentication is handled automatically:
 
-ws.onopen = () => {
-  // Send authentication message
-  ws.send(JSON.stringify({
-    type: "auth",
-    token: "YOUR_ACCESS_TOKEN"
-  }));
-};
-```
+    ```typescript
+    import { DexClient } from '@chainstream-io/sdk';
+    import { Resolution } from '@chainstream-io/sdk/openapi';
+
+    const client = new DexClient('YOUR_ACCESS_TOKEN');
+
+    // SDK handles WebSocket authentication automatically
+    client.stream.subscribeTokenCandles({
+      chain: 'sol',
+      tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+      resolution: Resolution._1m,
+      callback: (data) => {
+        console.log('Received data:', data);
+      }
+    });
+    ```
+
+    SDK Installation:
+    - **JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
+    - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
+  </Tab>
+  <Tab title="Using Native WebSocket">
+    When using browser native WebSocket or other WebSocket libraries, you need to manually pass authentication information in the request headers:
+
+    ```typescript
+    // Browser native WebSocket does not support custom headers
+    // You need to use a library that supports custom headers, such as ws (Node.js)
+
+    // Node.js example (using ws library)
+    import WebSocket from 'ws';
+
+    const ws = new WebSocket(
+      "wss://realtime-dex.chainstream.io/connection/websocket",
+      {
+        headers: {
+          "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+        }
+      }
+    );
+
+    ws.on('open', () => {
+      console.log('Connection established');
+    });
+    ```
+
+    <Warning>
+    Browser native `WebSocket` API does not support custom request headers. If you're using a browser environment, we recommend using our JavaScript SDK.
+    </Warning>
+  </Tab>
+  <Tab title="Command Line Testing">
+    Using `wscat` for testing:
+
+    ```bash
+    $ wscat -c wss://realtime-dex.chainstream.io/connection/websocket \
+      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    ```
+  </Tab>
+</Tabs>
 
 ### 2. Subscribe to Data
 
@@ -1673,24 +1724,27 @@ dex-pool-balance:{chain}_{poolAddress}
 ## Usage Examples
 
 ```typescript
-const streamApi = new StreamApi(context);
+import { DexClient } from '@chainstream-io/sdk';
+import { Resolution } from '@chainstream-io/sdk/openapi';
+
+const client = new DexClient('YOUR_ACCESS_TOKEN');
 
 // Subscribe to candle data
-streamApi.subscribeTokenCandles({
-  chain: "sol",
-  tokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-  resolution: "1m",
+client.stream.subscribeTokenCandles({
+  chain: 'sol',
+  tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+  resolution: Resolution._1m,
   callback: (data) => {
-    console.log("Candle data:", data);
+    console.log('Candle data:', data);
   }
 });
 
 // Subscribe to wallet balance
-streamApi.subscribeWalletBalance({
-  chain: "sol",
-  walletAddress: "YOUR_WALLET_ADDRESS",
+client.stream.subscribeWalletBalance({
+  chain: 'sol',
+  walletAddress: 'YOUR_WALLET_ADDRESS',
   callback: (data) => {
-    console.log("Wallet balance:", data);
+    console.log('Wallet balance:', data);
   }
 });
 ```
@@ -1735,52 +1789,122 @@ function reconnect(attempt) {
 
 ## Complete Example
 
-```typescript
-class DexWebSocket {
-  private ws: WebSocket;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private messageHandlers = new Map<string, Set<(data: any) => void>>();
+<Tabs>
+  <Tab title="Using SDK (Recommended)">
+    ```typescript
+    import { DexClient } from '@chainstream-io/sdk';
+    import { Resolution } from '@chainstream-io/sdk/openapi';
 
-  constructor(
-    private url: string,
-    private accessToken: string
-  ) {
-    this.connect();
-  }
+    const client = new DexClient('YOUR_ACCESS_TOKEN');
 
-  private connect() {
-    this.ws = new WebSocket(this.url);
-    
-    this.ws.onopen = () => {
-      // Send authentication
-      this.authenticate();
-      // Resubscribe
-      this.resubscribe();
-    };
-
-    this.ws.onmessage = (event) => {
-      this.handleMessage(JSON.parse(event.data));
-    };
-
-    this.ws.onclose = () => {
-      this.reconnect();
-    };
-  }
-
-  private authenticate() {
-    this.send({
-      type: "auth",
-      token: this.accessToken
+    // Subscribe to candle data
+    const subscription = client.stream.subscribeTokenCandles({
+      chain: 'sol',
+      tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+      resolution: Resolution._1m,
+      callback: (data) => {
+        console.log('Candle data:', data);
+      }
     });
-  }
 
-  public subscribe(channel: string, handler: (data: any) => void) {
-    // Subscription implementation
-  }
+    // Unsubscribe
+    subscription.unsubscribe();
+    ```
 
-  public unsubscribe(channel: string) {
-    // Unsubscribe implementation
-  }
-}
-```
+    <Note>
+    When using the SDK, authentication, reconnection, heartbeat, etc. are all handled automatically. Recommended for production environments.
+    - **JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
+    - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
+    </Note>
+  </Tab>
+  <Tab title="Node.js (ws library)">
+    ```typescript
+    import WebSocket from 'ws';
+
+    class DexWebSocket {
+      private ws: WebSocket;
+      private reconnectAttempts = 0;
+      private maxReconnectAttempts = 5;
+      private messageHandlers = new Map<string, Set<(data: any) => void>>();
+      private subscriptions = new Set<string>();
+
+      constructor(
+        private url: string,
+        private accessToken: string
+      ) {
+        this.connect();
+      }
+
+      private connect() {
+        // Pass Authorization in request headers for authentication
+        this.ws = new WebSocket(this.url, {
+          headers: {
+            "Authorization": `Bearer ${this.accessToken}`
+          }
+        });
+        
+        this.ws.on('open', () => {
+          console.log('WebSocket connection established');
+          this.reconnectAttempts = 0;
+          // Resubscribe to previous channels
+          this.resubscribe();
+        });
+
+        this.ws.on('message', (data) => {
+          this.handleMessage(JSON.parse(data.toString()));
+        });
+
+        this.ws.on('close', () => {
+          console.log('WebSocket connection closed');
+          this.reconnect();
+        });
+
+        this.ws.on('error', (error) => {
+          console.error('WebSocket error:', error);
+        });
+      }
+
+      private reconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
+          this.reconnectAttempts++;
+          console.log(`Attempting reconnection in ${delay}ms...`);
+          setTimeout(() => this.connect(), delay);
+        }
+      }
+
+      private resubscribe() {
+        this.subscriptions.forEach(channel => {
+          this.send({ type: "subscribe", channel });
+        });
+      }
+
+      private handleMessage(data: any) {
+        // Handle message
+      }
+
+      private send(data: any) {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify(data));
+        }
+      }
+
+      public subscribe(channel: string, handler: (data: any) => void) {
+        this.subscriptions.add(channel);
+        // Subscription implementation
+      }
+
+      public unsubscribe(channel: string) {
+        this.subscriptions.delete(channel);
+        // Unsubscribe implementation
+      }
+    }
+
+    // Usage example
+    const client = new DexWebSocket(
+      "wss://realtime-dex.chainstream.io/connection/websocket",
+      "YOUR_ACCESS_TOKEN"
+    );
+    ```
+  </Tab>
+</Tabs>

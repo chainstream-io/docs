@@ -22,7 +22,7 @@ wss://realtime-dex.chainstream.io/connection/websocket
 
 ### 1. Establish Connection
 
-First, create a WebSocket connection. WebSocket connections require the `Authorization` header for authentication.
+First, create a WebSocket connection. WebSocket connections require the `token` query parameter in the URL for authentication.
 
 <Tabs>
   <Tab title="Using SDK (Recommended)">
@@ -50,39 +50,34 @@ First, create a WebSocket connection. WebSocket connections require the `Authori
     - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
   </Tab>
   <Tab title="Using Native WebSocket">
-    When using browser native WebSocket or other WebSocket libraries, you need to manually pass authentication information in the request headers:
+    When using browser native WebSocket or other WebSocket libraries, append the `token` parameter to the URL:
 
     ```typescript
-    // Browser native WebSocket does not support custom headers
-    // You need to use a library that supports custom headers, such as ws (Node.js)
-
-    // Node.js example (using ws library)
-    import WebSocket from 'ws';
-
+    // Works in both browser and Node.js
+    const token = 'YOUR_ACCESS_TOKEN';
     const ws = new WebSocket(
-      "wss://realtime-dex.chainstream.io/connection/websocket",
-      {
-        headers: {
-          "Authorization": "Bearer YOUR_ACCESS_TOKEN"
-        }
-      }
+      `wss://realtime-dex.chainstream.io/connection/websocket?token=${token}`
     );
 
-    ws.on('open', () => {
+    ws.onopen = () => {
       console.log('Connection established');
-    });
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('Received data:', data);
+    };
     ```
 
-    <Warning>
-    Browser native `WebSocket` API does not support custom request headers. If you're using a browser environment, we recommend using our JavaScript SDK.
-    </Warning>
+    <Note>
+    By passing the token via URL parameter, both browser native WebSocket and various third-party libraries can be used without special header handling.
+    </Note>
   </Tab>
   <Tab title="Command Line Testing">
     Using `wscat` for testing:
 
     ```bash
-    $ wscat -c wss://realtime-dex.chainstream.io/connection/websocket \
-      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    $ wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
     ```
   </Tab>
 </Tabs>
@@ -1817,51 +1812,45 @@ function reconnect(attempt) {
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
     </Note>
   </Tab>
-  <Tab title="Node.js (ws library)">
+  <Tab title="Native WebSocket">
     ```typescript
-    import WebSocket from 'ws';
-
     class DexWebSocket {
       private ws: WebSocket;
       private reconnectAttempts = 0;
       private maxReconnectAttempts = 5;
-      private messageHandlers = new Map<string, Set<(data: any) => void>>();
       private subscriptions = new Set<string>();
 
       constructor(
-        private url: string,
+        private baseUrl: string,
         private accessToken: string
       ) {
         this.connect();
       }
 
       private connect() {
-        // Pass Authorization in request headers for authentication
-        this.ws = new WebSocket(this.url, {
-          headers: {
-            "Authorization": `Bearer ${this.accessToken}`
-          }
-        });
+        // Append token parameter to URL for authentication
+        const url = `${this.baseUrl}?token=${this.accessToken}`;
+        this.ws = new WebSocket(url);
         
-        this.ws.on('open', () => {
+        this.ws.onopen = () => {
           console.log('WebSocket connection established');
           this.reconnectAttempts = 0;
           // Resubscribe to previous channels
           this.resubscribe();
-        });
+        };
 
-        this.ws.on('message', (data) => {
-          this.handleMessage(JSON.parse(data.toString()));
-        });
+        this.ws.onmessage = (event) => {
+          this.handleMessage(JSON.parse(event.data));
+        };
 
-        this.ws.on('close', () => {
+        this.ws.onclose = () => {
           console.log('WebSocket connection closed');
           this.reconnect();
-        });
+        };
 
-        this.ws.on('error', (error) => {
+        this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
-        });
+        };
       }
 
       private reconnect() {
@@ -1889,14 +1878,14 @@ function reconnect(attempt) {
         }
       }
 
-      public subscribe(channel: string, handler: (data: any) => void) {
+      public subscribe(channel: string) {
         this.subscriptions.add(channel);
-        // Subscription implementation
+        this.send({ type: "subscribe", channel });
       }
 
       public unsubscribe(channel: string) {
         this.subscriptions.delete(channel);
-        // Unsubscribe implementation
+        this.send({ type: "unsubscribe", channel });
       }
     }
 

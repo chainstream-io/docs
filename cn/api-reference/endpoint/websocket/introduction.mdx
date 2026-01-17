@@ -11,30 +11,33 @@ ChainStream 提供 WebSocket 端点用于实时数据流传输，作为 HTTP 请
 
 ## 认证
 
-WebSocket 连接需要通过请求头进行认证，传入 `Authorization` 头，格式为 `Bearer <YOUR_ACCESS_TOKEN>`。
+WebSocket 连接需要在 URL 中通过 `token` 查询参数进行认证，格式为：
+
+```
+wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN
+```
 
 <Note>
-如果你使用的是我们的 **Go SDK** 或 **JavaScript SDK**，SDK 已内置认证支持，无需手动处理请求头。只有在使用原生 WebSocket 库时才需要手动传入认证头。
+如果你使用的是我们的 **Go SDK** 或 **JavaScript SDK**，SDK 已内置认证支持，无需手动处理。只有在使用原生 WebSocket 库或其他第三方库时才需要手动拼接 token 参数。
 </Note>
 
 ## 连接
 
-要连接到 WebSocket API，你需要根据所需的网络建立与相应 URL 的 WebSocket 连接，并在请求头中携带认证信息。连接成功后，你就可以发送订阅消息来接收实时数据更新。
+要连接到 WebSocket API，你需要根据所需的网络建立与相应 URL 的 WebSocket 连接，并在 URL 中携带 token 参数。连接成功后，你就可以发送订阅消息来接收实时数据更新。
 
 ### 命令行示例
 
-使用 `wscat` 测试连接（需要传入 Authorization 头）：
+使用 `wscat` 测试连接：
 
 ```bash
-$ wscat -c wss://realtime-dex.chainstream.io/connection/websocket \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+$ wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
 Connected (press CTRL+C to quit)
 > { "method": "subscribe", "subscription": { "type": "trades", "coin": "SOL" } }
 < {"channel":"subscriptionResponse","data":{"method":"subscribe","subscription":{"type":"trades","coin":"SOL"}}}
 ```
 
 <Warning>
-未提供有效的 `Authorization` 头将导致连接被拒绝或无法接收数据。
+未提供有效的 `token` 参数将导致连接被拒绝或无法接收数据。
 </Warning>
 
 <Note>

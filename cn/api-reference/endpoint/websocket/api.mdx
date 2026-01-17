@@ -22,7 +22,7 @@ wss://realtime-dex.chainstream.io/connection/websocket
 
 ### 1. 建立连接
 
-首先需要创建 WebSocket 连接。WebSocket 连接需要在请求头中传入 `Authorization` 进行认证。
+首先需要创建 WebSocket 连接。WebSocket 连接需要在 URL 中通过 `token` 查询参数进行认证。
 
 <Tabs>
   <Tab title="使用 SDK（推荐）">
@@ -50,39 +50,34 @@ wss://realtime-dex.chainstream.io/connection/websocket
     - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
   </Tab>
   <Tab title="使用原生 WebSocket">
-    使用浏览器原生 WebSocket 或其他 WebSocket 库时，需要手动在请求头中传入认证信息：
+    使用浏览器原生 WebSocket 或其他 WebSocket 库时，需要在 URL 中拼接 `token` 参数：
 
     ```typescript
-    // 浏览器原生 WebSocket 不支持自定义请求头
-    // 需要使用支持自定义头的库，如 ws (Node.js)
-
-    // Node.js 示例 (使用 ws 库)
-    import WebSocket from 'ws';
-
+    // 浏览器或 Node.js 均可使用
+    const token = 'YOUR_ACCESS_TOKEN';
     const ws = new WebSocket(
-      "wss://realtime-dex.chainstream.io/connection/websocket",
-      {
-        headers: {
-          "Authorization": "Bearer YOUR_ACCESS_TOKEN"
-        }
-      }
+      `wss://realtime-dex.chainstream.io/connection/websocket?token=${token}`
     );
 
-    ws.on('open', () => {
+    ws.onopen = () => {
       console.log('连接成功');
-    });
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('收到数据:', data);
+    };
     ```
 
-    <Warning>
-    浏览器原生 `WebSocket` API 不支持自定义请求头。如果在浏览器环境中使用，建议使用我们的 JavaScript SDK。
-    </Warning>
+    <Note>
+    通过 URL 参数传递 token，浏览器原生 WebSocket 和各种第三方库均可使用，无需特殊处理请求头。
+    </Note>
   </Tab>
   <Tab title="命令行测试">
     使用 `wscat` 进行测试：
 
     ```bash
-    $ wscat -c wss://realtime-dex.chainstream.io/connection/websocket \
-      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    $ wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
     ```
   </Tab>
 </Tabs>
@@ -1814,51 +1809,45 @@ function reconnect(attempt) {
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
     </Note>
   </Tab>
-  <Tab title="Node.js (ws 库)">
+  <Tab title="原生 WebSocket">
     ```typescript
-    import WebSocket from 'ws';
-
     class DexWebSocket {
       private ws: WebSocket;
       private reconnectAttempts = 0;
       private maxReconnectAttempts = 5;
-      private messageHandlers = new Map<string, Set<(data: any) => void>>();
       private subscriptions = new Set<string>();
 
       constructor(
-        private url: string,
+        private baseUrl: string,
         private accessToken: string
       ) {
         this.connect();
       }
 
       private connect() {
-        // 在请求头中传入 Authorization 进行认证
-        this.ws = new WebSocket(this.url, {
-          headers: {
-            "Authorization": `Bearer ${this.accessToken}`
-          }
-        });
+        // 在 URL 中拼接 token 参数进行认证
+        const url = `${this.baseUrl}?token=${this.accessToken}`;
+        this.ws = new WebSocket(url);
         
-        this.ws.on('open', () => {
+        this.ws.onopen = () => {
           console.log('WebSocket 连接成功');
           this.reconnectAttempts = 0;
           // 重新订阅之前的频道
           this.resubscribe();
-        });
+        };
 
-        this.ws.on('message', (data) => {
-          this.handleMessage(JSON.parse(data.toString()));
-        });
+        this.ws.onmessage = (event) => {
+          this.handleMessage(JSON.parse(event.data));
+        };
 
-        this.ws.on('close', () => {
+        this.ws.onclose = () => {
           console.log('WebSocket 连接关闭');
           this.reconnect();
-        });
+        };
 
-        this.ws.on('error', (error) => {
+        this.ws.onerror = (error) => {
           console.error('WebSocket 错误:', error);
-        });
+        };
       }
 
       private reconnect() {
@@ -1886,14 +1875,14 @@ function reconnect(attempt) {
         }
       }
 
-      public subscribe(channel: string, handler: (data: any) => void) {
+      public subscribe(channel: string) {
         this.subscriptions.add(channel);
-        // 订阅实现
+        this.send({ type: "subscribe", channel });
       }
 
       public unsubscribe(channel: string) {
         this.subscriptions.delete(channel);
-        // 取消订阅实现
+        this.send({ type: "unsubscribe", channel });
       }
     }
 

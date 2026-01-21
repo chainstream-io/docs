@@ -1627,6 +1627,54 @@
         ]
       }
     },
+    "/v1/token/{chain}/{tokenAddress}": {
+      "get": {
+        "description": "获取代币详情",
+        "operationId": "get.token",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 详情",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/v1/token/{chain}/{tokenAddress}/metadata": {
       "get": {
         "description": "获取代币元数据",
@@ -4079,54 +4127,6 @@
         ]
       }
     },
-    "/v1/token/{chain}/{tokenAddress}": {
-      "get": {
-        "description": "获取代币详情",
-        "operationId": "get.token",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "$ref": "#/components/schemas/ChainSymbol"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": true,
-            "in": "path",
-            "description": "代币地址",
-            "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Token"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "代币 - 详情",
-        "tags": [
-          "Token"
-        ]
-      }
-    },
     "/v1/token/{chain}/dev/{devAddress}/tokens": {
       "get": {
         "description": "获取特定开发者地址创建的所有代币",
@@ -6005,7 +6005,7 @@
     },
     "/v1/kyt/transfer": {
       "post": {
-        "description": "注册转账以进行 KYT（了解您的交易）分析",
+        "description": "注册一笔转账用于 KYT（了解您的交易）分析",
         "operationId": "register.transfer",
         "parameters": [],
         "requestBody": {
@@ -6160,7 +6160,7 @@
     },
     "/v1/kyt/transfers/{transferId}/network-identifications": {
       "get": {
-        "description": "获取转账的网络标识",
+        "description": "获取转账的网络识别信息",
         "operationId": "get.transfer.network.identifications",
         "parameters": [
           {
@@ -6191,7 +6191,7 @@
             "bearer": []
           }
         ],
-        "summary": "KYT - 获取转账网络标识",
+        "summary": "KYT - 获取转账网络识别",
         "tags": [
           "KYT"
         ]
@@ -6471,7 +6471,7 @@
     },
     "/v1/kyt/address": {
       "post": {
-        "description": "注册地址以进行 KYT 监控",
+        "description": "注册一个地址用于 KYT 监控",
         "operationId": "register.address",
         "parameters": [],
         "requestBody": {
@@ -6541,162 +6541,6 @@
           }
         ],
         "summary": "KYT - 获取地址风险",
-        "tags": [
-          "KYT"
-        ]
-      }
-    },
-    "/v1/kyt/transfers": {
-      "get": {
-        "description": "获取组织的 KYT 转账记录分页列表",
-        "operationId": "get.kyt.transfers",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "页码（从 1 开始）",
-            "schema": {
-              "minimum": 1,
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "description": "每页项目数",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KytTransferPage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "KYT - 获取组织转账",
-        "tags": [
-          "KYT"
-        ]
-      }
-    },
-    "/v1/kyt/addresses": {
-      "get": {
-        "description": "获取组织的 KYT 地址记录分页列表",
-        "operationId": "get.kyt.addresses",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "页码（从 1 开始）",
-            "schema": {
-              "minimum": 1,
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "description": "每页项目数",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KytAddressPage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "KYT - 获取组织地址",
-        "tags": [
-          "KYT"
-        ]
-      }
-    },
-    "/v1/kyt/withdrawals": {
-      "get": {
-        "description": "获取组织的 KYT 提现记录分页列表",
-        "operationId": "get.kyt.withdrawals",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "页码（从 1 开始）",
-            "schema": {
-              "minimum": 1,
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "description": "每页项目数",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KytWithdrawalPage"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "KYT - 获取组织提现",
         "tags": [
           "KYT"
         ]
@@ -6800,6 +6644,42 @@
         "tags": [
           "Endpoint"
         ]
+      },
+      "patch": {
+        "description": "更新Webhook端点配置",
+        "operationId": "update.endpoint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEndpointInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "端点 - 更新",
+        "tags": [
+          "Endpoint"
+        ]
       }
     },
     "/v1/webhook/endpoint/{id}": {
@@ -6869,42 +6749,6 @@
           }
         ],
         "summary": "端点 - 删除",
-        "tags": [
-          "Endpoint"
-        ]
-      },
-      "patch": {
-        "description": "更新Webhook端点配置",
-        "operationId": "update.endpoint",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEndpointInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EndpointResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "端点 - 更新",
         "tags": [
           "Endpoint"
         ]
@@ -11675,11 +11519,23 @@
             "type": "number",
             "description": "值",
             "example": 424895.68594
+          },
+          "exposureType": {
+            "type": "string",
+            "description": "暴露类型",
+            "example": "indirect"
+          },
+          "direction": {
+            "type": "string",
+            "description": "方向",
+            "example": "both_directions"
           }
         },
         "required": [
           "category",
-          "value"
+          "value",
+          "exposureType",
+          "direction"
         ]
       },
       "AddressRiskResponseDTO": {
@@ -11751,223 +11607,6 @@
           "exposures",
           "triggers",
           "status"
-        ]
-      },
-      "KytTransferDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "转账记录 ID"
-          },
-          "orgId": {
-            "type": "string",
-            "description": "组织 ID"
-          },
-          "txHash": {
-            "type": "string",
-            "description": "交易哈希"
-          },
-          "externalId": {
-            "type": "string",
-            "description": "外部 ID"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "创建时间戳"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "更新时间戳"
-          }
-        },
-        "required": [
-          "id",
-          "orgId",
-          "txHash",
-          "externalId",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "KytTransferPage": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "number",
-            "description": "项目总数"
-          },
-          "page": {
-            "type": "number",
-            "description": "当前页码"
-          },
-          "pageSize": {
-            "type": "number",
-            "description": "每页项目数"
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "总页数"
-          },
-          "data": {
-            "description": "转账记录列表",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/KytTransferDTO"
-            }
-          }
-        },
-        "required": [
-          "total",
-          "page",
-          "pageSize",
-          "totalPages",
-          "data"
-        ]
-      },
-      "KytAddressDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "地址记录 ID"
-          },
-          "orgId": {
-            "type": "string",
-            "description": "组织 ID"
-          },
-          "address": {
-            "type": "string",
-            "description": "地址"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "创建时间戳"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "更新时间戳"
-          }
-        },
-        "required": [
-          "id",
-          "orgId",
-          "address",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "KytAddressPage": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "number",
-            "description": "项目总数"
-          },
-          "page": {
-            "type": "number",
-            "description": "当前页码"
-          },
-          "pageSize": {
-            "type": "number",
-            "description": "每页项目数"
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "总页数"
-          },
-          "data": {
-            "description": "地址记录列表",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/KytAddressDTO"
-            }
-          }
-        },
-        "required": [
-          "total",
-          "page",
-          "pageSize",
-          "totalPages",
-          "data"
-        ]
-      },
-      "KytWithdrawalDTO": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "提现记录 ID"
-          },
-          "orgId": {
-            "type": "string",
-            "description": "组织 ID"
-          },
-          "address": {
-            "type": "string",
-            "description": "提现地址"
-          },
-          "externalId": {
-            "type": "string",
-            "description": "外部 ID"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "创建时间戳"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "更新时间戳"
-          }
-        },
-        "required": [
-          "id",
-          "orgId",
-          "address",
-          "externalId",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "KytWithdrawalPage": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "number",
-            "description": "项目总数"
-          },
-          "page": {
-            "type": "number",
-            "description": "当前页码"
-          },
-          "pageSize": {
-            "type": "number",
-            "description": "每页项目数"
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "总页数"
-          },
-          "data": {
-            "description": "提现记录列表",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/KytWithdrawalDTO"
-            }
-          }
-        },
-        "required": [
-          "total",
-          "page",
-          "pageSize",
-          "totalPages",
-          "data"
         ]
       },
       "EndpointResponse": {

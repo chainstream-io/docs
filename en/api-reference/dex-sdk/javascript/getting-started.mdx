@@ -13,29 +13,80 @@ yarn add @chainstream-io/sdk
 
 ## Initialization
 
+### Basic Usage
+
 ```javascript
 import { DexClient } from '@chainstream-io/sdk';
 
-// Initialize the client
+// Initialize with a static token
 const client = new DexClient('YOUR_ACCESS_TOKEN');
+```
+
+### Using TokenProvider (Auto Token Refresh)
+
+If your token expires and needs automatic refresh, you can pass a `TokenProvider` object:
+
+```javascript
+import { DexClient } from '@chainstream-io/sdk';
+
+// Define TokenProvider
+const tokenProvider = {
+  getToken: async () => {
+    // Implement your token fetching/refreshing logic here
+    // For example: get from cache, refresh via API if expired
+    const token = await refreshTokenIfNeeded();
+    return token;
+  }
+};
+
+// Initialize with TokenProvider
+const client = new DexClient(tokenProvider);
+```
+
+<Note>
+When using `TokenProvider`, the SDK will call `getToken()` before each request to get the latest token. This is ideal for scenarios requiring automatic token refresh.
+</Note>
+
+### Configuration Options
+
+```javascript
+const client = new DexClient('YOUR_ACCESS_TOKEN', {
+  // Custom API server URL (optional)
+  serverUrl: 'https://api-dex.chainstream.io',
+  // Custom WebSocket server URL (optional)
+  streamUrl: 'wss://realtime-dex.chainstream.io/connection/websocket',
+  // Whether to auto-connect WebSocket on initialization (default: false)
+  autoConnectWebSocket: false
+});
 ```
 
 ## Basic Usage
 
-### Query Token Information
+### API Only (No WebSocket)
+
+If you only need REST API calls without real-time data subscriptions, no extra configuration is needed:
+
 ```javascript
-// Get token details
+const client = new DexClient('YOUR_ACCESS_TOKEN');
+
+// Call API directly
 const tokenInfo = await client.token.getToken({
   chain: 'sol',
   tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'
 });
 ```
 
-### Subscribe to Real-time Data
+### Using WebSocket Real-time Data
+
+If you need WebSocket subscriptions for real-time data:
+
 ```javascript
+import { DexClient } from '@chainstream-io/sdk';
 import { Resolution } from '@chainstream-io/sdk/openapi';
 
-// Subscribe to candle data
+const client = new DexClient('YOUR_ACCESS_TOKEN');
+
+// Just subscribe directly, SDK auto-detects connection status and connects if needed
 const subscription = client.stream.subscribeTokenCandles({
   chain: 'sol',
   tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
@@ -49,11 +100,36 @@ const subscription = client.stream.subscribeTokenCandles({
 subscription.unsubscribe();
 ```
 
-## Configuration Options
+<Note>
+When calling `subscribeXXX` methods, SDK automatically checks WebSocket connection status and establishes connection if not connected. No need to manually call `connect()`.
+</Note>
 
-<ParamField path="accessToken" type="string" required>
-  API access token
-</ParamField>
+**Pre-connection (Optional)**
+
+If you want to pre-establish the WebSocket connection during initialization (e.g., to reduce latency on first subscription), set `autoConnectWebSocket: true`:
+
+```javascript
+const client = new DexClient('YOUR_ACCESS_TOKEN', {
+  autoConnectWebSocket: true  // Establish WebSocket connection immediately on initialization
+});
+```
+
+## Configuration Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `accessToken` | `string \| TokenProvider` | Yes | - | API access token or TokenProvider object |
+| `options.serverUrl` | `string` | No | `https://api-dex.chainstream.io` | API server URL |
+| `options.streamUrl` | `string` | No | `wss://realtime-dex.chainstream.io/connection/websocket` | WebSocket server URL |
+| `options.autoConnectWebSocket` | `boolean` | No | `false` | Whether to auto-connect WebSocket on initialization |
+
+### TokenProvider Interface
+
+```typescript
+interface TokenProvider {
+  getToken(): Promise<string> | string;
+}
+```
 
 ## Next Steps
 

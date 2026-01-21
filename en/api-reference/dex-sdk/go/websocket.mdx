@@ -37,7 +37,9 @@ This document describes the WebSocket subscription methods provided by the Chain
 
 ## Connection Management
 
-### Establish Connection
+When calling `SubscribeXXX` methods, SDK automatically checks WebSocket connection status and establishes connection if not connected. No need to manually call `Connect()`.
+
+If you need to pre-establish the connection (e.g., to reduce latency on first subscription), you can manually call:
 ```go
 err := client.Stream.Connect()
 if err != nil {
@@ -48,17 +50,15 @@ if err != nil {
 All subscription methods return an `Unsubscribe` function that can be used to cancel subscriptions:
 
 ```go
-unsubscribe, err := client.Stream.SubscribeTokenCandles(&api.SubscribeTokenCandlesRequest{
-    Chain:        "sol",
-    TokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-    Resolution:   "1m",
-    Callback: func(candle *api.TokenCandle) {
+unsubscribe := client.Stream.SubscribeTokenCandles(
+    "sol",
+    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    "1m",
+    func(candle api.TokenCandle) {
         log.Printf("New candle: %+v", candle)
     },
-})
-if err != nil {
-    log.Fatal(err)
-}
+    "", // filter (optional)
+)
 
 // Cancel subscription
 unsubscribe()

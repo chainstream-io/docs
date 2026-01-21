@@ -45,20 +45,22 @@ if err != nil {
 
 ### 订阅实时数据
 ```go
-// 订阅K线数据
-unsubscribe, err := client.Stream.SubscribeTokenCandles(&api.SubscribeTokenCandlesRequest{
-    Chain:        "sol",
-    TokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-    Resolution:   "1m",
-    Callback: func(candle *api.TokenCandle) {
+// 直接订阅即可，SDK 会自动检测连接状态并建立连接
+unsubscribe := client.Stream.SubscribeTokenCandles(
+    "sol",
+    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    "1m",
+    func(candle api.TokenCandle) {
         log.Printf("新K线: %+v", candle)
     },
-})
-if err != nil {
-    log.Fatal(err)
-}
+    "", // filter（可选）
+)
 defer unsubscribe()
 ```
+
+<Note>
+调用 `SubscribeXXX` 方法时，SDK 会自动检测 WebSocket 连接状态，如果未连接会自动建立连接，无需手动调用 `Connect()`。
+</Note>
 
 ## 配置选项
 
@@ -76,6 +78,10 @@ defer unsubscribe()
 
 <ParamField path="options.Debug" type="bool">
   启用调试模式
+</ParamField>
+
+<ParamField path="options.AutoConnectWebSocket" type="bool">
+  是否在初始化时自动连接 WebSocket（默认：false）。通常不需要设置，因为订阅方法会自动处理连接。
 </ParamField>
 
 ## 令牌提供者

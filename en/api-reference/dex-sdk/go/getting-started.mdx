@@ -45,20 +45,22 @@ if err != nil {
 
 ### Subscribe to Real-time Data
 ```go
-// Subscribe to candle data
-unsubscribe, err := client.Stream.SubscribeTokenCandles(&api.SubscribeTokenCandlesRequest{
-    Chain:        "sol",
-    TokenAddress: "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
-    Resolution:   "1m",
-    Callback: func(candle *api.TokenCandle) {
+// Just subscribe directly, SDK auto-detects connection status and connects if needed
+unsubscribe := client.Stream.SubscribeTokenCandles(
+    "sol",
+    "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+    "1m",
+    func(candle api.TokenCandle) {
         log.Printf("New candle: %+v", candle)
     },
-})
-if err != nil {
-    log.Fatal(err)
-}
+    "", // filter (optional)
+)
 defer unsubscribe()
 ```
+
+<Note>
+When calling `SubscribeXXX` methods, SDK automatically checks WebSocket connection status and establishes connection if not connected. No need to manually call `Connect()`.
+</Note>
 
 ## Configuration Options
 
@@ -76,6 +78,10 @@ defer unsubscribe()
 
 <ParamField path="options.Debug" type="bool">
   Enable debug mode
+</ParamField>
+
+<ParamField path="options.AutoConnectWebSocket" type="bool">
+  Whether to auto-connect WebSocket on initialization (default: false). Usually not needed as subscription methods handle connection automatically.
 </ParamField>
 
 ## Token Provider

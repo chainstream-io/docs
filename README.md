@@ -35,3 +35,7 @@ Install our Github App to auto propagate changes from your repo to your deployme
 git add . 
 git commit -m "XXXXXXXXXXXX"
 git push -u origin main
+
+
+https://docs.chainstream.io/llms.txt
+https://docs.chainstream.io/robots.txt

@@ -1133,6 +1133,141 @@
         ]
       }
     },
+    "/v1/trade/{chain}/top-traders": {
+      "get": {
+        "description": "获取特定代币的顶级交易者",
+        "operationId": "get.top.traders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "返回顶级交易者的最大数量（最多10个）",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "query",
+            "description": "查询交易的代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeFrame",
+            "required": false,
+            "in": "query",
+            "description": "筛选交易的时间范围",
+            "schema": {
+              "default": "24h",
+              "example": "24h",
+              "enum": [
+                "30m",
+                "1h",
+                "2h",
+                "4h",
+                "6h",
+                "8h",
+                "12h",
+                "24h"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": false,
+            "in": "query",
+            "description": "交易结果的排序类型",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "排序交易的字段",
+            "schema": {
+              "default": "tradeAmount",
+              "example": "tradeAmount",
+              "enum": [
+                "tradeAmount",
+                "tradeCount"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopTradersPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易 - 顶级交易者",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
     "/v1/token/search": {
       "get": {
         "description": "根据条件搜索代币信息",
@@ -1291,7 +1426,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -2291,8 +2427,10 @@
                       "holders": "644128",
                       "priceInSol": "0.05203685764891656364263510306272",
                       "priceInUsd": "8.80319369588594255667492526316047",
-                      "tvlInSol": "2014433.41314589805325129930935218249614969808",
-                      "tvlInUsd": "336266445.59268312743854221899192252205319411642"
+                      "maxPoolTvlInSol": "2014433.41314589805325129930935218249614969808",
+                      "maxPoolTvlInUsd": "336266445.59268312743854221899192252205319411642",
+                      "totalTvlInSol": "2514433.41314589805325129930935218249614969808",
+                      "totalTvlInUsd": "420266445.59268312743854221899192252205319411642"
                     },
                     "So11111111111111111111111111111111111111112": {
                       "totalSupply": "10044681215.881224",
@@ -2305,8 +2443,10 @@
                       "holders": "23368703",
                       "priceInSol": "1",
                       "priceInUsd": "168.0129741841079",
-                      "tvlInSol": "105112644905171226.33289713966106176370214271404616575084385744793118",
-                      "tvlInUsd": "105112687635577198.33605721153961742088001836659648515085724677733850"
+                      "maxPoolTvlInSol": "105112644905171226.33289713966106176370214271404616575084385744793118",
+                      "maxPoolTvlInUsd": "105112687635577198.33605721153961742088001836659648515085724677733850",
+                      "totalTvlInSol": "115112644905171226.33289713966106176370214271404616575084385744793118",
+                      "totalTvlInUsd": "115112687635577198.33605721153961742088001836659648515085724677733850"
                     }
                   }
                 }
@@ -4069,6 +4209,86 @@
         ]
       }
     },
+    "/v1/token/{chain}/{tokenAddress}/liquiditySnapshots": {
+      "get": {
+        "description": "获取代币的历史流动性快照。如果提供了时间参数，则返回该时间之前或该时间点的最近快照。",
+        "operationId": "get.token.liquidity.snapshots",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "快照查询的目标 Unix 时间戳（秒）。返回该时间之前或该时间点的最近快照。",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "游标",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenLiquiditySnapshotPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 流动性快照",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/v1/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "获取特定 DEX 资金池的详细信息",
@@ -4112,6 +4332,86 @@
           }
         ],
         "summary": "DEX 资金池 - 详情",
+        "tags": [
+          "DexPool"
+        ]
+      }
+    },
+    "/v1/dexpools/{chain}/{poolAddress}/snapshots": {
+      "get": {
+        "description": "获取特定资金池的历史流动性快照。如果提供了时间参数，则返回该时间之前或该时间点的最近快照。",
+        "operationId": "get.dexpool.snapshots",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": true,
+            "in": "path",
+            "description": "资金池地址",
+            "schema": {
+              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "快照查询的目标 Unix 时间戳（秒）。返回该时间之前或该时间点的最近快照。",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "游标",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DexPoolSnapshotPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "DEX 资金池 - 流动性快照",
         "tags": [
           "DexPool"
         ]
@@ -4162,7 +4462,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4350,7 +4651,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4538,7 +4840,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4726,7 +5029,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4914,7 +5218,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -7811,6 +8116,125 @@
           "data"
         ]
       },
+      "TopTradersDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "顶级交易者查询的代币地址",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "交易者钱包地址",
+            "example": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w"
+          },
+          "tradeCount": {
+            "type": "integer",
+            "description": "总交易次数",
+            "example": 100,
+            "format": "int64"
+          },
+          "tradeAmount": {
+            "type": "string",
+            "description": "总交易金额",
+            "example": "1000000"
+          },
+          "buyCount": {
+            "type": "integer",
+            "description": "买入交易次数",
+            "example": 60,
+            "format": "int64"
+          },
+          "buyAmount": {
+            "type": "string",
+            "description": "总买入金额",
+            "example": "600000"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "总买入金额（美元）",
+            "example": "12000.50"
+          },
+          "buyAmountInNative": {
+            "type": "string",
+            "description": "总买入金额（原生代币）",
+            "example": "100.5"
+          },
+          "sellCount": {
+            "type": "integer",
+            "description": "卖出交易次数",
+            "example": 40,
+            "format": "int64"
+          },
+          "sellAmount": {
+            "type": "string",
+            "description": "总卖出金额",
+            "example": "400000"
+          },
+          "sellAmountInUsd": {
+            "type": "string",
+            "description": "总卖出金额（美元）",
+            "example": "8000.30"
+          },
+          "sellAmountInNative": {
+            "type": "string",
+            "description": "总卖出金额（原生代币）",
+            "example": "66.8"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "walletAddress",
+          "tradeCount",
+          "tradeAmount",
+          "buyCount",
+          "buyAmount",
+          "buyAmountInUsd",
+          "buyAmountInNative",
+          "sellCount",
+          "sellAmount",
+          "sellAmountInUsd",
+          "sellAmountInNative"
+        ]
+      },
+      "TopTradersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "number",
+            "description": "总项目数"
+          },
+          "data": {
+            "description": "顶级交易者数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTradersDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenCreatorsDTO": {
         "type": "object",
         "properties": {
@@ -8736,6 +9160,55 @@
           "trades24h"
         ]
       },
+      "DexPoolTokenLiquidity": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenDecimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 6
+          },
+          "vaultAmount": {
+            "type": "string",
+            "description": "原始金库数量（无小数）",
+            "example": "1000000000000"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "description": "流动性价值（美元）",
+            "example": "1000000.45"
+          },
+          "amountInNative": {
+            "type": "string",
+            "description": "流动性价值（原生代币，如 SOL）",
+            "example": "5000.123"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "代币美元价格",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "代币原生代币价格",
+            "example": "0.005"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "tokenDecimals",
+          "vaultAmount",
+          "amountInUsd",
+          "amountInNative",
+          "priceUsd",
+          "priceNative"
+        ]
+      },
       "DexPoolDTO": {
         "type": "object",
         "properties": {
@@ -8788,6 +9261,77 @@
             "type": "string",
             "description": "总流动性价值(单位:SOL)",
             "example": "1000000.45"
+          },
+          "type": {
+            "type": "number",
+            "description": "池类型（0=未知，1=标准，2=集中，3=加权，4=稳定）",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "version": {
+            "type": "number",
+            "description": "池版本（0=未知，1=V1，2=V2，3=V3/CLMM）",
+            "example": 2,
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "liquidityModel": {
+            "type": "number",
+            "description": "流动性模型（0=未知，1=基于储备，2=基于仓位，3=虚拟，4=共享）",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "feeRate": {
+            "type": "string",
+            "description": "池费率（例如 0.003 表示 0.3%）",
+            "example": "0.003"
+          },
+          "tickSpacing": {
+            "type": "integer",
+            "description": "集中流动性池的 tick 间距",
+            "example": 64
+          },
+          "tokenCount": {
+            "type": "integer",
+            "description": "池中代币数量",
+            "example": 2
+          },
+          "createdBlockTimestamp": {
+            "type": "string",
+            "description": "池创建时的区块时间戳",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "tokenALiquidity": {
+            "description": "第一个代币流动性详情",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
+          },
+          "tokenBLiquidity": {
+            "description": "第二个代币流动性详情",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
           }
         },
         "required": [
@@ -8850,14 +9394,24 @@
             "description": "代币价格(单位:USD)",
             "example": "0.00000261383847574915906643405542"
           },
-          "tvlInSol": {
+          "maxPoolTvlInSol": {
             "type": "string",
-            "description": "总流动性价值(单位:SOL)",
+            "description": "最大池的 TVL（SOL）",
             "example": "0.00000261383847574915906643405542"
           },
-          "tvlInUsd": {
+          "maxPoolTvlInUsd": {
             "type": "string",
-            "description": "总流动性价值(单位:USD)",
+            "description": "最大池的 TVL（美元）",
+            "example": "0.00000261383847574915906643405542"
+          },
+          "totalTvlInSol": {
+            "type": "string",
+            "description": "所有池的总 TVL（SOL）",
+            "example": "0.00000261383847574915906643405542"
+          },
+          "totalTvlInUsd": {
+            "type": "string",
+            "description": "所有池的总 TVL（美元）",
             "example": "0.00000261383847574915906643405542"
           },
           "completionRatio": {
@@ -9016,7 +9570,8 @@
           "marketCapInUsd",
           "holders",
           "priceInUsd",
-          "tvlInUsd"
+          "totalTvlInSol",
+          "totalTvlInUsd"
         ]
       },
       "Token": {
@@ -9212,7 +9767,8 @@
               "stats.priceChangeRatioInUsd4h",
               "stats.priceChangeRatioInUsd24h",
               "marketData.marketCapInUsd",
-              "marketData.tvlInUsd",
+              "marketData.maxPoolTvlInUsd",
+              "marketData.totalTvlInUsd",
               "marketData.top10TotalHoldings",
               "marketData.top10HoldingsRatio",
               "marketData.top100TotalHoldings",
@@ -9814,6 +10370,264 @@
         },
         "required": [
           "address"
+        ]
+      },
+      "TokenLiquiditySnapshotDTO": {
+        "type": "object",
+        "properties": {
+          "snapshotTime": {
+            "type": "integer",
+            "description": "实际快照 Unix 时间戳（秒）",
+            "example": 1705312800,
+            "format": "int64"
+          },
+          "maxLiquidityPoolAddress": {
+            "type": "string",
+            "description": "最大流动性池地址",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "maxLiquidityInUsd": {
+            "type": "string",
+            "description": "单个池最大流动性（美元）",
+            "example": "1000000.45"
+          },
+          "maxLiquidityInNative": {
+            "type": "string",
+            "description": "单个池最大流动性（原生代币）",
+            "example": "5000.123"
+          },
+          "totalLiquidityInUsd": {
+            "type": "string",
+            "description": "所有池总流动性（美元）",
+            "example": "2000000.90"
+          },
+          "totalLiquidityInNative": {
+            "type": "string",
+            "description": "所有池总流动性（原生代币）",
+            "example": "10000.246"
+          },
+          "poolCount": {
+            "type": "integer",
+            "description": "该代币的池数量",
+            "example": 5
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "快照时的代币美元价格",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "快照时的代币原生代币价格",
+            "example": "0.005"
+          },
+          "calculatedAt": {
+            "type": "integer",
+            "description": "流动性计算的 Unix 时间戳（秒）",
+            "example": 1705312800,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "snapshotTime",
+          "maxLiquidityPoolAddress",
+          "maxLiquidityInUsd",
+          "maxLiquidityInNative",
+          "totalLiquidityInUsd",
+          "totalLiquidityInNative",
+          "poolCount",
+          "priceUsd",
+          "priceNative",
+          "calculatedAt"
+        ]
+      },
+      "TokenLiquiditySnapshotPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenLiquiditySnapshotDTO"
+            }
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          }
+        },
+        "required": [
+          "data",
+          "hasNext",
+          "hasPrev"
+        ]
+      },
+      "DexPoolTokenSnapshotDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenDecimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 6
+          },
+          "vaultAmount": {
+            "type": "string",
+            "description": "原始金库数量（无小数）",
+            "example": "1000000000000"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "description": "流动性价值（美元）",
+            "example": "1000000.45"
+          },
+          "amountInNative": {
+            "type": "string",
+            "description": "流动性价值（原生代币，如 SOL）",
+            "example": "5000.123"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "代币美元价格",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "代币原生代币价格",
+            "example": "0.005"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "tokenDecimals",
+          "vaultAmount",
+          "amountInUsd",
+          "amountInNative",
+          "priceUsd",
+          "priceNative"
+        ]
+      },
+      "DexPoolSnapshotDTO": {
+        "type": "object",
+        "properties": {
+          "poolAddress": {
+            "type": "string",
+            "description": "资金池地址",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "snapshotTime": {
+            "type": "integer",
+            "description": "实际快照 Unix 时间戳（秒）",
+            "example": 1705312800,
+            "format": "int64"
+          },
+          "tvlInUsd": {
+            "type": "string",
+            "description": "总流动性价值(单位:USD)",
+            "example": "1000000.45"
+          },
+          "tvlInNative": {
+            "type": "string",
+            "description": "总流动性价值(单位:SOL)",
+            "example": "5000.123"
+          },
+          "tokenA": {
+            "description": "第一个代币快照数据",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenSnapshotDTO"
+              }
+            ]
+          },
+          "tokenB": {
+            "description": "第二个代币快照数据",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenSnapshotDTO"
+              }
+            ]
+          },
+          "blockHeight": {
+            "type": "integer",
+            "description": "快照时的区块高度",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockSlot": {
+            "type": "integer",
+            "description": "快照时的区块槽位（仅 Solana）",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "description": "快照时的区块 Unix 时间戳（秒）",
+            "example": 1705312800,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "poolAddress",
+          "snapshotTime",
+          "tvlInUsd",
+          "tvlInNative",
+          "tokenA",
+          "tokenB",
+          "blockHeight",
+          "blockTimestamp"
+        ]
+      },
+      "DexPoolSnapshotPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexPoolSnapshotDTO"
+            }
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          }
+        },
+        "required": [
+          "data",
+          "hasNext",
+          "hasPrev"
         ]
       },
       "WalletPnlDTO": {

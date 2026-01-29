@@ -1133,6 +1133,141 @@
         ]
       }
     },
+    "/v1/trade/{chain}/top-traders": {
+      "get": {
+        "description": "Get top traders for a specific token",
+        "operationId": "get.top.traders",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of top traders to return (max 10)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "query",
+            "description": "Token address to query trades",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeFrame",
+            "required": false,
+            "in": "query",
+            "description": "Time frame for filtering trades",
+            "schema": {
+              "default": "24h",
+              "example": "24h",
+              "enum": [
+                "30m",
+                "1h",
+                "2h",
+                "4h",
+                "6h",
+                "8h",
+                "12h",
+                "24h"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": false,
+            "in": "query",
+            "description": "Sort type for trade results",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort trades by",
+            "schema": {
+              "default": "tradeAmount",
+              "example": "tradeAmount",
+              "enum": [
+                "tradeAmount",
+                "tradeCount"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopTradersPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trade - Top Traders",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
     "/v1/token/search": {
       "get": {
         "description": "Search token information by criteria",
@@ -1291,7 +1426,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -2291,8 +2427,10 @@
                       "holders": "644128",
                       "priceInSol": "0.05203685764891656364263510306272",
                       "priceInUsd": "8.80319369588594255667492526316047",
-                      "tvlInSol": "2014433.41314589805325129930935218249614969808",
-                      "tvlInUsd": "336266445.59268312743854221899192252205319411642"
+                      "maxPoolTvlInSol": "2014433.41314589805325129930935218249614969808",
+                      "maxPoolTvlInUsd": "336266445.59268312743854221899192252205319411642",
+                      "totalTvlInSol": "2514433.41314589805325129930935218249614969808",
+                      "totalTvlInUsd": "420266445.59268312743854221899192252205319411642"
                     },
                     "So11111111111111111111111111111111111111112": {
                       "totalSupply": "10044681215.881224",
@@ -2305,8 +2443,10 @@
                       "holders": "23368703",
                       "priceInSol": "1",
                       "priceInUsd": "168.0129741841079",
-                      "tvlInSol": "105112644905171226.33289713966106176370214271404616575084385744793118",
-                      "tvlInUsd": "105112687635577198.33605721153961742088001836659648515085724677733850"
+                      "maxPoolTvlInSol": "105112644905171226.33289713966106176370214271404616575084385744793118",
+                      "maxPoolTvlInUsd": "105112687635577198.33605721153961742088001836659648515085724677733850",
+                      "totalTvlInSol": "115112644905171226.33289713966106176370214271404616575084385744793118",
+                      "totalTvlInUsd": "115112687635577198.33605721153961742088001836659648515085724677733850"
                     }
                   }
                 }
@@ -4069,6 +4209,86 @@
         ]
       }
     },
+    "/v1/token/{chain}/{tokenAddress}/liquiditySnapshots": {
+      "get": {
+        "description": "Retrieve historical liquidity snapshots for a token. If a time parameter is provided, returns the nearest snapshot before or at that time.",
+        "operationId": "get.token.liquidity.snapshots",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a token",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "Target Unix timestamp (seconds) for snapshot query. Returns the nearest snapshot before or at this time.",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenLiquiditySnapshotPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - Liquidity Snapshots",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
     "/v1/dexpools/{chain}/{poolAddress}": {
       "get": {
         "description": "Retrieve detailed information about a specific DEX pool",
@@ -4112,6 +4332,86 @@
           }
         ],
         "summary": "DexPool - Detail",
+        "tags": [
+          "DexPool"
+        ]
+      }
+    },
+    "/v1/dexpools/{chain}/{poolAddress}/snapshots": {
+      "get": {
+        "description": "Retrieve historical liquidity snapshots for a specific pool. If a time parameter is provided, returns the nearest snapshot before or at that time.",
+        "operationId": "get.dexpool.snapshots",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": true,
+            "in": "path",
+            "description": "A pool address",
+            "schema": {
+              "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "Target Unix timestamp (seconds) for snapshot query. Returns the nearest snapshot before or at this time.",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DexPoolSnapshotPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "DexPool - Liquidity Snapshots",
         "tags": [
           "DexPool"
         ]
@@ -4162,7 +4462,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4350,7 +4651,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4538,7 +4840,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4726,7 +5029,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -4914,7 +5218,8 @@
                 "stats.priceChangeRatioInUsd4h",
                 "stats.priceChangeRatioInUsd24h",
                 "marketData.marketCapInUsd",
-                "marketData.tvlInUsd",
+                "marketData.maxPoolTvlInUsd",
+                "marketData.totalTvlInUsd",
                 "marketData.top10TotalHoldings",
                 "marketData.top10HoldingsRatio",
                 "marketData.top100TotalHoldings",
@@ -7811,6 +8116,125 @@
           "data"
         ]
       },
+      "TopTradersDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token address for top traders query",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address of the trader",
+            "example": "3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w"
+          },
+          "tradeCount": {
+            "type": "integer",
+            "description": "Total number of trades",
+            "example": 100,
+            "format": "int64"
+          },
+          "tradeAmount": {
+            "type": "string",
+            "description": "Total trade amount",
+            "example": "1000000"
+          },
+          "buyCount": {
+            "type": "integer",
+            "description": "Number of buy trades",
+            "example": 60,
+            "format": "int64"
+          },
+          "buyAmount": {
+            "type": "string",
+            "description": "Total buy amount",
+            "example": "600000"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "Total buy amount in USD",
+            "example": "12000.50"
+          },
+          "buyAmountInNative": {
+            "type": "string",
+            "description": "Total buy amount in native token",
+            "example": "100.5"
+          },
+          "sellCount": {
+            "type": "integer",
+            "description": "Number of sell trades",
+            "example": 40,
+            "format": "int64"
+          },
+          "sellAmount": {
+            "type": "string",
+            "description": "Total sell amount",
+            "example": "400000"
+          },
+          "sellAmountInUsd": {
+            "type": "string",
+            "description": "Total sell amount in USD",
+            "example": "8000.30"
+          },
+          "sellAmountInNative": {
+            "type": "string",
+            "description": "Total sell amount in native token",
+            "example": "66.8"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "walletAddress",
+          "tradeCount",
+          "tradeAmount",
+          "buyCount",
+          "buyAmount",
+          "buyAmountInUsd",
+          "buyAmountInNative",
+          "sellCount",
+          "sellAmount",
+          "sellAmountInUsd",
+          "sellAmountInNative"
+        ]
+      },
+      "TopTradersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "number",
+            "description": "Total number of items"
+          },
+          "data": {
+            "description": "Array of top traders data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTradersDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenCreatorsDTO": {
         "type": "object",
         "properties": {
@@ -8736,6 +9160,55 @@
           "trades24h"
         ]
       },
+      "DexPoolTokenLiquidity": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenDecimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 6
+          },
+          "vaultAmount": {
+            "type": "string",
+            "description": "Raw vault amount (without decimals)",
+            "example": "1000000000000"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "description": "Liquidity value in USD",
+            "example": "1000000.45"
+          },
+          "amountInNative": {
+            "type": "string",
+            "description": "Liquidity value in native token (e.g., SOL)",
+            "example": "5000.123"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "Token price in USD",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "Token price in native token",
+            "example": "0.005"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "tokenDecimals",
+          "vaultAmount",
+          "amountInUsd",
+          "amountInNative",
+          "priceUsd",
+          "priceNative"
+        ]
+      },
       "DexPoolDTO": {
         "type": "object",
         "properties": {
@@ -8788,6 +9261,77 @@
             "type": "string",
             "description": "TVL in SOL",
             "example": "1000000.45"
+          },
+          "type": {
+            "type": "number",
+            "description": "Pool type (0=unknown, 1=standard, 2=concentrated, 3=weighted, 4=stable)",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "version": {
+            "type": "number",
+            "description": "Pool version (0=unknown, 1=V1, 2=V2, 3=V3/CLMM)",
+            "example": 2,
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "liquidityModel": {
+            "type": "number",
+            "description": "Liquidity model (0=unknown, 1=reserve_based, 2=position_based, 3=virtual, 4=shared)",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "feeRate": {
+            "type": "string",
+            "description": "Pool fee rate (e.g., 0.003 for 0.3%)",
+            "example": "0.003"
+          },
+          "tickSpacing": {
+            "type": "integer",
+            "description": "Tick spacing for concentrated liquidity pools",
+            "example": 64
+          },
+          "tokenCount": {
+            "type": "integer",
+            "description": "Number of tokens in pool",
+            "example": 2
+          },
+          "createdBlockTimestamp": {
+            "type": "string",
+            "description": "Block timestamp when pool was created",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "tokenALiquidity": {
+            "description": "First token liquidity details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
+          },
+          "tokenBLiquidity": {
+            "description": "Second token liquidity details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
           }
         },
         "required": [
@@ -8850,14 +9394,24 @@
             "description": "Price in USD",
             "example": "0.00000261383847574915906643405542"
           },
-          "tvlInSol": {
+          "maxPoolTvlInSol": {
             "type": "string",
-            "description": "TVL in SOL",
+            "description": "TVL of the largest pool in SOL",
             "example": "0.00000261383847574915906643405542"
           },
-          "tvlInUsd": {
+          "maxPoolTvlInUsd": {
             "type": "string",
-            "description": "TVL in USD",
+            "description": "TVL of the largest pool in USD",
+            "example": "0.00000261383847574915906643405542"
+          },
+          "totalTvlInSol": {
+            "type": "string",
+            "description": "Total TVL across all pools in SOL",
+            "example": "0.00000261383847574915906643405542"
+          },
+          "totalTvlInUsd": {
+            "type": "string",
+            "description": "Total TVL across all pools in USD",
             "example": "0.00000261383847574915906643405542"
           },
           "completionRatio": {
@@ -9016,7 +9570,8 @@
           "marketCapInUsd",
           "holders",
           "priceInUsd",
-          "tvlInUsd"
+          "totalTvlInSol",
+          "totalTvlInUsd"
         ]
       },
       "Token": {
@@ -9212,7 +9767,8 @@
               "stats.priceChangeRatioInUsd4h",
               "stats.priceChangeRatioInUsd24h",
               "marketData.marketCapInUsd",
-              "marketData.tvlInUsd",
+              "marketData.maxPoolTvlInUsd",
+              "marketData.totalTvlInUsd",
               "marketData.top10TotalHoldings",
               "marketData.top10HoldingsRatio",
               "marketData.top100TotalHoldings",
@@ -9814,6 +10370,264 @@
         },
         "required": [
           "address"
+        ]
+      },
+      "TokenLiquiditySnapshotDTO": {
+        "type": "object",
+        "properties": {
+          "snapshotTime": {
+            "type": "integer",
+            "description": "Actual snapshot Unix timestamp (seconds)",
+            "example": 1705312800,
+            "format": "int64"
+          },
+          "maxLiquidityPoolAddress": {
+            "type": "string",
+            "description": "Pool address with maximum liquidity",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "maxLiquidityInUsd": {
+            "type": "string",
+            "description": "Maximum single pool liquidity in USD",
+            "example": "1000000.45"
+          },
+          "maxLiquidityInNative": {
+            "type": "string",
+            "description": "Maximum single pool liquidity in native token",
+            "example": "5000.123"
+          },
+          "totalLiquidityInUsd": {
+            "type": "string",
+            "description": "Total liquidity across all pools in USD",
+            "example": "2000000.90"
+          },
+          "totalLiquidityInNative": {
+            "type": "string",
+            "description": "Total liquidity across all pools in native token",
+            "example": "10000.246"
+          },
+          "poolCount": {
+            "type": "integer",
+            "description": "Number of pools for this token",
+            "example": 5
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "Token price in USD at snapshot time",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "Token price in native token at snapshot time",
+            "example": "0.005"
+          },
+          "calculatedAt": {
+            "type": "integer",
+            "description": "Unix timestamp when liquidity was calculated (seconds)",
+            "example": 1705312800,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "snapshotTime",
+          "maxLiquidityPoolAddress",
+          "maxLiquidityInUsd",
+          "maxLiquidityInNative",
+          "totalLiquidityInUsd",
+          "totalLiquidityInNative",
+          "poolCount",
+          "priceUsd",
+          "priceNative",
+          "calculatedAt"
+        ]
+      },
+      "TokenLiquiditySnapshotPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenLiquiditySnapshotDTO"
+            }
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          }
+        },
+        "required": [
+          "data",
+          "hasNext",
+          "hasPrev"
+        ]
+      },
+      "DexPoolTokenSnapshotDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenDecimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 6
+          },
+          "vaultAmount": {
+            "type": "string",
+            "description": "Raw vault amount (without decimals)",
+            "example": "1000000000000"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "description": "Liquidity value in USD",
+            "example": "1000000.45"
+          },
+          "amountInNative": {
+            "type": "string",
+            "description": "Liquidity value in native token (e.g., SOL)",
+            "example": "5000.123"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "Token price in USD",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "Token price in native token",
+            "example": "0.005"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "tokenDecimals",
+          "vaultAmount",
+          "amountInUsd",
+          "amountInNative",
+          "priceUsd",
+          "priceNative"
+        ]
+      },
+      "DexPoolSnapshotDTO": {
+        "type": "object",
+        "properties": {
+          "poolAddress": {
+            "type": "string",
+            "description": "Pool address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "snapshotTime": {
+            "type": "integer",
+            "description": "Actual snapshot Unix timestamp (seconds)",
+            "example": 1705312800,
+            "format": "int64"
+          },
+          "tvlInUsd": {
+            "type": "string",
+            "description": "Total value locked in USD",
+            "example": "1000000.45"
+          },
+          "tvlInNative": {
+            "type": "string",
+            "description": "TVL in SOL",
+            "example": "5000.123"
+          },
+          "tokenA": {
+            "description": "First token snapshot data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenSnapshotDTO"
+              }
+            ]
+          },
+          "tokenB": {
+            "description": "Second token snapshot data",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenSnapshotDTO"
+              }
+            ]
+          },
+          "blockHeight": {
+            "type": "integer",
+            "description": "Block height at snapshot time",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockSlot": {
+            "type": "integer",
+            "description": "Block slot at snapshot time (Solana only)",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "description": "Block Unix timestamp at snapshot time (seconds)",
+            "example": 1705312800,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "poolAddress",
+          "snapshotTime",
+          "tvlInUsd",
+          "tvlInNative",
+          "tokenA",
+          "tokenB",
+          "blockHeight",
+          "blockTimestamp"
+        ]
+      },
+      "DexPoolSnapshotPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexPoolSnapshotDTO"
+            }
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          }
+        },
+        "required": [
+          "data",
+          "hasNext",
+          "hasPrev"
         ]
       },
       "WalletPnlDTO": {

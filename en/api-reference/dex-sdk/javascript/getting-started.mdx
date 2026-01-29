@@ -16,10 +16,10 @@ yarn add @chainstream-io/sdk
 ### Basic Usage
 
 ```javascript
-import { DexClient } from '@chainstream-io/sdk';
+import { ChainStreamClient } from '@chainstream-io/sdk';
 
 // Initialize with a static token
-const client = new DexClient('YOUR_ACCESS_TOKEN');
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 ```
 
 ### Using TokenProvider (Auto Token Refresh)
@@ -27,7 +27,7 @@ const client = new DexClient('YOUR_ACCESS_TOKEN');
 If your token expires and needs automatic refresh, you can pass a `TokenProvider` object:
 
 ```javascript
-import { DexClient } from '@chainstream-io/sdk';
+import { ChainStreamClient } from '@chainstream-io/sdk';
 
 // Define TokenProvider
 const tokenProvider = {
@@ -40,7 +40,7 @@ const tokenProvider = {
 };
 
 // Initialize with TokenProvider
-const client = new DexClient(tokenProvider);
+const client = new ChainStreamClient(tokenProvider);
 ```
 
 <Note>
@@ -50,7 +50,7 @@ When using `TokenProvider`, the SDK will call `getToken()` before each request t
 ### Configuration Options
 
 ```javascript
-const client = new DexClient('YOUR_ACCESS_TOKEN', {
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN', {
   // Custom API server URL (optional)
   serverUrl: 'https://api-dex.chainstream.io',
   // Custom WebSocket server URL (optional)
@@ -67,7 +67,7 @@ const client = new DexClient('YOUR_ACCESS_TOKEN', {
 If you only need REST API calls without real-time data subscriptions, no extra configuration is needed:
 
 ```javascript
-const client = new DexClient('YOUR_ACCESS_TOKEN');
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
 // Call API directly
 const tokenInfo = await client.token.getToken({
@@ -81,10 +81,10 @@ const tokenInfo = await client.token.getToken({
 If you need WebSocket subscriptions for real-time data:
 
 ```javascript
-import { DexClient } from '@chainstream-io/sdk';
+import { ChainStreamClient } from '@chainstream-io/sdk';
 import { Resolution } from '@chainstream-io/sdk/openapi';
 
-const client = new DexClient('YOUR_ACCESS_TOKEN');
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
 // Just subscribe directly, SDK auto-detects connection status and connects if needed
 const subscription = client.stream.subscribeTokenCandles({
@@ -109,7 +109,7 @@ When calling `subscribeXXX` methods, SDK automatically checks WebSocket connecti
 If you want to pre-establish the WebSocket connection during initialization (e.g., to reduce latency on first subscription), set `autoConnectWebSocket: true`:
 
 ```javascript
-const client = new DexClient('YOUR_ACCESS_TOKEN', {
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN', {
   autoConnectWebSocket: true  // Establish WebSocket connection immediately on initialization
 });
 ```

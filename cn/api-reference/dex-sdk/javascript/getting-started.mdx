@@ -16,10 +16,10 @@ yarn add @chainstream-io/sdk
 ### 基础用法
 
 ```javascript
-import { DexClient } from '@chainstream-io/sdk';
+import { ChainStreamClient } from '@chainstream-io/sdk';
 
 // 使用静态 token 初始化客户端
-const client = new DexClient('YOUR_ACCESS_TOKEN');
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 ```
 
 ### 使用 TokenProvider（支持自动刷新 Token）
@@ -27,7 +27,7 @@ const client = new DexClient('YOUR_ACCESS_TOKEN');
 如果你的 token 会过期并需要自动刷新，可以传入一个 `TokenProvider` 对象：
 
 ```javascript
-import { DexClient } from '@chainstream-io/sdk';
+import { ChainStreamClient } from '@chainstream-io/sdk';
 
 // 定义 TokenProvider
 const tokenProvider = {
@@ -40,7 +40,7 @@ const tokenProvider = {
 };
 
 // 使用 TokenProvider 初始化
-const client = new DexClient(tokenProvider);
+const client = new ChainStreamClient(tokenProvider);
 ```
 
 <Note>
@@ -50,7 +50,7 @@ const client = new DexClient(tokenProvider);
 ### 配置选项
 
 ```javascript
-const client = new DexClient('YOUR_ACCESS_TOKEN', {
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN', {
   // 自定义 API 服务器地址（可选）
   serverUrl: 'https://api-dex.chainstream.io',
   // 自定义 WebSocket 服务器地址（可选）
@@ -67,7 +67,7 @@ const client = new DexClient('YOUR_ACCESS_TOKEN', {
 如果你只需要调用 REST API 而不需要实时数据订阅，无需任何额外配置：
 
 ```javascript
-const client = new DexClient('YOUR_ACCESS_TOKEN');
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
 // 直接调用 API
 const tokenInfo = await client.token.getToken({
@@ -81,10 +81,10 @@ const tokenInfo = await client.token.getToken({
 如果需要使用 WebSocket 订阅实时数据：
 
 ```javascript
-import { DexClient } from '@chainstream-io/sdk';
+import { ChainStreamClient } from '@chainstream-io/sdk';
 import { Resolution } from '@chainstream-io/sdk/openapi';
 
-const client = new DexClient('YOUR_ACCESS_TOKEN');
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
 // 直接订阅即可，SDK 会自动检测连接状态并建立连接
 const subscription = client.stream.subscribeTokenCandles({
@@ -109,7 +109,7 @@ subscription.unsubscribe();
 如果需要在初始化时就预先建立 WebSocket 连接（例如减少首次订阅的延迟），可以设置 `autoConnectWebSocket: true`：
 
 ```javascript
-const client = new DexClient('YOUR_ACCESS_TOKEN', {
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN', {
   autoConnectWebSocket: true  // 初始化时立即建立 WebSocket 连接
 });
 ```

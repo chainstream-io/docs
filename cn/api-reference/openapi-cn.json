@@ -189,15 +189,8 @@
             "schema": {
               "example": {
                 "SOLANA": "sol",
-                "BASE": "base",
                 "BSC": "bsc",
-                "POLYGON": "polygon",
-                "ARBITRUM": "arbitrum",
-                "OPTIMISM": "optimism",
-                "AVALANCHE": "avalanche",
-                "ETHEREUM": "eth",
-                "ZKSYNC": "zksync",
-                "SUI": "sui"
+                "ETHEREUM": "eth"
               },
               "type": "string"
             }
@@ -249,14 +242,8 @@
             "description": "支持网络中列出的区块链名称",
             "schema": {
               "enum": [
-                "base",
                 "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "eth",
-                "zksync"
+                "eth"
               ],
               "type": "string"
             }
@@ -297,14 +284,8 @@
             "description": "支持网络中列出的区块链名称",
             "schema": {
               "enum": [
-                "base",
                 "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "eth",
-                "zksync"
+                "eth"
               ],
               "type": "string"
             }
@@ -655,7 +636,7 @@
         ]
       }
     },
-    "/v1/solana/moonshot/create": {
+    "/v1/sol/moonshot/create": {
       "post": {
         "description": "使用Moonshot协议在Solana上创建新代币",
         "operationId": "moonshot.create.token",
@@ -690,11 +671,11 @@
         ],
         "summary": "Moonshot - 创建代币",
         "tags": [
-          "Defi/solana/Moonshot"
+          "Defi/sol/Moonshot"
         ]
       }
     },
-    "/v1/solana/moonshot/submitCreateToken": {
+    "/v1/sol/moonshot/submitCreateToken": {
       "post": {
         "description": "提交已签名的代币创建交易以完成Moonshot代币创建",
         "operationId": "moonshot.submit.create.token",
@@ -741,11 +722,11 @@
         ],
         "summary": "Moonshot - 提交创建代币",
         "tags": [
-          "Defi/solana/Moonshot"
+          "Defi/sol/Moonshot"
         ]
       }
     },
-    "/v1/solana/pumpfun/create": {
+    "/v1/sol/pumpfun/create": {
       "post": {
         "description": "使用PumpFun协议创建新代币",
         "operationId": "pumpfun.create.token",
@@ -780,7 +761,7 @@
         ],
         "summary": "PumpFun - 创建代币",
         "tags": [
-          "Defi/solana/Pumpfun"
+          "Defi/sol/Pumpfun"
         ]
       }
     },
@@ -5606,6 +5587,128 @@
         ]
       }
     },
+    "/v1/wallet/{chain}/{walletAddress}/balance-updates": {
+      "get": {
+        "description": "获取钱包余额变更历史记录，支持过滤和分页",
+        "operationId": "get.balance.updates",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "按特定代币地址过滤",
+            "schema": {
+              "example": "FBmHMoWzwJB3g9GCSNTn1ZyvgkuZs7c8GTgNDoJNpump",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeFrom",
+            "required": false,
+            "in": "query",
+            "description": "开始时间戳（Unix 秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "timeTo",
+            "required": false,
+            "in": "query",
+            "description": "结束时间戳（Unix 秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1705399200,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "余额类型过滤（SOL 为原生代币，SPL 为代币）",
+            "schema": {
+              "$ref": "#/components/schemas/BalanceTokenType"
+            }
+          },
+          {
+            "name": "changeType",
+            "required": false,
+            "in": "query",
+            "description": "余额变更方向过滤（INCREASE 或 DECREASE）",
+            "schema": {
+              "$ref": "#/components/schemas/BalanceChangeType"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "游标",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int32",
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceUpdatePage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 余额变更记录",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "创建一个指定金额和数量的新红包",
@@ -5870,15 +5973,8 @@
               "example": "sol",
               "enum": [
                 "sol",
-                "base",
                 "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "eth",
-                "zksync",
-                "sui"
+                "eth"
               ],
               "type": "string"
             }
@@ -7088,15 +7184,8 @@
         "type": "string",
         "enum": [
           "sol",
-          "base",
           "bsc",
-          "polygon",
-          "arbitrum",
-          "optimism",
-          "avalanche",
-          "eth",
-          "zksync",
-          "sui"
+          "eth"
         ]
       },
       "BlockchainLatestBlockDTO": {
@@ -10994,6 +11083,201 @@
           "success"
         ]
       },
+      "BalanceTokenType": {
+        "type": "string",
+        "enum": [
+          "SOL",
+          "SPL"
+        ]
+      },
+      "BalanceChangeType": {
+        "type": "string",
+        "enum": [
+          "INCREASE",
+          "DECREASE"
+        ]
+      },
+      "BalanceUpdateDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "记录标识符",
+            "example": "1",
+            "format": "int64"
+          },
+          "blockHash": {
+            "type": "string",
+            "description": "余额变更发生的区块哈希",
+            "example": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW"
+          },
+          "blockHeight": {
+            "type": "integer",
+            "description": "区块高度",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockSlot": {
+            "type": "integer",
+            "description": "Solana 区块槽位号",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "description": "区块时间戳（Unix 秒）",
+            "example": 1705312800,
+            "format": "int64"
+          },
+          "transactionSignature": {
+            "type": "string",
+            "description": "导致余额变更的交易签名",
+            "example": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW"
+          },
+          "index": {
+            "type": "integer",
+            "description": "交易内的指令索引",
+            "example": 0,
+            "format": "int64"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "tokenAccountAddress": {
+            "type": "string",
+            "description": "持有代币的代币账户地址",
+            "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2"
+          },
+          "accountOwnerAddress": {
+            "type": "string",
+            "description": "代币账户的所有者地址",
+            "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2"
+          },
+          "preBalance": {
+            "type": "string",
+            "description": "交易前余额（代币单位）",
+            "example": "1000.123456"
+          },
+          "preBalanceInNative": {
+            "type": "string",
+            "description": "交易前余额（原生单位如 lamports）",
+            "example": "5.123456789"
+          },
+          "preBalanceInUsd": {
+            "type": "string",
+            "description": "交易前余额（美元）",
+            "example": "1234.56"
+          },
+          "postBalance": {
+            "type": "string",
+            "description": "交易后余额（代币单位）",
+            "example": "1100.123456"
+          },
+          "postBalanceInNative": {
+            "type": "string",
+            "description": "交易后余额（原生单位如 lamports）",
+            "example": "5.623456789"
+          },
+          "postBalanceInUsd": {
+            "type": "string",
+            "description": "交易后余额（美元）",
+            "example": "1357.90"
+          },
+          "balanceChange": {
+            "type": "string",
+            "description": "余额变更金额（代币单位）",
+            "example": "100.000000"
+          },
+          "balanceChangeInNative": {
+            "type": "string",
+            "description": "余额变更金额（原生单位）",
+            "example": "0.500000000"
+          },
+          "balanceChangeInUsd": {
+            "type": "string",
+            "description": "余额变更金额（美元）",
+            "example": "123.34"
+          },
+          "type": {
+            "description": "余额类型（SOL 为原生代币，SPL 为代币）",
+            "example": "SPL",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BalanceTokenType"
+              }
+            ]
+          },
+          "changeType": {
+            "description": "余额变更方向（INCREASE 或 DECREASE）",
+            "example": "INCREASE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BalanceChangeType"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "blockHash",
+          "blockHeight",
+          "blockSlot",
+          "blockTimestamp",
+          "transactionSignature",
+          "index",
+          "tokenAddress",
+          "tokenAccountAddress",
+          "accountOwnerAddress",
+          "preBalance",
+          "preBalanceInNative",
+          "preBalanceInUsd",
+          "postBalance",
+          "postBalanceInNative",
+          "postBalanceInUsd",
+          "balanceChange",
+          "balanceChangeInNative",
+          "balanceChangeInUsd",
+          "type",
+          "changeType"
+        ]
+      },
+      "BalanceUpdatePage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BalanceUpdateDTO"
+            }
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          }
+        },
+        "required": [
+          "data",
+          "hasNext",
+          "hasPrev"
+        ]
+      },
       "CreateRedPacketInput": {
         "type": "object",
         "properties": {
@@ -11003,15 +11287,8 @@
             "example": "sol",
             "enum": [
               "sol",
-              "base",
               "bsc",
-              "polygon",
-              "arbitrum",
-              "optimism",
-              "avalanche",
-              "eth",
-              "zksync",
-              "sui"
+              "eth"
             ]
           },
           "creator": {
@@ -11095,15 +11372,8 @@
             "example": "sol",
             "enum": [
               "sol",
-              "base",
               "bsc",
-              "polygon",
-              "arbitrum",
-              "optimism",
-              "avalanche",
-              "eth",
-              "zksync",
-              "sui"
+              "eth"
             ]
           },
           "packetId": {
@@ -11149,15 +11419,8 @@
         "type": "string",
         "enum": [
           "sol",
-          "base",
           "bsc",
-          "polygon",
-          "arbitrum",
-          "optimism",
-          "avalanche",
-          "eth",
-          "zksync",
-          "sui"
+          "eth"
         ]
       },
       "RedPacketDTO": {

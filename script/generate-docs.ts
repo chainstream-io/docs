@@ -35,6 +35,12 @@ const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'cn', baseDir: 'cn' }
 ];
 
+// 需要排除的 Controller（tag），这些 Controller 的接口不会生成文档
+const EXCLUDED_TAGS: string[] = [
+  // 'ExampleController',  // 示例：添加需要排除的 Controller 名称
+  'Jobs',
+];
+
 // 添加根目录路径常量
 const ROOT_DIR = path.resolve(__dirname, '..');
 
@@ -123,6 +129,12 @@ async function generateDocs() {
 
       // 4. 生成 MDX 文件
       for (const [tag, operations] of pathsByTag) {
+        // 检查是否在排除列表中
+        if (EXCLUDED_TAGS.includes(tag)) {
+          console.log(`Skipped tag: ${tag} (in EXCLUDED_TAGS)`);
+          continue;
+        }
+        
         const tagDir = path.join(ROOT_DIR, language.baseDir, 'api-reference', 'endpoint', tag.toLowerCase());
         await fs.mkdir(tagDir, { recursive: true });
 
@@ -142,6 +154,15 @@ async function generateDocs() {
             filePath = path.join(tagDir, `${fileName}.mdx`);
           }
           
+          // 检查文件是否已存在，如果存在则跳过
+          try {
+            await fs.access(filePath);
+            console.log(`Skipped ${language.code}: ${filePath} (already exists)`);
+            continue;
+          } catch {
+            // 文件不存在，继续生成
+          }
+          
           await fs.writeFile(filePath, mdxContent);
           console.log(`Generated ${language.code}: ${filePath}`);
         }
@@ -159,6 +180,11 @@ async function generateDocs() {
           if (dexApiGroup) {
             // 更新每个标签的页面
             for (const [tag, operations] of pathsByTag) {
+              // 跳过排除列表中的 tag
+              if (EXCLUDED_TAGS.includes(tag)) {
+                continue;
+              }
+              
               const pages = operations.map(op => {
                 const fileName = generateFileName(op.path, op.method);
                 const version = getVersionFromPath(op.path);
@@ -170,20 +196,28 @@ async function generateDocs() {
                 }
               });
               
-              const tagGroup = {
-                group: tag,
-                pages: pages
-              };
-              
-              // 查找或创建标签组
-              const existingGroupIndex = dexApiGroup.pages.findIndex((page: any) => 
-                page.group === tag
-              );
-              
-              if (existingGroupIndex >= 0) {
-                dexApiGroup.pages[existingGroupIndex] = tagGroup;
+              // 检查 tag 是否包含多级目录（使用 / 分隔）
+              if (tag.includes('/')) {
+                // 多级 tag，使用嵌套结构
+                const tagParts = tag.split('/');
+                findOrCreateNestedGroup(dexApiGroup.pages, tagParts, pages);
               } else {
-                dexApiGroup.pages.push(tagGroup);
+                // 单级 tag，使用原有逻辑
+                const tagGroup = {
+                  group: tag,
+                  pages: pages
+                };
+                
+                // 查找或创建标签组
+                const existingGroupIndex = dexApiGroup.pages.findIndex((page: any) => 
+                  page.group === tag
+                );
+                
+                if (existingGroupIndex >= 0) {
+                  dexApiGroup.pages[existingGroupIndex] = tagGroup;
+                } else {
+                  dexApiGroup.pages.push(tagGroup);
+                }
               }
             }
           }
@@ -230,6 +264,43 @@ function generateMDXContent(path: string, method: string, operation: OperationOb
 title: '${operation.summary || path}'
 openapi: '${openapiPath} ${method.toUpperCase()} ${path}'
 ---`;
+}
+
+/**
+ * 在嵌套结构中查找或创建多级 group
+ * 例如：tag = "Defi/sol/Moonshot" 会创建：
+ * { group: "Defi", pages: [{ group: "sol", pages: [{ group: "Moonshot", pages: [...] }] }] }
+ */
+function findOrCreateNestedGroup(pages: any[], tagParts: string[], leafPages: string[]): void {
+  if (tagParts.length === 0) return;
+  
+  const currentPart = tagParts[0];
+  const remainingParts = tagParts.slice(1);
+  
+  // 查找当前层级的 group
+  let existingGroup = pages.find((page: any) => page.group === currentPart);
+  
+  if (!existingGroup) {
+    // 创建新的 group
+    existingGroup = {
+      group: currentPart,
+      pages: []
+    };
+    pages.push(existingGroup);
+  }
+  
+  if (remainingParts.length === 0) {
+    // 这是最后一层，设置页面
+    existingGroup.pages = leafPages;
+  } else {
+    // 还有更多层级，递归处理
+    // 确保 pages 是数组（可能之前是字符串数组的页面列表）
+    if (!Array.isArray(existingGroup.pages) || 
+        (existingGroup.pages.length > 0 && typeof existingGroup.pages[0] === 'string')) {
+      existingGroup.pages = [];
+    }
+    findOrCreateNestedGroup(existingGroup.pages, remainingParts, leafPages);
+  }
 }
 
 generateDocs().catch(console.error);

@@ -189,15 +189,8 @@
             "schema": {
               "example": {
                 "SOLANA": "sol",
-                "BASE": "base",
                 "BSC": "bsc",
-                "POLYGON": "polygon",
-                "ARBITRUM": "arbitrum",
-                "OPTIMISM": "optimism",
-                "AVALANCHE": "avalanche",
-                "ETHEREUM": "eth",
-                "ZKSYNC": "zksync",
-                "SUI": "sui"
+                "ETHEREUM": "eth"
               },
               "type": "string"
             }
@@ -249,14 +242,8 @@
             "description": "A chain name listed in supported networks",
             "schema": {
               "enum": [
-                "base",
                 "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "eth",
-                "zksync"
+                "eth"
               ],
               "type": "string"
             }
@@ -297,14 +284,8 @@
             "description": "A chain name listed in supported networks",
             "schema": {
               "enum": [
-                "base",
                 "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "eth",
-                "zksync"
+                "eth"
               ],
               "type": "string"
             }
@@ -655,7 +636,7 @@
         ]
       }
     },
-    "/v1/solana/moonshot/create": {
+    "/v1/sol/moonshot/create": {
       "post": {
         "description": "Create a new token with Moonshot protocol on Solana",
         "operationId": "moonshot.create.token",
@@ -690,11 +671,11 @@
         ],
         "summary": "Moonshot - Create Token",
         "tags": [
-          "Defi/solana/Moonshot"
+          "Defi/sol/Moonshot"
         ]
       }
     },
-    "/v1/solana/moonshot/submitCreateToken": {
+    "/v1/sol/moonshot/submitCreateToken": {
       "post": {
         "description": "Submit a signed token creation transaction to finalize token creation with Moonshot",
         "operationId": "moonshot.submit.create.token",
@@ -741,11 +722,11 @@
         ],
         "summary": "Moonshot - Submit Create Token",
         "tags": [
-          "Defi/solana/Moonshot"
+          "Defi/sol/Moonshot"
         ]
       }
     },
-    "/v1/solana/pumpfun/create": {
+    "/v1/sol/pumpfun/create": {
       "post": {
         "description": "Create a new token with PumpFun protocol",
         "operationId": "pumpfun.create.token",
@@ -780,7 +761,7 @@
         ],
         "summary": "PumpFun - Create Token",
         "tags": [
-          "Defi/solana/Pumpfun"
+          "Defi/sol/Pumpfun"
         ]
       }
     },
@@ -5606,6 +5587,128 @@
         ]
       }
     },
+    "/v1/wallet/{chain}/{walletAddress}/balance-updates": {
+      "get": {
+        "description": "Get wallet balance change history with filtering and pagination",
+        "operationId": "get.balance.updates",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "Filter by specific token address",
+            "schema": {
+              "example": "FBmHMoWzwJB3g9GCSNTn1ZyvgkuZs7c8GTgNDoJNpump",
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeFrom",
+            "required": false,
+            "in": "query",
+            "description": "Start timestamp (Unix epoch in seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "timeTo",
+            "required": false,
+            "in": "query",
+            "description": "End timestamp (Unix epoch in seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1705399200,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Balance type filter (SOL for native, SPL for tokens)",
+            "schema": {
+              "$ref": "#/components/schemas/BalanceTokenType"
+            }
+          },
+          {
+            "name": "changeType",
+            "required": false,
+            "in": "query",
+            "description": "Balance change direction filter (INCREASE or DECREASE)",
+            "schema": {
+              "$ref": "#/components/schemas/BalanceChangeType"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "example": "eyJpZCI6MTAwfQ==",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int32",
+              "default": 20,
+              "example": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceUpdatePage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Balance Updates",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/v1/redpacket/{chain}/create": {
       "post": {
         "description": "Create a new red packet with specified amount and quantity",
@@ -5870,15 +5973,8 @@
               "example": "sol",
               "enum": [
                 "sol",
-                "base",
                 "bsc",
-                "polygon",
-                "arbitrum",
-                "optimism",
-                "avalanche",
-                "eth",
-                "zksync",
-                "sui"
+                "eth"
               ],
               "type": "string"
             }
@@ -7088,15 +7184,8 @@
         "type": "string",
         "enum": [
           "sol",
-          "base",
           "bsc",
-          "polygon",
-          "arbitrum",
-          "optimism",
-          "avalanche",
-          "eth",
-          "zksync",
-          "sui"
+          "eth"
         ]
       },
       "BlockchainLatestBlockDTO": {
@@ -10994,6 +11083,201 @@
           "success"
         ]
       },
+      "BalanceTokenType": {
+        "type": "string",
+        "enum": [
+          "SOL",
+          "SPL"
+        ]
+      },
+      "BalanceChangeType": {
+        "type": "string",
+        "enum": [
+          "INCREASE",
+          "DECREASE"
+        ]
+      },
+      "BalanceUpdateDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Record identifier",
+            "example": "1",
+            "format": "int64"
+          },
+          "blockHash": {
+            "type": "string",
+            "description": "Block hash where the balance change occurred",
+            "example": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW"
+          },
+          "blockHeight": {
+            "type": "integer",
+            "description": "Block height in the chain",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockSlot": {
+            "type": "integer",
+            "description": "Block slot number on Solana",
+            "example": 123456789,
+            "format": "int64"
+          },
+          "blockTimestamp": {
+            "type": "integer",
+            "description": "Block timestamp (Unix epoch in seconds)",
+            "example": 1705312800,
+            "format": "int64"
+          },
+          "transactionSignature": {
+            "type": "string",
+            "description": "Transaction signature that caused the balance change",
+            "example": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW"
+          },
+          "index": {
+            "type": "integer",
+            "description": "Instruction index within the transaction",
+            "example": 0,
+            "format": "int64"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+          },
+          "tokenAccountAddress": {
+            "type": "string",
+            "description": "Token account address holding the tokens",
+            "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2"
+          },
+          "accountOwnerAddress": {
+            "type": "string",
+            "description": "Owner address of the token account",
+            "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2"
+          },
+          "preBalance": {
+            "type": "string",
+            "description": "Balance before the transaction (in token units)",
+            "example": "1000.123456"
+          },
+          "preBalanceInNative": {
+            "type": "string",
+            "description": "Balance before the transaction (in native units like lamports)",
+            "example": "5.123456789"
+          },
+          "preBalanceInUsd": {
+            "type": "string",
+            "description": "Balance before the transaction (in USD)",
+            "example": "1234.56"
+          },
+          "postBalance": {
+            "type": "string",
+            "description": "Balance after the transaction (in token units)",
+            "example": "1100.123456"
+          },
+          "postBalanceInNative": {
+            "type": "string",
+            "description": "Balance after the transaction (in native units like lamports)",
+            "example": "5.623456789"
+          },
+          "postBalanceInUsd": {
+            "type": "string",
+            "description": "Balance after the transaction (in USD)",
+            "example": "1357.90"
+          },
+          "balanceChange": {
+            "type": "string",
+            "description": "Balance change amount (in token units)",
+            "example": "100.000000"
+          },
+          "balanceChangeInNative": {
+            "type": "string",
+            "description": "Balance change amount (in native units)",
+            "example": "0.500000000"
+          },
+          "balanceChangeInUsd": {
+            "type": "string",
+            "description": "Balance change amount (in USD)",
+            "example": "123.34"
+          },
+          "type": {
+            "description": "Balance type (SOL for native, SPL for tokens)",
+            "example": "SPL",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BalanceTokenType"
+              }
+            ]
+          },
+          "changeType": {
+            "description": "Balance change direction (INCREASE or DECREASE)",
+            "example": "INCREASE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BalanceChangeType"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "blockHash",
+          "blockHeight",
+          "blockSlot",
+          "blockTimestamp",
+          "transactionSignature",
+          "index",
+          "tokenAddress",
+          "tokenAccountAddress",
+          "accountOwnerAddress",
+          "preBalance",
+          "preBalanceInNative",
+          "preBalanceInUsd",
+          "postBalance",
+          "postBalanceInNative",
+          "postBalanceInUsd",
+          "balanceChange",
+          "balanceChangeInNative",
+          "balanceChangeInUsd",
+          "type",
+          "changeType"
+        ]
+      },
+      "BalanceUpdatePage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BalanceUpdateDTO"
+            }
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          }
+        },
+        "required": [
+          "data",
+          "hasNext",
+          "hasPrev"
+        ]
+      },
       "CreateRedPacketInput": {
         "type": "object",
         "properties": {
@@ -11003,15 +11287,8 @@
             "example": "sol",
             "enum": [
               "sol",
-              "base",
               "bsc",
-              "polygon",
-              "arbitrum",
-              "optimism",
-              "avalanche",
-              "eth",
-              "zksync",
-              "sui"
+              "eth"
             ]
           },
           "creator": {
@@ -11095,15 +11372,8 @@
             "example": "sol",
             "enum": [
               "sol",
-              "base",
               "bsc",
-              "polygon",
-              "arbitrum",
-              "optimism",
-              "avalanche",
-              "eth",
-              "zksync",
-              "sui"
+              "eth"
             ]
           },
           "packetId": {
@@ -11149,15 +11419,8 @@
         "type": "string",
         "enum": [
           "sol",
-          "base",
           "bsc",
-          "polygon",
-          "arbitrum",
-          "optimism",
-          "avalanche",
-          "eth",
-          "zksync",
-          "sui"
+          "eth"
         ]
       },
       "RedPacketDTO": {

@@ -1,0 +1,150 @@
+---
+title: 'Rust'
+description: 'ChainStream Rust SDK'
+icon: 'rust'
+---
+
+## 安装
+
+在 `Cargo.toml` 中添加：
+
+```toml
+[dependencies]
+chainstream-sdk = "0.1"
+tokio = { version = "1", features = ["full"] }
+```
+
+## 快速开始
+
+```rust
+use chainstream_sdk::ChainStreamClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = ChainStreamClient::new("YOUR_ACCESS_TOKEN", None);
+    
+    // 使用客户端...
+    
+    Ok(())
+}
+```
+
+## REST API 示例
+
+查询代币元数据：
+
+```rust
+use chainstream_sdk::{openapi, CHAINSTREAM_BASE_URL};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+
+// 添加 Bearer token 的中间件
+struct BearerAuthMiddleware {
+    token: String,
+}
+
+#[async_trait::async_trait]
+impl reqwest_middleware::Middleware for BearerAuthMiddleware {
+    async fn handle(
+        &self,
+        mut req: reqwest::Request,
+        extensions: &mut http::Extensions,
+        next: reqwest_middleware::Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        req.headers_mut().insert(
+            reqwest::header::AUTHORIZATION,
+            format!("Bearer {}", self.token).parse().unwrap(),
+        );
+        next.run(req, extensions).await
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let access_token = "YOUR_ACCESS_TOKEN";
+
+    // 创建带 Bearer token 中间件的 HTTP 客户端
+    let http_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(BearerAuthMiddleware {
+            token: access_token.to_string(),
+        })
+        .build();
+
+    // 创建 OpenAPI 客户端
+    let client = openapi::Client::new_with_client(CHAINSTREAM_BASE_URL, http_client);
+
+    // 调用 API
+    let result = client.get_supported_blockchains().send().await?;
+    let blockchains = result.into_inner();
+    
+    println!("支持的区块链: {:#?}", blockchains);
+    
+    Ok(())
+}
+```
+
+## WebSocket 示例
+
+订阅实时代币 K 线数据：
+
+```rust
+use chainstream_sdk::{
+    stream::{Resolution, TokenCandle},
+    ChainStreamClient,
+};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use tokio::signal;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let access_token = "YOUR_ACCESS_TOKEN";
+    let client = ChainStreamClient::new(&access_token, None);
+
+    let chain = "sol";
+    let token_address = "So11111111111111111111111111111111111111112"; // SOL
+    let resolution = Resolution::X1s;
+
+    println!("订阅代币 K 线: {}/{}", chain, token_address);
+    println!("按 Ctrl+C 退出...\n");
+
+    let message_count = Arc::new(AtomicUsize::new(0));
+    let message_count_clone = message_count.clone();
+
+    // 订阅代币 K 线
+    let _unsub = client
+        .stream
+        .subscribe_token_candles(
+            chain,
+            token_address,
+            resolution,
+            move |candle: TokenCandle| {
+                let count = message_count_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                println!(
+                    "[{}] open={}, close={}, high={}, low={}, volume={}",
+                    count, candle.open, candle.close, candle.high, candle.low, candle.volume
+                );
+            },
+            None,
+        )
+        .await?;
+
+    // 等待 Ctrl+C
+    signal::ctrl_c().await?;
+
+    println!("\n共收到 {} 条消息", message_count.load(Ordering::SeqCst));
+    client.close().await;
+    
+    Ok(())
+}
+```
+
+## 资源
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/rust">
+    查看源代码
+  </Card>
+  <Card title="crates.io" icon="rust" href="https://crates.io/crates/chainstream-sdk">
+    包注册中心
+  </Card>
+</CardGroup>

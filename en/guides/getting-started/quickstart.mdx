@@ -1,0 +1,247 @@
+---
+title: "Quickstart"
+description: "Complete your first API call in 5 minutes"
+icon: "rocket"
+---
+
+## What You'll Learn
+
+After completing this tutorial, you will be able to:
+
+- Create an application and obtain credentials
+- Generate an Access Token for API authentication
+- Call the API to get token metadata
+- Understand the API response structure
+
+<Note>
+**Estimated time**: 5-10 minutes
+</Note>
+
+---
+
+## Prerequisites
+
+- A registered ChainStream account ([Register here](https://www.chainstream.io/dashboard))
+
+---
+
+## Step 1: Create Application and Get Credentials
+
+1. Log in to [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+2. Go to **Applications**
+3. Click **Create New App**
+4. After creation, you will get your `Client ID` and `Client Secret`
+
+<Tip>
+Save your `Client ID` and `Client Secret` securely. You'll use them to generate Access Tokens.
+</Tip>
+
+---
+
+## Step 2: Generate Access Token
+
+Use your credentials to generate an Access Token. The token is used for API authentication.
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "audience": "https://api.dex.chainstream.io",
+    "grant_type": "client_credentials"
+  }'
+```
+  </Tab>
+  <Tab title="JavaScript">
+```javascript
+const response = await fetch('https://dex.asia.auth.chainstream.io/oauth/token', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    client_id: 'YOUR_CLIENT_ID',
+    client_secret: 'YOUR_CLIENT_SECRET',
+    audience: 'https://api.dex.chainstream.io',
+    grant_type: 'client_credentials'
+  })
+});
+
+const data = await response.json();
+const accessToken = data.access_token;
+console.log('Access Token:', accessToken);
+```
+  </Tab>
+  <Tab title="Python">
+```python
+import requests
+
+response = requests.post(
+    'https://dex.asia.auth.chainstream.io/oauth/token',
+    json={
+        'client_id': 'YOUR_CLIENT_ID',
+        'client_secret': 'YOUR_CLIENT_SECRET',
+        'audience': 'https://api.dex.chainstream.io',
+        'grant_type': 'client_credentials'
+    }
+)
+
+access_token = response.json()['access_token']
+print('Access Token:', access_token)
+```
+  </Tab>
+</Tabs>
+
+<Note>
+Access Tokens are valid for 24 hours. You can generate a new token anytime using your credentials.
+</Note>
+
+---
+
+## Step 3: Make Your First Request
+
+Let's use "Get Token Metadata" as an example. We'll query information about the SOL token on Solana.
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl -X GET "https://api-dex.chainstream.io/v1/token/sol/So11111111111111111111111111111111111111112/metadata" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+  </Tab>
+  <Tab title="JavaScript">
+```javascript
+const response = await fetch(
+  'https://api-dex.chainstream.io/v1/token/sol/So11111111111111111111111111111111111111112/metadata',
+  {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    }
+  }
+);
+
+const tokenMetadata = await response.json();
+console.log(tokenMetadata);
+```
+  </Tab>
+  <Tab title="Python">
+```python
+import requests
+
+response = requests.get(
+    'https://api-dex.chainstream.io/v1/token/sol/So11111111111111111111111111111111111111112/metadata',
+    headers={'Authorization': f'Bearer {access_token}'}
+)
+
+token_metadata = response.json()
+print(token_metadata)
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+Replace `YOUR_ACCESS_TOKEN` with the token you generated in Step 2.
+</Tip>
+
+### Response Example
+
+```json
+{
+  "chain": "sol",
+  "decimals": 9,
+  "name": "Wrapped SOL",
+  "symbol": "SOL",
+  "address": "So11111111111111111111111111111111111111112",
+  "imageUrl": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  "tokenCreatedAt": 1710417600000
+}
+```
+
+---
+
+## Step 4: Understand the Response
+
+| Field | Type | Description |
+|:--|:--|:--|
+| `chain` | string | Blockchain network identifier |
+| `decimals` | integer | Token decimal places |
+| `name` | string | Token name |
+| `symbol` | string | Token symbol |
+| `address` | string | Token contract address |
+| `imageUrl` | string | Token logo URL |
+| `tokenCreatedAt` | integer | Token creation timestamp (milliseconds) |
+
+<Note>
+For complete field descriptions, see the [Token Metadata API Reference](/en/api-reference/endpoint/token/v1/token-chain-tokenaddress-metadata-get).
+</Note>
+
+---
+
+## Step 5: Try More APIs
+
+Now that you've successfully completed your first call, try these APIs:
+
+<CardGroup cols={2}>
+  <Card title="Get Token Price" icon="chart-line" href="/en/api-reference/endpoint/token/v1/token-chain-tokenaddress-price-get">
+    Get real-time token price
+    
+    `GET /v1/token/{chain}/{tokenAddress}/price`
+  </Card>
+  <Card title="Get Wallet Balance" icon="wallet" href="/en/api-reference/endpoint/wallet/v1/wallet-chain-walletaddress-balance-get">
+    Query wallet token holdings
+    
+    `GET /v1/wallet/{chain}/{walletAddress}/balance`
+  </Card>
+</CardGroup>
+
+---
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized Error">
+    Please check:
+    - Is the Access Token correct and not expired?
+    - Is the Header format `Authorization: Bearer YOUR_ACCESS_TOKEN`?
+    - Try generating a new token using your Client ID and Client Secret
+  </Accordion>
+  <Accordion title="429 Too Many Requests Error">
+    You've reached the request rate limit. The free tier is limited to 10 requests/second. You can upgrade your plan to increase the limit.
+    
+    See [API Security](/en/guides/data-concepts/api-security) for details.
+  </Accordion>
+  <Accordion title="How to query tokens on other chains?">
+    Change the chain parameter in the URL, for example:
+    
+    `GET /v1/token/eth/{address}/metadata` for Ethereum
+    
+    `GET /v1/token/bsc/{address}/metadata` for BSC
+    
+    See [Realtime Streaming](/en/guides/data-concepts/realtime-streaming) for the full list.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+Choose your next learning path based on your use case:
+
+<CardGroup cols={3}>
+  <Card title="Data Developer" icon="database" href="/en/guides/data-concepts/realtime-streaming">
+    Go to Data Concepts to understand data models
+  </Card>
+  <Card title="Compliance User" icon="shield" href="/en/guides/security-compliance/overview">
+    Go to Security Compliance to learn about KYT/KYA
+  </Card>
+  <Card title="AI Developer" icon="robot" href="/en/guides/ai-infrastructure/overview">
+    Go to AI Infrastructure to learn about MCP integration
+  </Card>
+</CardGroup>
+
+<Info>
+Having issues? Check the [FAQ](/en/guides/getting-started/faq) or contact technical support.
+</Info>

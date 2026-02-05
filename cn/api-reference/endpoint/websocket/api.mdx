@@ -50,8 +50,10 @@ wss://realtime-dex.chainstream.io/connection/websocket
     </Note>
 
     SDK 安装：
-    - **JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
+    - **TypeScript/JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
+    - **Python**: `pip install chainstream-sdk` ([PyPI](https://pypi.org/project/chainstream-sdk))
     - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
+    - **Rust**: 添加 `chainstream-sdk` 到 `Cargo.toml` ([crates.io](https://crates.io/crates/chainstream-sdk))
   </Tab>
   <Tab title="使用原生 WebSocket">
     使用浏览器原生 WebSocket 或其他 WebSocket 库时，需要在 URL 中拼接 `token` 参数：
@@ -652,6 +654,112 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
       "metricType": string,    // 指标类型
       "value": number,         // 数值
       "timestamp": number      // 时间戳
+    }
+    ```
+  </Tab>
+</Tabs>
+
+#### 代币最大流动性
+
+实时获取代币在单个池子中的最大流动性信息。
+
+**订阅格式**
+```text
+dex-token-liquidity:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  可选的过滤条件，使用Google Common Expression Language (CEL)表达式语言语法。例如：liquidityInUsd > 10000
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // 代币地址
+      "p": string,     // 池子地址
+      "liu": string,   // 美元流动性
+      "lin": string,   // 原生代币流动性
+      "ts": number     // 时间戳
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,       // 代币地址
+      "poolAddress": string,        // 池子地址
+      "liquidityInUsd": string,     // 美元流动性
+      "liquidityInNative": string,  // 原生代币流动性
+      "timestamp": number           // 时间戳
+    }
+    ```
+  </Tab>
+</Tabs>
+
+#### 代币总流动性
+
+实时获取代币在所有池子中的总流动性信息。
+
+**订阅格式**
+```text
+dex-token-total-liquidity:{chain}_{tokenAddress}
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  代币合约地址
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  可选的过滤条件，使用Google Common Expression Language (CEL)表达式语言语法。例如：liquidityInUsd > 50000
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // 代币地址
+      "liu": string,   // 总美元流动性
+      "lin": string,   // 总原生代币流动性
+      "pc": number,    // 池子数量
+      "ts": number     // 时间戳
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,       // 代币地址
+      "liquidityInUsd": string,     // 总美元流动性
+      "liquidityInNative": string,  // 总原生代币流动性
+      "poolCount": number,          // 池子数量
+      "timestamp": number           // 时间戳
     }
     ```
   </Tab>
@@ -1304,6 +1412,49 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
   </Tab>
 </Tabs>
 
+#### 排名代币绑定曲线
+
+实时获取新上市代币的绑定曲线进度。
+
+**订阅格式**
+```text
+dex-ranking-token-bounding-curve-list:{chain}_new
+```
+
+**参数说明**
+<ParamField query="chain" type="string" required>
+  区块链名称，例如：sol
+</ParamField>
+
+**响应数据格式**
+
+<Tip>
+  WebSocket API 返回简短字段名以优化传输效率，SDK 返回完整字段名以提高代码可读性。
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,    // 代币地址
+        "pr": string    // 进度比例 (0-1)
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "tokenAddress": string,   // 代币地址
+        "progressRatio": string   // 进度比例 (0-1)
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
 ### 钱包
 #### 钱包余额
 
@@ -1809,8 +1960,10 @@ function reconnect(attempt) {
 
     <Note>
     使用 SDK 时，认证、重连、心跳等都已自动处理，推荐在生产环境中使用。
-    - **JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
+    - **TypeScript/JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
+    - **Python SDK**: [chainstream-sdk](https://pypi.org/project/chainstream-sdk)
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
+    - **Rust SDK**: [chainstream-sdk](https://crates.io/crates/chainstream-sdk)
     </Note>
   </Tab>
   <Tab title="原生 WebSocket">

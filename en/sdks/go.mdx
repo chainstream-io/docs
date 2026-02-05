@@ -1,0 +1,175 @@
+---
+title: 'Go'
+description: 'ChainStream Go SDK'
+icon: 'golang'
+---
+
+## Installation
+
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+
+## Quick Start
+
+```go
+import chainstream "github.com/chainstream-io/chainstream-go-sdk"
+
+client, err := chainstream.NewChainStreamClient(accessToken, &chainstream.ChainStreamClientOptions{})
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+```
+
+## REST API Example
+
+Query token information:
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+
+	chainstream "github.com/chainstream-io/chainstream-go-sdk"
+	"github.com/chainstream-io/chainstream-go-sdk/openapi/token"
+)
+
+const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
+
+func main() {
+	fmt.Println("Querying Token via API...")
+
+	// Initialize SDK client
+	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{})
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+	defer client.Close()
+
+	chain := token.Sol
+	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
+
+	fmt.Printf("Querying: %s/%s\n", chain, tokenAddress)
+
+	// Call API via SDK
+	resp, err := client.Token.GetToken(context.Background(), chain, tokenAddress)
+	if err != nil {
+		log.Fatalf("API call failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response: %v", err)
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		log.Fatalf("Failed to parse JSON: %v", err)
+	}
+
+	fmt.Println("\nResult:")
+	prettyJSON, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Println(string(prettyJSON))
+}
+```
+
+## WebSocket Example
+
+Subscribe to real-time token candle data:
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	chainstream "github.com/chainstream-io/chainstream-go-sdk"
+	"github.com/chainstream-io/chainstream-go-sdk/openapi/token"
+	"github.com/chainstream-io/chainstream-go-sdk/stream"
+)
+
+const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
+
+func main() {
+	fmt.Println("Starting WebSocket subscription...")
+
+	// Create ChainStreamClient (WebSocket will auto-connect on subscribe)
+	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{
+		StreamURL: "wss://realtime-dex.chainstream.io/connection/websocket",
+	})
+	if err != nil {
+		fmt.Printf("Failed to create client: %v\n", err)
+		os.Exit(1)
+	}
+	defer client.Close()
+
+	chain := "sol"
+	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
+
+	fmt.Printf("Subscribing to Token Candles: %s/%s\n", chain, tokenAddress)
+	fmt.Println("Listening... (Press Ctrl+C to stop)")
+
+	// Subscribe to Token Candles (WebSocket auto-connects)
+	messageCount := 0
+	unsubscribe := client.Stream.SubscribeTokenCandles(chain, tokenAddress, token.N1s, func(data stream.TokenCandle) {
+		messageCount++
+		fmt.Printf("[%d] open=%s, close=%s, high=%s, low=%s, volume=%s\n",
+			messageCount,
+			data.Open,
+			data.Close,
+			data.High,
+			data.Low,
+			data.Volume,
+		)
+	}, "")
+	defer unsubscribe()
+
+	// Handle interrupt signal
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	// Wait for interrupt signal
+	<-interrupt
+	fmt.Println("\nReceived interrupt, closing connection...")
+	fmt.Printf("Total messages received: %d\n", messageCount)
+}
+```
+
+## Concurrent Requests
+
+```go
+var wg sync.WaitGroup
+tokens := []string{"ADDR1", "ADDR2", "ADDR3"}
+results := make([]*token.Token, len(tokens))
+
+for i, addr := range tokens {
+    wg.Add(1)
+    go func(i int, addr string) {
+        defer wg.Done()
+        resp, _ := client.Token.GetToken(ctx, token.Sol, addr)
+        results[i] = resp
+    }(i, addr)
+}
+wg.Wait()
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-go-sdk">
+    View source code
+  </Card>
+  <Card title="pkg.go.dev" icon="golang" href="https://pkg.go.dev/github.com/chainstream-io/chainstream-go-sdk">
+    Package documentation
+  </Card>
+</CardGroup>

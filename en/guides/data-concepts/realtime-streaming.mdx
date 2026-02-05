@@ -1,0 +1,583 @@
+---
+title: "Realtime Streaming"
+description: "WebSocket real-time data streaming guide"
+icon: "bolt"
+---
+
+ChainStream provides powerful real-time data streaming capabilities, allowing developers to instantly receive on-chain events, transactions, and state changes. This document covers WebSocket connection, subscription mechanisms, and best practices.
+
+---
+
+## Connection
+
+### WebSocket Endpoint
+
+```
+wss://realtime-dex.chainstream.io/connection/websocket
+```
+
+### Authentication
+
+Provide the Access Token in the URL when establishing a connection:
+
+```
+wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN
+```
+
+<Tabs>
+  <Tab title="Using SDK (Recommended)">
+    The SDK handles connection and authentication automatically. Just call the subscribe method:
+
+    ```javascript
+    import { ChainStreamClient } from '@chainstream-io/sdk';
+    import { Resolution } from '@chainstream-io/sdk/openapi';
+
+    const client = new ChainStreamClient(process.env.CHAINSTREAM_ACCESS_TOKEN);
+
+    // Subscribe directly, SDK handles connection and authentication automatically
+    client.stream.subscribeTokenCandles({
+      chain: 'sol',
+      tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+      resolution: Resolution._1m,
+      callback: (data) => {
+        console.log('Received data:', data);
+      }
+    });
+    ```
+
+    <Note>
+    The SDK automatically detects connection status and establishes connection when needed. No need to manually call `connect()`.
+    </Note>
+  </Tab>
+  <Tab title="Using Native WebSocket">
+    When using native WebSocket, send a `connect` message after connection to complete authentication:
+
+    ```javascript
+    const token = process.env.CHAINSTREAM_ACCESS_TOKEN;
+    const ws = new WebSocket(
+      `wss://realtime-dex.chainstream.io/connection/websocket?token=${token}`
+    );
+
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+      
+      // Send connect message to complete authentication
+      ws.send(JSON.stringify({
+        connect: {
+          token: token,
+          name: 'js'
+        },
+        id: 1
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      // Handle connect response
+      if (data.connect) {
+        console.log('✅ Authentication successful, client ID:', data.connect.client);
+        
+        // Start subscribing after authentication
+        ws.send(JSON.stringify({
+          subscribe: {
+            channel: 'dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m'
+          },
+          id: 2
+        }));
+      }
+      
+      // Handle subscription data
+      if (data.push) {
+        console.log('Received data:', data.push.pub.data);
+      }
+    };
+    ```
+  </Tab>
+  <Tab title="Command Line Testing">
+    Test using `wscat`:
+
+    ```bash
+    wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
+    ```
+
+    Send connect message after connection:
+    ```json
+    {"connect":{"token":"YOUR_ACCESS_TOKEN","name":"test"},"id":1}
+    ```
+  </Tab>
+</Tabs>
+
+### Connection Response
+
+Upon successful authentication, you'll receive a response like:
+
+```json
+{
+  "id": 1,
+  "connect": {
+    "client": "0f819f5f-7d8b-4949-9433-0e91bbfe1cdb",
+    "version": "0.0.0 OSS",
+    "expires": true,
+    "ttl": 86002,
+    "ping": 25,
+    "pong": true
+  }
+}
+```
+
+| Field | Description |
+|:--|:--|
+| `client` | Unique client identifier |
+| `ttl` | Token remaining validity (seconds) |
+| `ping` | Heartbeat interval (seconds) |
+| `pong` | Whether pong response is supported |
+
+---
+
+## Subscription Types
+
+ChainStream WebSocket supports multiple data subscription types:
+
+| Category | Channel Prefix | Description |
+|:--|:--|:--|
+| Candles | `dex-candle:` | Token price candles |
+| Token Stats | `dex-token-stats:` | Token market statistics |
+| Holder Stats | `dex-token-holders-stats:` | Token holder distribution |
+| New Tokens | `dex-token-new:` | Newly launched tokens |
+| Token Trades | `dex-token-trade:` | Token trade records |
+| Wallet Balance | `dex-wallet-balance:` | Wallet asset changes |
+| Wallet Trades | `dex-wallet-trade:` | Wallet trade records |
+| Rankings | `dex-ranking-token-stats:` | Token ranking statistics |
+| DEX Pools | `dex-dex-pool-balance:` | DEX liquidity pool data |
+
+<Tip>
+For complete subscription types, parameters, and response formats, see the [WebSocket API documentation](/en/api-reference/endpoint/websocket/api).
+</Tip>
+
+### Subscription Format Examples
+
+```javascript
+// Subscribe to candle data
+ws.send(JSON.stringify({
+  subscribe: {
+    channel: 'dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m'
+  },
+  id: 2
+}));
+
+// Subscribe to token stats
+ws.send(JSON.stringify({
+  subscribe: {
+    channel: 'dex-token-stats:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'
+  },
+  id: 3
+}));
+
+// Subscribe to new tokens
+ws.send(JSON.stringify({
+  subscribe: {
+    channel: 'dex-token-new:sol'
+  },
+  id: 4
+}));
+```
+
+### Unsubscribe
+
+```javascript
+ws.send(JSON.stringify({
+  unsubscribe: {
+    channel: 'dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m'
+  },
+  id: 5
+}));
+```
+
+---
+
+## Message Format
+
+### Request Messages
+
+**Connect Message (Authentication):**
+
+```json
+{
+  "connect": {
+    "token": "YOUR_ACCESS_TOKEN",
+    "name": "client_name"
+  },
+  "id": 1
+}
+```
+
+**Subscribe Message:**
+
+```json
+{
+  "subscribe": {
+    "channel": "dex-candle:sol_xxx_1m"
+  },
+  "id": 2
+}
+```
+
+**Unsubscribe Message:**
+
+```json
+{
+  "unsubscribe": {
+    "channel": "dex-candle:sol_xxx_1m"
+  },
+  "id": 3
+}
+```
+
+### Response Messages
+
+**Subscription Confirmation:**
+
+```json
+{
+  "id": 2,
+  "subscribe": {}
+}
+```
+
+**Data Push:**
+
+```json
+{
+  "push": {
+    "channel": "dex-candle:sol_xxx_1m",
+    "pub": {
+      "data": {
+        "o": 0.001234,
+        "c": 0.001256,
+        "h": 0.001280,
+        "l": 0.001200,
+        "v": 1234567,
+        "t": 1706745600
+      }
+    }
+  }
+}
+```
+
+**Error Message:**
+
+```json
+{
+  "id": 2,
+  "error": {
+    "code": 100,
+    "message": "invalid channel"
+  }
+}
+```
+
+---
+
+## Heartbeat
+
+WebSocket connections require periodic heartbeat messages to stay active. Based on the `ping` field in the connect response (usually 25 seconds), send heartbeats within this interval:
+
+```javascript
+// Heartbeat message
+ws.send(JSON.stringify({}));
+
+// Or send ping
+ws.send(JSON.stringify({ ping: {} }));
+```
+
+<Warning>
+If no messages are sent within the specified time (typically 3x the ping interval), the server will disconnect.
+</Warning>
+
+---
+
+## Complete Example
+
+<CodeGroup>
+```javascript JavaScript
+const WebSocket = require('ws');
+
+class ChainStreamWebSocket {
+  constructor(accessToken) {
+    this.accessToken = accessToken;
+    this.ws = null;
+    this.messageId = 0;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 10;
+    this.subscriptions = new Set();
+    this.pingInterval = null;
+  }
+
+  connect() {
+    const url = `wss://realtime-dex.chainstream.io/connection/websocket?token=${this.accessToken}`;
+    this.ws = new WebSocket(url);
+
+    this.ws.onopen = () => {
+      console.log('WebSocket connection established');
+      this.reconnectAttempts = 0;
+      
+      // Send connect message
+      this.send({
+        connect: {
+          token: this.accessToken,
+          name: 'nodejs'
+        }
+      });
+    };
+
+    this.ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      this.handleMessage(data);
+    };
+
+    this.ws.onclose = (event) => {
+      console.log(`Connection closed: ${event.code}`);
+      this.stopPing();
+      
+      if (event.code !== 1000) {
+        this.scheduleReconnect();
+      }
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error.message);
+    };
+  }
+
+  handleMessage(data) {
+    // Handle connect response
+    if (data.connect) {
+      console.log('✅ Authentication successful');
+      this.startPing(data.connect.ping || 25);
+      this.resubscribe();
+      return;
+    }
+
+    // Handle data push
+    if (data.push) {
+      console.log(`[${data.push.channel}]`, data.push.pub.data);
+      return;
+    }
+
+    // Handle error
+    if (data.error) {
+      console.error('Error:', data.error.message);
+      return;
+    }
+  }
+
+  send(message) {
+    message.id = ++this.messageId;
+    this.ws.send(JSON.stringify(message));
+  }
+
+  subscribe(channel) {
+    this.subscriptions.add(channel);
+    this.send({ subscribe: { channel } });
+  }
+
+  unsubscribe(channel) {
+    this.subscriptions.delete(channel);
+    this.send({ unsubscribe: { channel } });
+  }
+
+  resubscribe() {
+    this.subscriptions.forEach(channel => {
+      this.send({ subscribe: { channel } });
+    });
+  }
+
+  startPing(interval) {
+    this.pingInterval = setInterval(() => {
+      if (this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send('{}');
+      }
+    }, interval * 1000);
+  }
+
+  stopPing() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  scheduleReconnect() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error('❌ Max reconnect attempts reached');
+      return;
+    }
+
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+    console.log(`⏳ Reconnecting in ${delay}ms... (attempt ${this.reconnectAttempts + 1})`);
+    this.reconnectAttempts++;
+
+    setTimeout(() => this.connect(), delay);
+  }
+
+  close() {
+    this.stopPing();
+    if (this.ws) {
+      this.ws.close(1000, 'Normal closure');
+    }
+  }
+}
+
+// Usage example
+const client = new ChainStreamWebSocket(process.env.CHAINSTREAM_ACCESS_TOKEN);
+client.connect();
+
+// Subscribe after connection is established
+setTimeout(() => {
+  client.subscribe('dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m');
+  client.subscribe('dex-token-new:sol');
+}, 1000);
+```
+
+```python Python
+import asyncio
+import websockets
+import json
+import os
+
+class ChainStreamWebSocket:
+    def __init__(self, access_token):
+        self.access_token = access_token
+        self.ws = None
+        self.message_id = 0
+        self.subscriptions = set()
+        self.ping_interval = 25
+    
+    async def connect(self):
+        url = f"wss://realtime-dex.chainstream.io/connection/websocket?token={self.access_token}"
+        
+        async with websockets.connect(url) as ws:
+            self.ws = ws
+            print("WebSocket connection established")
+            
+            # Send connect message
+            await self.send({
+                "connect": {
+                    "token": self.access_token,
+                    "name": "python"
+                }
+            })
+            
+            # Start heartbeat and message receiving
+            await asyncio.gather(
+                self.heartbeat(),
+                self.receive()
+            )
+    
+    async def send(self, message):
+        self.message_id += 1
+        message["id"] = self.message_id
+        await self.ws.send(json.dumps(message))
+    
+    async def receive(self):
+        async for message in self.ws:
+            data = json.loads(message)
+            await self.handle_message(data)
+    
+    async def handle_message(self, data):
+        if "connect" in data:
+            print("✅ Authentication successful")
+            self.ping_interval = data["connect"].get("ping", 25)
+            await self.resubscribe()
+        elif "push" in data:
+            channel = data["push"]["channel"]
+            pub_data = data["push"]["pub"]["data"]
+            print(f"[{channel}]", pub_data)
+        elif "error" in data:
+            print(f"Error: {data['error']['message']}")
+    
+    async def subscribe(self, channel):
+        self.subscriptions.add(channel)
+        await self.send({"subscribe": {"channel": channel}})
+    
+    async def resubscribe(self):
+        for channel in self.subscriptions:
+            await self.send({"subscribe": {"channel": channel}})
+    
+    async def heartbeat(self):
+        while True:
+            await asyncio.sleep(self.ping_interval)
+            if self.ws and self.ws.open:
+                await self.ws.send("{}")
+
+# Usage example
+async def main():
+    client = ChainStreamWebSocket(os.environ["CHAINSTREAM_ACCESS_TOKEN"])
+    
+    # Pre-add subscriptions
+    client.subscriptions.add("dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m")
+    client.subscriptions.add("dex-token-new:sol")
+    
+    await client.connect()
+
+asyncio.run(main())
+```
+</CodeGroup>
+
+---
+
+## Best Practices
+
+### Performance Optimization
+
+<CardGroup cols={2}>
+  <Card title="Use Filters" icon="filter">
+    Subscribe only to needed data to reduce bandwidth. Use CEL expressions to filter data.
+  </Card>
+  <Card title="Batch Processing" icon="layer-group">
+    Batch process high-frequency data instead of processing one by one. Use message queues for buffering.
+  </Card>
+  <Card title="Local Caching" icon="database">
+    Cache static data like token information to reduce repeated processing.
+  </Card>
+  <Card title="Connection Reuse" icon="plug">
+    A single connection can subscribe to multiple channels. Avoid creating multiple connections.
+  </Card>
+</CardGroup>
+
+### Error Handling
+
+1. **Listen for error events** — Handle connection and data errors promptly
+2. **Implement retry mechanism** — Use exponential backoff for reconnection
+3. **Log recording** — Record key events for troubleshooting
+4. **Graceful degradation** — Switch to polling when WebSocket is unavailable
+
+### Resource Management
+
+```javascript
+// ✅ Unsubscribe from unneeded channels promptly
+client.unsubscribe('dex-candle:sol_xxx_1m');
+
+// ✅ Close connection gracefully
+function gracefulClose() {
+  // 1. Stop heartbeat
+  client.stopPing();
+  
+  // 2. Close connection
+  client.close();
+}
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="WebSocket API Reference" icon="plug" href="/en/api-reference/endpoint/websocket/api">
+    Complete subscription types and parameters
+  </Card>
+  <Card title="Price Alert Bot" icon="bell" href="/en/playbooks/tutorials/build-price-alert-bot">
+    Hands-on: Build a price monitoring bot
+  </Card>
+</CardGroup>

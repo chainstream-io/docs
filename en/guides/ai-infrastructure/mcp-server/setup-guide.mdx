@@ -1,0 +1,292 @@
+---
+title: 'MCP Setup Guide'
+description: 'Complete ChainStream MCP Server setup in 5 minutes'
+icon: 'gear'
+---
+
+This guide helps you quickly configure ChainStream MCP Server.
+
+---
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+| Requirement | Details | How to Check |
+|-------------|---------|--------------|
+| ChainStream Account | Registered account | Log in to console to confirm |
+| Access Token | Valid access token | Console → Apps → Generate Token |
+| AI Client | Claude Desktop / Cursor / Custom client | Installed |
+
+---
+
+## MCP Endpoint
+
+ChainStream provides a hosted MCP Server. No local installation required - connect directly via:
+
+```
+https://mcp.chainstream.io/mcp
+```
+
+---
+
+## Configuration Steps
+
+<Steps>
+  <Step title="Get Access Token">
+    1. Log in to [ChainStream Console](https://www.chainstream.io/dashboard)
+    2. Navigate to **Apps** page
+    3. Create an App to get Client ID and Client Secret
+    4. Use credentials to generate **Access Token** (see [Authentication docs](/en/guides/getting-started/authentication))
+    
+    <Note>
+    Access Token is valid for 24 hours. We recommend implementing an automatic refresh mechanism in your application.
+    </Note>
+  </Step>
+  
+  <Step title="Configure AI Client">
+    <Tabs>
+      <Tab title="Claude Desktop">
+        **Config file path**:
+        - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+        - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+        
+        **Configuration**:
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "Authorization": "Bearer your_access_token"
+              }
+            }
+          }
+        }
+        ```
+        
+        <Note>
+        If the file doesn't exist, create it manually. If you have other MCP Server configurations, add the `chainstream` config to the existing `mcpServers` object.
+        </Note>
+      </Tab>
+      
+      <Tab title="Cursor IDE">
+        **Config file path**: `~/.cursor/mcp.json`
+        
+        **Configuration**:
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "Authorization": "Bearer your_access_token"
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+      
+      <Tab title="Custom Client">
+        If you're using a custom MCP client, connect via HTTP+SSE protocol:
+        
+        **Endpoint Information**:
+        
+        | Endpoint | URL |
+        |----------|-----|
+        | MCP Endpoint | `https://mcp.chainstream.io/mcp` |
+        | SSE Endpoint | `https://mcp.chainstream.io/sse` |
+        | Message Endpoint | `https://mcp.chainstream.io/messages` |
+        
+        **Authentication**:
+        
+        Add Authorization header to requests:
+        
+        ```
+        Authorization: Bearer your_access_token
+        ```
+        
+        **Example Code**:
+        
+        ```javascript
+        import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+        import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+
+        const transport = new SSEClientTransport(
+          new URL('https://mcp.chainstream.io/sse'),
+          {
+            requestInit: {
+              headers: {
+                'Authorization': `Bearer ${process.env.CHAINSTREAM_ACCESS_TOKEN}`
+              }
+            }
+          }
+        );
+
+        const client = new Client({
+          name: 'my-client',
+          version: '1.0.0'
+        });
+
+        await client.connect(transport);
+
+        // List available tools
+        const { tools } = await client.listTools();
+        console.log('Available tools:', tools.map(t => t.name));
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="Restart Client">
+    After configuration, completely quit and restart your AI client for changes to take effect.
+    
+    - **Claude Desktop**: Fully quit (not just minimize), then reopen
+    - **Cursor**: Restart the IDE
+  </Step>
+</Steps>
+
+---
+
+## Verify Configuration
+
+### Test Command
+
+Enter the following test question in your AI client:
+
+```
+Query the token balance of 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on Ethereum
+```
+
+### Expected Result
+
+If configured successfully, the AI should:
+
+1. Recognize this as a balance query request
+2. Call the `get_token_balance` tool
+3. Return the address's token balance list
+
+**Success example**:
+
+```
+This address (Vitalik.eth) holds the following on Ethereum:
+
+| Token | Balance | Value (USD) |
+|-------|---------|-------------|
+| ETH   | 1,234.56 | $2,469,120 |
+| USDC  | 50,000 | $50,000 |
+| ...   | ... | ... |
+
+Total value: ~$2,500,000
+```
+
+<Note>
+If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](#troubleshooting) below.
+</Note>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication failed" icon="key">
+    **Possible causes**:
+    
+    1. **Access Token entered incorrectly**
+       - Check for extra spaces
+       - Confirm complete copy
+    
+    2. **Access Token expired**
+       - Token is valid for 24 hours
+       - Need to regenerate
+    
+    3. **Token format incorrect**
+       - Confirm it's a complete JWT format
+       - Confirm `Bearer ` prefix is included
+    
+    **Solutions**:
+    - Regenerate Access Token
+    - Check if Token is expired
+    - Confirm Authorization header format is correct
+  </Accordion>
+
+  <Accordion title="Connection failed" icon="plug-circle-xmark">
+    **Possible causes**:
+    
+    1. **Network issues**
+       - Check network connection
+       - Confirm access to `https://mcp.chainstream.io`
+    
+    2. **Configuration format error**
+       - Check JSON format is correct
+       - Confirm URL spelling is correct
+    
+    **Solution**:
+    
+    ```bash
+    # Test endpoint connectivity
+    curl -I https://mcp.chainstream.io/mcp
+    ```
+  </Accordion>
+
+  <Accordion title="Config file not taking effect" icon="file-circle-xmark">
+    **Possible causes**:
+    
+    1. **Config file path incorrect**
+       - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+       - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+    
+    2. **JSON format error**
+       - Use a JSON validator to check
+    
+    3. **Client not restarted**
+       - Fully quit and restart
+    
+    **Solution**:
+    
+    ```bash
+    # macOS - validate config file
+    cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
+    ```
+  </Accordion>
+
+  <Accordion title="Tool call failed: Quota exceeded" icon="gauge-low">
+    **Possible causes**:
+    
+    1. Plan quota exhausted
+    2. Request rate too high, triggering rate limit
+    
+    **Solutions**:
+    - Check quota usage in the console
+    - Upgrade plan for more quota
+  </Accordion>
+
+  <Accordion title="Data return delayed or timeout" icon="clock">
+    **Possible causes**:
+    
+    1. Network latency
+    2. Query data volume too large
+    3. Server load high
+    
+    **Solutions**:
+    - Check network connection
+    - Reduce data volume per query
+    - Try again later
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools Catalog" icon="wrench" href="/en/guides/ai-infrastructure/mcp-server/tools-catalog">
+    View all available tools and usage examples
+  </Card>
+  <Card title="AI Agent Tutorial" icon="graduation-cap" href="/en/playbooks/tutorials/ai-agent-with-mcp">
+    Build an AI trading assistant
+  </Card>
+</CardGroup>

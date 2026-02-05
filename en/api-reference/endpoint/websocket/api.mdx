@@ -50,8 +50,10 @@ First, create a WebSocket connection. WebSocket connections require the `token` 
     </Note>
 
     SDK Installation:
-    - **JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
+    - **TypeScript/JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
+    - **Python**: `pip install chainstream-sdk` ([PyPI](https://pypi.org/project/chainstream-sdk))
     - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
+    - **Rust**: Add `chainstream-sdk` to your `Cargo.toml` ([crates.io](https://crates.io/crates/chainstream-sdk))
   </Tab>
   <Tab title="Using Native WebSocket">
     When using browser native WebSocket or other WebSocket libraries, append the `token` parameter to the URL:
@@ -653,6 +655,112 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
       "metricType": string,    // Metric type
       "value": number,         // Value
       "timestamp": number      // Timestamp
+    }
+    ```
+  </Tab>
+</Tabs>
+
+#### Token Max Liquidity
+
+Get real-time max liquidity info of a token in a single pool.
+
+**Subscription Format**
+```text
+dex-token-liquidity:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: liquidityInUsd > 10000
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // Token address
+      "p": string,     // Pool address
+      "liu": string,   // Liquidity in USD
+      "lin": string,   // Liquidity in native token
+      "ts": number     // Timestamp
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,       // Token address
+      "poolAddress": string,        // Pool address
+      "liquidityInUsd": string,     // Liquidity in USD
+      "liquidityInNative": string,  // Liquidity in native token
+      "timestamp": number           // Timestamp
+    }
+    ```
+  </Tab>
+</Tabs>
+
+#### Token Total Liquidity
+
+Get real-time total liquidity info of a token across all pools.
+
+**Subscription Format**
+```text
+dex-token-total-liquidity:{chain}_{tokenAddress}
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+<ParamField query="tokenAddress" type="string" required>
+  Token contract address
+</ParamField>
+
+<ParamField query="filter" type="string" required={false}>
+  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: liquidityInUsd > 50000
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    {
+      "a": string,     // Token address
+      "liu": string,   // Total liquidity in USD
+      "lin": string,   // Total liquidity in native token
+      "pc": number,    // Pool count
+      "ts": number     // Timestamp
+    }
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    {
+      "tokenAddress": string,       // Token address
+      "liquidityInUsd": string,     // Total liquidity in USD
+      "liquidityInNative": string,  // Total liquidity in native token
+      "poolCount": number,          // Pool count
+      "timestamp": number           // Timestamp
     }
     ```
   </Tab>
@@ -1305,6 +1413,49 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
   </Tab>
 </Tabs>
 
+#### Ranking Tokens Bonding Curve
+
+Get real-time bonding curve progress for newly listed tokens.
+
+**Subscription Format**
+```text
+dex-ranking-token-bounding-curve-list:{chain}_new
+```
+
+**Parameters**
+<ParamField query="chain" type="string" required>
+  Blockchain name, e.g., sol
+</ParamField>
+
+**Response Data Format**
+
+<Tip>
+  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+</Tip>
+
+<Tabs>
+  <Tab title="WebSocket API">
+    ```typescript
+    [
+      {
+        "a": string,    // Token address
+        "pr": string    // Progress ratio (0-1)
+      }
+    ]
+    ```
+  </Tab>
+  <Tab title="SDK">
+    ```typescript
+    [
+      {
+        "tokenAddress": string,   // Token address
+        "progressRatio": string   // Progress ratio (0-1)
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
 ### Wallet Series
 
 #### Wallet Balance
@@ -1812,8 +1963,10 @@ function reconnect(attempt) {
 
     <Note>
     When using the SDK, authentication, reconnection, heartbeat, etc. are all handled automatically. Recommended for production environments.
-    - **JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
+    - **TypeScript/JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
+    - **Python SDK**: [chainstream-sdk](https://pypi.org/project/chainstream-sdk)
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
+    - **Rust SDK**: [chainstream-sdk](https://crates.io/crates/chainstream-sdk)
     </Note>
   </Tab>
   <Tab title="Native WebSocket">

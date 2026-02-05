@@ -1,0 +1,474 @@
+---
+title: 'Error Codes Reference'
+description: 'Complete list of ChainStream API error codes'
+icon: "triangle-exclamation"
+---
+
+## Error Response Format
+
+All API errors follow a unified response format:
+
+```json
+{
+  "code": 40001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Human readable error message",
+  "details": {
+    // Optional additional information
+  }
+}
+```
+
+## HTTP Status Codes
+
+| Status | Description | Error Code Range |
+|--------|-------------|------------------|
+| 400 | Bad Request | 400, 40001-40040 |
+| 401 | Unauthorized | 401 |
+| 403 | Forbidden | 403, 40301 |
+| 404 | Not Found | 404, 40401-40406 |
+| 429 | Too Many Requests | 429, 42901-42902 |
+| 500 | Internal Server Error | 500, 50001-50036 |
+| 510 | Red Packet Error | 51000-51004 |
+| 520 | Webhook Error | 52000-52001 |
+
+---
+
+## Client Errors (400)
+
+### Parameter Validation Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 400 | `BAD_REQUEST` | Bad request | Check request format |
+| 40001 | `VALIDATION_ERROR` | Request parameters are abnormal or incorrect | Check parameter format and values |
+| 40002 | `INVALID_PARAMETER` | Invalid parameter | Check if parameter value meets requirements |
+| 40003 | `INVALID_TOKEN` | Invalid access token | Check token format |
+| 40004 | `MISSING_PARAMETER` | Missing required parameter | Add missing required parameters |
+| 40005 | `INVALID_ADDRESS` | Invalid wallet address format | Check address format |
+| 40027 | `INVALID_CURSOR` | Invalid cursor | Use valid pagination cursor |
+| 40031 | `INVALID_TIMESTAMP` | Invalid timestamp format | Use ISO 8601 format |
+| 40032 | `INVALID_RESOLUTION` | Invalid resolution parameter | Use supported K-line periods |
+| 40033 | `INVALID_NUMBER_FORMAT` | Invalid number format | Use correct number format |
+
+```json
+{
+  "code": 40002,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Invalid parameter",
+  "details": {
+    "parameter": "resolution",
+    "value": "2h",
+    "allowed_values": ["1s", "1m", "5m", "15m", "1h", "4h", "1d"]
+  }
+}
+```
+
+### Token Related Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 40009 | `INVALID_TOKEN_ADDRESS` | Invalid token address | Check token contract address |
+| 40028 | `TOKEN_ADDRESSES_LIMIT_EXCEEDED` | Token addresses limit exceeded | Maximum 100 addresses |
+| 40034 | `TOKEN_ALREADY_CREATED` | Token already created | Check for duplicate creation |
+
+### Wallet Related Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 40029 | `WALLET_ADDRESSES_LIMIT_EXCEEDED` | Wallet addresses limit exceeded | Maximum 100 addresses |
+
+### Transaction Related Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 40010 | `TRANSACTION_FAILED` | Transaction execution failed | Check parameters and balance |
+| 40011 | `TRANSACTION_REJECTED` | Transaction rejected | Check signature and permissions |
+| 40012 | `INVALID_TRANSACTION` | Invalid transaction | Check transaction structure |
+| 40025 | `TRANSACTION_NOT_SIGNED` | Transaction not signed | Sign before serialization |
+| 40026 | `TRANSACTION_SIGNATURE_MISSING` | Transaction signature missing | Add transaction signature |
+| 40039 | `TRANSACTION_SIZE_EXCEEDED` | Transaction size exceeded | Reduce transaction complexity |
+
+### DEX Trading Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 40006 | `LIQUIDITY_INSUFFICIENT` | Insufficient liquidity | Reduce trade amount |
+| 40007 | `PRICE_IMPACT_TOO_HIGH` | Price impact too high | Reduce amount or increase slippage |
+| 40008 | `SLIPPAGE_TOO_HIGH` | Slippage too high | Adjust slippage settings |
+| 40014 | `INVALID_AMOUNT` | Invalid amount | Use valid number |
+| 40015 | `AMOUNT_TOO_SMALL` | Amount too small | Increase trade amount |
+| 40016 | `AMOUNT_TOO_LARGE` | Amount too large | Amount exceeds safe range |
+| 40017 | `SAME_TOKEN_SWAP` | Same token swap | Input and output cannot be same |
+| 40018 | `INVALID_SLIPPAGE` | Invalid slippage value | Use valid slippage value |
+| 40019 | `SLIPPAGE_TOO_LOW` | Slippage too low | Slippage must be greater than zero |
+| 40020 | `POOL_NOT_SUPPORTED` | Pool not supported | Use supported pool |
+| 40021 | `UNSUPPORTED_SWAP_MODE` | Swap mode not supported | Use supported swap mode |
+| 40022 | `FEE_PARAMETER_ERROR` | Invalid fee parameter | Check fee configuration |
+| 40023 | `ANTI_MEV_REJECTED` | Anti-MEV validation failed | Check Anti-MEV settings |
+| 40030 | `POOL_INPUT_MISMATCH` | Pool input mismatch | Input token doesn't match pool |
+
+```json
+{
+  "code": 40006,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient liquidity",
+  "details": {
+    "requested_amount": "1000000000",
+    "available_liquidity": "500000000"
+  }
+}
+```
+
+### Order Related Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 40035 | `INVALID_MARKET_PRICES` | Invalid market prices | Check price parameters |
+| 40036 | `INVALID_ORDER_PARAMETERS` | Invalid order parameters | Check order configuration |
+
+### Other Client Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 40013 | `PARAMETER_ERROR` | Parameter error | Must set total or fixed amount |
+| 40024 | `NOT_IMPLEMENTED` | Method not implemented | Use implemented methods |
+| 40037 | `UNSUPPORTED_VALUE_TYPE` | Value type not supported | Use supported value types |
+| 40038 | `PARSE_ERROR` | Parse failed | Check data format |
+| 40040 | `INVALID_MIGRATE_TYPE` | Invalid migration type | Use valid migration type |
+
+---
+
+## Authentication Errors (401)
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 401 | `UNAUTHORIZED` | Unauthorized. Token is missing or invalid | Check Authorization header |
+
+```json
+{
+  "code": 401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Unauthorized. Token is missing or invalid"
+}
+```
+
+**Handling Example**:
+
+```javascript
+if (error.code === 401) {
+  // Refresh token
+  const newToken = await getAccessToken();
+  // Retry request with new token
+}
+```
+
+---
+
+## Permission Errors (403)
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 403 | `FORBIDDEN` | Forbidden | See details below |
+| 40301 | `INSUFFICIENT_PERMISSIONS` | Insufficient permissions | Obtain required permissions |
+
+403 errors can be triggered by:
+
+- **Quota exhausted**: Monthly API call quota depleted, upgrade plan or wait for next month reset
+- **Blacklisted**: IP or account has been blacklisted
+- **Not whitelisted**: Request origin not in allowed whitelist
+
+<Note>
+When API quota is exhausted, the gateway returns 403 directly. This differs from 429 (rate limit):
+- **429**: Short-term rate limiting (requests per second/minute exceeded)
+- **403**: Account quota limit (monthly usage exhausted) or permission issues
+</Note>
+
+```json
+{
+  "code": 403,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Forbidden"
+}
+```
+
+```json
+{
+  "code": 40301,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient permissions",
+  "details": {
+    "required_scope": "kyt.write",
+    "current_scopes": ["kyt.read"]
+  }
+}
+```
+
+---
+
+## Resource Not Found Errors (404)
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 404 | `NOT_FOUND` | Resource not found | Check if resource exists |
+| 40401 | `POOL_NOT_FOUND` | Liquidity pool not found | Check pool address and chain |
+| 40402 | `MARKET_INFO_NOT_FOUND` | Market info not found | Check if market exists |
+| 40403 | `OPEN_ORDER_NOT_FOUND` | Open order account not found | Check order account |
+| 40404 | `ORDER_NOT_FOUND` | Order not found | Check order ID |
+| 40405 | `CHAIN_NOT_FOUND` | Chain not found | Use supported chain identifier |
+| 40406 | `DEX_NOT_FOUND` | DEX not found | Use supported DEX |
+
+```json
+{
+  "code": 40401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Liquidity pool not found",
+  "details": {
+    "chain": "sol",
+    "pool_address": "INVALID_ADDRESS"
+  }
+}
+```
+
+---
+
+## Rate Limit Errors (429)
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 429 | `RATE_LIMIT` | Too many requests. Rate limit reached | Wait and retry |
+| 42901 | `API_USAGE_LIMIT_EXCEEDED` | API usage limit exceeded | Upgrade plan or wait for reset |
+| 42902 | `KYT_USAGE_LIMIT_EXCEEDED` | KYT API usage limit exceeded | Upgrade KYT plan |
+
+```json
+{
+  "code": 429,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Too Many Requests. Rate limit reached",
+  "details": {
+    "limit": 100,
+    "remaining": 0,
+    "reset_at": 1706745600
+  }
+}
+```
+
+**Handling Example**:
+
+```javascript
+if (response.status === 429) {
+  const retryAfter = response.headers.get('Retry-After') || 1;
+  await sleep(retryAfter * 1000);
+  // Retry request
+}
+```
+
+---
+
+## Server Errors (500)
+
+### General Server Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 500 | `INTERNAL_SERVER_ERROR` | Internal server error | Retry later |
+| 50001 | `UNKNOWN_ERROR` | Unknown error | Contact support |
+| 50005 | `DATABASE_ERROR` | Data operation failed | Retry later |
+| 50007 | `EXTERNAL_SERVICE_ERROR` | External service call failed | Retry later |
+| 50029 | `EXTERNAL_API_ERROR` | External API request failed | Retry later |
+
+### Blockchain Related Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 50002 | `CHAIN_CONNECTION_ERROR` | Blockchain connection error | Check network status |
+| 50003 | `CHAIN_SYNC_ERROR` | Blockchain synchronization error | Wait for sync completion |
+| 50004 | `TRANSACTION_TIMEOUT` | Transaction timeout | Retry or increase timeout |
+| 50006 | `TRANSACTION_ERROR` | Transaction error | Check transaction parameters |
+| 50008 | `CHAIN_NOT_SUPPORTED` | Chain not supported | Use supported chain |
+| 50017 | `INSUFFICIENT_BALANCE` | Insufficient balance | Check account balance |
+| 50026 | `TRANSACTION_SEND_FAILED` | Transaction send failed | Check network and parameters |
+| 50027 | `TRANSACTION_CONFIRMATION_FAILED` | Transaction confirmation failed | Check transaction status |
+| 50028 | `TRANSACTION_SIGNATURE_EMPTY` | Transaction signature is empty | Add signature |
+
+### DEX Related Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 50009 | `DEX_NOT_SUPPORTED` | DEX not supported | Use supported DEX |
+| 50010 | `DEX_ROUTE_BUILD_FAILED` | DEX route build failed | Check token pair liquidity |
+| 50011 | `DEX_SWAP_BUILD_FAILED` | DEX swap build failed | Check trade parameters |
+| 50012 | `DEX_SWAP_SIMULATED_FAILED` | DEX swap simulation failed | Adjust trade parameters |
+| 50019 | `DEX_AGGREGATOR_NOT_FOUND` | DEX aggregator not found | Contact support |
+| 50020 | `DEX_BUILDER_NOT_FOUND` | DEX builder not found | Contact support |
+| 50033 | `CURVE_CALCULATION_ERROR` | Curve calculation error | Check parameters |
+| 50034 | `LOOKUP_TABLE_ERROR` | Address lookup table error | Retry later |
+| 50035 | `SWAP_ROUTE_ERROR` | Swap route calculation error | Check token pair |
+
+### Jupiter API Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 50013 | `JUPITER_API_UNAUTHORIZED` | Jupiter API unauthorized | Check API key |
+| 50014 | `JUPITER_API_RATE_LIMIT` | Jupiter API rate limit | Retry later |
+| 50015 | `JUPITER_API_BAD_REQUEST` | Jupiter API bad request | Check parameters |
+| 50016 | `JUPITER_API_ERROR` | Jupiter API error | Retry later |
+
+### Configuration and Initialization Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 50018 | `PROVIDER_NOT_INITIALIZED` | Provider not initialized | Configure rpcUrl |
+| 50021 | `ORDER_BUILDER_NOT_FOUND` | Order builder not found | Contact support |
+| 50022 | `MARKET_EXPIRED` | Market has expired | Use valid market |
+| 50023 | `CONFIG_NOT_FOUND` | Config not found | Check configuration |
+| 50030 | `FEE_CONFIGURATION_REQUIRED` | Fee configuration required | Configure fee |
+| 50036 | `METAFIELD_NOT_FOUND` | Metafield not found | Check metadata |
+
+### File Upload Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 50024 | `IPFS_UPLOAD_FAILED` | IPFS upload failed | Retry later |
+| 50025 | `SIGNED_URL_FAILED` | Signed URL creation failed | Retry later |
+
+### Bundle Processing Errors
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 50031 | `BUNDLE_PROCESSING_FAILED` | Bundle processing failed | Check bundle configuration |
+| 50032 | `TIP_ACCOUNTS_NOT_AVAILABLE` | Tip accounts not available | Retry later |
+
+```json
+{
+  "code": 50010,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "DEX route build failed",
+  "details": {
+    "input_token": "So11111111111111111111111111111111111111112",
+    "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "reason": "No valid route found"
+  }
+}
+```
+
+---
+
+## Red Packet Errors (510)
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 51000 | `RED_PACKET_INVALID_PARAMETER_ERROR` | Red packet parameter error | Provide red packet ID or share ID |
+| 51001 | `RED_PACKET_NOT_FOUND_ERROR` | Red packet not found | Check red packet ID |
+| 51002 | `RED_PACKET_WITHDRAWN_ERROR` | Red packet withdrawn | Red packet no longer available |
+| 51003 | `RED_PACKET_ALREADY_CLAIMED_ERROR` | Already claimed red packet | Each user can claim once |
+| 51004 | `RED_PACKET_TRANSACTION_ERROR` | Red packet transaction error | Retry later |
+
+```json
+{
+  "code": 51003,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "You have already claimed this red packet"
+}
+```
+
+---
+
+## Webhook Errors (520)
+
+| Code | Name | Description | Solution |
+|------|------|-------------|----------|
+| 52000 | `WEBHOOKS_APPLICATION_NOT_FOUND` | Webhook application not found | Check webhook ID |
+| 52001 | `WEBHOOKS_ENDPOINT_LIMIT_REACHED` | Webhook endpoint limit reached | Delete unused endpoints |
+
+```json
+{
+  "code": 52001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Webhooks endpoint limit reached",
+  "details": {
+    "current_count": 10,
+    "max_allowed": 10
+  }
+}
+```
+
+---
+
+## Error Handling Best Practices
+
+```javascript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient(process.env.CHAINSTREAM_ACCESS_TOKEN);
+
+async function safeApiCall(apiFunction) {
+  try {
+    return await apiFunction();
+  } catch (error) {
+    const { code, message, details } = error;
+    
+    // Handle errors by category
+    if (code === 401) {
+      // Authentication error: refresh token
+      await refreshToken();
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code === 429 || code === 42901 || code === 42902) {
+      // Rate limit: wait and retry
+      const retryAfter = details?.reset_at 
+        ? (details.reset_at * 1000 - Date.now()) 
+        : 1000;
+      await sleep(retryAfter);
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code >= 40000 && code < 41000) {
+      // Client parameter error: log and throw
+      console.error(`Parameter error: ${message}`, details);
+      throw new ValidationError(message, details);
+    }
+    
+    if (code >= 40400 && code < 40500) {
+      // Resource not found
+      console.warn(`Resource not found: ${message}`);
+      return null;
+    }
+    
+    if (code >= 50000) {
+      // Server error: log and retry
+      console.error(`Server error: ${message}`, details);
+      await sleep(1000);
+      return safeApiCall(apiFunction);
+    }
+    
+    // Unknown error
+    throw error;
+  }
+}
+
+// Usage example
+const tokenInfo = await safeApiCall(() => 
+  client.token.getToken('sol', 'TOKEN_ADDRESS')
+);
+```
+
+---
+
+## Getting Help
+
+If you encounter unresolvable errors:
+
+<CardGroup cols={2}>
+  <Card title="Technical Support" icon="envelope" href="mailto:support@chainstream.io">
+    Email us with error code and timestamp
+  </Card>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/quhPXEkJ">
+    Join community for help
+  </Card>
+</CardGroup>
+
+<Note>
+When reporting issues, please provide the complete error response (including `code`, `timestamp`, `message`, and `details`) so we can quickly identify the problem.
+</Note>

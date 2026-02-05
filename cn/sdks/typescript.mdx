@@ -1,0 +1,133 @@
+---
+title: 'TypeScript'
+description: 'ChainStream TypeScript/JavaScript SDK'
+icon: 'js'
+---
+
+## 安装
+
+<CodeGroup>
+```bash npm
+npm install @chainstream-io/sdk
+```
+
+```bash yarn
+yarn add @chainstream-io/sdk
+```
+
+```bash pnpm
+pnpm add @chainstream-io/sdk
+```
+</CodeGroup>
+
+## 快速开始
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+```
+
+## REST API 示例
+
+查询代币信息：
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
+async function main() {
+  // 初始化 SDK 客户端
+  const client = new ChainStreamClient(ACCESS_TOKEN);
+
+  const chain = 'sol';
+  const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
+
+  console.log(`查询代币: ${chain}/${tokenAddress}`);
+
+  try {
+    // 通过 SDK 调用 API
+    const result = await client.token.getToken(chain, tokenAddress);
+    
+    console.log('结果:');
+    console.log(JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error('API 调用失败:', error);
+  }
+}
+
+main();
+```
+
+## WebSocket 示例
+
+订阅实时代币 K 线数据：
+
+```typescript
+import { ChainStreamClient, Resolution } from '@chainstream-io/sdk';
+
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
+async function main() {
+  const client = new ChainStreamClient(ACCESS_TOKEN, {
+    autoConnectWebSocket: true,
+  });
+
+  const chain = 'sol';
+  const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
+
+  console.log(`订阅代币 K 线: ${chain}/${tokenAddress}`);
+  console.log('监听中... (按 Ctrl+C 停止)\n');
+
+  // 通过 SDK 订阅 WebSocket
+  client.stream.subscribeTokenCandles({
+    chain,
+    tokenAddress,
+    resolution: Resolution['1s'],
+    callback: data => {
+      console.log(new Date().toISOString(), JSON.stringify(data));
+    },
+  });
+
+  // 保持进程运行
+  process.on('SIGINT', () => {
+    console.log('\n关闭连接...');
+    process.exit(0);
+  });
+
+  // 持续运行
+  await new Promise(() => {});
+}
+
+main().catch(error => {
+  console.error('测试失败:', error.message);
+  process.exit(1);
+});
+```
+
+## 错误处理
+
+```typescript
+import { ChainStreamClient, ChainStreamError } from '@chainstream-io/sdk';
+
+try {
+  const token = await client.token.getToken('sol', 'INVALID_ADDRESS');
+} catch (error) {
+  if (error instanceof ChainStreamError) {
+    console.error(`错误代码: ${error.code}`);
+    console.error(`错误信息: ${error.message}`);
+  }
+}
+```
+
+## 相关资源
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/typescript">
+    查看源代码
+  </Card>
+  <Card title="npm" icon="npm" href="https://www.npmjs.com/package/@chainstream-io/sdk">
+    包管理器
+  </Card>
+</CardGroup>

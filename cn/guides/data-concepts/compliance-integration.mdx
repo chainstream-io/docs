@@ -1,0 +1,867 @@
+---
+title: "合规集成指南"
+description: "企业级 KYT/KYA 合规能力集成完整指南"
+icon: "shield-check"
+---
+
+本指南介绍如何将 ChainStream KYT/KYA 合规能力集成到您的应用中，包括 CEX 充提风控、钱包风险提示、批量筛查等完整场景。
+
+---
+
+## 前置准备
+
+### API 基础信息
+
+| 配置项 | 值 |
+|:--|:--|
+| Base URL | `https://api-dex.chainstream.io/` |
+| Auth Domain | `dex.asia.auth.chainstream.io` |
+| Audience | `https://api.dex.chainstream.io` |
+
+### KYT 相关 Scopes
+
+| Scope | 说明 |
+|:--|:--|
+| `kyt.read` | KYT API 读取权限（查询交易风险） |
+| `kyt.write` | KYT API 写入权限（注册交易分析） |
+
+### 生成 Access Token
+
+<CodeGroup>
+```javascript JavaScript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+  domain: 'dex.asia.auth.chainstream.io',
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret'
+});
+
+// 获取 KYT 完整权限的 Token
+const response = await auth0Client.oauth.clientCredentialsGrant({
+  audience: 'https://api.dex.chainstream.io',
+  scope: 'kyt.read kyt.write'
+});
+
+const accessToken = response.data.access_token;
+```
+
+```python Python
+from auth0.authentication import GetToken
+
+get_token = GetToken(
+    'dex.asia.auth.chainstream.io',
+    'your-client-id',
+    client_secret='your-client-secret'
+)
+
+token = get_token.client_credentials(
+    audience='https://api.dex.chainstream.io',
+    scope='kyt.read kyt.write'
+)
+
+access_token = token['access_token']
+```
+</CodeGroup>
+
+### API 调用
+
+所有请求需在 Header 中携带 Token：
+
+```javascript
+const response = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ /* request body */ })
+});
+```
+
+---
+
+## CEX 充值风控
+
+交易所充值场景是 KYT 最核心的应用场景，需要在资金入账前完成风险判断。
+
+### 业务流程
+
+```mermaid
+flowchart TD
+    A[链上交易检测] --> B[注册交易到 KYT]
+    B --> C[获取风险评估]
+    C --> D{风险等级判定}
+    D -->|SEVERE| E[冻结资金 + 合规报告]
+    D -->|HIGH| F[延迟入账 + 人工审核]
+    D -->|MEDIUM| G[正常入账 + 标记监控]
+    D -->|LOW| H[正常入账]
+```
+
+### 接入步骤
+
+<Steps>
+  <Step title="初始化客户端">
+    ```javascript
+    import { AuthenticationClient } from 'auth0';
+
+    // 生成 Token（建议缓存，过期前刷新）
+    async function getAccessToken() {
+      const auth0Client = new AuthenticationClient({
+        domain: 'dex.asia.auth.chainstream.io',
+        clientId: process.env.CHAINSTREAM_CLIENT_ID,
+        clientSecret: process.env.CHAINSTREAM_CLIENT_SECRET
+      });
+
+      const { data } = await auth0Client.oauth.clientCredentialsGrant({
+        audience: 'https://api.dex.chainstream.io',
+        scope: 'kyt.read kyt.write'
+      });
+
+      return data.access_token;
+    }
+    ```
+  </Step>
+
+  <Step title="交易检测">
+    监听用户充值地址的入账交易：
+    ```javascript
+    async function onDepositDetected(tx) {
+      const deposit = {
+        network: 'ethereum',           // 网络：bitcoin, ethereum, Solana
+        asset: tx.asset,               // 资产类型：ETH, SOL 等
+        transferReference: tx.hash,    // 交易哈希
+        direction: 'received'          // 方向：sent 或 received
+      };
+      
+      // 调用 KYT 分析
+      const result = await registerTransfer(deposit);
+      
+      // 获取风险评估
+      const risk = await getTransferSummary(result.externalId);
+      
+      // 执行决策
+      await executeDecision(tx, risk);
+    }
+    ```
+  </Step>
+
+  <Step title="注册交易">
+    调用 KYT API 注册交易：
+    ```javascript
+    async function registerTransfer(deposit) {
+      const response = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          network: deposit.network,
+          asset: deposit.asset,
+          transferReference: deposit.transferReference,
+          direction: deposit.direction
+        })
+      });
+      
+      return await response.json();
+    }
+    ```
+  </Step>
+
+  <Step title="获取风险评估">
+    查询交易的风险摘要：
+    ```javascript
+    async function getTransferSummary(transferId) {
+      const response = await fetch(
+        `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+      
+      return await response.json();
+    }
+    ```
+  </Step>
+
+  <Step title="自动决策">
+    根据风险等级执行相应操作：
+    ```javascript
+    async function executeDecision(tx, risk) {
+      const riskLevel = risk.rating; // SEVERE, HIGH, MEDIUM, LOW
+      
+      switch (riskLevel) {
+        case 'SEVERE':
+          await freezeDeposit(tx);
+          await createSARReport(tx, risk);
+          await notifyCompliance(tx, risk);
+          break;
+          
+        case 'HIGH':
+          await holdDeposit(tx, { hours: 24 });
+          await createManualReview(tx, risk);
+          break;
+          
+        case 'MEDIUM':
+          await creditDeposit(tx);
+          await flagForMonitoring(tx, risk);
+          break;
+          
+        case 'LOW':
+          await creditDeposit(tx);
+          break;
+      }
+      
+      // 记录审计日志
+      await auditLog.record({
+        action: 'DEPOSIT_RISK_DECISION',
+        txHash: tx.hash,
+        riskLevel,
+        timestamp: new Date()
+      });
+    }
+    ```
+  </Step>
+</Steps>
+
+---
+
+## 完整流程详解
+
+合规集成的端到端流程涵盖：检测 → 注册 → 轮询 → 风险判定 → 放行/冻结
+
+### 1. 检测阶段
+
+| 触发源 | 说明 | 延迟 |
+|:--|:--|:--|
+| 链上监听 | 监控充值地址 | 区块确认时间 |
+| 用户提交 | 提现申请 | 即时 |
+| 定时扫描 | 补漏机制 | 可配置 |
+
+### 2. 注册阶段
+
+```bash
+POST https://api-dex.chainstream.io/v1/kyt/transfer
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "network": "ethereum",
+  "asset": "ETH",
+  "transferReference": "0x1234567890abcdef...",
+  "direction": "received"
+}
+```
+
+**响应：**
+
+```json
+{
+  "externalId": "123e4567-e89b-12d3-a456-426614174000",
+  "asset": "ETH",
+  "network": "ethereum",
+  "transferReference": "0x1234567890abcdef...",
+  "direction": "received",
+  "updatedAt": "2024-01-15T10:30:00.000Z"
+}
+```
+
+### 3. 查询阶段
+
+<Tabs>
+  <Tab title="轮询方式">
+    ```javascript
+    async function pollForResult(transferId, maxAttempts = 10) {
+      for (let i = 0; i < maxAttempts; i++) {
+        const response = await fetch(
+          `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+          {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          }
+        );
+        const data = await response.json();
+        
+        if (data.rating) {
+          return data;
+        }
+        
+        await new Promise(r => setTimeout(r, 3000)); // 3秒间隔
+      }
+      
+      throw new Error('Analysis timeout');
+    }
+    ```
+  </Tab>
+  <Tab title="获取详细信息">
+    获取风险敞口详情：
+    ```javascript
+    // 获取直接风险敞口
+    const exposures = await fetch(
+      `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/exposures/direct`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+
+    // 获取风险告警
+    const alerts = await fetch(
+      `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/alerts`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    ```
+  </Tab>
+</Tabs>
+
+### 4. 判定阶段
+
+风险判定规则配置：
+
+```yaml
+risk_rules:
+  severe:
+    action: FREEZE
+    auto_execute: true
+    notify:
+      - compliance@company.com
+      - security@company.com
+    
+  high:
+    action: MANUAL_REVIEW
+    auto_execute: false
+    hold_period: 24h
+    escalation: 4h
+    
+  medium:
+    action: FLAG
+    auto_execute: true
+    monitoring_period: 30d
+    
+  low:
+    action: PASS
+    auto_execute: true
+```
+
+### 5. 执行阶段
+
+| 操作 | 触发条件 | 后续流程 |
+|:--|:--|:--|
+| 放行 | LOW 风险 | 正常入账/放款 |
+| 标记 | MEDIUM 风险 | 入账但持续监控 |
+| 暂扣 | HIGH 风险 | 进入人工审核队列 |
+| 冻结 | SEVERE 风险 | 冻结 + 合规报告 |
+
+---
+
+## 完整服务实现
+
+<CodeGroup>
+```javascript JavaScript
+import { AuthenticationClient } from 'auth0';
+
+class ComplianceService {
+  constructor() {
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+
+  // 获取或刷新 Token
+  async getAccessToken() {
+    if (this.accessToken && this.tokenExpiry > Date.now()) {
+      return this.accessToken;
+    }
+
+    const auth0Client = new AuthenticationClient({
+      domain: 'dex.asia.auth.chainstream.io',
+      clientId: process.env.CHAINSTREAM_CLIENT_ID,
+      clientSecret: process.env.CHAINSTREAM_CLIENT_SECRET
+    });
+
+    const { data } = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: 'kyt.read kyt.write'
+    });
+
+    this.accessToken = data.access_token;
+    // Token 通常 24 小时有效，提前 1 小时刷新
+    this.tokenExpiry = Date.now() + (23 * 60 * 60 * 1000);
+    
+    return this.accessToken;
+  }
+
+  // 充值合规检查
+  async checkDeposit(deposit) {
+    const token = await this.getAccessToken();
+    
+    // 1. 注册交易
+    const registerResponse = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        network: deposit.network,
+        asset: deposit.asset,
+        transferReference: deposit.txHash,
+        direction: 'received'
+      })
+    });
+    const registered = await registerResponse.json();
+
+    // 2. 等待并获取风险评估
+    const risk = await this.waitForAnalysis(token, registered.externalId);
+    
+    // 3. 生成决策
+    const decision = this.makeDecision(risk);
+    
+    // 4. 记录审计
+    await this.auditLog(deposit, risk, decision);
+    
+    return decision;
+  }
+
+  async waitForAnalysis(token, transferId, maxAttempts = 10) {
+    for (let i = 0; i < maxAttempts; i++) {
+      const response = await fetch(
+        `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      const result = await response.json();
+      
+      if (result.rating) {
+        return result;
+      }
+      await new Promise(r => setTimeout(r, 3000));
+    }
+    throw new Error('Analysis timeout');
+  }
+
+  makeDecision(risk) {
+    const decisions = {
+      'SEVERE': {
+        action: 'FREEZE',
+        requireSAR: true,
+        notify: ['compliance@company.com', 'security@company.com']
+      },
+      'HIGH': {
+        action: 'HOLD',
+        requireReview: true,
+        holdHours: 24
+      },
+      'MEDIUM': {
+        action: 'PASS',
+        flagMonitoring: true
+      },
+      'LOW': {
+        action: 'PASS'
+      }
+    };
+    return decisions[risk.rating] || decisions['LOW'];
+  }
+
+  async auditLog(deposit, risk, decision) {
+    console.log({
+      timestamp: new Date().toISOString(),
+      type: 'COMPLIANCE_CHECK',
+      deposit,
+      risk,
+      decision
+    });
+  }
+}
+
+// 使用示例
+const compliance = new ComplianceService();
+
+app.post('/deposit/process', async (req, res) => {
+  const deposit = req.body;
+  const decision = await compliance.checkDeposit(deposit);
+  res.json(decision);
+});
+```
+
+```python Python
+import os
+import time
+import requests
+from auth0.authentication import GetToken
+
+class ComplianceService:
+    def __init__(self):
+        self.access_token = None
+        self.token_expiry = 0
+        self.base_url = 'https://api-dex.chainstream.io'
+    
+    def get_access_token(self):
+        if self.access_token and self.token_expiry > time.time():
+            return self.access_token
+        
+        get_token = GetToken(
+            'dex.asia.auth.chainstream.io',
+            os.environ['CHAINSTREAM_CLIENT_ID'],
+            client_secret=os.environ['CHAINSTREAM_CLIENT_SECRET']
+        )
+        
+        token = get_token.client_credentials(
+            audience='https://api.dex.chainstream.io',
+            scope='kyt.read kyt.write'
+        )
+        
+        self.access_token = token['access_token']
+        self.token_expiry = time.time() + (23 * 60 * 60)
+        
+        return self.access_token
+    
+    def check_deposit(self, deposit: dict) -> dict:
+        token = self.get_access_token()
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # 注册交易
+        register_response = requests.post(
+            f'{self.base_url}/v1/kyt/transfer',
+            headers=headers,
+            json={
+                'network': deposit['network'],
+                'asset': deposit['asset'],
+                'transferReference': deposit['tx_hash'],
+                'direction': 'received'
+            }
+        )
+        registered = register_response.json()
+        
+        # 等待结果
+        risk = self.wait_for_analysis(token, registered['externalId'])
+        
+        # 返回决策
+        return self.make_decision(risk['rating'])
+    
+    def wait_for_analysis(self, token, transfer_id, max_attempts=10):
+        headers = {'Authorization': f'Bearer {token}'}
+        
+        for _ in range(max_attempts):
+            response = requests.get(
+                f'{self.base_url}/v1/kyt/transfers/{transfer_id}/summary',
+                headers=headers
+            )
+            result = response.json()
+            
+            if result.get('rating'):
+                return result
+            time.sleep(3)
+        
+        raise Exception('Analysis timeout')
+    
+    def make_decision(self, rating):
+        decisions = {
+            'SEVERE': {'action': 'FREEZE', 'requireSAR': True},
+            'HIGH': {'action': 'HOLD', 'requireReview': True},
+            'MEDIUM': {'action': 'PASS', 'flagMonitoring': True},
+            'LOW': {'action': 'PASS'}
+        }
+        return decisions.get(rating, decisions['LOW'])
+```
+</CodeGroup>
+
+---
+
+## CEX 提现风控
+
+提现场景需要在用户发起提现时，检查目标地址的风险。
+
+### 业务流程
+
+```mermaid
+flowchart TD
+    A[用户提现请求] --> B[注册目标地址]
+    B --> C[获取地址风险]
+    C --> D{风险等级判定}
+    D -->|SEVERE| E[阻止提现]
+    D -->|HIGH| F[二次确认]
+    D -->|MEDIUM/LOW| G[放行提现]
+```
+
+### 实现示例
+
+```javascript
+async function handleWithdrawal(request) {
+  const { toAddress } = request;
+  const token = await complianceService.getAccessToken();
+  
+  // 1. 注册地址
+  const registerResponse = await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ address: toAddress })
+  });
+  await registerResponse.json();
+  
+  // 2. 获取地址风险
+  const riskResponse = await fetch(
+    `https://api-dex.chainstream.io/v1/kyt/addresses/${toAddress}/risk`,
+    { headers: { 'Authorization': `Bearer ${token}` } }
+  );
+  const addressRisk = await riskResponse.json();
+  
+  // 3. 风险处理
+  switch (addressRisk.rating) {
+    case 'SEVERE':
+      return {
+        status: 'REJECTED',
+        reason: 'Target address is associated with known criminal activity',
+        riskLevel: 'SEVERE'
+      };
+      
+    case 'HIGH':
+      return {
+        status: 'PENDING_CONFIRMATION',
+        warning: 'This address has been flagged as high risk',
+        riskDetails: addressRisk,
+        requiresConfirmation: true
+      };
+      
+    default:
+      return {
+        status: 'APPROVED',
+        riskLevel: addressRisk.rating
+      };
+  }
+}
+
+// Express 路由示例
+app.post('/withdraw/request', async (req, res) => {
+  const result = await handleWithdrawal(req.body);
+  res.json(result);
+});
+```
+
+---
+
+## 钱包风险提示
+
+钱包应用中，在用户发起转账前提供风险提示。
+
+### 用户体验流程
+
+```mermaid
+flowchart TD
+    A[用户输入地址] --> B[实时查询地址风险]
+    B --> C{风险等级}
+    C -->|HIGH/SEVERE| D[显示风险警告]
+    C -->|MEDIUM| E[显示提示信息]
+    C -->|LOW| F[正常显示]
+    D --> G{用户确认}
+    G -->|确认| H[继续转账]
+    G -->|取消| I[取消操作]
+```
+
+### 前后端集成
+
+<Warning>
+前端不应直接暴露 clientSecret，应通过后端 API 代理调用 ChainStream。
+</Warning>
+
+<Tabs>
+  <Tab title="前端调用">
+    ```javascript
+    // 地址输入变化时触发
+    async function onAddressChange(address) {
+      if (!isValidAddress(address)) return;
+      
+      setLoading(true);
+      
+      try {
+        // 调用后端代理 API
+        const response = await fetch('/api/risk/check-address', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address })
+        });
+        const risk = await response.json();
+        
+        setRiskInfo({
+          level: risk.rating,
+          labels: risk.labels,
+          warnings: risk.warnings
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="后端代理">
+    ```javascript
+    app.post('/api/risk/check-address', async (req, res) => {
+      const { address } = req.body;
+      const token = await complianceService.getAccessToken();
+      
+      // 注册地址
+      await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address })
+      });
+      
+      // 获取风险
+      const riskResponse = await fetch(
+        `https://api-dex.chainstream.io/v1/kyt/addresses/${address}/risk`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      const result = await riskResponse.json();
+      
+      res.json({
+        rating: result.rating,
+        riskScore: result.riskScore,
+        labels: result.labels || [],
+        warnings: generateWarnings(result)
+      });
+    });
+
+    function generateWarnings(result) {
+      const warnings = [];
+      if (result.exposures?.direct?.severe > 0) {
+        warnings.push('直接关联已知犯罪地址');
+      }
+      if (result.labels?.includes('Mixer User')) {
+        warnings.push('曾与混币服务交互');
+      }
+      return warnings;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 批量地址筛查
+
+企业场景下的存量地址合规筛查。
+
+### 应用场景
+
+- 定期合规审计
+- 新监管要求落地
+- 并购尽调
+- 风险排查
+
+### 批量筛查实现
+
+```javascript
+async function batchScreenAddresses(addresses) {
+  const token = await complianceService.getAccessToken();
+  const results = [];
+  
+  for (const address of addresses) {
+    try {
+      // 注册地址
+      await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address })
+      });
+      
+      // 获取风险
+      const riskResponse = await fetch(
+        `https://api-dex.chainstream.io/v1/kyt/addresses/${address}/risk`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      const risk = await riskResponse.json();
+      
+      results.push({
+        address,
+        rating: risk.rating,
+        riskScore: risk.riskScore
+      });
+    } catch (error) {
+      results.push({
+        address,
+        error: error.message
+      });
+    }
+  }
+  
+  // 处理高风险地址
+  const highRiskAddresses = results.filter(
+    r => r.rating === 'SEVERE' || r.rating === 'HIGH'
+  );
+  
+  return { all: results, highRisk: highRiskAddresses };
+}
+```
+
+---
+
+## 最佳实践
+
+### 阈值设置建议
+
+根据业务类型调整风险阈值：
+
+| 业务类型 | SEVERE 处理 | HIGH 处理 | MEDIUM 处理 |
+|:--|:--|:--|:--|
+| 持牌 CEX | 自动冻结 | 人工审核 | 标记监控 |
+| 钱包应用 | 强警告 | 警告 | 提示 |
+| DeFi 协议 | 拒绝交互 | 警告 | 正常 |
+| OTC 平台 | 拒绝交易 | 额外 KYC | 正常 |
+
+### 审计日志要求
+
+确保记录完整的审计轨迹：
+
+```json
+{
+  "eventId": "evt_123456",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "eventType": "RISK_DECISION",
+  "subject": {
+    "transferId": "123e4567-e89b-12d3-a456-426614174000",
+    "txHash": "0x...",
+    "userId": "user_789"
+  },
+  "riskAssessment": {
+    "rating": "HIGH",
+    "riskScore": 72
+  },
+  "decision": {
+    "action": "HOLD",
+    "decidedBy": "SYSTEM",
+    "reason": "Auto-hold per risk policy"
+  },
+  "metadata": {
+    "policyVersion": "1.2.0",
+    "engineVersion": "2024.01"
+  }
+}
+```
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="认证文档" icon="key" href="/cn/guides/getting-started/authentication">
+    详细认证指南
+  </Card>
+  <Card title="KYT 概念" icon="shield" href="/cn/guides/data-concepts/kyt-concepts">
+    KYT 核心概念
+  </Card>
+  <Card title="KYA 概念" icon="user-shield" href="/cn/guides/data-concepts/kya-concepts">
+    KYA 核心概念
+  </Card>
+  <Card title="KYT API 参考" icon="code" href="/cn/api-reference/endpoint/kyt/v1/kyt-transfer-post">
+    KYT API 完整文档
+  </Card>
+</CardGroup>

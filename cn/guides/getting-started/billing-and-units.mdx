@@ -1,0 +1,488 @@
+---
+title: "计费与额度"
+description: "了解 ChainStream 的计费模式和额度管理"
+icon: "credit-card"
+---
+
+## 概述
+
+ChainStream 采用 **Unit（计费单位）** 模式计费。不同 API 消耗不同数量的 Units，你可以根据业务需求选择合适的套餐。
+
+---
+
+## 计费模式
+
+### 套餐类型
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="gift">
+    **$0 / 月**
+
+    - 30K Units/月
+    - 不可超额
+    - 适合开发测试、概念验证
+  </Card>
+
+  <Card title="Starter" icon="rocket">
+    **$199 / 月**
+
+    - 10M Units/月
+    - 超额费率 $12.9/M
+    - 适合小型项目、MVP
+  </Card>
+
+  <Card title="Pro" icon="bolt">
+    **$699 / 月**
+
+    - 50M Units/月
+    - 超额费率 $9.9/M
+    - 适合生产环境、中等流量
+  </Card>
+
+  <Card title="Enterprise" icon="building">
+    **$1,699 / 月**
+
+    - 200M Units/月
+    - 超额费率 $6.9/M
+    - 适合大型企业、高并发场景
+  </Card>
+
+  <Card title="Custom" icon="handshake">
+    **定制价格**
+
+    - 定制 Units 额度
+    - 定制超额费率
+    - 私有部署、专属 SLA
+  </Card>
+</CardGroup>
+
+<Tip>
+所有套餐额度用尽后都会禁止访问（返回 403 错误）。付费套餐可在 Dashboard 中购买额外用量恢复服务。
+</Tip>
+
+### 套餐选择指南
+
+<AccordionGroup>
+  <Accordion title="Free — 适合开发测试">
+    **适用场景：**
+    - 本地开发调试
+    - 功能验证和 Demo 演示
+    - 学习和评估 ChainStream API
+
+    **典型用量估算：**
+    - 每天调用 300 次价格查询 → 约 9,000 Units/月
+
+    **限制：**
+    - 数据可能有 1-2 秒延迟
+    - 不保证 SLA
+    - 额度用尽后无法继续调用
+  </Accordion>
+
+  <Accordion title="Starter — 适合小型项目">
+    **适用场景：**
+    - 个人开发者的小型 dApp
+    - 交易机器人原型
+    - 小型行情展示网站
+
+    **典型用量估算：**
+    - 行情看板（10 个代币，每分钟刷新）→ 约 43,200 Units/月
+    - 小型交易机器人（每秒 1 次查询）→ 约 86,400 Units/月（单代币）
+
+    **具体场景示例：**
+    假设你在开发一个 Solana 代币行情网站，展示 20 个热门代币价格，每 30 秒刷新：
+    ```
+    20 代币 × 2 次/分钟 × 60 分钟 × 24 小时 × 30 天 = 1,728,000 次请求
+    按 1 Unit/次 = 1,728,000 Units/月
+    ```
+    此场景建议选择 Pro 套餐。
+  </Accordion>
+
+  <Accordion title="Pro — 适合生产环境">
+    **适用场景：**
+    - 中小型交易所/钱包的数据需求
+    - 专业交易工具
+    - 需要 KYT/KYA 风控的业务
+
+    **典型用量估算：**
+    - 中型行情平台（100 代币，实时 WebSocket）→ 约 500,000 Units/月
+    - 充值风控（1000 笔/天 KYT 检测）→ 约 150,000 Units/月
+
+    **具体场景示例：**
+    假设你运营一个小型交易所，需要：
+    - 行情数据：50 个交易对，WebSocket 实时推送
+    - 充值风控：每天 500 笔充值，每笔做 KYT 检测
+    ```
+    WebSocket: 50 × 0.1 Unit/消息 × 86400 秒 × 30 天 ≈ 12,960,000 消息 = 1,296,000 Units
+    KYT: 500 × 5 Units × 30 天 = 75,000 Units
+    总计: 约 1,371,000 Units/月
+    ```
+    此场景建议选择 Pro 套餐 + 超额预算，或联系销售获取 Enterprise 报价。
+  </Accordion>
+
+  <Accordion title="Enterprise — 适合大型企业">
+    **适用场景：**
+    - 大型交易所
+    - 机构级量化交易
+    - 需要私有部署或定制 SLA
+
+    **包含权益：**
+    - 无限 API 调用量
+    - 专属技术支持
+    - 定制 SLA（99.99%+）
+    - 可选私有部署
+
+    联系销售获取报价。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Units 计算
+
+### 什么是 Unit
+
+Unit 是 ChainStream 的计费单位。不同 API 消耗不同数量的 Units，复杂度越高的 API 消耗越多。
+
+### 数据 API 消耗表
+
+<Tabs>
+  <Tab title="代币 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 代币价格查询 | 1 | `GET /v1/token/{chain}/{tokenAddress}/price` |
+    | 批量价格查询 | 1 | `GET /v1/token/{chain}/{tokenAddress}/prices` |
+    | 代币元数据 | 1 | `GET /v1/token/{chain}/metadata/multi` |
+    | 代币市场数据 | 1 | `GET /v1/token/{chain}/{tokenAddress}/marketdata` |
+    | 批量市场数据 | 1 | `GET /v1/token/{chain}/marketdata/multi` |
+    | 代币统计 | 1 | `GET /v1/token/{chain}/{tokenAddress}/stats` |
+    | 批量统计 | 1 | `GET /v1/token/{chain}/stats/multi` |
+    | 代币K线 | 1 | `GET /v1/token/{chain}/{tokenAddress}/candles` |
+    | 代币持有者列表 | 2 | `GET /v1/token/{chain}/{tokenAddress}/holders` |
+    | 批量持有者 | 2 | `GET /v1/token/{chain}/{tokenAddress}/holders/multi` |
+    | Top持有者 | 2 | `GET /v1/token/{chain}/{tokenAddress}/topholders` |
+    | 代币流动性快照 | 2 | `GET /v1/token/{chain}/{tokenAddress}/liquiditysnapshots` |
+    | 代币安全检查 | 2 | `GET /v1/token/{chain}/{tokenAddress}/security` |
+    | 代币创建信息 | 1 | `GET /v1/token/{chain}/{tokenAddress}/creation` |
+    | 代币铸造/销毁 | 2 | `GET /v1/token/{chain}/{tokenAddress}/mintandburn` |
+    | 代币交易者标签 | 2 | `GET /v1/token/{chain}/{tokenAddress}/traders/{tag}` |
+    | 代币列表 | 1 | `GET /v1/token/{chain}/list` |
+    | 开发者代币 | 2 | `GET /v1/token/{chain}/dev/{devAddress}/tokens` |
+    | 代币流动池 | 1 | `GET /v1/token/{chain}/{tokenAddress}/pools` |
+  </Tab>
+  <Tab title="钱包 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 钱包余额 | 2 | `GET /v1/wallet/{chain}/{walletAddress}/balance` |
+    | 余额更新 | 2 | `GET /v1/wallet/{chain}/{walletAddress}/balance/updates` |
+    | 钱包信息 | 1 | `GET /v1/wallet/{chain}/{walletAddress}` |
+    | 钱包统计 | 2 | `GET /v1/wallet/{chain}/{walletAddress}/stats` |
+    | PnL计算 | 3 | `POST /v1/wallet/{chain}/{walletAddress}/calculate-pnl` |
+    | 添加监控钱包 | 1 | `POST /v1/watchlist/{chain}/{walletAddress}` |
+  </Tab>
+  <Tab title="交易 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 代币交易记录 | 2 | `GET /v1/trade/{chain}` |
+    | 交易活动 | 2 | `GET /v1/trade/{chain}/activities` |
+    | Top交易者 | 2 | `GET /v1/trade/{chain}/top-traders` |
+  </Tab>
+  <Tab title="流动池 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 流动池信息 | 1 | `GET /v1/dexpools/{chain}/{poolAddress}` |
+    | 流动池快照 | 2 | `GET /v1/dexpools/{chain}/{poolAddress}/snapshots` |
+  </Tab>
+  <Tab title="排名 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 热门代币 | 1 | `GET /v1/ranking/{chain}/hottokens/{duration}` |
+    | 新代币 | 1 | `GET /v1/ranking/{chain}/newtokens` |
+    | 毕业代币 | 1 | `GET /v1/ranking/{chain}/migrated` |
+    | 即将毕业 | 1 | `GET /v1/ranking/{chain}/finalstretch` |
+    | 美股概念币 | 1 | `GET /v1/ranking/{chain}/stocks` |
+  </Tab>
+  <Tab title="DEX 交易 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 支持的DEX | 1 | `GET /v1/dex` |
+    | 交易报价 | 2 | `GET /v1/dex/{chain}/quote` |
+    | 路由查询 | 2 | `POST /v1/dex/{chain}/route` |
+    | 创建交易 | 3 | `POST /v1/dex/{chain}/create` |
+    | 执行交换 | 5 | `POST /v1/dex/{chain}/swap` |
+  </Tab>
+  <Tab title="区块链 API">
+    | API | Units | 端点 |
+    |:--|:--|:--|
+    | 支持的链 | 1 | `GET /v1/blockchain` |
+    | 最新区块 | 1 | `GET /v1/blockchain/{chain}/latest_block` |
+    | Gas价格 | 1 | `GET /v1/transaction/{chain}/gas-price` |
+    | Gas估算 | 2 | `POST /v1/transaction/{chain}/estimate-gas-limit` |
+    | 发送交易 | 3 | `POST /v1/transaction/{chain}/send` |
+  </Tab>
+</Tabs>
+
+### Webhook API 消耗表
+
+| API | Units | 端点 |
+|:--|:--|:--|
+| 获取所有 Webhook | 1 | `GET /v1/webhook/endpoint` |
+| 创建 Webhook | 2 | `POST /v1/webhook/endpoint` |
+| 获取 Webhook 详情 | 1 | `GET /v1/webhook/endpoint/{id}` |
+| 更新 Webhook | 2 | `PATCH /v1/webhook/endpoint` |
+| 删除 Webhook | 1 | `DELETE /v1/webhook/endpoint/{id}` |
+| 获取 Webhook Secret | 1 | `GET /v1/webhook/endpoint/{id}/secret` |
+| 轮换 Secret | 2 | `POST /v1/webhook/endpoint/{id}/secret/rotate` |
+
+---
+
+## WebSocket 实时订阅计费
+
+WebSocket 实时数据订阅独立计费，按推送数据的字节数计费：
+
+| 计费项 | 费率 | 说明 |
+|:--|:--|:--|
+| WebSocket 数据 | **0.005 Unit/byte** | 按推送数据字节数计费 |
+| WebSocket 连接 | 免费 | 建立连接不计费 |
+| 心跳消息 | 免费 | 心跳包不计费 |
+
+### 支持的订阅频道
+
+<Tabs>
+  <Tab title="K线数据">
+    | 频道 | 说明 |
+    |:--|:--|
+    | `dex-candle:{chain}_{tokenAddress}_{resolution}` | 实时K线数据 |
+  </Tab>
+  <Tab title="代币数据">
+    | 频道 | 说明 |
+    |:--|:--|
+    | `dex-token-stats:{chain}_{tokenAddress}` | 代币统计数据 |
+    | `dex-token-holding:{chain}_{tokenAddress}` | 持有者统计 |
+    | `dex-token-supply:{chain}_{tokenAddress}` | 供应量和市值 |
+    | `dex-token-general-stat-num:{chain}_{tokenAddress}` | 流动性统计 |
+    | `dex-new-token:{chain}` | 新代币信息 |
+    | `dex-new-tokens-metadata:{chain}` | 新代币元数据 |
+  </Tab>
+  <Tab title="排名数据">
+    | 频道 | 说明 |
+    |:--|:--|
+    | `dex-ranking-list:{chain}_{ranking_type}` | 排名代币列表 |
+    | `dex-ranking-token-stats-list:{chain}_{channelType}` | 排名代币统计 |
+    | `dex-ranking-token-holding-list:{chain}_{channelType}` | 排名持有者统计 |
+    | `dex-ranking-token-supply-list:{chain}_{channelType}` | 排名供应量 |
+  </Tab>
+  <Tab title="钱包数据">
+    | 频道 | 说明 |
+    |:--|:--|
+    | `dex-wallet-balance:{chain}_{walletAddress}` | 钱包余额 |
+    | `dex-wallet-token-pnl:{chain}_{walletAddress}` | 代币级PnL |
+    | `dex-wallet-pnl-list:{chain}_{walletAddress}` | 钱包级PnL |
+  </Tab>
+  <Tab title="交易数据">
+    | 频道 | 说明 |
+    |:--|:--|
+    | `dex-trade:{chain}_{tokenAddress}` | 代币交易 |
+    | `dex-wallet-trade:{chain}_{walletAddress}` | 钱包交易 |
+  </Tab>
+  <Tab title="流动池">
+    | 频道 | 说明 |
+    |:--|:--|
+    | `dex-pool-balance:{chain}_{poolAddress}` | 资金池余额 |
+  </Tab>
+</Tabs>
+
+### WebSocket 用量估算示例
+
+```
+场景：监控 10 个代币的实时K线（1分钟周期）
+
+计算：
+- K线消息约 200 bytes/条
+- 每个代币每分钟约 1 条K线消息
+- 10 代币 × 1 消息/分钟 × 60 分钟 × 24 小时 × 30 天 = 432,000 条消息
+- 总数据量：432,000 × 200 = 86,400,000 bytes
+- 月消耗：86,400,000 × 0.005 = 432,000 Units
+
+场景：监控 50 个代币统计数据（实时推送，约每秒更新）
+
+计算：
+- 代币统计消息约 500 bytes/条
+- 50 代币 × 1 消息/秒 × 86,400 秒 × 30 天 = 129,600,000 条消息
+- 总数据量：129,600,000 × 500 = 64,800,000,000 bytes (约 64.8 GB)
+- 月消耗：64,800,000,000 × 0.005 = 324,000,000 Units (约 324M)
+```
+
+<Note>
+批量 API 通常有折扣。具体消耗以 API Reference 中的说明为准。WebSocket 消息频率取决于市场活跃度，高波动时消息量会增加。
+</Note>
+
+---
+
+## KYT/KYA 服务计费
+
+<Warning>
+KYT/KYA API **不消耗套餐 Units**，而是从独立的 KYT 账户余额扣费（美元计价）。请在 Dashboard → KYT Service 页面进行充值。
+</Warning>
+
+| API | 费用 | 端点 |
+|:--|:--|:--|
+| 充值风险评估 | $0.25/次 | `POST /v1/kyt/transfer` |
+| 提现风险评估 | $0.25/次 | `POST /v1/kyt/withdrawal` |
+| 注册地址 | $1.25/次 | `POST /v1/kyt/address` |
+
+---
+
+### 费用估算示例
+
+<Tabs>
+  <Tab title="行情展示应用">
+    **场景：** 一个 DeFi 行情网站，展示 50 个代币价格，每 10 秒刷新
+    ```
+    计算：
+    - 请求频率：50 代币 × 6 次/分钟 = 300 次/分钟
+    - 月请求量：300 × 60 × 24 × 30 = 12,960,000 次
+    - 月消耗：12,960,000 × 1 Unit = 12,960,000 Units
+
+    推荐：Enterprise 套餐
+    ```
+  </Tab>
+  <Tab title="交易机器人">
+    **场景：** 一个套利机器人，监控 5 个交易对，每秒查询价格
+    ```
+    计算：
+    - 请求频率：5 × 1 次/秒 = 5 次/秒
+    - 月请求量：5 × 86400 × 30 = 12,960,000 次
+    - 月消耗：12,960,000 × 1 Unit = 12,960,000 Units
+
+    推荐：Enterprise 套餐，或使用 WebSocket 降低消耗
+
+    使用 WebSocket 优化后：
+    - 5 交易对 × 0.1 Unit/消息 × 86400 × 30 = 1,296,000 Units
+    - 推荐：Pro 套餐 + 超额
+    ```
+  </Tab>
+  <Tab title="交易所风控">
+    **场景：** 小型交易所，每天 1000 笔充值需要 KYT 检测
+    ```
+    计算：
+    - 日请求量：1000 笔
+    - 月请求量：1000 × 30 = 30,000 次
+    - 月消耗：30,000 × 5 Units = 150,000 Units
+
+    推荐：Pro 套餐
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 额度管理
+
+### Dashboard 查看使用量
+
+<Steps>
+  <Step title="登录 Dashboard">
+    访问 [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+  </Step>
+  <Step title="查看用量">
+    在 Usage 页面查看当月使用量、剩余额度、历史趋势
+  </Step>
+</Steps>
+
+### 额度预警设置
+
+可以设置额度预警，在使用量达到阈值时收到通知：
+
+| 预警级别 | 触发条件 | 通知方式 |
+|:--|:--|:--|
+| 提醒 | 50% 使用量 | 邮件 |
+| 警告 | 80% 使用量 | 邮件 + Dashboard 提示 |
+| 紧急 | 100% 使用量 | 邮件 + Dashboard 提示 |
+
+<Tip>
+建议至少开启 80% 预警，避免服务意外中断。
+</Tip>
+
+---
+
+## 额度用尽处理
+
+### 用量不足时会发生什么
+
+当月额度用尽后，API 将返回 403 错误，无法继续调用。付费套餐用户可手动购买额外用量恢复服务。
+
+| 套餐 | 处理方式 |
+|:--|:--|
+| Free | API 返回 403 错误，等待下月额度重置 |
+| Starter / Pro / Enterprise | API 返回 403 错误，可购买额外用量恢复服务 |
+| Custom | 按合同约定处理 |
+
+### 购买额外用量
+
+付费套餐用户可以在 Dashboard 中购买额外用量，价格按照套餐对应的超额费率计算：
+
+| 套餐 | 额外用量价格 |
+|:--|:--|
+| Starter | $12.9 / 1M Units |
+| Pro | $9.9 / 1M Units |
+| Enterprise | $6.9 / 1M Units |
+
+<Warning>
+额度用尽后服务会立即中断（返回 403 错误）。建议设置 80% 用量预警，提前购买额外用量避免业务受影响。
+</Warning>
+
+---
+
+## 付款方式
+
+### 支持的付款方式
+
+| 方式 | 说明 | 适用套餐 |
+|:--|:--|:--|
+| 信用卡 | Visa, MasterCard, AMEX | 所有套餐 |
+| 加密货币 | USDT, USDC（ERC-20 / TRC-20） | Starter 及以上 |
+| 银行转账 | 需联系销售 | Enterprise |
+
+### 账单周期
+
+- **月付套餐：** 每月 1 日生成上月账单
+- **年付套餐：** 享受 2 个月免费（相当于 8.3 折）
+
+---
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="如何选择合适的套餐？">
+    建议先使用 Free 套餐评估实际用量，然后根据月均消耗选择：
+    - &lt; 30K Units：Free
+    - 30K - 10M Units：Starter
+    - 10M - 50M Units：Pro
+    - &gt; 50M Units：Enterprise
+  </Accordion>
+  <Accordion title="可以随时升级/降级套餐吗？">
+    可以。升级立即生效，按比例补差价。降级在下个账单周期生效。
+  </Accordion>
+  <Accordion title="未使用的额度可以累积吗？">
+    不可以。每月额度在月底清零，不累积到下月。
+  </Accordion>
+  <Accordion title="如何获取发票？">
+    在 Dashboard → Billing → Invoices 页面下载历史发票。企业客户可联系销售获取定制发票。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="FAQ" icon="circle-question" href="/cn/guides/getting-started/faq">
+    常见问题
+  </Card>
+  <Card title="API 安全" icon="shield-halved" href="/cn/guides/data-concepts/api-security">
+    了解 API 安全配置
+  </Card>
+  <Card title="API 参考" icon="book" href="/cn/api-reference/authentication/authenticate">
+    开始调用 API
+  </Card>
+</CardGroup>

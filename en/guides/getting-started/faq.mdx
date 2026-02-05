@@ -1,0 +1,467 @@
+---
+title: "FAQ"
+description: "ChainStream frequently asked questions"
+icon: "circle-question"
+---
+
+## Account & Authentication
+
+<AccordionGroup>
+  <Accordion title="How do I get an Access Token?">
+    1. Login to [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+    2. Go to **Apps** page
+    3. Click **Create New App**
+    4. Get your Client ID and Client Secret
+    5. Use Client ID and Client Secret to request an Access Token (JWT) from the Auth service
+
+    See [Authentication docs](/en/guides/getting-started/authentication) for details.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Data Related
+
+<AccordionGroup>
+  <Accordion title="Which blockchains are supported?">
+    Currently supported chains:
+
+    | Chain | Status | Notes |
+    |:--|:--|:--|
+    | Ethereum | ✅ Supported | Including mainnet and major L2s |
+    | Solana | ✅ Supported | |
+    | BSC | ✅ Supported | |
+    | Polygon | ✅ Supported | |
+    | Arbitrum | ✅ Supported | |
+    | Optimism | ✅ Supported | |
+    | Base | ✅ Supported | |
+    | Tron | ✅ Supported | |
+
+    See [Realtime Streaming](/en/guides/data-concepts/realtime-streaming) for more details.
+  </Accordion>
+
+  <Accordion title="What's the data latency?">
+    | Data Type | Latency |
+    |:--|:--|
+    | Real-time price (WebSocket) | < 2ms (P99) |
+    | REST API queries | < 100ms |
+    | Historical data queries | < 500ms |
+
+    Latency may vary based on network conditions and data complexity.
+  </Accordion>
+
+  <Accordion title="What's the data update frequency?">
+    | Data Type | Update Frequency |
+    |:--|:--|
+    | Token price | Real-time (triggered by each trade) |
+    | Wallet holdings | Updated per block |
+    | Smart Money labels | Daily updates |
+
+    Use WebSocket for the most real-time data push.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Billing Related
+
+<AccordionGroup>
+  <Accordion title="What are the Free plan limitations?">
+    Free plan limits:
+
+    - **Quota:** 30K Units/month
+    - **Request rate:** 10 requests/sec
+    - **Data latency:** May have 1-2 second delay
+    - **SLA:** Not guaranteed
+    - **Overage:** Returns 403 error when quota exhausted, resets next month
+
+    Suitable for development testing and POC, not recommended for production.
+  </Accordion>
+
+  <Accordion title="How do I check current usage?">
+    1. Login to [Dashboard](https://www.chainstream.io/dashboard)
+    2. View current month usage, remaining quota, and historical trends on the **Usage** page
+  </Accordion>
+
+  <Accordion title="What payment methods are supported?">
+    | Method | Supported Plans |
+    |:--|:--|
+    | Credit Card (Visa, MasterCard, AMEX) | All plans |
+    | Cryptocurrency (USDT, USDC) | Starter and above |
+    | Bank Transfer | Enterprise / Custom |
+
+    Cryptocurrency payments support ERC-20 and TRC-20 networks.
+  </Accordion>
+
+  <Accordion title="Can I upgrade or downgrade anytime?">
+    - **Upgrade:** Takes effect immediately, prorated charges apply
+    - **Downgrade:** Takes effect in next billing cycle
+
+    Manage in Dashboard → Billing → Subscription.
+  </Accordion>
+
+  <Accordion title="Do unused quotas roll over?">
+    No. Monthly quotas reset at month end and do not roll over. Choose a plan based on your actual usage.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Technical Issues
+
+<AccordionGroup>
+  <Accordion title="What do I do about 429 or 403 errors?">
+    - **429 error**: Request rate exceeded
+    - **403 error**: Quota exhausted
+
+    **Troubleshooting:**
+
+    1. **429 - Check if rate limited**
+       - Free plan: 10 requests/minute
+       - Paid plans: See [API Security](/en/guides/data-concepts/api-security)
+
+    2. **403 - Check if quota exhausted**
+       - View remaining quota in Dashboard → Usage
+       - Paid plans can purchase additional quota to restore service
+
+    **Solutions:**
+    - 429: Implement request throttling or exponential backoff retry
+    - 403: Purchase additional quota or upgrade plan
+    - Use WebSocket instead of polling to reduce request count
+
+```javascript
+// Error handling example
+async function handleApiError(error) {
+  if (error.status === 429) {
+    // Rate limited, wait and retry
+    await sleep(1000);
+    return retry();
+  } else if (error.status === 403) {
+    // Quota exhausted, need to purchase additional quota
+    console.error('Quota exhausted, please purchase additional quota in Dashboard');
+  }
+}
+```
+  </Accordion>
+
+  <Accordion title="How do I handle WebSocket disconnections?">
+    Implement an auto-reconnect mechanism:
+
+```javascript
+class ChainStreamWebSocket {
+  constructor(baseUrl, accessToken) {
+    this.baseUrl = baseUrl;
+    this.accessToken = accessToken;
+    this.reconnectDelay = 1000;
+    this.maxReconnectDelay = 30000;
+    this.connect();
+  }
+
+  connect() {
+    // Pass token via URL parameter
+    const url = `${this.baseUrl}?token=${this.accessToken}`;
+    this.ws = new WebSocket(url);
+    this.ws.onopen = () => {
+      console.log('Connected');
+      this.reconnectDelay = 1000; // Reset delay
+    };
+    this.ws.onclose = () => {
+      console.log('Disconnected, reconnecting...');
+      setTimeout(() => this.connect(), this.reconnectDelay);
+      // Exponential backoff
+      this.reconnectDelay = Math.min(
+        this.reconnectDelay * 2,
+        this.maxReconnectDelay
+      );
+    };
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+}
+```
+
+    **Reconnection tips:**
+    - Use exponential backoff (1s → 2s → 4s → ... → 30s)
+    - Set maximum reconnect delay (e.g., 30 seconds)
+    - Re-subscribe to data after successful reconnection
+  </Accordion>
+
+  <Accordion title="What's the API response format?">
+    All APIs return JSON format.
+
+    **Success response:**
+
+```json
+{
+  "chain": "solana",
+  "address": "So11111111111111111111111111111111111111112",
+  "name": "Wrapped SOL",
+  "symbol": "SOL",
+  "decimals": 9,
+  "price": 95.42
+}
+```
+
+    **Error response:**
+
+```json
+{
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Token not found"
+  }
+}
+```
+
+    See [Error Codes](/en/guides/resources/error-codes) for common error codes.
+  </Accordion>
+
+  <Accordion title="How do I debug API requests?">
+    **Method 1: Use API Playground**
+
+    Use the "Try It" feature on [API Reference](/en/api-reference) pages to test without writing code.
+
+    **Method 2: Use cURL**
+
+    Add `-v` flag for detailed request info:
+
+```bash
+curl -v "https://api.chainstream.io/v1/token/{chain}/{address}/metadata" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## KYT/KYA Related
+
+<AccordionGroup>
+  <Accordion title="What's the difference between KYT and KYA?">
+    | Feature | KYA (Address Verification) | KYT Report |
+    |:--|:--|:--|
+    | Purpose | Verify address risk and profile analysis | Transaction-level risk reports |
+    | Input | Wallet address | Transaction hash or address |
+    | Output | Risk level + address type + risk exposures | Transaction-related risk analysis |
+    | Typical use case | Address screening before user registration/deposit | Compliance check for specific transactions |
+
+    See [Security Compliance docs](/en/guides/security-compliance/overview).
+  </Accordion>
+
+  <Accordion title="What information does Address Verification return?">
+    Address verification returns these fields:
+
+    | Field | Description | Example Values |
+    |:--|:--|:--|
+    | Risk | Risk level | Low, Medium, High, Severe |
+    | Status | Verification status | COMPLETE, PENDING |
+    | Address Type | Address type | PRIVATE_WALLET, EXCHANGE, CONTRACT, etc. |
+    | Risk Exposures | Risk exposure details | Risk labels and associated amounts |
+  </Accordion>
+
+  <Accordion title="How do I interpret risk levels?">
+    Address Verification returns these risk levels:
+
+    | Risk Level | Meaning | Recommended Action |
+    |:--|:--|:--|
+    | Low | Low risk, no obvious suspicious associations | Process normally |
+    | Medium | Medium risk, some suspicious associations | Manual review recommended |
+    | High | High risk, significant suspicious associations | Reject or enhanced review recommended |
+    | Severe | Severe risk, direct association with sanctioned/illegal entities | Strongly recommend rejection |
+
+    **Note:** Specific handling policies should be based on your business compliance requirements. Above are reference suggestions only.
+  </Accordion>
+
+  <Accordion title="What risk labels are in Risk Exposures?">
+    Risk Exposures shows address associations with various risk entities. Common labels include:
+
+    **High-risk labels (Severe):**
+
+    | Label | Description |
+    |:--|:--|
+    | sanctioned entity | Associated with sanctioned entity |
+    | sanctioned jurisdiction | Associated with sanctioned jurisdiction |
+    | terrorist financing | Associated with terrorist financing |
+
+    **Neutral/low-risk labels:**
+
+    | Label | Description |
+    |:--|:--|
+    | bridge | Funds transferred via cross-chain bridge |
+    | decentralized exchange | Traded via DEX |
+    | atm | Traded via crypto ATM |
+
+    **Other risk labels:**
+
+    | Label | Description |
+    |:--|:--|
+    | mixer | Via mixing service |
+    | gambling | Associated with gambling platform |
+    | darknet | Associated with darknet market |
+
+    Each label shows:
+    - **direct / indirect**: Direct or indirect association
+    - **amount**: Associated fund amount
+    - **percentage**: Percentage of total transaction volume
+  </Accordion>
+
+  <Accordion title="What's the difference between direct and indirect?">
+    | Type | Meaning | Risk Level |
+    |:--|:--|:--|
+    | direct | Address directly interacted with risk entity | Higher |
+    | indirect | Address indirectly associated via intermediate addresses | Relatively lower |
+
+    **Examples:**
+    - `sanctioned entity + direct`: Address directly transferred to sanctioned address
+    - `sanctioned entity + indirect`: Associated address of this address previously interacted with sanctioned address
+
+    Even indirect associations warrant careful handling if involving Severe-level labels (sanctions, terrorist financing).
+  </Accordion>
+
+  <Accordion title="What Address Types are there?">
+    | Address Type | Description |
+    |:--|:--|
+    | PRIVATE_WALLET | Personal wallet address |
+    | EXCHANGE | Centralized exchange address |
+    | CONTRACT | Smart contract address |
+    | MINING_POOL | Mining pool address |
+    | MERCHANT | Merchant address |
+    | PAYMENT_PROCESSOR | Payment processor |
+
+    Address type helps understand fund flow and business context.
+  </Accordion>
+
+  <Accordion title="How do I call Address Verification via API?">
+
+```bash
+curl -X POST "https://api.chainstream.io/v1/kya/address/verify" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "So11111111111111111111111111111111111111112",
+    "chain": "sol"
+  }'
+```
+
+    **Response example:**
+
+```json
+{
+  "address": "So11111111111111111111111111111111111111112",
+  "risk": "Low",
+  "status": "COMPLETE",
+  "address_type": "PRIVATE_WALLET",
+  "risk_exposures": [
+    {
+      "label": "sanctioned entity",
+      "severity": "Severe",
+      "type": "indirect",
+      "amount": 372262.76,
+      "percentage": 0.6
+    },
+    {
+      "label": "bridge",
+      "severity": "Info",
+      "type": "indirect",
+      "amount": 816082.22,
+      "percentage": 1.3
+    }
+  ]
+}
+```
+  </Accordion>
+
+  <Accordion title="How long does KYT detection take?">
+    | Operation | Response Time |
+    |:--|:--|
+    | New address first verification | Usually 1-5 seconds |
+    | Cached address query | < 500ms |
+    | Complex address (many transactions) | May take 5-10 seconds |
+
+    Status `PENDING` indicates analysis in progress; retry later for complete results.
+  </Accordion>
+
+  <Accordion title="How is KYT/KYA billed?">
+    KYT/KYA APIs **do not consume plan Units**. They are charged from a separate KYT account balance (in USD).
+
+    | Operation | Cost |
+    |:--|:--|
+    | Deposit Risk Assessment | $0.25/call |
+    | Withdrawal Risk Assessment | $0.25/call |
+    | Register Address | $1.25/call |
+
+    Please top up at Dashboard → KYT Service.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## AI/MCP Related
+
+<AccordionGroup>
+  <Accordion title="What is MCP?">
+    MCP (Model Context Protocol) is a protocol proposed by Anthropic that enables AI models to call external tools.
+
+    ChainStream provides an MCP Server that lets Claude and other AIs directly query on-chain data.
+
+    See [MCP Server docs](/en/guides/ai-infrastructure/mcp-server/introduction).
+  </Accordion>
+
+  <Accordion title="How do I use ChainStream in Claude Desktop?">
+    1. Install ChainStream MCP Server
+    2. Configure Claude Desktop's MCP settings
+    3. Restart Claude Desktop
+    4. Start chatting - Claude can automatically call ChainStream to query data
+
+    See [Claude Integration guide](/en/guides/ai-infrastructure/mcp-server/setup-guide) for detailed setup.
+  </Accordion>
+
+  <Accordion title="Can AI execute transactions?">
+    **Not currently supported.** ChainStream MCP Server only provides read operations:
+
+    - Query token prices and information
+    - Query wallet holdings and transaction history
+    - Execute KYT/KYA risk assessments
+
+    Does not support automatic transaction execution, transfers, or other write operations for security reasons.
+  </Accordion>
+
+  <Accordion title="How are MCP calls billed?">
+    MCP calls are billed the same as direct API calls, consuming Units based on the actual API type called.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Contact Support
+
+<AccordionGroup>
+  <Accordion title="How do I get technical support?">
+    | Channel | Use Case | Response Time |
+    |:--|:--|:--|
+    | Email support@chainstream.io | General questions | Within 24 hours |
+    | Discord community | Technical discussions, usage questions | Community help |
+    | Dedicated account manager | Enterprise / Custom customers | Within 4 hours |
+
+    **When contacting, please provide:**
+    - Client ID
+    - Error messages and reproduction steps
+  </Accordion>
+
+  <Accordion title="How do I report documentation errors?">
+    - **GitHub Issues:** Submit documentation issues
+    - **Email:** docs@chainstream.io
+
+    Thanks for helping us improve the documentation!
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Didn't find an answer?
+
+<Card title="Contact Us" icon="headset" href="mailto:support@chainstream.io">
+  If the above FAQ didn't answer your question, please contact our technical support team.
+</Card>

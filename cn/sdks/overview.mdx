@@ -1,0 +1,163 @@
+---
+title: '概览'
+description: '选择适合你的 ChainStream SDK'
+icon: "code"
+---
+
+## 官方 SDK
+
+ChainStream 提供多种语言的官方 SDK，封装了常用 API 操作，提供更好的开发体验。
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/cn/sdks/typescript">
+    适用于 Node.js 和浏览器应用
+  </Card>
+  <Card title="Python" icon="python" href="/cn/sdks/python">
+    适用于数据分析和后端服务
+  </Card>
+  <Card title="Go" icon="golang" href="/cn/sdks/go">
+    适用于高性能后端服务
+  </Card>
+  <Card title="Rust" icon="rust" href="/cn/sdks/rust">
+    适用于系统编程和高性能应用
+  </Card>
+</CardGroup>
+
+## SDK 功能
+
+所有 SDK 都提供：
+
+- **REST API 客户端**：调用所有 ChainStream 数据 API
+- **WebSocket 客户端**：订阅实时数据流
+- **自动认证**：自动管理 Token
+- **类型安全**：完整的类型定义（TypeScript、Go、Rust）
+
+## 安装
+
+<Tabs>
+  <Tab title="TypeScript">
+```bash
+npm install @chainstream-io/sdk
+```
+  </Tab>
+  <Tab title="Python">
+```bash
+pip install chainstream-sdk
+```
+  </Tab>
+  <Tab title="Go">
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+  </Tab>
+  <Tab title="Rust">
+```toml
+# 添加到 Cargo.toml
+[dependencies]
+chainstream-sdk = "0.1"
+```
+  </Tab>
+</Tabs>
+
+## 快速对比
+
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+
+// REST API 调用
+const token = await client.token.getToken('sol', 'TOKEN_ADDRESS');
+
+// WebSocket 订阅
+client.stream.subscribeTokenCandles({
+  chain: 'sol',
+  tokenAddress: 'TOKEN_ADDRESS',
+  resolution: Resolution['1s'],
+  callback: (data) => console.log(data)
+});
+```
+  </Tab>
+  <Tab title="Python">
+```python
+from chainstream import ChainStreamClient
+from chainstream.stream import Resolution
+
+client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
+
+# REST API 调用
+token = await client.token.get_metadata('sol', 'TOKEN_ADDRESS')
+
+# WebSocket 订阅
+await client.stream.subscribe_token_candles(
+    chain='sol',
+    token_address='TOKEN_ADDRESS',
+    resolution=Resolution.S1,
+    callback=lambda data: print(data)
+)
+```
+  </Tab>
+  <Tab title="Go">
+```go
+import chainstream "github.com/chainstream-io/chainstream-go-sdk"
+
+client, _ := chainstream.NewChainStreamClient(accessToken, &chainstream.ChainStreamClientOptions{})
+
+// REST API 调用
+resp, _ := client.Token.GetToken(ctx, "sol", "TOKEN_ADDRESS")
+
+// WebSocket 订阅
+client.Stream.SubscribeTokenCandles("sol", "TOKEN_ADDRESS", token.N1s, func(data stream.TokenCandle) {
+    fmt.Println(data)
+}, "")
+```
+  </Tab>
+  <Tab title="Rust">
+```rust
+use chainstream_sdk::{ChainStreamClient, stream::{Resolution, TokenCandle}};
+
+let client = ChainStreamClient::new("YOUR_ACCESS_TOKEN", None);
+
+// WebSocket 订阅
+client.stream.subscribe_token_candles(
+    "sol",
+    "TOKEN_ADDRESS",
+    Resolution::X1s,
+    |candle: TokenCandle| {
+        println!("{:?}", candle);
+    },
+    None,
+).await?;
+```
+  </Tab>
+</Tabs>
+
+## SDK vs 直接 API
+
+| 特性 | SDK | 直接 API |
+|------|-----|----------|
+| 类型安全 | 是（TS/Go/Rust） | 否 |
+| 认证管理 | 自动处理 | 手动管理 |
+| 错误处理 | 封装友好 | 原始 HTTP 错误 |
+| WebSocket | 内置支持 | 需手动实现 |
+| 代码量 | 更少 | 较多 |
+| 灵活性 | 中等 | 完全灵活 |
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="TypeScript SDK" icon="js" href="/cn/sdks/typescript">
+    查看 TypeScript 详细文档
+  </Card>
+  <Card title="Python SDK" icon="python" href="/cn/sdks/python">
+    查看 Python 详细文档
+  </Card>
+  <Card title="Go SDK" icon="golang" href="/cn/sdks/go">
+    查看 Go 详细文档
+  </Card>
+  <Card title="Rust SDK" icon="rust" href="/cn/sdks/rust">
+    查看 Rust 详细文档
+  </Card>
+</CardGroup>

@@ -1,0 +1,292 @@
+---
+title: 'MCP 配置指南'
+description: '5 分钟完成 ChainStream MCP Server 配置'
+icon: 'gear'
+---
+
+本指南帮助您快速完成 ChainStream MCP Server 的配置。
+
+---
+
+## 前置条件
+
+在开始之前，请确保您已准备：
+
+| 条件 | 要求 | 检查方式 |
+|------|------|----------|
+| ChainStream 账户 | 已注册账户 | 登录控制台确认 |
+| Access Token | 有效的访问令牌 | 控制台 → Apps → 生成 Token |
+| AI 客户端 | Claude Desktop / Cursor / 自定义客户端 | 已安装 |
+
+---
+
+## MCP 端点
+
+ChainStream 提供托管的 MCP Server，无需本地安装，直接通过以下端点访问：
+
+```
+https://mcp.chainstream.io/mcp
+```
+
+---
+
+## 配置步骤
+
+<Steps>
+  <Step title="获取 Access Token">
+    1. 登录 [ChainStream 控制台](https://www.chainstream.io/dashboard)
+    2. 导航至 **Apps** 页面
+    3. 创建 App 获取 Client ID 和 Client Secret
+    4. 使用凭据生成 **Access Token**（参考 [认证文档](/cn/guides/getting-started/authentication)）
+    
+    <Note>
+    Access Token 有效期为 24 小时，建议在应用中实现自动刷新机制。
+    </Note>
+  </Step>
+  
+  <Step title="配置 AI 客户端">
+    <Tabs>
+      <Tab title="Claude Desktop">
+        **配置文件路径**：
+        - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+        - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+        
+        **配置内容**：
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "Authorization": "Bearer your_access_token"
+              }
+            }
+          }
+        }
+        ```
+        
+        <Note>
+        如果文件不存在，请手动创建。如果已有其他 MCP Server 配置，在 `mcpServers` 对象中添加 `chainstream` 配置即可。
+        </Note>
+      </Tab>
+      
+      <Tab title="Cursor IDE">
+        **配置文件路径**：`~/.cursor/mcp.json`
+        
+        **配置内容**：
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "Authorization": "Bearer your_access_token"
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+      
+      <Tab title="自定义客户端">
+        如果您使用自定义 MCP 客户端，通过 HTTP+SSE 协议连接：
+        
+        **端点信息**：
+        
+        | 端点 | 地址 |
+        |------|------|
+        | MCP 端点 | `https://mcp.chainstream.io/mcp` |
+        | SSE 端点 | `https://mcp.chainstream.io/sse` |
+        | 消息端点 | `https://mcp.chainstream.io/messages` |
+        
+        **认证方式**：
+        
+        在请求头中添加 Authorization：
+        
+        ```
+        Authorization: Bearer your_access_token
+        ```
+        
+        **示例代码**：
+        
+        ```javascript
+        import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+        import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+
+        const transport = new SSEClientTransport(
+          new URL('https://mcp.chainstream.io/sse'),
+          {
+            requestInit: {
+              headers: {
+                'Authorization': `Bearer ${process.env.CHAINSTREAM_ACCESS_TOKEN}`
+              }
+            }
+          }
+        );
+
+        const client = new Client({
+          name: 'my-client',
+          version: '1.0.0'
+        });
+
+        await client.connect(transport);
+
+        // 列出可用工具
+        const { tools } = await client.listTools();
+        console.log('Available tools:', tools.map(t => t.name));
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="重启客户端">
+    配置完成后，完全退出并重新启动 AI 客户端，使配置生效。
+    
+    - **Claude Desktop**：完全退出（不是最小化），重新打开
+    - **Cursor**：重启 IDE
+  </Step>
+</Steps>
+
+---
+
+## 验证配置
+
+### 测试命令
+
+在 AI 客户端中输入以下测试问题：
+
+```
+查询 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 在以太坊上的 Token 余额
+```
+
+### 预期结果
+
+如果配置成功，AI 应该能够：
+
+1. 识别这是一个余额查询请求
+2. 调用 `get_token_balance` 工具
+3. 返回该地址的 Token 余额列表
+
+**成功示例**：
+
+```
+该地址（Vitalik.eth）在以太坊上的持仓如下：
+
+| Token | 余额 | 价值 (USD) |
+|-------|------|-----------|
+| ETH   | 1,234.56 | $2,469,120 |
+| USDC  | 50,000 | $50,000 |
+| ...   | ... | ... |
+
+总价值：约 $2,500,000
+```
+
+<Note>
+如果 AI 没有调用工具或返回错误，请参考下方 [常见问题](#常见问题) 排查。
+</Note>
+
+---
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="认证失败" icon="key">
+    **可能原因**：
+    
+    1. **Access Token 输入错误**
+       - 检查是否有多余空格
+       - 确认复制完整
+    
+    2. **Access Token 已过期**
+       - Token 有效期为 24 小时
+       - 需要重新生成
+    
+    3. **Token 格式错误**
+       - 确认是完整的 JWT 格式
+       - 确认添加了 `Bearer ` 前缀
+    
+    **解决方案**：
+    - 重新生成 Access Token
+    - 检查 Token 是否过期
+    - 确认 Authorization header 格式正确
+  </Accordion>
+
+  <Accordion title="连接失败" icon="plug-circle-xmark">
+    **可能原因**：
+    
+    1. **网络问题**
+       - 检查网络连接
+       - 确认能访问 `https://mcp.chainstream.io`
+    
+    2. **配置格式错误**
+       - 检查 JSON 格式是否正确
+       - 确认 URL 拼写正确
+    
+    **解决方案**：
+    
+    ```bash
+    # 测试端点连通性
+    curl -I https://mcp.chainstream.io/mcp
+    ```
+  </Accordion>
+
+  <Accordion title="配置文件不生效" icon="file-circle-xmark">
+    **可能原因**：
+    
+    1. **配置文件路径错误**
+       - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+       - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+    
+    2. **JSON 格式错误**
+       - 使用 JSON 校验工具检查
+    
+    3. **客户端未重启**
+       - 完全退出并重新启动
+    
+    **解决方案**：
+    
+    ```bash
+    # macOS 验证配置文件
+    cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
+    ```
+  </Accordion>
+
+  <Accordion title="工具调用失败：配额不足" icon="gauge-low">
+    **可能原因**：
+    
+    1. 套餐配额已用完
+    2. 请求频率过高触发限流
+    
+    **解决方案**：
+    - 登录控制台查看配额使用情况
+    - 升级套餐获取更多配额
+  </Accordion>
+
+  <Accordion title="数据返回延迟或超时" icon="clock">
+    **可能原因**：
+    
+    1. 网络延迟
+    2. 查询数据量过大
+    3. 服务端负载高
+    
+    **解决方案**：
+    - 检查网络连接
+    - 减少单次查询数据量
+    - 稍后重试
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="工具目录" icon="wrench" href="/cn/guides/ai-infrastructure/mcp-server/tools-catalog">
+    查看所有可用工具和使用示例
+  </Card>
+  <Card title="AI Agent 教程" icon="graduation-cap" href="/cn/playbooks/tutorials/ai-agent-with-mcp">
+    构建 AI 交易助理
+  </Card>
+</CardGroup>

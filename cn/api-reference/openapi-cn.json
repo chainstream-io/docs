@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "paths": {
-    "/jobs/{id}": {
+    "/v1/jobs/{id}": {
       "get": {
         "description": "通过任务ID获取当前任务状态和结果",
         "operationId": "get",
@@ -40,7 +40,7 @@
         ]
       }
     },
-    "/jobs/{id}/streaming": {
+    "/v1/jobs/{id}/streaming": {
       "get": {
         "description": "通过服务器发送事件（SSE）订阅实时任务状态更新。连接将保持打开状态直到任务完成或发生错误",
         "operationId": "streaming",
@@ -275,7 +275,7 @@
     "/v1/transaction/{chain}/estimate-gas-limit": {
       "post": {
         "description": "估算交易所需的 gas 限制",
-        "operationId": "estimate.gasLimit",
+        "operationId": "get.gasLimit",
         "parameters": [
           {
             "name": "chain",
@@ -508,7 +508,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuoteResponse"
+                  "$ref": "#/components/schemas/DexQuoteResponse"
                 }
               }
             }
@@ -796,8 +796,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -967,8 +968,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -1704,11 +1706,48 @@
             }
           },
           {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
             "name": "sortBy",
             "required": false,
             "in": "query",
             "description": "排序字段（tvlInSol 或 tvlInUsd）",
             "schema": {
+              "default": "tvlInUsd",
               "example": "tvlInUsd",
               "enum": [
                 "tvlInSol",
@@ -1778,10 +1817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DexPoolDTO"
-                  }
+                  "$ref": "#/components/schemas/DexPoolPage"
                 }
               }
             }
@@ -2069,8 +2105,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2487,8 +2524,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2677,8 +2715,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2766,8 +2805,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -5359,7 +5399,7 @@
         ]
       }
     },
-    "/v1/wallet/{chain}/{walletAddress}": {
+    "/v1/wallet/{chain}/{walletAddress}/pnl": {
       "get": {
         "description": "获取钱包代币的盈亏信息",
         "operationId": "get.pnl",
@@ -7559,7 +7599,7 @@
           "elapsedTime"
         ]
       },
-      "QuoteResponse": {
+      "DexQuoteResponse": {
         "type": "object",
         "properties": {
           "amountOut": {
@@ -7737,8 +7777,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "DEX 信息数组",
@@ -8190,8 +8232,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "交易数据数组",
@@ -8309,8 +8353,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "顶级交易者数据数组",
@@ -9819,8 +9865,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "countsByProtocols": {
             "type": "object",
@@ -10007,6 +10055,45 @@
           "address"
         ]
       },
+      "DexPoolPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "DEX 资金池数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexPoolDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenHolder": {
         "type": "object",
         "properties": {
@@ -10060,8 +10147,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "代币持有者数据数组",
@@ -10198,8 +10287,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "代币价格数据数组",
@@ -10291,8 +10382,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "代币创建数据数组",
@@ -10328,8 +10421,10 @@
             "description": "当前页最后一项的游标"
           },
           "total": {
-            "type": "number",
-            "description": "总项目数"
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "代币数据数组",
@@ -12411,10 +12506,18 @@
             }
           },
           "channels": {
-            "description": "端点频道",
             "type": "array",
+            "description": "端点频道",
+            "example": [
+              "sol.token.migrated",
+              "sol.token.created"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "sol.token.migrated",
+                "sol.token.created"
+              ]
             }
           },
           "disabled": {
@@ -12502,10 +12605,18 @@
         "type": "object",
         "properties": {
           "channels": {
-            "description": "端点频道",
             "type": "array",
+            "description": "端点频道",
+            "example": [
+              "sol.token.migrated",
+              "sol.token.created"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "sol.token.migrated",
+                "sol.token.created"
+              ]
             }
           },
           "description": {
@@ -12558,10 +12669,18 @@
             "example": "123"
           },
           "channels": {
-            "description": "端点频道",
             "type": "array",
+            "description": "端点频道",
+            "example": [
+              "sol.token.migrated",
+              "sol.token.created"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "sol.token.migrated",
+                "sol.token.created"
+              ]
             }
           },
           "description": {

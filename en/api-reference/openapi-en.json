@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "paths": {
-    "/jobs/{id}": {
+    "/v1/jobs/{id}": {
       "get": {
         "description": "Retrieve the current status and result of a job by its ID",
         "operationId": "get",
@@ -40,7 +40,7 @@
         ]
       }
     },
-    "/jobs/{id}/streaming": {
+    "/v1/jobs/{id}/streaming": {
       "get": {
         "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs",
         "operationId": "streaming",
@@ -275,7 +275,7 @@
     "/v1/transaction/{chain}/estimate-gas-limit": {
       "post": {
         "description": "Estimate the gas limit required for a transaction",
-        "operationId": "estimate.gasLimit",
+        "operationId": "get.gasLimit",
         "parameters": [
           {
             "name": "chain",
@@ -508,7 +508,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QuoteResponse"
+                  "$ref": "#/components/schemas/DexQuoteResponse"
                 }
               }
             }
@@ -796,8 +796,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -967,8 +968,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -1704,11 +1706,48 @@
             }
           },
           {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
             "name": "sortBy",
             "required": false,
             "in": "query",
             "description": "Sort field (tvlInSol or tvlInUsd)",
             "schema": {
+              "default": "tvlInUsd",
               "example": "tvlInUsd",
               "enum": [
                 "tvlInSol",
@@ -1778,10 +1817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DexPoolDTO"
-                  }
+                  "$ref": "#/components/schemas/DexPoolPage"
                 }
               }
             }
@@ -2069,8 +2105,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2487,8 +2524,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2677,8 +2715,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -2766,8 +2805,9 @@
             "schema": {
               "minimum": 1,
               "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "type": "number"
+              "type": "integer"
             }
           },
           {
@@ -5359,7 +5399,7 @@
         ]
       }
     },
-    "/v1/wallet/{chain}/{walletAddress}": {
+    "/v1/wallet/{chain}/{walletAddress}/pnl": {
       "get": {
         "description": "Get profit and loss information for wallet tokens",
         "operationId": "get.pnl",
@@ -7559,7 +7599,7 @@
           "elapsedTime"
         ]
       },
-      "QuoteResponse": {
+      "DexQuoteResponse": {
         "type": "object",
         "properties": {
           "amountOut": {
@@ -7737,8 +7777,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of DEX information",
@@ -8190,8 +8232,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of trade data",
@@ -8309,8 +8353,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of top traders data",
@@ -9819,8 +9865,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "countsByProtocols": {
             "type": "object",
@@ -10007,6 +10055,45 @@
           "address"
         ]
       },
+      "DexPoolPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "Array of DEX pool data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DexPoolDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenHolder": {
         "type": "object",
         "properties": {
@@ -10060,8 +10147,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of token holder data",
@@ -10198,8 +10287,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of token price data",
@@ -10291,8 +10382,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of token creation data",
@@ -10328,8 +10421,10 @@
             "description": "Cursor for last item in current page"
           },
           "total": {
-            "type": "number",
-            "description": "Total number of items"
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
           },
           "data": {
             "description": "Array of token data",
@@ -12411,10 +12506,18 @@
             }
           },
           "channels": {
-            "description": "Endpoint channels",
             "type": "array",
+            "description": "Endpoint channels",
+            "example": [
+              "sol.token.migrated",
+              "sol.token.created"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "sol.token.migrated",
+                "sol.token.created"
+              ]
             }
           },
           "disabled": {
@@ -12502,10 +12605,18 @@
         "type": "object",
         "properties": {
           "channels": {
-            "description": "Endpoint channels",
             "type": "array",
+            "description": "Endpoint channels",
+            "example": [
+              "sol.token.migrated",
+              "sol.token.created"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "sol.token.migrated",
+                "sol.token.created"
+              ]
             }
           },
           "description": {
@@ -12558,10 +12669,18 @@
             "example": "123"
           },
           "channels": {
-            "description": "Endpoint channels",
             "type": "array",
+            "description": "Endpoint channels",
+            "example": [
+              "sol.token.migrated",
+              "sol.token.created"
+            ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "sol.token.migrated",
+                "sol.token.created"
+              ]
             }
           },
           "description": {

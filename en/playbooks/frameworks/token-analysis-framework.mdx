@@ -1,0 +1,390 @@
+---
+title: "Token Analysis Framework"
+description: "Systematic Token analysis methodology, from fundamentals to on-chain metrics"
+icon: "chart-pie"
+---
+
+This document introduces a comprehensive Token analysis framework using ChainStream, covering fundamental data, on-chain metrics, holder analysis, and risk assessment.
+
+---
+
+## Framework Overview
+
+<CardGroup cols={4}>
+  <Card title="Basic Info" icon="circle-info">
+    Name/Symbol, Decimals, Contract Address, Creation Time
+  </Card>
+  <Card title="Market Data" icon="chart-line">
+    Price, Market Cap, Liquidity, Volume
+  </Card>
+  <Card title="Holder Analysis" icon="users">
+    Holder Count, Top 10/100 Ratio, Creator Holdings
+  </Card>
+  <Card title="Trading Stats" icon="arrow-right-arrow-left">
+    Buy/Sell Count, Volume, Price Change
+  </Card>
+</CardGroup>
+
+---
+
+## 1. Basic Information
+
+### API Endpoint
+
+```bash
+GET /v1/token/{chain}/{tokenAddress}
+```
+
+### Core Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `chain` | string | Blockchain network identifier, e.g., `sol` |
+| `name` | string | Token name |
+| `symbol` | string | Token symbol |
+| `decimals` | integer | Token decimal places |
+| `address` | string | Token mint address |
+| `imageUrl` | string | Token image URL |
+| `tokenCreatedAt` | integer | Token creation timestamp (milliseconds) |
+| `description` | string | Token description |
+| `tokenCreators` | array | Token creator address list |
+
+### Response Example
+
+```json
+{
+  "chain": "sol",
+  "name": "USD Coin",
+  "symbol": "USDC",
+  "decimals": 9,
+  "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "imageUrl": "https://raw.githubusercontent.com/.../logo.png",
+  "tokenCreatedAt": 1710417600000,
+  "description": "USDC is a stablecoin pegged to the US dollar",
+  "tokenCreators": [
+    {
+      "address": "...",
+      "share": 100
+    }
+  ]
+}
+```
+
+---
+
+## 2. Market Data
+
+Market data is included in the `marketData` field of the Token details endpoint.
+
+### Price & Market Cap
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `priceInUsd` | string | Token price (USD) |
+| `priceInSol` | string | Token price (SOL) |
+| `marketCapInUsd` | string | Circulating market cap (USD) |
+| `marketCapInSol` | string | Circulating market cap (SOL) |
+| `totalSupply` | string | Total supply |
+
+### Liquidity Metrics
+
+| Field | Type | Description | Health Standard |
+|-------|------|-------------|-----------------|
+| `maxPoolTvlInUsd` | string | Max pool TVL (USD) | Higher depth = lower slippage |
+| `totalTvlInUsd` | string | Total TVL across all pools (USD) | &gt; 5% of market cap |
+| `maxPoolTvlInSol` | string | Max pool TVL (SOL) | - |
+| `totalTvlInSol` | string | Total TVL across all pools (SOL) | - |
+
+### Holder Overview
+
+| Field | Type | Description | Health Standard |
+|-------|------|-------------|-----------------|
+| `holders` | string | Total token holders | More = more distributed |
+| `top10HoldingsRatio` | string | Top 10 holders ratio | &lt; 0.5 (50%) |
+| `top10TotalHoldings` | string | Top 10 total holdings | - |
+| `top100HoldingsRatio` | string | Top 100 holders ratio | &lt; 0.7 (70%) |
+| `top100TotalHoldings` | string | Top 100 total holdings | - |
+
+### Response Example
+
+```json
+{
+  "marketData": {
+    "priceInUsd": "0.00123456",
+    "priceInSol": "0.0000089",
+    "marketCapInUsd": "1234567.89",
+    "totalSupply": "1000000000",
+    "holders": "5432",
+    "top10HoldingsRatio": "0.35",
+    "top100HoldingsRatio": "0.58",
+    "maxPoolTvlInUsd": "50000.00",
+    "totalTvlInUsd": "85000.00"
+  }
+}
+```
+
+---
+
+## 3. Trading Statistics
+
+Trading statistics are included in the `stats` field of the Token details endpoint, or can be fetched via a dedicated endpoint.
+
+### API Endpoint
+
+```bash
+GET /v1/token/{chain}/{tokenAddress}/stats
+```
+
+### Statistics Fields (by Time Period)
+
+Supported time periods: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `24h`
+
+| Field Pattern | Description | Example Fields |
+|---------------|-------------|----------------|
+| `price{period}` | Price within period | `price1m`, `price5m`, `price1h` |
+| `buys{period}` | Buy count within period | `buys1m`, `buys5m`, `buys1h` |
+| `sells{period}` | Sell count within period | `sells1m`, `sells5m`, `sells1h` |
+| `buyVolumesInUsd{period}` | Buy volume (USD) | `buyVolumesInUsd1m` |
+| `sellVolumesInUsd{period}` | Sell volume (USD) | `sellVolumesInUsd1m` |
+| `volumesInUsd{period}` | Total volume (USD) | `volumesInUsd1m` |
+| `priceChangeRatioInUsd{period}` | Price change ratio | `priceChangeRatioInUsd1h` |
+
+### Response Example
+
+```json
+{
+  "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "price1m": "1.234",
+  "buys1m": "150",
+  "sells1m": "120",
+  "buyVolumesInUsd1m": "50000.45",
+  "sellVolumesInUsd1m": "45000.32",
+  "volumesInUsd1m": "95000.77",
+  "buys1h": "2500",
+  "sells1h": "2100",
+  "volumesInUsd1h": "1500000.00",
+  "priceChangeRatioInUsd1h": "0.025"
+}
+```
+
+---
+
+## 4. Holder Analysis
+
+### API Endpoint
+
+```bash
+GET /v1/token/{chain}/{tokenAddress}/holders
+```
+
+### Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `cursor` | string | No | Pagination cursor |
+| `limit` | number | No | Results per page (1-100, default 20) |
+| `direction` | string | No | Pagination direction (`next` or `prev`) |
+
+### Holder Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `walletAddress` | string | Wallet address |
+| `amount` | string | Holding amount |
+| `amountInUsd` | string | Holding value (USD) |
+| `percentage` | string | Holding percentage |
+
+### Response Example
+
+```json
+{
+  "hasNext": true,
+  "hasPrev": false,
+  "startCursor": "abc123",
+  "endCursor": "xyz789",
+  "data": [
+    {
+      "walletAddress": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+      "amount": "1000000000000000000",
+      "amountInUsd": "12345.67",
+      "percentage": "10.5"
+    }
+  ]
+}
+```
+
+### Holder Distribution Assessment
+
+<Tabs>
+  <Tab title="Healthy Distribution">
+    **Characteristics**:
+    - Top 10 ratio &lt; 50%
+    - Top 100 ratio &lt; 70%
+    - High holder count
+    - Even distribution, decentralized
+    
+    **Risk Level**: 🟢 Low Risk
+  </Tab>
+  <Tab title="Risky Distribution">
+    **Characteristics**:
+    - Top 10 ratio &gt; 80%
+    - Few addresses control most supply
+    - Low holder count
+    - Highly concentrated, manipulation risk
+    
+    **Risk Level**: 🔴 High Risk
+  </Tab>
+</Tabs>
+
+### Holder Type Identification
+
+| Type | Identification | Significance |
+|------|----------------|--------------|
+| **Team/Project** | Contract deployer, addresses in `tokenCreators` | Unlock risk |
+| **Whales** | Holdings &gt; 1% | Market influence |
+| **Smart Money** | High win-rate traders (requires wallet analysis) | Information advantage |
+| **CEX** | Exchange hot wallets | Liquidity source |
+
+---
+
+## 5. Risk Assessment
+
+### Risk Assessment Dimensions
+
+| Dimension | Weight | Metrics |
+|-----------|--------|---------|
+| **Concentration Risk** | 30% | `top10HoldingsRatio`, `top100HoldingsRatio` |
+| **Liquidity Risk** | 25% | `totalTvlInUsd`, TVL/Market Cap ratio |
+| **New Token Risk** | 20% | `tokenCreatedAt` (creation time) |
+| **Trading Activity** | 15% | `holders`, volume, buy/sell count |
+| **Creator Holdings** | 10% | Creator address holding ratio |
+
+### Risk Indicators
+
+| Indicator | Level | Trigger Conditions |
+|-----------|-------|-------------------|
+| 🔴 High Risk | Critical | `top10HoldingsRatio` &gt; 0.8, TVL &lt; 1% of market cap, created &lt; 24h |
+| 🟡 Medium Risk | Warning | `top10HoldingsRatio` &gt; 0.5, created &lt; 7 days |
+| 🟢 Low Risk | Safe | All metrics healthy |
+
+---
+
+## Analysis Workflow
+
+<Steps>
+  <Step title="Get Basic Information">
+    Call `GET /v1/token/{chain}/{tokenAddress}` to get complete token info
+    - Verify contract address
+    - Check creation time `tokenCreatedAt`
+  </Step>
+  <Step title="Analyze Market Data">
+    Review `marketData` field
+    - Current price `priceInUsd`
+    - Market cap `marketCapInUsd`
+    - Liquidity `totalTvlInUsd`
+  </Step>
+  <Step title="Evaluate Holder Distribution">
+    Review holder data in `marketData`
+    - Holder count `holders`
+    - Top 10 ratio `top10HoldingsRatio`
+    - Top 100 ratio `top100HoldingsRatio`
+  </Step>
+  <Step title="Check Trading Activity">
+    Review `stats` field
+    - Volume `volumesInUsd1h`, `volumesInUsd24h`
+    - Buy/sell ratio `buys1h` vs `sells1h`
+  </Step>
+  <Step title="Comprehensive Risk Assessment">
+    Calculate risk level based on above data
+    - High concentration + low liquidity = 🔴 High Risk
+    - Healthy distribution + sufficient liquidity = 🟢 Low Risk
+  </Step>
+</Steps>
+
+---
+
+## Practical Example
+
+### Example: Analyze Newly Listed Token
+
+```typescript
+import { ChainStreamClient } from '@anthropic/chainstream';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+
+async function analyzeToken(chain: string, tokenAddress: string) {
+  // 1. Get complete token info
+  const token = await client.token.getToken(chain, tokenAddress);
+  
+  // 2. Check creation time
+  const ageInDays = (Date.now() - token.tokenCreatedAt) / (1000 * 60 * 60 * 24);
+  if (ageInDays < 7) {
+    console.warn('⚠️ New token risk: Created less than 7 days ago');
+  }
+  
+  // 3. Analyze holder distribution
+  const top10Ratio = parseFloat(token.marketData.top10HoldingsRatio);
+  if (top10Ratio > 0.5) {
+    console.warn('⚠️ Concentration risk: Top 10 holds > 50%');
+  }
+  
+  // 4. Check liquidity
+  const tvl = parseFloat(token.marketData.totalTvlInUsd);
+  const marketCap = parseFloat(token.marketData.marketCapInUsd);
+  if (tvl < marketCap * 0.05) {
+    console.warn('⚠️ Liquidity risk: TVL < 5% of market cap');
+  }
+  
+  // 5. Comprehensive assessment
+  const riskLevel = calculateRiskLevel(token);
+  console.log(`Risk Level: ${riskLevel}`);
+  
+  return {
+    token,
+    ageInDays,
+    top10Ratio,
+    tvlRatio: tvl / marketCap,
+    riskLevel
+  };
+}
+
+function calculateRiskLevel(token: any): string {
+  const top10Ratio = parseFloat(token.marketData.top10HoldingsRatio);
+  const tvl = parseFloat(token.marketData.totalTvlInUsd);
+  const marketCap = parseFloat(token.marketData.marketCapInUsd);
+  
+  if (top10Ratio > 0.8 || tvl < marketCap * 0.01) {
+    return '🔴 High Risk';
+  } else if (top10Ratio > 0.5) {
+    return '🟡 Medium Risk';
+  }
+  return '🟢 Low Risk';
+}
+```
+
+---
+
+## API Endpoint Summary
+
+| Analysis Need | API Endpoint |
+|---------------|--------------|
+| Token Details (with market data, stats) | `GET /v1/token/{chain}/{tokenAddress}` |
+| Token Metadata | `GET /v1/token/{chain}/{tokenAddress}/metadata` |
+| Token Stats | `GET /v1/token/{chain}/{tokenAddress}/stats` |
+| Holder List | `GET /v1/token/{chain}/{tokenAddress}/holders` |
+| Top Holders | `GET /v1/token/{chain}/{tokenAddress}/topholders` |
+| Token Pools | `GET /v1/token/{chain}/{tokenAddress}/pools` |
+| Token Market Data | `GET /v1/token/{chain}/{tokenAddress}/marketdata` |
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Smart Money Methodology" icon="brain" href="/en/guides/data-concepts/smart-money-methodology">
+    Learn about Smart Money analysis
+  </Card>
+  <Card title="MCP Tools Catalog" icon="wrench" href="/en/guides/ai-infrastructure/mcp-server/tools-catalog">
+    View complete MCP tools list
+  </Card>
+</CardGroup>

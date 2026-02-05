@@ -1,0 +1,702 @@
+---
+title: '工具目录'
+description: 'ChainStream MCP Server 完整工具参考'
+icon: 'wrench'
+---
+
+ChainStream MCP Server 支持所有 API Reference 中定义的接口，AI 可以直接调用这些工具获取链上数据。
+
+<Note>
+MCP 工具的参数和返回值与 REST API 完全一致，详细字段说明请参考 [API Reference](/cn/api-reference/authentication/authenticate)。
+</Note>
+
+---
+
+## 工具总览
+
+<Tabs>
+  <Tab title="数据查询">
+    | 工具分类 | 功能 |
+    |----------|------|
+    | Token | 代币搜索、信息、价格、K线、持有者、安全检查 |
+    | Wallet | 钱包余额、PnL、统计、余额变动 |
+    | Trade | 交易记录、交易活动、顶级交易者 |
+    | DexPool | 流动池信息、快照 |
+    | Ranking | 热门代币、新代币、即将毕业、已毕业 |
+    | Blockchain | 链信息、最新区块 |
+  </Tab>
+  <Tab title="交易执行">
+    | 工具分类 | 功能 |
+    |----------|------|
+    | Dex | 报价、路由、Swap 执行 |
+    | DeFi | Pumpfun/Moonshot 创建代币 |
+    | Transaction | 发送交易、Gas 估算 |
+    | RedPacket | 创建红包、领取红包 |
+  </Tab>
+  <Tab title="风控合规">
+    | 工具分类 | 功能 |
+    |----------|------|
+    | KYT | 注册交易、风险评估、地址风险 |
+    | Webhook | 端点管理、事件订阅 |
+  </Tab>
+  <Tab title="实时订阅">
+    | 订阅类型 | 功能 |
+    |----------|------|
+    | K线 | 实时价格走势 |
+    | 代币统计 | 实时交易统计 |
+    | 新代币 | 新代币创建通知 |
+    | 钱包余额 | 余额变动通知 |
+    | 交易活动 | 实时交易流 |
+    | 流动池 | 池子状态变化 |
+  </Tab>
+</Tabs>
+
+---
+
+## Token 工具
+
+### token_search
+
+搜索代币。
+
+```
+搜索 PEPE 相关的代币
+```
+
+### token_get
+
+获取代币详细信息。
+
+```
+查看代币 So11111111111111111111111111111111111111112 的详细信息
+```
+
+### token_get_metadata
+
+获取代币元数据（名称、符号、Logo 等）。
+
+```
+获取这个代币的 Logo 和社交媒体链接
+```
+
+### token_get_stats
+
+获取代币统计数据（交易量、买卖次数等）。
+
+```
+查看这个代币过去 24 小时的交易统计
+```
+
+### token_get_price
+
+获取代币当前价格。
+
+```
+BONK 现在的价格是多少？
+```
+
+### token_get_prices
+
+获取代币历史价格。
+
+```
+查看 ETH 过去一周的价格走势
+```
+
+### token_get_candles
+
+获取代币 K 线数据。
+
+```
+获取 SOL 最近 100 根 1 小时 K 线
+```
+
+### token_get_holders
+
+获取代币持有者信息。
+
+```
+这个代币有多少持有者？
+```
+
+### token_get_top_holders
+
+获取代币 Top 持有者列表。
+
+```
+查看这个代币的前 10 大持有者
+```
+
+### token_get_pools
+
+获取代币相关的流动池。
+
+```
+这个代币在哪些 DEX 有流动池？
+```
+
+### token_get_security
+
+获取代币安全检查结果。
+
+```
+帮我检查这个代币是否安全
+```
+
+### token_get_creation
+
+获取代币创建信息。
+
+```
+这个代币是什么时候创建的？创建者是谁？
+```
+
+### token_get_mint_and_burn
+
+获取代币铸造和销毁记录。
+
+```
+查看这个代币的铸造和销毁历史
+```
+
+### token_list
+
+获取代币列表（支持分页和筛选）。
+
+```
+列出 Solana 上最近创建的代币
+```
+
+### token_get_traders_tag
+
+获取代币交易者标签分布。
+
+```
+分析这个代币的交易者都是什么类型的
+```
+
+### token_get_liquidity_snapshots
+
+获取代币流动性快照。
+
+```
+查看这个代币过去一周的流动性变化
+```
+
+### token_dev_get_tokens
+
+获取开发者创建的所有代币。
+
+```
+查看这个开发者还创建过哪些代币
+```
+
+---
+
+## Wallet 工具
+
+### wallet_get_balance
+
+获取钱包余额。
+
+```
+查询地址 0x1234...abcd 的所有代币余额
+```
+
+### wallet_get_balance_updates
+
+获取钱包余额变动历史。
+
+```
+这个钱包最近的资金变动记录
+```
+
+### wallet_get_pnl
+
+获取钱包盈亏数据。
+
+```
+计算这个地址的总收益和胜率
+```
+
+### wallet_calculate_pnl
+
+计算指定条件的钱包盈亏。
+
+```
+计算这个地址在过去 30 天的收益
+```
+
+### wallet_get_stats
+
+获取钱包统计数据。
+
+```
+分析这个钱包的交易风格和活跃度
+```
+
+---
+
+## Trade 工具
+
+### trade_get
+
+获取交易记录。
+
+```
+查看 0x... 最近 20 笔交易
+```
+
+### trade_get_activities
+
+获取交易活动流。
+
+```
+这个代币最近的交易活动
+```
+
+### trade_get_top_traders
+
+获取顶级交易者。
+
+```
+查看这个代币收益最高的交易者
+```
+
+---
+
+## DexPool 工具
+
+### dexpool_get
+
+获取流动池信息。
+
+```
+查看这个池子的详细信息
+```
+
+### dexpool_get_snapshots
+
+获取流动池快照历史。
+
+```
+这个池子过去 24 小时的流动性变化
+```
+
+---
+
+## Ranking 工具
+
+### ranking_get_hot_tokens
+
+获取热门代币排行。
+
+```
+今天最热门的 10 个代币
+```
+
+### ranking_get_new_tokens
+
+获取新代币列表。
+
+```
+最近 1 小时新创建的代币
+```
+
+### ranking_get_stocks
+
+获取库存代币（未毕业）。
+
+```
+Pump.fun 上还有哪些代币在 bonding curve
+```
+
+### ranking_get_final_stretch
+
+获取即将毕业的代币。
+
+```
+哪些代币快要从 Pump.fun 毕业了
+```
+
+### ranking_get_migrated
+
+获取已毕业代币列表。
+
+```
+最近毕业到 Raydium 的代币
+```
+
+---
+
+## Blockchain 工具
+
+### blockchain_list
+
+获取支持的区块链列表。
+
+```
+ChainStream 支持哪些区块链？
+```
+
+### blockchain_get_latest_block
+
+获取最新区块信息。
+
+```
+以太坊最新的区块号是多少？
+```
+
+---
+
+## Dex 工具
+
+### dex_list
+
+获取支持的 DEX 列表。
+
+```
+Solana 上支持哪些 DEX？
+```
+
+### dex_get_quote
+
+获取交易报价。
+
+```
+用 1 SOL 换 USDC 能得到多少？
+```
+
+### dex_get_route
+
+获取最优交易路由。
+
+```
+找到最优的 ETH 到 ARB 的交易路径
+```
+
+### dex_swap
+
+执行代币兑换。
+
+```
+帮我把 0.5 SOL 换成 BONK
+```
+
+### dex_create
+
+创建交易（需要签名）。
+
+```
+创建一笔从 USDC 到 ETH 的交易
+```
+
+---
+
+## DeFi 工具
+
+### pumpfun_create
+
+在 Pump.fun 创建代币。
+
+```
+在 Pump.fun 创建一个新代币
+```
+
+### moonshot_create
+
+在 Moonshot 创建代币。
+
+```
+在 Moonshot 创建代币
+```
+
+### moonshot_submit_create_token
+
+提交 Moonshot 创建代币交易。
+
+```
+提交 Moonshot 代币创建交易
+```
+
+---
+
+## Transaction 工具
+
+### transaction_send
+
+发送已签名交易。
+
+```
+发送这笔交易
+```
+
+### transaction_get_gas_price
+
+获取当前 Gas 价格。
+
+```
+以太坊现在的 Gas 费多少？
+```
+
+### transaction_estimate_gas_limit
+
+估算交易 Gas 限制。
+
+```
+估算这笔交易需要多少 Gas
+```
+
+---
+
+## RedPacket 工具
+
+### redpacket_create
+
+创建红包。
+
+```
+创建一个包含 10 SOL 的红包，分成 100 份
+```
+
+### redpacket_claim
+
+领取红包。
+
+```
+领取这个红包
+```
+
+### redpacket_get
+
+获取红包信息。
+
+```
+查看这个红包的详情
+```
+
+### redpacket_get_claims
+
+获取红包领取记录。
+
+```
+谁领取了这个红包？
+```
+
+---
+
+## KYT 工具
+
+### kyt_register_transfer
+
+注册充值交易进行风险评估。
+
+```
+检查这笔充值交易的风险
+```
+
+### kyt_get_transfer_summary
+
+获取交易风险摘要。
+
+```
+查看这笔交易的风险评估结果
+```
+
+### kyt_get_transfer_exposures
+
+获取交易直接风险敞口。
+
+```
+这笔交易涉及哪些风险实体？
+```
+
+### kyt_get_transfer_alerts
+
+获取交易风险告警。
+
+```
+这笔交易有什么告警信息？
+```
+
+### kyt_register_withdrawal
+
+注册提币交易进行风险评估。
+
+```
+检查这笔提币的目标地址风险
+```
+
+### kyt_register_address
+
+注册地址进行风险评估。
+
+```
+评估这个地址的风险等级
+```
+
+### kyt_get_address_risk
+
+获取地址风险评估结果。
+
+```
+这个地址的风险等级是多少？
+```
+
+---
+
+## Webhook 工具
+
+### webhook_list_endpoints
+
+获取已配置的 Webhook 端点列表。
+
+```
+查看我配置的所有 Webhook
+```
+
+### webhook_create_endpoint
+
+创建新的 Webhook 端点。
+
+```
+创建一个新的 Webhook 接收代币创建事件
+```
+
+### webhook_update_endpoint
+
+更新 Webhook 端点配置。
+
+```
+修改这个 Webhook 的回调地址
+```
+
+### webhook_delete_endpoint
+
+删除 Webhook 端点。
+
+```
+删除这个 Webhook
+```
+
+### webhook_get_secret
+
+获取 Webhook 签名密钥。
+
+```
+获取这个 Webhook 的签名密钥
+```
+
+### webhook_rotate_secret
+
+轮换 Webhook 签名密钥。
+
+```
+重新生成这个 Webhook 的密钥
+```
+
+---
+
+## WebSocket 订阅
+
+MCP 服务也支持 WebSocket 实时订阅，可以获取以下实时数据：
+
+### 订阅类型
+
+| 类型 | 说明 | 示例提问 |
+|------|------|----------|
+| K线 | 实时价格 K 线 | "订阅这个代币的 1 分钟 K 线" |
+| 代币统计 | 实时交易统计 | "实时监控这个代币的交易数据" |
+| 新代币 | 新代币创建通知 | "通知我 Solana 上的新代币" |
+| 代币元数据 | 新代币元数据 | "获取新代币的详细信息" |
+| 钱包余额 | 余额变动 | "监控这个钱包的余额变化" |
+| 钱包交易 | 交易通知 | "这个钱包有新交易时通知我" |
+| 交易活动 | 实时交易流 | "显示这个代币的实时交易" |
+| 流动池 | 池子状态 | "监控这个池子的流动性变化" |
+| 排行榜 | 热门代币更新 | "实时更新热门代币排行" |
+
+<Note>
+WebSocket 订阅的详细参数和返回格式请参考 [WebSocket API 文档](/cn/api-reference/endpoint/websocket/api)。
+</Note>
+
+---
+
+## 支持的区块链
+
+| 链 | 标识 | 类型 |
+|----|------|------|
+| Ethereum | `ethereum` | EVM |
+| BNB Chain | `bsc` | EVM |
+| Polygon | `polygon` | EVM |
+| Arbitrum | `arbitrum` | EVM |
+| Optimism | `optimism` | EVM |
+| Base | `base` | EVM |
+| Avalanche | `avalanche` | EVM |
+| Solana | `sol` | 非 EVM |
+
+---
+
+## 提示词最佳实践
+
+### 明确指定链
+
+```
+✅ 好：查询 0x... 在以太坊上的余额
+❌ 差：查询 0x... 的余额
+```
+
+### 提供完整地址
+
+```
+✅ 好：分析 0x1234567890abcdef1234567890abcdef12345678
+❌ 差：分析 0x1234...5678
+```
+
+### 指定时间范围
+
+```
+✅ 好：查看最近 7 天的交易记录
+❌ 差：查看最近的交易
+```
+
+### 分步骤提问
+
+复杂任务拆分为多个简单问题：
+
+```
+✅ 好：
+1. 首先查询这个地址的持仓
+2. 然后分析它的交易历史
+3. 最后判断它的投资风格
+
+❌ 差：
+告诉我这个地址的一切信息
+```
+
+### 利用上下文追问
+
+```
+用户：查询 0x... 的持仓
+AI：[返回持仓列表]
+用户：这些代币中哪个涨幅最大？
+用户：分析持有 PEPE 的原因
+```
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="MCP 介绍" icon="plug" href="/cn/guides/ai-infrastructure/mcp-server/introduction">
+    了解 MCP 协议和能力
+  </Card>
+  <Card title="配置指南" icon="gear" href="/cn/guides/ai-infrastructure/mcp-server/setup-guide">
+    配置 MCP Server
+  </Card>
+  <Card title="API Reference" icon="code" href="/cn/api-reference/authentication/authenticate">
+    完整 REST API 文档
+  </Card>
+  <Card title="WebSocket API" icon="bolt" href="/cn/api-reference/endpoint/websocket/api">
+    实时数据订阅
+  </Card>
+</CardGroup>

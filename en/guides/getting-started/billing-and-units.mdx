@@ -1,0 +1,488 @@
+---
+title: "Billing and Units"
+description: "Understanding ChainStream's billing model and quota management"
+icon: "credit-card"
+---
+
+## Overview
+
+ChainStream uses a **Unit-based billing model**. Different APIs consume different amounts of Units, and you can choose a plan that fits your business needs.
+
+---
+
+## Billing Model
+
+### Plan Types
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="gift">
+    **$0 / month**
+
+    - 30K Units/month
+    - No overage
+    - For development, POC
+  </Card>
+
+  <Card title="Starter" icon="rocket">
+    **$199 / month**
+
+    - 10M Units/month
+    - Overage: $12.9/M
+    - For small projects, MVP
+  </Card>
+
+  <Card title="Pro" icon="bolt">
+    **$699 / month**
+
+    - 50M Units/month
+    - Overage: $9.9/M
+    - For production, medium traffic
+  </Card>
+
+  <Card title="Enterprise" icon="building">
+    **$1,699 / month**
+
+    - 200M Units/month
+    - Overage: $6.9/M
+    - For large enterprises, high concurrency
+  </Card>
+
+  <Card title="Custom" icon="handshake">
+    **Custom pricing**
+
+    - Custom Units quota
+    - Custom overage rate
+    - Private deployment, dedicated SLA
+  </Card>
+</CardGroup>
+
+<Tip>
+All plans will be blocked (return 403 error) when quota is exhausted. Paid plans can purchase additional quota in Dashboard to restore service.
+</Tip>
+
+### Plan Selection Guide
+
+<AccordionGroup>
+  <Accordion title="Free — For Development & Testing">
+    **Use cases:**
+    - Local development and debugging
+    - Feature validation and demos
+    - Learning and evaluating ChainStream API
+
+    **Typical usage estimate:**
+    - 300 price queries per day → ~9,000 Units/month
+
+    **Limitations:**
+    - Data may have 1-2 second delay
+    - No SLA guarantee
+    - Cannot continue calling after quota exhaustion
+  </Accordion>
+
+  <Accordion title="Starter — For Small Projects">
+    **Use cases:**
+    - Individual developer's small dApps
+    - Trading bot prototypes
+    - Small market display websites
+
+    **Typical usage estimate:**
+    - Market dashboard (10 tokens, refresh every minute) → ~43,200 Units/month
+    - Small trading bot (1 query/second) → ~86,400 Units/month (single token)
+
+    **Example scenario:**
+    Building a Solana token market website showing 20 popular tokens, refreshing every 30 seconds:
+    ```
+    20 tokens × 2 times/min × 60 min × 24 hours × 30 days = 1,728,000 requests
+    At 1 Unit/request = 1,728,000 Units/month
+    ```
+    This scenario recommends Pro plan.
+  </Accordion>
+
+  <Accordion title="Pro — For Production Environment">
+    **Use cases:**
+    - Small/medium exchange or wallet data needs
+    - Professional trading tools
+    - Businesses requiring KYT/KYA risk control
+
+    **Typical usage estimate:**
+    - Medium market platform (100 tokens, real-time WebSocket) → ~500,000 Units/month
+    - Deposit risk control (1000 KYT checks/day) → ~150,000 Units/month
+
+    **Example scenario:**
+    Running a small exchange that needs:
+    - Market data: 50 trading pairs, WebSocket real-time push
+    - Deposit risk control: 500 deposits/day, each with KYT check
+    ```
+    WebSocket: 50 × 0.1 Unit/message × 86400 sec × 30 days ≈ 12,960,000 messages = 1,296,000 Units
+    KYT: 500 × 5 Units × 30 days = 75,000 Units
+    Total: ~1,371,000 Units/month
+    ```
+    This scenario recommends Pro plan + overage budget, or contact sales for Enterprise quote.
+  </Accordion>
+
+  <Accordion title="Enterprise — For Large Enterprises">
+    **Use cases:**
+    - Large exchanges
+    - Institutional quantitative trading
+    - Private deployment or custom SLA requirements
+
+    **Includes:**
+    - Unlimited API calls
+    - Dedicated technical support
+    - Custom SLA (99.99%+)
+    - Optional private deployment
+
+    Contact sales for pricing.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Units Calculation
+
+### What is a Unit
+
+Unit is ChainStream's billing unit. Different APIs consume different amounts of Units - more complex APIs consume more.
+
+### Data API Consumption
+
+<Tabs>
+  <Tab title="Token API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Token Price | 1 | `GET /v1/token/{chain}/{tokenAddress}/price` |
+    | Batch Price | 1 | `GET /v1/token/{chain}/{tokenAddress}/prices` |
+    | Token Metadata | 1 | `GET /v1/token/{chain}/metadata/multi` |
+    | Token Market Data | 1 | `GET /v1/token/{chain}/{tokenAddress}/marketdata` |
+    | Batch Market Data | 1 | `GET /v1/token/{chain}/marketdata/multi` |
+    | Token Stats | 1 | `GET /v1/token/{chain}/{tokenAddress}/stats` |
+    | Batch Stats | 1 | `GET /v1/token/{chain}/stats/multi` |
+    | Token Candles | 1 | `GET /v1/token/{chain}/{tokenAddress}/candles` |
+    | Token Holders | 2 | `GET /v1/token/{chain}/{tokenAddress}/holders` |
+    | Batch Holders | 2 | `GET /v1/token/{chain}/{tokenAddress}/holders/multi` |
+    | Top Holders | 2 | `GET /v1/token/{chain}/{tokenAddress}/topholders` |
+    | Liquidity Snapshots | 2 | `GET /v1/token/{chain}/{tokenAddress}/liquiditysnapshots` |
+    | Security Check | 2 | `GET /v1/token/{chain}/{tokenAddress}/security` |
+    | Creation Info | 1 | `GET /v1/token/{chain}/{tokenAddress}/creation` |
+    | Mint/Burn | 2 | `GET /v1/token/{chain}/{tokenAddress}/mintandburn` |
+    | Traders by Tag | 2 | `GET /v1/token/{chain}/{tokenAddress}/traders/{tag}` |
+    | Token List | 1 | `GET /v1/token/{chain}/list` |
+    | Dev Tokens | 2 | `GET /v1/token/{chain}/dev/{devAddress}/tokens` |
+    | Token Pools | 1 | `GET /v1/token/{chain}/{tokenAddress}/pools` |
+  </Tab>
+  <Tab title="Wallet API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Wallet Balance | 2 | `GET /v1/wallet/{chain}/{walletAddress}/balance` |
+    | Balance Updates | 2 | `GET /v1/wallet/{chain}/{walletAddress}/balance/updates` |
+    | Wallet Info | 1 | `GET /v1/wallet/{chain}/{walletAddress}` |
+    | Wallet Stats | 2 | `GET /v1/wallet/{chain}/{walletAddress}/stats` |
+    | PnL Calculation | 3 | `POST /v1/wallet/{chain}/{walletAddress}/calculate-pnl` |
+    | Add to Watchlist | 1 | `POST /v1/watchlist/{chain}/{walletAddress}` |
+  </Tab>
+  <Tab title="Trade API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Token Trades | 2 | `GET /v1/trade/{chain}` |
+    | Trade Activities | 2 | `GET /v1/trade/{chain}/activities` |
+    | Top Traders | 2 | `GET /v1/trade/{chain}/top-traders` |
+  </Tab>
+  <Tab title="Pool API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Pool Info | 1 | `GET /v1/dexpools/{chain}/{poolAddress}` |
+    | Pool Snapshots | 2 | `GET /v1/dexpools/{chain}/{poolAddress}/snapshots` |
+  </Tab>
+  <Tab title="Ranking API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Hot Tokens | 1 | `GET /v1/ranking/{chain}/hottokens/{duration}` |
+    | New Tokens | 1 | `GET /v1/ranking/{chain}/newtokens` |
+    | Graduated Tokens | 1 | `GET /v1/ranking/{chain}/migrated` |
+    | Final Stretch | 1 | `GET /v1/ranking/{chain}/finalstretch` |
+    | Stock Tokens | 1 | `GET /v1/ranking/{chain}/stocks` |
+  </Tab>
+  <Tab title="DEX API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Supported DEXs | 1 | `GET /v1/dex` |
+    | Quote | 2 | `GET /v1/dex/{chain}/quote` |
+    | Route | 2 | `POST /v1/dex/{chain}/route` |
+    | Create Tx | 3 | `POST /v1/dex/{chain}/create` |
+    | Execute Swap | 5 | `POST /v1/dex/{chain}/swap` |
+  </Tab>
+  <Tab title="Blockchain API">
+    | API | Units | Endpoint |
+    |:--|:--|:--|
+    | Supported Chains | 1 | `GET /v1/blockchain` |
+    | Latest Block | 1 | `GET /v1/blockchain/{chain}/latest_block` |
+    | Gas Price | 1 | `GET /v1/transaction/{chain}/gas-price` |
+    | Gas Estimate | 2 | `POST /v1/transaction/{chain}/estimate-gas-limit` |
+    | Send Transaction | 3 | `POST /v1/transaction/{chain}/send` |
+  </Tab>
+</Tabs>
+
+### Webhook API Consumption
+
+| API | Units | Endpoint |
+|:--|:--|:--|
+| List Webhooks | 1 | `GET /v1/webhook/endpoint` |
+| Create Webhook | 2 | `POST /v1/webhook/endpoint` |
+| Get Webhook | 1 | `GET /v1/webhook/endpoint/{id}` |
+| Update Webhook | 2 | `PATCH /v1/webhook/endpoint` |
+| Delete Webhook | 1 | `DELETE /v1/webhook/endpoint/{id}` |
+| Get Secret | 1 | `GET /v1/webhook/endpoint/{id}/secret` |
+| Rotate Secret | 2 | `POST /v1/webhook/endpoint/{id}/secret/rotate` |
+
+---
+
+## WebSocket Real-time Subscription Billing
+
+WebSocket real-time data subscriptions are billed separately, charged by data bytes:
+
+| Item | Rate | Description |
+|:--|:--|:--|
+| WebSocket Data | **0.005 Unit/byte** | Charged by push data bytes |
+| WebSocket Connection | Free | No charge for establishing connection |
+| Heartbeat Messages | Free | Heartbeat packets not charged |
+
+### Supported Subscription Channels
+
+<Tabs>
+  <Tab title="Candles">
+    | Channel | Description |
+    |:--|:--|
+    | `dex-candle:{chain}_{tokenAddress}_{resolution}` | Real-time candle data |
+  </Tab>
+  <Tab title="Token Data">
+    | Channel | Description |
+    |:--|:--|
+    | `dex-token-stats:{chain}_{tokenAddress}` | Token statistics |
+    | `dex-token-holding:{chain}_{tokenAddress}` | Holder statistics |
+    | `dex-token-supply:{chain}_{tokenAddress}` | Supply and market cap |
+    | `dex-token-general-stat-num:{chain}_{tokenAddress}` | Liquidity stats |
+    | `dex-new-token:{chain}` | New token info |
+    | `dex-new-tokens-metadata:{chain}` | New token metadata |
+  </Tab>
+  <Tab title="Ranking Data">
+    | Channel | Description |
+    |:--|:--|
+    | `dex-ranking-list:{chain}_{ranking_type}` | Ranking token list |
+    | `dex-ranking-token-stats-list:{chain}_{channelType}` | Ranking token stats |
+    | `dex-ranking-token-holding-list:{chain}_{channelType}` | Ranking holder stats |
+    | `dex-ranking-token-supply-list:{chain}_{channelType}` | Ranking supply |
+  </Tab>
+  <Tab title="Wallet Data">
+    | Channel | Description |
+    |:--|:--|
+    | `dex-wallet-balance:{chain}_{walletAddress}` | Wallet balance |
+    | `dex-wallet-token-pnl:{chain}_{walletAddress}` | Token-level PnL |
+    | `dex-wallet-pnl-list:{chain}_{walletAddress}` | Wallet-level PnL |
+  </Tab>
+  <Tab title="Trade Data">
+    | Channel | Description |
+    |:--|:--|
+    | `dex-trade:{chain}_{tokenAddress}` | Token trades |
+    | `dex-wallet-trade:{chain}_{walletAddress}` | Wallet trades |
+  </Tab>
+  <Tab title="Pool Data">
+    | Channel | Description |
+    |:--|:--|
+    | `dex-pool-balance:{chain}_{poolAddress}` | Pool balance |
+  </Tab>
+</Tabs>
+
+### WebSocket Usage Estimation Examples
+
+```
+Scenario: Monitor 10 tokens' real-time candles (1-minute resolution)
+
+Calculation:
+- Candle message ~200 bytes each
+- Each token ~1 candle message per minute
+- 10 tokens × 1 msg/min × 60 min × 24 hrs × 30 days = 432,000 messages
+- Total data: 432,000 × 200 = 86,400,000 bytes
+- Monthly: 86,400,000 × 0.005 = 432,000 Units
+
+Scenario: Monitor 50 tokens' stats (real-time, ~1 update/second)
+
+Calculation:
+- Token stats message ~500 bytes each
+- 50 tokens × 1 msg/sec × 86,400 sec × 30 days = 129,600,000 messages
+- Total data: 129,600,000 × 500 = 64,800,000,000 bytes (~64.8 GB)
+- Monthly: 64,800,000,000 × 0.005 = 324,000,000 Units (~324M)
+```
+
+<Note>
+Batch APIs typically have discounts. Refer to API Reference for exact consumption. WebSocket message frequency depends on market activity; high volatility periods will increase message volume.
+</Note>
+
+---
+
+## KYT/KYA Service Billing
+
+<Warning>
+KYT/KYA APIs **do not consume plan Units**. They are charged from a separate KYT account balance (in USD). Please top up at Dashboard → KYT Service.
+</Warning>
+
+| API | Cost | Endpoint |
+|:--|:--|:--|
+| Deposit Risk Assessment | $0.25/call | `POST /v1/kyt/transfer` |
+| Withdrawal Risk Assessment | $0.25/call | `POST /v1/kyt/withdrawal` |
+| Register Address | $1.25/call | `POST /v1/kyt/address` |
+
+---
+
+### Cost Estimation Examples
+
+<Tabs>
+  <Tab title="Market Display App">
+    **Scenario:** A DeFi market website showing 50 token prices, refreshing every 10 seconds
+    ```
+    Calculation:
+    - Request frequency: 50 tokens × 6 times/min = 300 times/min
+    - Monthly requests: 300 × 60 × 24 × 30 = 12,960,000 times
+    - Monthly consumption: 12,960,000 × 1 Unit = 12,960,000 Units
+
+    Recommended: Enterprise plan
+    ```
+  </Tab>
+  <Tab title="Trading Bot">
+    **Scenario:** An arbitrage bot monitoring 5 trading pairs, querying price every second
+    ```
+    Calculation:
+    - Request frequency: 5 × 1 time/sec = 5 times/sec
+    - Monthly requests: 5 × 86400 × 30 = 12,960,000 times
+    - Monthly consumption: 12,960,000 × 1 Unit = 12,960,000 Units
+
+    Recommended: Enterprise plan, or use WebSocket to reduce consumption
+
+    Optimized with WebSocket:
+    - 5 pairs × 0.1 Unit/message × 86400 × 30 = 1,296,000 Units
+    - Recommended: Pro plan + overage
+    ```
+  </Tab>
+  <Tab title="Exchange Risk Control">
+    **Scenario:** Small exchange, 1000 deposits/day requiring KYT check
+    ```
+    Calculation:
+    - Daily requests: 1000 transactions
+    - Monthly requests: 1000 × 30 = 30,000 times
+    - Monthly consumption: 30,000 × 5 Units = 150,000 Units
+
+    Recommended: Pro plan
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Quota Management
+
+### View Usage in Dashboard
+
+<Steps>
+  <Step title="Login to Dashboard">
+    Visit [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+  </Step>
+  <Step title="View Usage">
+    Check current month usage, remaining quota, and historical trends on the Usage page
+  </Step>
+</Steps>
+
+### Quota Alert Settings
+
+You can set quota alerts to receive notifications when usage reaches thresholds:
+
+| Alert Level | Trigger Condition | Notification Method |
+|:--|:--|:--|
+| Reminder | 50% usage | Email |
+| Warning | 80% usage | Email + Dashboard alert |
+| Critical | 100% usage | Email + Dashboard alert |
+
+<Tip>
+We recommend enabling at least the 80% alert to avoid unexpected service interruption.
+</Tip>
+
+---
+
+## Quota Exhaustion Handling
+
+### What Happens When Quota Runs Out
+
+When monthly quota is exhausted, API will return 403 error and cannot continue to be called. Paid plan users can manually purchase additional quota to restore service.
+
+| Plan | Handling Method |
+|:--|:--|
+| Free | API returns 403 error, wait for next month's quota reset |
+| Starter / Pro / Enterprise | API returns 403 error, can purchase additional quota to restore service |
+| Custom | Per contract terms |
+
+### Purchase Additional Quota
+
+Paid plan users can purchase additional quota in Dashboard, priced according to the plan's overage rate:
+
+| Plan | Additional Quota Price |
+|:--|:--|
+| Starter | $12.9 / 1M Units |
+| Pro | $9.9 / 1M Units |
+| Enterprise | $6.9 / 1M Units |
+
+<Warning>
+Service is interrupted immediately when quota is exhausted (returns 403 error). We recommend setting 80% usage alerts and purchasing additional quota in advance to avoid business impact.
+</Warning>
+
+---
+
+## Payment Methods
+
+### Supported Payment Methods
+
+| Method | Description | Applicable Plans |
+|:--|:--|:--|
+| Credit Card | Visa, MasterCard, AMEX | All plans |
+| Cryptocurrency | USDT, USDC (ERC-20 / TRC-20) | Starter and above |
+| Bank Transfer | Contact sales | Enterprise |
+
+### Billing Cycle
+
+- **Monthly plans:** Invoice generated on the 1st for the previous month
+- **Annual plans:** Get 2 months free (equivalent to 16.7% discount)
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="How do I choose the right plan?">
+    We recommend starting with the Free plan to evaluate actual usage, then choose based on monthly consumption:
+    - &lt; 30K Units: Free
+    - 30K - 10M Units: Starter
+    - 10M - 50M Units: Pro
+    - &gt; 50M Units: Enterprise
+  </Accordion>
+  <Accordion title="Can I upgrade/downgrade anytime?">
+    Yes. Upgrades take effect immediately with prorated charges. Downgrades take effect in the next billing cycle.
+  </Accordion>
+  <Accordion title="Do unused quotas roll over?">
+    No. Monthly quotas reset at the end of each month and do not roll over.
+  </Accordion>
+  <Accordion title="How do I get invoices?">
+    Download historical invoices from Dashboard → Billing → Invoices. Enterprise customers can contact sales for custom invoices.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="FAQ" icon="circle-question" href="/en/guides/getting-started/faq">
+    Common questions
+  </Card>
+  <Card title="API Security" icon="shield-halved" href="/en/guides/data-concepts/api-security">
+    Understand API security configuration
+  </Card>
+  <Card title="API Reference" icon="book" href="/en/api-reference/authentication/authenticate">
+    Start calling APIs
+  </Card>
+</CardGroup>

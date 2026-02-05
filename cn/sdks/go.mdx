@@ -1,0 +1,175 @@
+---
+title: 'Go'
+description: 'ChainStream Go SDK'
+icon: 'golang'
+---
+
+## 安装
+
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+
+## 快速开始
+
+```go
+import chainstream "github.com/chainstream-io/chainstream-go-sdk"
+
+client, err := chainstream.NewChainStreamClient(accessToken, &chainstream.ChainStreamClientOptions{})
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+```
+
+## REST API 示例
+
+查询代币信息：
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+
+	chainstream "github.com/chainstream-io/chainstream-go-sdk"
+	"github.com/chainstream-io/chainstream-go-sdk/openapi/token"
+)
+
+const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
+
+func main() {
+	fmt.Println("通过 API 查询代币...")
+
+	// 初始化 SDK 客户端
+	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{})
+	if err != nil {
+		log.Fatalf("创建客户端失败: %v", err)
+	}
+	defer client.Close()
+
+	chain := token.Sol
+	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
+
+	fmt.Printf("查询: %s/%s\n", chain, tokenAddress)
+
+	// 通过 SDK 调用 API
+	resp, err := client.Token.GetToken(context.Background(), chain, tokenAddress)
+	if err != nil {
+		log.Fatalf("API 调用失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("读取响应失败: %v", err)
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		log.Fatalf("解析 JSON 失败: %v", err)
+	}
+
+	fmt.Println("\n结果:")
+	prettyJSON, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Println(string(prettyJSON))
+}
+```
+
+## WebSocket 示例
+
+订阅实时代币 K 线数据：
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	chainstream "github.com/chainstream-io/chainstream-go-sdk"
+	"github.com/chainstream-io/chainstream-go-sdk/openapi/token"
+	"github.com/chainstream-io/chainstream-go-sdk/stream"
+)
+
+const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
+
+func main() {
+	fmt.Println("启动 WebSocket 订阅...")
+
+	// 创建 ChainStreamClient (订阅时会自动连接 WebSocket)
+	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{
+		StreamURL: "wss://realtime-dex.chainstream.io/connection/websocket",
+	})
+	if err != nil {
+		fmt.Printf("创建客户端失败: %v\n", err)
+		os.Exit(1)
+	}
+	defer client.Close()
+
+	chain := "sol"
+	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
+
+	fmt.Printf("订阅代币 K 线: %s/%s\n", chain, tokenAddress)
+	fmt.Println("监听中... (按 Ctrl+C 停止)")
+
+	// 订阅代币 K 线 (WebSocket 自动连接)
+	messageCount := 0
+	unsubscribe := client.Stream.SubscribeTokenCandles(chain, tokenAddress, token.N1s, func(data stream.TokenCandle) {
+		messageCount++
+		fmt.Printf("[%d] open=%s, close=%s, high=%s, low=%s, volume=%s\n",
+			messageCount,
+			data.Open,
+			data.Close,
+			data.High,
+			data.Low,
+			data.Volume,
+		)
+	}, "")
+	defer unsubscribe()
+
+	// 处理中断信号
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	// 等待中断信号
+	<-interrupt
+	fmt.Println("\n收到中断信号，关闭连接...")
+	fmt.Printf("共收到消息: %d\n", messageCount)
+}
+```
+
+## 并发请求
+
+```go
+var wg sync.WaitGroup
+tokens := []string{"ADDR1", "ADDR2", "ADDR3"}
+results := make([]*token.Token, len(tokens))
+
+for i, addr := range tokens {
+    wg.Add(1)
+    go func(i int, addr string) {
+        defer wg.Done()
+        resp, _ := client.Token.GetToken(ctx, token.Sol, addr)
+        results[i] = resp
+    }(i, addr)
+}
+wg.Wait()
+```
+
+## 相关资源
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-go-sdk">
+    查看源代码
+  </Card>
+  <Card title="pkg.go.dev" icon="golang" href="https://pkg.go.dev/github.com/chainstream-io/chainstream-go-sdk">
+    包文档
+  </Card>
+</CardGroup>

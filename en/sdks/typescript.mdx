@@ -1,0 +1,133 @@
+---
+title: 'TypeScript'
+description: 'ChainStream TypeScript/JavaScript SDK'
+icon: 'js'
+---
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @chainstream-io/sdk
+```
+
+```bash yarn
+yarn add @chainstream-io/sdk
+```
+
+```bash pnpm
+pnpm add @chainstream-io/sdk
+```
+</CodeGroup>
+
+## Quick Start
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+```
+
+## REST API Example
+
+Query token information:
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
+async function main() {
+  // Initialize SDK client
+  const client = new ChainStreamClient(ACCESS_TOKEN);
+
+  const chain = 'sol';
+  const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
+
+  console.log(`Querying Token: ${chain}/${tokenAddress}`);
+
+  try {
+    // Call API via SDK
+    const result = await client.token.getToken(chain, tokenAddress);
+    
+    console.log('Result:');
+    console.log(JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error('API call failed:', error);
+  }
+}
+
+main();
+```
+
+## WebSocket Example
+
+Subscribe to real-time token candle data:
+
+```typescript
+import { ChainStreamClient, Resolution } from '@chainstream-io/sdk';
+
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
+async function main() {
+  const client = new ChainStreamClient(ACCESS_TOKEN, {
+    autoConnectWebSocket: true,
+  });
+
+  const chain = 'sol';
+  const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
+
+  console.log(`Subscribing to Token Candles: ${chain}/${tokenAddress}`);
+  console.log('Listening... (Press Ctrl+C to stop)\n');
+
+  // Subscribe to WebSocket via SDK
+  client.stream.subscribeTokenCandles({
+    chain,
+    tokenAddress,
+    resolution: Resolution['1s'],
+    callback: data => {
+      console.log(new Date().toISOString(), JSON.stringify(data));
+    },
+  });
+
+  // Keep the process alive
+  process.on('SIGINT', () => {
+    console.log('\nClosing connection...');
+    process.exit(0);
+  });
+
+  // Keep running
+  await new Promise(() => {});
+}
+
+main().catch(error => {
+  console.error('Test failed:', error.message);
+  process.exit(1);
+});
+```
+
+## Error Handling
+
+```typescript
+import { ChainStreamClient, ChainStreamError } from '@chainstream-io/sdk';
+
+try {
+  const token = await client.token.getToken('sol', 'INVALID_ADDRESS');
+} catch (error) {
+  if (error instanceof ChainStreamError) {
+    console.error(`Error code: ${error.code}`);
+    console.error(`Error message: ${error.message}`);
+  }
+}
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/typescript">
+    View source code
+  </Card>
+  <Card title="npm" icon="npm" href="https://www.npmjs.com/package/@chainstream-io/sdk">
+    Package registry
+  </Card>
+</CardGroup>

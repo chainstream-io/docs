@@ -1,0 +1,163 @@
+---
+title: 'Overview'
+description: 'Choose the right ChainStream SDK for you'
+icon: "code"
+---
+
+## Official SDKs
+
+ChainStream provides official SDKs in multiple languages, wrapping common API operations for a better development experience.
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/en/sdks/typescript">
+    For Node.js and browser applications
+  </Card>
+  <Card title="Python" icon="python" href="/en/sdks/python">
+    For data analysis and backend services
+  </Card>
+  <Card title="Go" icon="golang" href="/en/sdks/go">
+    For high-performance backend services
+  </Card>
+  <Card title="Rust" icon="rust" href="/en/sdks/rust">
+    For systems programming and performance-critical applications
+  </Card>
+</CardGroup>
+
+## SDK Features
+
+All SDKs provide:
+
+- **REST API Client**: Call all ChainStream data APIs
+- **WebSocket Client**: Subscribe to real-time data streams
+- **Auto Authentication**: Automatic token management
+- **Type Safety**: Full type definitions (TypeScript, Go, Rust)
+
+## Installation
+
+<Tabs>
+  <Tab title="TypeScript">
+```bash
+npm install @chainstream-io/sdk
+```
+  </Tab>
+  <Tab title="Python">
+```bash
+pip install chainstream-sdk
+```
+  </Tab>
+  <Tab title="Go">
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+  </Tab>
+  <Tab title="Rust">
+```toml
+# Add to Cargo.toml
+[dependencies]
+chainstream-sdk = "0.1"
+```
+  </Tab>
+</Tabs>
+
+## Quick Comparison
+
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+
+// REST API call
+const token = await client.token.getToken('sol', 'TOKEN_ADDRESS');
+
+// WebSocket subscription
+client.stream.subscribeTokenCandles({
+  chain: 'sol',
+  tokenAddress: 'TOKEN_ADDRESS',
+  resolution: Resolution['1s'],
+  callback: (data) => console.log(data)
+});
+```
+  </Tab>
+  <Tab title="Python">
+```python
+from chainstream import ChainStreamClient
+from chainstream.stream import Resolution
+
+client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
+
+# REST API call
+token = await client.token.get_metadata('sol', 'TOKEN_ADDRESS')
+
+# WebSocket subscription
+await client.stream.subscribe_token_candles(
+    chain='sol',
+    token_address='TOKEN_ADDRESS',
+    resolution=Resolution.S1,
+    callback=lambda data: print(data)
+)
+```
+  </Tab>
+  <Tab title="Go">
+```go
+import chainstream "github.com/chainstream-io/chainstream-go-sdk"
+
+client, _ := chainstream.NewChainStreamClient(accessToken, &chainstream.ChainStreamClientOptions{})
+
+// REST API call
+resp, _ := client.Token.GetToken(ctx, "sol", "TOKEN_ADDRESS")
+
+// WebSocket subscription
+client.Stream.SubscribeTokenCandles("sol", "TOKEN_ADDRESS", token.N1s, func(data stream.TokenCandle) {
+    fmt.Println(data)
+}, "")
+```
+  </Tab>
+  <Tab title="Rust">
+```rust
+use chainstream_sdk::{ChainStreamClient, stream::{Resolution, TokenCandle}};
+
+let client = ChainStreamClient::new("YOUR_ACCESS_TOKEN", None);
+
+// WebSocket subscription
+client.stream.subscribe_token_candles(
+    "sol",
+    "TOKEN_ADDRESS",
+    Resolution::X1s,
+    |candle: TokenCandle| {
+        println!("{:?}", candle);
+    },
+    None,
+).await?;
+```
+  </Tab>
+</Tabs>
+
+## SDK vs Direct API
+
+| Feature | SDK | Direct API |
+|---------|-----|------------|
+| Type Safety | Yes (TS/Go/Rust) | No |
+| Auth Management | Automatic | Manual |
+| Error Handling | Wrapped | Raw HTTP errors |
+| WebSocket | Built-in | Manual implementation |
+| Code Volume | Less | More |
+| Flexibility | Medium | Full |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="TypeScript SDK" icon="js" href="/en/sdks/typescript">
+    View TypeScript documentation
+  </Card>
+  <Card title="Python SDK" icon="python" href="/en/sdks/python">
+    View Python documentation
+  </Card>
+  <Card title="Go SDK" icon="golang" href="/en/sdks/go">
+    View Go documentation
+  </Card>
+  <Card title="Rust SDK" icon="rust" href="/en/sdks/rust">
+    View Rust documentation
+  </Card>
+</CardGroup>

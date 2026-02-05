@@ -2243,6 +2243,15 @@
             }
           },
           {
+            "name": "priceType",
+            "required": false,
+            "in": "query",
+            "description": "价格类型：usd（默认）或原生代币价格",
+            "schema": {
+              "$ref": "#/components/schemas/PriceType"
+            }
+          },
+          {
             "name": "from",
             "required": false,
             "in": "query",
@@ -2297,6 +2306,210 @@
           }
         ],
         "summary": "代币 - K线",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/pool/{poolAddress}/candles": {
+      "get": {
+        "description": "获取指定流动池的 OHLCV K线数据",
+        "operationId": "get.pool.candles",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": true,
+            "in": "path",
+            "description": "资金池地址",
+            "schema": {
+              "example": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": true,
+            "in": "query",
+            "description": "数据的时间周期。特别注意：1s的时间周期只保存最近1小时的数据；15s、30s时间周期只保存最近6小时的数据；1m时间周期只保存最近12小时数据；其他时间周期的数据永久保存",
+            "schema": {
+              "$ref": "#/components/schemas/Resolution"
+            }
+          },
+          {
+            "name": "priceType",
+            "required": false,
+            "in": "query",
+            "description": "价格类型：usd（默认）或原生代币价格",
+            "schema": {
+              "$ref": "#/components/schemas/PriceType"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "开始时间戳（Unix 纪元毫秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1741647950000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "结束时间戳（Unix 纪元毫秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1741700970000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "format": "int64",
+              "example": 100,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Candle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "流动池 - K线",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/pair/{pair}/candles": {
+      "get": {
+        "description": "获取交易对的 OHLCV K线数据（格式：TOKEN_A_ADDRESS-TOKEN_B_ADDRESS）",
+        "operationId": "get.pair.candles",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "pair",
+            "required": true,
+            "in": "path",
+            "description": "交易对标识符（格式：TOKEN_A_ADDRESS-TOKEN_B_ADDRESS），交易对会自动排序",
+            "schema": {
+              "example": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump-EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": true,
+            "in": "query",
+            "description": "数据的时间周期。特别注意：1s的时间周期只保存最近1小时的数据；15s、30s时间周期只保存最近6小时的数据；1m时间周期只保存最近12小时数据；其他时间周期的数据永久保存",
+            "schema": {
+              "$ref": "#/components/schemas/Resolution"
+            }
+          },
+          {
+            "name": "priceType",
+            "required": false,
+            "in": "query",
+            "description": "价格类型：usd（默认）或原生代币价格",
+            "schema": {
+              "$ref": "#/components/schemas/PriceType"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "开始时间戳（Unix 纪元毫秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1741647950000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "结束时间戳（Unix 纪元毫秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1741700970000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "format": "int64",
+              "example": 100,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Candle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易对 - K线",
         "tags": [
           "Token"
         ]
@@ -10171,12 +10384,27 @@
           "15s",
           "30s",
           "1m",
+          "3m",
           "5m",
           "15m",
+          "30m",
           "1h",
+          "2h",
           "4h",
+          "6h",
+          "8h",
           "12h",
-          "1d"
+          "1d",
+          "3d",
+          "1w",
+          "1M"
+        ]
+      },
+      "PriceType": {
+        "type": "string",
+        "enum": [
+          "usd",
+          "native"
         ]
       },
       "Candle": {
@@ -10207,6 +10435,12 @@
             "description": "交易量",
             "example": "1000000"
           },
+          "trades": {
+            "type": "integer",
+            "description": "该K线内的交易笔数",
+            "example": 42,
+            "format": "int64"
+          },
           "resolution": {
             "description": "数据的时间周期。特别注意：1s的时间周期只保存最近1小时的数据；15s、30s时间周期只保存最近6小时的数据；1m时间周期只保存最近12小时数据；其他时间周期的数据永久保存",
             "example": "1h",
@@ -10221,6 +10455,12 @@
             "description": "数据时间戳（Unix 纪元毫秒）",
             "example": 1709251200000,
             "format": "int64"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "description": "最后更新时间戳（毫秒）",
+            "example": 1709251200000,
+            "format": "int64"
           }
         },
         "required": [
@@ -10229,8 +10469,10 @@
           "high",
           "low",
           "volume",
+          "trades",
           "resolution",
-          "time"
+          "time",
+          "updatedAt"
         ]
       },
       "TokenPriceDTO": {
@@ -10488,7 +10730,8 @@
           "pro",
           "insider",
           "kol",
-          "bluechip"
+          "bluechip",
+          "smart"
         ]
       },
       "TokenTrader": {

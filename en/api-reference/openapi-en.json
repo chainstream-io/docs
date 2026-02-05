@@ -2243,6 +2243,15 @@
             }
           },
           {
+            "name": "priceType",
+            "required": false,
+            "in": "query",
+            "description": "Price type: usd (default) or native token price",
+            "schema": {
+              "$ref": "#/components/schemas/PriceType"
+            }
+          },
+          {
             "name": "from",
             "required": false,
             "in": "query",
@@ -2297,6 +2306,210 @@
           }
         ],
         "summary": "Token - Candles",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/pool/{poolAddress}/candles": {
+      "get": {
+        "description": "Get OHLCV candlestick data for a specific liquidity pool",
+        "operationId": "get.pool.candles",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "poolAddress",
+            "required": true,
+            "in": "path",
+            "description": "A pool address",
+            "schema": {
+              "example": "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": true,
+            "in": "query",
+            "description": "Time resolution for candle data. Note: 1s resolution data is only kept for the last 1 hour; 15s and 30s resolution data is kept for the last 6 hours; 1m resolution data is kept for the last 12 hours; data for other resolutions is stored permanently",
+            "schema": {
+              "$ref": "#/components/schemas/Resolution"
+            }
+          },
+          {
+            "name": "priceType",
+            "required": false,
+            "in": "query",
+            "description": "Price type: usd (default) or native token price",
+            "schema": {
+              "$ref": "#/components/schemas/PriceType"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start timestamp (Unix epoch in milliseconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1741647950000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End timestamp (Unix epoch in milliseconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1741700970000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "format": "int64",
+              "example": 100,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Candle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pool - Candles",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/pair/{pair}/candles": {
+      "get": {
+        "description": "Get OHLCV candlestick data for a trading pair (format: TOKEN_A_ADDRESS-TOKEN_B_ADDRESS)",
+        "operationId": "get.pair.candles",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "pair",
+            "required": true,
+            "in": "path",
+            "description": "Trading pair identifier (format: TOKEN_A_ADDRESS-TOKEN_B_ADDRESS). The pair will be automatically sorted",
+            "schema": {
+              "example": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump-EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": true,
+            "in": "query",
+            "description": "Time resolution for candle data. Note: 1s resolution data is only kept for the last 1 hour; 15s and 30s resolution data is kept for the last 6 hours; 1m resolution data is kept for the last 12 hours; data for other resolutions is stored permanently",
+            "schema": {
+              "$ref": "#/components/schemas/Resolution"
+            }
+          },
+          {
+            "name": "priceType",
+            "required": false,
+            "in": "query",
+            "description": "Price type: usd (default) or native token price",
+            "schema": {
+              "$ref": "#/components/schemas/PriceType"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start timestamp (Unix epoch in milliseconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1741647950000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End timestamp (Unix epoch in milliseconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1741700970000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "format": "int64",
+              "example": 100,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Candle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pair - Candles",
         "tags": [
           "Token"
         ]
@@ -10171,12 +10384,27 @@
           "15s",
           "30s",
           "1m",
+          "3m",
           "5m",
           "15m",
+          "30m",
           "1h",
+          "2h",
           "4h",
+          "6h",
+          "8h",
           "12h",
-          "1d"
+          "1d",
+          "3d",
+          "1w",
+          "1M"
+        ]
+      },
+      "PriceType": {
+        "type": "string",
+        "enum": [
+          "usd",
+          "native"
         ]
       },
       "Candle": {
@@ -10207,6 +10435,12 @@
             "description": "Trading volume",
             "example": "1000000"
           },
+          "trades": {
+            "type": "integer",
+            "description": "Number of trades in this candle",
+            "example": 42,
+            "format": "int64"
+          },
           "resolution": {
             "description": "Time resolution for candle data. Note: 1s resolution data is only kept for the last 1 hour; 15s and 30s resolution data is kept for the last 6 hours; 1m resolution data is kept for the last 12 hours; data for other resolutions is stored permanently",
             "example": "1h",
@@ -10221,6 +10455,12 @@
             "description": "Candle timestamp (Unix epoch in milliseconds)",
             "example": 1709251200000,
             "format": "int64"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "description": "Last update timestamp in milliseconds",
+            "example": 1709251200000,
+            "format": "int64"
           }
         },
         "required": [
@@ -10229,8 +10469,10 @@
           "high",
           "low",
           "volume",
+          "trades",
           "resolution",
-          "time"
+          "time",
+          "updatedAt"
         ]
       },
       "TokenPriceDTO": {
@@ -10488,7 +10730,8 @@
           "pro",
           "insider",
           "kol",
-          "bluechip"
+          "bluechip",
+          "smart"
         ]
       },
       "TokenTrader": {

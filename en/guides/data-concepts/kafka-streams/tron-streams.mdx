@@ -1,0 +1,357 @@
+---
+title: "TRON Streams"
+description: "Protobuf data streams for TRON network"
+icon: "circle-t"
+---
+
+TRON produces a block approximately every 3 seconds, supporting high-throughput transactions and smart contract execution. TRON uses a unique resource model (Energy and Bandwidth) and Witness (Super Representative) consensus mechanism.
+
+**Schema Repository**: [github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron)
+
+---
+
+## Message Types Overview
+
+TRON Streams provides the following message types:
+
+| Message Type | Description | Topic |
+|:---|:---|:---|
+| TradeEvents | DEX trade events | `tron.dex.trades` |
+| TokenEvents | Token events | `tron.tokens` |
+| BalanceEvents | Balance change events | `tron.balances` |
+| DexPoolEvents | Liquidity pool events | `tron.dex.pools` |
+| TransfersMessage | Transfer messages | `tron.v1.transfers.proto` |
+| CandlestickEvents | Candlestick data | `tron.candlesticks` |
+
+---
+
+## Block-Level Data
+
+### BlockHeader Core Fields
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `Number` | uint64 | Block number |
+| `Hash` | bytes | Block hash |
+| `ParentHash` | bytes | Parent block hash |
+| `Timestamp` | Timestamp | Block time |
+| `TxTrieRoot` | bytes | Transaction trie root |
+| `Version` | uint32 | Block version |
+
+### Witness (Super Representative) Information
+
+| Field | Description |
+|:---|:---|
+| `Address` | Witness address |
+| `Id` | Witness ID |
+| `Signature` | Block signature |
+
+<Note>
+TRON uses DPoS consensus mechanism with 27 Super Representatives (Witnesses) taking turns to produce blocks.
+</Note>
+
+---
+
+## Transaction-Level Data
+
+### TransactionHeader
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `Hash` | bytes | Transaction hash |
+| `Fee` | uint64 | Transaction fee |
+| `Index` | uint32 | Index within block |
+| `Expiration` | Timestamp | Expiration time |
+| `FeeLimit` | uint64 | Fee limit |
+| `Signatures` | []bytes | Signature list |
+| `FeePayer` | bytes | Fee payer |
+
+### Result — Execution Result
+
+| Field | Description |
+|:---|:---|
+| `Status` | Execution status |
+| `Success` | Whether successful |
+| `Message` | Error message on failure |
+
+### Receipt — Resource Consumption
+
+| Field | Description |
+|:---|:---|
+| `EnergyUsageTotal` | Total Energy consumption |
+| `EnergyFee` | Energy fee |
+| `NetUsage` | Bandwidth consumption |
+| `NetFee` | Bandwidth fee |
+
+### Contract
+
+Contains contract execution details:
+
+| Field | Description |
+|:---|:---|
+| `Address` | Contract address |
+| `Type` | Contract type (TransferContract, TriggerSmartContract, etc.) |
+| `Parameters` | Call parameters |
+| `InternalTransactions` | Internal transactions |
+| `Logs` | Event logs |
+| `ExecutionTrace` | Execution trace |
+| `WithdrawInfo` | Reward withdrawal information |
+
+---
+
+## Transfer Data
+
+`TransfersMessage` provides TRON chain transfer information (Topic: `tron.v1.transfers.proto`).
+
+### TransfersMessage Structure
+
+```protobuf
+message TransfersMessage {
+  Chain Chain = 1;
+  BlockHeader Header = 2;
+  repeated Transfer Transfers = 3;
+}
+```
+
+### Transfer Structure
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `CallIndex` | uint64 | Call index |
+| `LogIndex` | uint64 | Log index |
+| `Sender` | string | Sender address |
+| `Receiver` | string | Receiver address |
+| `Amount` | string | Transfer amount |
+| `Id` | string | Token ID (NFT) |
+| `URI` | string | Token URI |
+| `Currency` | TokenInfo | Token information |
+| `Success` | bool | Success status |
+| `Index` | uint32 | Transfer index |
+| `TransactionHeader` | TransactionHeader | Transaction header |
+
+### TokenInfo Structure
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `SmartContract` | string | Contract address |
+| `Delegated` | bool | Is delegated |
+| `DelegatedTo` | string | Delegation address |
+| `ProtocolName` | string | Protocol name |
+| `Name` | string | Token name |
+| `Symbol` | string | Token symbol |
+| `Decimals` | int32 | Decimals |
+| `HasURI` | bool | Has URI |
+| `Fungible` | bool | Is fungible |
+| `AssetId` | string | Asset ID (TRC-10) |
+
+### TRON Token Standards
+
+| Standard | Description |
+|:---|:---|
+| TRC-10 | TRON native tokens, no smart contract needed |
+| TRC-20 | Smart contract tokens (similar to ERC-20) |
+| TRC-721 | NFT tokens (similar to ERC-721) |
+
+<Note>
+TRC-10 is TRON's unique native token standard, cheaper to create and transfer, but less flexible than TRC-20.
+</Note>
+
+---
+
+## DEX Data
+
+`TradeEvents` provides DEX trade data (Topic: `tron.dex.trades`), using common TradeEvent structure.
+
+### Trade Core Fields
+
+| Field | Description |
+|:---|:---|
+| `token_a_address` / `token_b_address` | Trading pair token addresses |
+| `user_a_amount` / `user_b_amount` | User trade amounts |
+| `pool_address` | Pool address |
+| `vault_a` / `vault_b` | Pool vault addresses |
+| `vault_a_amount` / `vault_b_amount` | Vault amounts |
+
+### DApp Info
+
+| Field | Description |
+|:---|:---|
+| `program_address` | DEX contract address (e.g., SunSwap) |
+| `inner_program_address` | Inner program address |
+| `chain` | Chain identifier (CHAIN_TRON) |
+
+### DexPoolEvent - Liquidity Pools
+
+| Field | Description |
+|:---|:---|
+| `type` | Event type (INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP) |
+| `address` | Pool address |
+| `token_a_address` / `token_b_address` | Token addresses |
+| `token_a_amount` / `token_b_amount` | Token amounts |
+| `lp_wallet` | LP wallet address |
+
+---
+
+## TRON Chain Characteristics
+
+### Energy and Bandwidth Resource Model
+
+Unlike EVM's Gas model, TRON uses two resources:
+
+| Resource | Description | How to Obtain |
+|:---|:---|:---|
+| **Energy** | Measures smart contract execution consumption | Stake TRX or pay |
+| **Bandwidth (Net)** | Measures transaction data size consumption | Stake TRX or pay |
+
+Receipt shows usage and fees for both resources:
+
+```
+Receipt {
+  EnergyUsageTotal: 50000    // Smart contract consumption
+  EnergyFee: 0               // 0 if staked
+  NetUsage: 265              // Transaction data size
+  NetFee: 0                  // 0 if staked
+}
+```
+
+### Witness System
+
+| Characteristic | Description |
+|:---|:---|
+| Name | Witness (Super Representative) |
+| Count | 27 active Super Representatives |
+| Election | Elected by token holders |
+| Block production | Takes turns, ~3 seconds/block |
+
+`BlockMessage` contains Witness address, ID, and signature.
+
+### Predefined Contract Types
+
+TRON predefines contract types for common operations:
+
+| Type | Description |
+|:---|:---|
+| `TransferContract` | TRX transfer |
+| `TransferAssetContract` | TRC-10 transfer |
+| `TriggerSmartContract` | Call smart contract |
+| `CreateSmartContract` | Create smart contract |
+| `FreezeBalanceV2Contract` | Stake TRX |
+| `UnfreezeBalanceV2Contract` | Unstake |
+| `DelegateResourceContract` | Resource delegation |
+| `WithdrawBalanceContract` | Withdraw rewards |
+
+Identified through Contract's `Type` field.
+
+### Resource Delegation
+
+Users can delegate Energy and Bandwidth to other accounts, commonly used in the TRON ecosystem for:
+- Reducing user transaction costs
+- DApps paying resources for users
+
+---
+
+## Topic → Message Type Mapping
+
+| Topic | Proto File | Message Type | Description |
+|:---|:---|:---|:---|
+| `tron.dex.trades` | trade_event.proto | TradeEvents | DEX trade events |
+| `tron.dex.trades.processed` | trade_event.proto | TradeEvents | With USD price, suspicious flag |
+| `tron.tokens` | token_event.proto | TokenEvents | Token events |
+| `tron.tokens.processed` | token_event.proto | TokenEvents | With description, image, social links |
+| `tron.balances` | balance_event.proto | BalanceEvents | Balance change events |
+| `tron.v1.transfers.proto` | tron/transfers_message.proto | TransfersMessage | TRON transfer messages |
+| `tron.v1.transfers.processed.proto` | tron/transfers_message.proto | TransfersMessage | Processed transfer messages |
+| `tron.dex.pools` | dex_pool_event.proto | DexPoolEvents | Liquidity pool events |
+| `tron.candlesticks` | candlestick.proto | CandlestickEvents | Candlestick data |
+
+---
+
+## Code Examples
+
+### Python Example: Consume TRON DEX Trades
+
+```python
+from kafka import KafkaConsumer
+from common import trade_event_pb2  # Get from streaming_protobuf repository
+
+# Create consumer
+consumer = KafkaConsumer(
+    'tron.dex.trades',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    enable_auto_commit=False,
+    group_id='my-tron-consumer'
+)
+
+# Consume and parse messages
+for message in consumer:
+    trade_events = trade_event_pb2.TradeEvents()
+    trade_events.ParseFromString(message.value)
+    
+    for event in trade_events.events:
+        print(f"Pool: {event.trade.pool_address}")
+        print(f"Token A: {event.trade.token_a_address}")
+        print(f"Token B: {event.trade.token_b_address}")
+        print(f"Amount A: {event.trade.user_a_amount}")
+        print(f"Amount B: {event.trade.user_b_amount}")
+        print(f"Block: {event.block.height}")
+        print(f"DEX: {event.d_app.program_address}")
+        print("---")
+```
+
+### Monitor TRC-20 Token Events
+
+```python
+from kafka import KafkaConsumer
+from common import token_event_pb2
+
+consumer = KafkaConsumer(
+    'tron.tokens',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    group_id='my-tron-token-consumer'
+)
+
+# USDT on TRON
+USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+
+for message in consumer:
+    token_events = token_event_pb2.TokenEvents()
+    token_events.ParseFromString(message.value)
+    
+    for event in token_events.events:
+        # Filter USDT events
+        if event.token.address == USDT_ADDRESS:
+            print(f"Event Type: {event.type}")  # CREATED or UPDATED
+            print(f"Token: {event.token.symbol}")
+            print(f"Name: {event.token.name}")
+            print(f"Decimals: {event.token.decimals}")
+            print("---")
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Concepts & Integration Guide" icon="book-open" href="/en/guides/data-concepts/kafka-streams/overview">
+    Kafka Streams integration basics
+  </Card>
+  <Card title="EVM Streams" icon="ethereum" href="/en/guides/data-concepts/kafka-streams/evm-streams">
+    EVM chain data streams
+  </Card>
+  <Card title="Solana Streams" icon="bolt" href="/en/guides/data-concepts/kafka-streams/solana-streams">
+    Solana high-throughput data streams
+  </Card>
+  <Card title="WebSocket Real-time Data" icon="bolt" href="/en/guides/data-concepts/realtime-streaming">
+    WebSocket integration
+  </Card>
+</CardGroup>

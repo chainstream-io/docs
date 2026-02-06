@@ -1,0 +1,357 @@
+---
+title: "TRON Streams"
+description: "TRON 网络的 Protobuf 数据流"
+icon: "circle-t"
+---
+
+TRON 约每 3 秒出一个区块，支持高吞吐的交易和智能合约执行。TRON 使用独特的资源模型（Energy 和 Bandwidth）和 Witness（超级代表）共识机制。
+
+**Schema 仓库**：[github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron)
+
+---
+
+## Message Types 总览
+
+TRON Streams 提供以下消息类型：
+
+| Message Type | 说明 | Topic |
+|:---|:---|:---|
+| TradeEvents | DEX 交易事件 | `tron.dex.trades` |
+| TokenEvents | Token 事件 | `tron.tokens` |
+| BalanceEvents | 余额变动事件 | `tron.balances` |
+| DexPoolEvents | 流动性池事件 | `tron.dex.pools` |
+| TransfersMessage | 转账消息 | `tron.v1.transfers.proto` |
+| CandlestickEvents | K线数据 | `tron.candlesticks` |
+
+---
+
+## Block-Level Data
+
+### BlockHeader 核心字段
+
+| 字段 | 类型 | 说明 |
+|:---|:---|:---|
+| `Number` | uint64 | 区块号 |
+| `Hash` | bytes | 区块哈希 |
+| `ParentHash` | bytes | 父区块哈希 |
+| `Timestamp` | Timestamp | 出块时间 |
+| `TxTrieRoot` | bytes | 交易树根 |
+| `Version` | uint32 | 区块版本 |
+
+### Witness（超级代表）信息
+
+| 字段 | 说明 |
+|:---|:---|
+| `Address` | Witness 地址 |
+| `Id` | Witness ID |
+| `Signature` | 区块签名 |
+
+<Note>
+TRON 使用 DPoS 共识机制，由 27 个超级代表（Witness）轮流出块。
+</Note>
+
+---
+
+## Transaction-Level Data
+
+### TransactionHeader
+
+| 字段 | 类型 | 说明 |
+|:---|:---|:---|
+| `Hash` | bytes | 交易哈希 |
+| `Fee` | uint64 | 交易费用 |
+| `Index` | uint32 | 区块内索引 |
+| `Expiration` | Timestamp | 过期时间 |
+| `FeeLimit` | uint64 | 费用上限 |
+| `Signatures` | []bytes | 签名列表 |
+| `FeePayer` | bytes | 费用支付方 |
+
+### Result — 执行结果
+
+| 字段 | 说明 |
+|:---|:---|
+| `Status` | 执行状态 |
+| `Success` | 是否成功 |
+| `Message` | 失败时的错误信息 |
+
+### Receipt — 资源消耗
+
+| 字段 | 说明 |
+|:---|:---|
+| `EnergyUsageTotal` | 总 Energy 消耗 |
+| `EnergyFee` | Energy 费用 |
+| `NetUsage` | 带宽消耗 |
+| `NetFee` | 带宽费用 |
+
+### Contract
+
+包含合约执行详情：
+
+| 字段 | 说明 |
+|:---|:---|
+| `Address` | 合约地址 |
+| `Type` | 合约类型（TransferContract、TriggerSmartContract 等） |
+| `Parameters` | 调用参数 |
+| `InternalTransactions` | 内部交易 |
+| `Logs` | 事件日志 |
+| `ExecutionTrace` | 执行 Trace |
+| `WithdrawInfo` | 奖励提取信息 |
+
+---
+
+## Transfer Data
+
+`TransfersMessage` 提供 TRON 链的转账信息（Topic: `tron.v1.transfers.proto`）。
+
+### TransfersMessage 结构
+
+```protobuf
+message TransfersMessage {
+  Chain Chain = 1;
+  BlockHeader Header = 2;
+  repeated Transfer Transfers = 3;
+}
+```
+
+### Transfer 结构
+
+| 字段 | 类型 | 说明 |
+|:---|:---|:---|
+| `CallIndex` | uint64 | 调用索引 |
+| `LogIndex` | uint64 | 日志索引 |
+| `Sender` | string | 发送方地址 |
+| `Receiver` | string | 接收方地址 |
+| `Amount` | string | 转账金额 |
+| `Id` | string | Token ID（NFT） |
+| `URI` | string | Token URI |
+| `Currency` | TokenInfo | Token 信息 |
+| `Success` | bool | 是否成功 |
+| `Index` | uint32 | 转账索引 |
+| `TransactionHeader` | TransactionHeader | 交易头信息 |
+
+### TokenInfo 结构
+
+| 字段 | 类型 | 说明 |
+|:---|:---|:---|
+| `SmartContract` | string | 合约地址 |
+| `Delegated` | bool | 是否委托 |
+| `DelegatedTo` | string | 委托地址 |
+| `ProtocolName` | string | 协议名称 |
+| `Name` | string | Token 名称 |
+| `Symbol` | string | Token 符号 |
+| `Decimals` | int32 | 精度 |
+| `HasURI` | bool | 是否有 URI |
+| `Fungible` | bool | 是否同质化 |
+| `AssetId` | string | 资产 ID（TRC-10） |
+
+### TRON Token 标准
+
+| 标准 | 说明 |
+|:---|:---|
+| TRC-10 | TRON 原生 Token，无需智能合约 |
+| TRC-20 | 智能合约 Token（类似 ERC-20） |
+| TRC-721 | NFT Token（类似 ERC-721） |
+
+<Note>
+TRC-10 是 TRON 独有的原生 Token 标准，创建和转账更便宜，但功能不如 TRC-20 灵活。
+</Note>
+
+---
+
+## DEX Data
+
+`TradeEvents` 提供 DEX 交易数据（Topic: `tron.dex.trades`），使用通用的 TradeEvent 结构。
+
+### Trade 核心字段
+
+| 字段 | 说明 |
+|:---|:---|
+| `token_a_address` / `token_b_address` | 交易对代币地址 |
+| `user_a_amount` / `user_b_amount` | 用户交易数量 |
+| `pool_address` | 池子地址 |
+| `vault_a` / `vault_b` | 池子 Vault 地址 |
+| `vault_a_amount` / `vault_b_amount` | Vault 数量 |
+
+### DApp 信息
+
+| 字段 | 说明 |
+|:---|:---|
+| `program_address` | DEX 合约地址（如 SunSwap） |
+| `inner_program_address` | 内部程序地址 |
+| `chain` | 链标识（CHAIN_TRON） |
+
+### DexPoolEvent - 流动性池
+
+| 字段 | 说明 |
+|:---|:---|
+| `type` | 事件类型（INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP） |
+| `address` | 池子地址 |
+| `token_a_address` / `token_b_address` | 代币地址 |
+| `token_a_amount` / `token_b_amount` | 代币数量 |
+| `lp_wallet` | LP 钱包地址 |
+
+---
+
+## TRON 链特性
+
+### Energy 和 Bandwidth 资源模型
+
+不同于 EVM 的 Gas 模型，TRON 使用两种资源：
+
+| 资源 | 说明 | 获取方式 |
+|:---|:---|:---|
+| **Energy** | 计量智能合约执行消耗 | 质押 TRX 或付费 |
+| **Bandwidth (Net)** | 计量交易数据大小消耗 | 质押 TRX 或付费 |
+
+Receipt 中分别体现两种资源的用量和费用：
+
+```
+Receipt {
+  EnergyUsageTotal: 50000    // 智能合约消耗
+  EnergyFee: 0               // 如有质押则为 0
+  NetUsage: 265              // 交易数据大小
+  NetFee: 0                  // 如有质押则为 0
+}
+```
+
+### Witness 系统
+
+| 特性 | 说明 |
+|:---|:---|
+| 名称 | Witness（超级代表） |
+| 数量 | 27 个活跃超级代表 |
+| 选举 | 持币者投票选举 |
+| 出块 | 轮流出块，约 3 秒/块 |
+
+`BlockMessage` 中包含 Witness 的地址、ID 和签名。
+
+### 预定义合约类型
+
+TRON 为常见操作预定义了合约类型：
+
+| 类型 | 说明 |
+|:---|:---|
+| `TransferContract` | TRX 转账 |
+| `TransferAssetContract` | TRC-10 转账 |
+| `TriggerSmartContract` | 调用智能合约 |
+| `CreateSmartContract` | 创建智能合约 |
+| `FreezeBalanceV2Contract` | 质押 TRX |
+| `UnfreezeBalanceV2Contract` | 解除质押 |
+| `DelegateResourceContract` | 资源委托 |
+| `WithdrawBalanceContract` | 提取奖励 |
+
+通过 Contract 的 `Type` 字段标识。
+
+### 资源委托
+
+用户可以将 Energy 和 Bandwidth 委托给其他账户使用，这在 TRON 生态中常用于：
+- 降低用户交易成本
+- DApp 为用户代付资源
+
+---
+
+## Topic → Message Type 映射表
+
+| Topic | Proto File | Message Type | 说明 |
+|:---|:---|:---|:---|
+| `tron.dex.trades` | trade_event.proto | TradeEvents | DEX 交易事件 |
+| `tron.dex.trades.processed` | trade_event.proto | TradeEvents | 含 USD 价格、可疑标记 |
+| `tron.tokens` | token_event.proto | TokenEvents | Token 事件 |
+| `tron.tokens.processed` | token_event.proto | TokenEvents | 含描述、图片、社交链接 |
+| `tron.balances` | balance_event.proto | BalanceEvents | 余额变动事件 |
+| `tron.v1.transfers.proto` | tron/transfers_message.proto | TransfersMessage | TRON 转账消息 |
+| `tron.v1.transfers.processed.proto` | tron/transfers_message.proto | TransfersMessage | 处理后的转账消息 |
+| `tron.dex.pools` | dex_pool_event.proto | DexPoolEvents | 流动性池事件 |
+| `tron.candlesticks` | candlestick.proto | CandlestickEvents | K线数据 |
+
+---
+
+## 代码示例
+
+### Python 示例：消费 TRON DEX 交易
+
+```python
+from kafka import KafkaConsumer
+from common import trade_event_pb2  # 从 streaming_protobuf 仓库获取
+
+# 创建 consumer
+consumer = KafkaConsumer(
+    'tron.dex.trades',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    enable_auto_commit=False,
+    group_id='my-tron-consumer'
+)
+
+# 消费并解析消息
+for message in consumer:
+    trade_events = trade_event_pb2.TradeEvents()
+    trade_events.ParseFromString(message.value)
+    
+    for event in trade_events.events:
+        print(f"Pool: {event.trade.pool_address}")
+        print(f"Token A: {event.trade.token_a_address}")
+        print(f"Token B: {event.trade.token_b_address}")
+        print(f"Amount A: {event.trade.user_a_amount}")
+        print(f"Amount B: {event.trade.user_b_amount}")
+        print(f"Block: {event.block.height}")
+        print(f"DEX: {event.d_app.program_address}")
+        print("---")
+```
+
+### 监控 TRC-20 Token 事件
+
+```python
+from kafka import KafkaConsumer
+from common import token_event_pb2
+
+consumer = KafkaConsumer(
+    'tron.tokens',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    group_id='my-tron-token-consumer'
+)
+
+# USDT on TRON
+USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+
+for message in consumer:
+    token_events = token_event_pb2.TokenEvents()
+    token_events.ParseFromString(message.value)
+    
+    for event in token_events.events:
+        # 过滤 USDT 事件
+        if event.token.address == USDT_ADDRESS:
+            print(f"Event Type: {event.type}")  # CREATED or UPDATED
+            print(f"Token: {event.token.symbol}")
+            print(f"Name: {event.token.name}")
+            print(f"Decimals: {event.token.decimals}")
+            print("---")
+```
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="概念与接入指南" icon="book-open" href="/cn/guides/data-concepts/kafka-streams/overview">
+    Kafka Streams 接入基础
+  </Card>
+  <Card title="EVM Streams" icon="ethereum" href="/cn/guides/data-concepts/kafka-streams/evm-streams">
+    EVM 链数据流
+  </Card>
+  <Card title="Solana Streams" icon="bolt" href="/cn/guides/data-concepts/kafka-streams/solana-streams">
+    Solana 高吞吐数据流
+  </Card>
+  <Card title="WebSocket 实时数据" icon="bolt" href="/cn/guides/data-concepts/realtime-streaming">
+    WebSocket 接入方式
+  </Card>
+</CardGroup>

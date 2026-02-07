@@ -1251,11 +1251,145 @@
         ]
       }
     },
+    "/v1/trade/{chain}/trader-gainers-losers": {
+      "get": {
+        "description": "Get top gainers or losers ranked by PnL",
+        "operationId": "get.trader.gainers.losers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": false,
+            "in": "query",
+            "description": "PnL time resolution (1d, 7d, or 30d)",
+            "schema": {
+              "$ref": "#/components/schemas/TraderPnlResolution"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": false,
+            "in": "query",
+            "description": "Sort order (desc for gainers, asc for losers)",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraderGainersLosersPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trader - Gainers/Losers",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
     "/v1/token/search": {
       "get": {
         "description": "Search token information by criteria",
         "operationId": "search",
         "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
           {
             "name": "chains",
             "required": false,
@@ -1277,19 +1411,6 @@
               "minLength": 1,
               "example": "USDC",
               "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of results per page",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "format": "int64",
-              "default": 20,
-              "type": "integer"
             }
           },
           {
@@ -1316,15 +1437,6 @@
               "items": {
                 "type": "string"
               }
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "Pagination cursor",
-            "schema": {
-              "type": "string"
             }
           },
           {
@@ -4468,23 +4580,11 @@
             }
           },
           {
-            "name": "time",
-            "required": false,
-            "in": "query",
-            "description": "Target Unix timestamp (seconds) for snapshot query. Returns the nearest snapshot before or at this time.",
-            "schema": {
-              "format": "int64",
-              "example": 1705312800,
-              "type": "integer"
-            }
-          },
-          {
             "name": "cursor",
             "required": false,
             "in": "query",
             "description": "Pagination cursor",
             "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
               "type": "string"
             }
           },
@@ -4494,8 +4594,35 @@
             "in": "query",
             "description": "Number of results per page",
             "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "example": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "Target Unix timestamp (seconds) for snapshot query. Returns the nearest snapshot before or at this time.",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
               "type": "integer"
             }
           }
@@ -4518,6 +4645,218 @@
           }
         ],
         "summary": "Token - Liquidity Snapshots",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/{tokenAddress}/transfers": {
+      "get": {
+        "description": "Get transfer history for a specific token",
+        "operationId": "get.token.transfers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a token",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers before this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers after this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770249600,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenTransferPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - Transfer List",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/{tokenAddress}/transfer-total": {
+      "get": {
+        "description": "Get total count of transfers for a specific token with filters",
+        "operationId": "get.token.transfer.total",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a token",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers before this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers after this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770249600,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenTransferTotalDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Token - Transfer Total",
         "tags": [
           "Token"
         ]
@@ -4596,23 +4935,11 @@
             }
           },
           {
-            "name": "time",
-            "required": false,
-            "in": "query",
-            "description": "Target Unix timestamp (seconds) for snapshot query. Returns the nearest snapshot before or at this time.",
-            "schema": {
-              "format": "int64",
-              "example": 1705312800,
-              "type": "integer"
-            }
-          },
-          {
             "name": "cursor",
             "required": false,
             "in": "query",
             "description": "Pagination cursor",
             "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
               "type": "string"
             }
           },
@@ -4622,8 +4949,35 @@
             "in": "query",
             "description": "Number of results per page",
             "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "example": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "Target Unix timestamp (seconds) for snapshot query. Returns the nearest snapshot before or at this time.",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
               "type": "integer"
             }
           }
@@ -5612,10 +5966,10 @@
         ]
       }
     },
-    "/v1/wallet/{chain}/{walletAddress}/pnl": {
+    "/v1/wallet/{chain}/net-worth-summary": {
       "get": {
-        "description": "Get profit and loss information for wallet tokens",
-        "operationId": "get.pnl",
+        "description": "Get current net worth summary for multiple wallets",
+        "operationId": "get.net.worth.summary",
         "parameters": [
           {
             "name": "chain",
@@ -5627,22 +5981,106 @@
             }
           },
           {
-            "name": "walletAddress",
+            "name": "walletAddresses",
+            "required": true,
+            "in": "query",
+            "description": "A list of wallet addresses in string separated by commas (,)",
+            "schema": {
+              "example": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1,WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthSummaryDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Net Worth Summary (Multi)",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/pnl-by-wallet": {
+      "get": {
+        "description": "Get PnL for a specific token across multiple wallets",
+        "operationId": "get.pnl.by.wallet",
+        "parameters": [
+          {
+            "name": "chain",
             "required": true,
             "in": "path",
-            "description": "An address of a wallet",
+            "description": "A chain name listed in supported networks",
             "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddresses",
+            "required": true,
+            "in": "query",
+            "description": "A list of wallet addresses in string separated by commas (,)",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy,HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K",
               "type": "string"
             }
           },
           {
             "name": "tokenAddress",
-            "required": false,
+            "required": true,
             "in": "query",
             "description": "An address of a token",
             "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "example": "4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p",
               "type": "string"
             }
           }
@@ -5653,10 +6091,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WalletPnlDTO"
-                  }
+                  "$ref": "#/components/schemas/PnlDetailsPage"
                 }
               }
             }
@@ -5667,16 +6102,16 @@
             "bearer": []
           }
         ],
-        "summary": "Wallet - PNL",
+        "summary": "Wallet - PnL By Wallet",
         "tags": [
           "Wallet"
         ]
       }
     },
-    "/v1/wallet/{chain}/{walletAddress}/stats": {
+    "/v1/wallet/{chain}/first-tx": {
       "get": {
-        "description": "Get profit and loss stats for wallet",
-        "operationId": "get.pnl.stats",
+        "description": "Get the first funded transaction for one or more wallets",
+        "operationId": "get.wallet.first.tx",
         "parameters": [
           {
             "name": "chain",
@@ -5688,73 +6123,12 @@
             }
           },
           {
-            "name": "walletAddress",
+            "name": "walletAddresses",
             "required": true,
-            "in": "path",
-            "description": "An address of a wallet",
-            "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WalletPnlDTO"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Wallet - PNL Stats",
-        "tags": [
-          "Wallet"
-        ]
-      }
-    },
-    "/v1/wallet/{chain}/{walletAddress}/balance": {
-      "get": {
-        "description": "Get wallet balance information",
-        "operationId": "get.balance",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "A chain name listed in supported networks",
-            "schema": {
-              "$ref": "#/components/schemas/ChainSymbol"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "An address of a wallet",
-            "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": false,
             "in": "query",
-            "description": "Specific token address to filter wallet balances",
+            "description": "A list of wallet addresses in string separated by commas (,)",
             "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "example": "3bovD5jCRn7eG64jZqyEz6Zbx92mHixZSTRrWLy1Sirx,FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP",
               "type": "string"
             }
           }
@@ -5765,7 +6139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletBalancesDTO"
+                  "$ref": "#/components/schemas/WalletFirstTxDTO"
                 }
               }
             }
@@ -5776,7 +6150,7 @@
             "bearer": []
           }
         ],
-        "summary": "Wallet - Balances",
+        "summary": "Wallet - First Tx Funded",
         "tags": [
           "Wallet"
         ]
@@ -5840,6 +6214,801 @@
         ]
       }
     },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth": {
+      "get": {
+        "description": "Get current net worth of a wallet including all token holdings with prices",
+        "operationId": "get.net.worth",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Net Worth",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/tokens-balance": {
+      "get": {
+        "description": "Get token balances for a wallet with current prices",
+        "operationId": "get.tokens.balance",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensBalancePage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Tokens Balance",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth-chart": {
+      "get": {
+        "description": "Get historical net worth chart data for a wallet with hourly snapshots",
+        "operationId": "get.net.worth.chart",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hours",
+            "required": false,
+            "in": "query",
+            "description": "Number of hours of history to retrieve",
+            "schema": {
+              "minimum": 1,
+              "maximum": 720,
+              "format": "int32",
+              "default": 24,
+              "example": 24,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthChartDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Net Worth Chart",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth-details": {
+      "get": {
+        "description": "Get detailed net worth breakdown for a wallet, supporting both real-time and historical snapshots",
+        "operationId": "get.net.worth.details",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "hours",
+            "required": false,
+            "in": "query",
+            "description": "Hours ago for historical snapshot (0 for real-time)",
+            "schema": {
+              "minimum": 0,
+              "maximum": 720,
+              "format": "int32",
+              "default": 0,
+              "example": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthDetailsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Net Worth Details",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/pnl": {
+      "get": {
+        "description": "Get aggregated profit and loss summary for a wallet",
+        "operationId": "get.pnl",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": false,
+            "in": "query",
+            "description": "PnL time resolution (1d, 7d, 30d, or all)",
+            "schema": {
+              "$ref": "#/components/schemas/PnlResolution"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletPnlSummaryDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - PnL Summary",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/pnl-details": {
+      "get": {
+        "description": "Get per-token PnL breakdown for a wallet",
+        "operationId": "get.pnl.details",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PnlDetailsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - PnL Details",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/pnl-by-token": {
+      "get": {
+        "description": "Get PnL for specific tokens in a wallet",
+        "operationId": "get.pnl.by.token",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "A list of token addresses in string separated by commas (,)",
+            "schema": {
+              "example": "4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PnlDetailsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - PnL By Token",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/transfers": {
+      "get": {
+        "description": "Get transfer history for a wallet with optional token filter",
+        "operationId": "get.wallet.transfers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "An address of a token",
+            "schema": {
+              "example": "So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers before this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers after this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770163200,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionHistoryPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Transfer List",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/transfer-total": {
+      "get": {
+        "description": "Get total count of transfers for a wallet with optional token filter",
+        "operationId": "get.wallet.transfer.total",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "An address of a token",
+            "schema": {
+              "example": "So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers before this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "Filter transfers after this timestamp (Unix epoch seconds)",
+            "schema": {
+              "format": "int64",
+              "example": 1770163200,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenTransferTotalDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Transfer Total",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/v1/wallet/{chain}/{walletAddress}/balance-updates": {
       "get": {
         "description": "Get wallet balance change history with filtering and pagination",
@@ -5861,6 +7030,42 @@
             "description": "An address of a wallet",
             "schema": {
               "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "Pagination direction (next or prev)",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string"
             }
           },
@@ -5912,30 +7117,6 @@
             "description": "Balance change direction filter (INCREASE or DECREASE)",
             "schema": {
               "$ref": "#/components/schemas/BalanceChangeType"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "Pagination cursor",
-            "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Number of results per page",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "format": "int32",
-              "default": 20,
-              "example": 20,
-              "type": "integer"
             }
           }
         ],
@@ -8583,6 +9764,94 @@
           "data"
         ]
       },
+      "TraderPnlResolution": {
+        "type": "string",
+        "enum": [
+          "1d",
+          "7d",
+          "30d"
+        ]
+      },
+      "TraderGainersLosersItemDTO": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "description": "A chain name listed in supported networks",
+            "example": "sol",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChainSymbol"
+              }
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC"
+          },
+          "pnl": {
+            "type": "string",
+            "description": "Total profit and loss in USD",
+            "example": "37765184714.25"
+          },
+          "tradeCount": {
+            "type": "string",
+            "description": "Total number of trades",
+            "example": "31904567"
+          },
+          "volume": {
+            "type": "string",
+            "description": "Total trading volume in USD",
+            "example": "641087465734.79"
+          }
+        },
+        "required": [
+          "chain",
+          "address",
+          "pnl",
+          "tradeCount",
+          "volume"
+        ]
+      },
+      "TraderGainersLosersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "Array of gainers and losers data",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TraderGainersLosersItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenCreatorsDTO": {
         "type": "object",
         "properties": {
@@ -9519,7 +10788,8 @@
           "tokenDecimals": {
             "type": "integer",
             "description": "Token decimals",
-            "example": 6
+            "example": 6,
+            "format": "int64"
           },
           "vaultAmount": {
             "type": "string",
@@ -9620,7 +10890,8 @@
               2,
               3,
               4
-            ]
+            ],
+            "format": "int64"
           },
           "version": {
             "type": "number",
@@ -9631,7 +10902,8 @@
               1,
               2,
               3
-            ]
+            ],
+            "format": "int64"
           },
           "liquidityModel": {
             "type": "number",
@@ -9643,7 +10915,8 @@
               2,
               3,
               4
-            ]
+            ],
+            "format": "int64"
           },
           "feeRate": {
             "type": "string",
@@ -9653,12 +10926,14 @@
           "tickSpacing": {
             "type": "integer",
             "description": "Tick spacing for concentrated liquidity pools",
-            "example": 64
+            "example": 64,
+            "format": "int64"
           },
           "tokenCount": {
             "type": "integer",
             "description": "Number of tokens in pool",
-            "example": 2
+            "example": 2,
+            "format": "int64"
           },
           "createdBlockTimestamp": {
             "type": "string",
@@ -10836,7 +12111,8 @@
           "poolCount": {
             "type": "integer",
             "description": "Number of pools for this token",
-            "example": 5
+            "example": 5,
+            "format": "int64"
           },
           "priceUsd": {
             "type": "string",
@@ -10903,6 +12179,174 @@
           "hasPrev"
         ]
       },
+      "TokenTransferItemDTO": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "type": "string",
+            "description": "Transaction signature/hash",
+            "example": "2vLYZuCrKARicrXRDf2eGnzaKR9PP6qFFuzgPCHUNAnw..."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "description": "Block slot number",
+            "example": 398544039,
+            "format": "int64"
+          },
+          "blockTime": {
+            "type": "integer",
+            "description": "Block timestamp (Unix epoch seconds)",
+            "example": 1770508507,
+            "format": "int64"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "Sender wallet address",
+            "example": "BLes958hcLyJcXibidW4fmWpCjoXmJEdoewY5itHLZgi"
+          },
+          "toAddress": {
+            "type": "string",
+            "description": "Receiver wallet address",
+            "example": "ARu4n5mFdZogZAravu7CcizaojWnS6oqka37gdLT5SZn"
+          },
+          "fromTokenAccount": {
+            "type": "string",
+            "description": "Sender token account address",
+            "example": "CLoj1mryCYGpNhY1k27UJLeoaAuzM5gLC1dyWX58YLCg"
+          },
+          "toTokenAccount": {
+            "type": "string",
+            "description": "Receiver token account address",
+            "example": "8XrtGP8RG33AnrN2yJ6H3gnXPNQ3dYXKqM72bpzhcsd6"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Token transfer amount",
+            "example": "149.05"
+          },
+          "price": {
+            "type": "string",
+            "description": "Token price at time of transfer in USD",
+            "example": "1.00"
+          },
+          "value": {
+            "type": "string",
+            "description": "Transfer value in USD",
+            "example": "149.05"
+          },
+          "flow": {
+            "type": "string",
+            "description": "Transfer flow direction (in or out)",
+            "example": "out",
+            "enum": [
+              "in",
+              "out"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "description": "Transfer action type",
+            "example": "transfer"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Token symbol",
+            "example": "USDC"
+          },
+          "name": {
+            "type": "string",
+            "description": "Token name",
+            "example": "USD Coin"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 6,
+            "format": "int64"
+          },
+          "logoUri": {
+            "type": "string",
+            "description": "Token logo URL",
+            "example": "https://..."
+          }
+        },
+        "required": [
+          "txHash",
+          "blockNumber",
+          "blockTime",
+          "tokenAddress",
+          "fromAddress",
+          "toAddress",
+          "fromTokenAccount",
+          "toTokenAccount",
+          "amount",
+          "price",
+          "value",
+          "flow",
+          "action",
+          "symbol",
+          "name",
+          "decimals"
+        ]
+      },
+      "TokenTransferPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenTransferItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "TokenTransferTotalDTO": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total number of transfers",
+            "example": 123456,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "total"
+        ]
+      },
       "DexPoolTokenSnapshotDTO": {
         "type": "object",
         "properties": {
@@ -10914,7 +12358,8 @@
           "tokenDecimals": {
             "type": "integer",
             "description": "Token decimals",
-            "example": 6
+            "example": 6,
+            "format": "int64"
           },
           "vaultAmount": {
             "type": "string",
@@ -11057,339 +12502,360 @@
           "hasPrev"
         ]
       },
-      "WalletPnlDTO": {
+      "WalletNetWorthSummaryDTO": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Record identifier",
-            "example": "1",
-            "format": "int64"
-          },
-          "chain": {
+          "currentTimestamp": {
             "type": "string",
-            "description": "Blockchain network",
-            "example": "solana"
+            "description": "Current server timestamp (ISO 8601)",
+            "example": "2025-10-30T03:33:40.980Z"
           },
-          "walletAddress": {
+          "wallets": {
+            "type": "object",
+            "description": "Map of wallet addresses to their net worth values",
+            "example": {
+              "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1": {
+                "value": "1764819473.530063"
+              },
+              "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh": {
+                "value": "3508619230.707581"
+              }
+            }
+          }
+        },
+        "required": [
+          "currentTimestamp",
+          "wallets"
+        ]
+      },
+      "PnlDetailSummaryDTO": {
+        "type": "object",
+        "properties": {
+          "tokens": {
             "type": "string",
-            "description": "Wallet address",
-            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7"
-          },
-          "tokenAddress": {
-            "type": "string",
-            "description": "Token contract address",
-            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
-          },
-          "tokenPriceInUsd": {
-            "type": "string",
-            "description": "Current token price in USD",
-            "example": "1.23"
-          },
-          "openTime": {
-            "type": "integer",
-            "description": "Position opening time",
-            "example": "1741780514000",
-            "format": "int64"
-          },
-          "closeTime": {
-            "type": "integer",
-            "description": "Position closing time",
-            "example": "1741780514000",
-            "format": "int64"
-          },
-          "lastTime": {
-            "type": "integer",
-            "description": "Last update time",
-            "example": "1741780514000",
-            "format": "int64"
-          },
-          "balance": {
-            "type": "string",
-            "description": "Current token balance",
-            "example": "1000"
-          },
-          "buyAmount": {
-            "type": "string",
-            "description": "Total amount of tokens bought",
-            "example": "1500"
-          },
-          "buyAmountInUsd": {
-            "type": "string",
-            "description": "Total value of tokens bought in USD",
-            "example": "1845"
+            "description": "Number of unique tokens",
+            "example": "15322"
           },
           "buys": {
             "type": "string",
-            "description": "Number of buy transactions",
-            "example": "10"
-          },
-          "sellAmount": {
-            "type": "string",
-            "description": "Total amount of tokens sold",
-            "example": "500"
-          },
-          "sellAmountInUsd": {
-            "type": "string",
-            "description": "Total value of tokens sold in USD",
-            "example": "615"
+            "description": "Total buy transactions",
+            "example": "6546312"
           },
           "sells": {
             "type": "string",
-            "description": "Number of sell transactions",
-            "example": "5"
+            "description": "Total sell transactions",
+            "example": "4012013"
           },
-          "averageBuyPriceInUsd": {
+          "totalTrades": {
             "type": "string",
-            "description": "Average buying price",
-            "example": "1.23"
+            "description": "Total trades",
+            "example": "10558325"
           },
-          "averageSellPriceInUsd": {
+          "wins": {
             "type": "string",
-            "description": "Average selling price",
-            "example": "1.23"
+            "description": "Winning positions",
+            "example": "1999472"
           },
-          "unrealizedProfitInUsd": {
+          "losses": {
             "type": "string",
-            "description": "Unrealized profit in USD",
-            "example": "123.45"
+            "description": "Losing positions",
+            "example": "1742452"
           },
-          "unrealizedProfitRatio": {
+          "winRate": {
             "type": "string",
-            "description": "Unrealized profit ratio",
-            "example": "12.34"
+            "description": "Win rate",
+            "example": "0.5343"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "Total invested in USD",
+            "example": "372090700.51"
+          },
+          "sellAmountInUsd": {
+            "type": "string",
+            "description": "Total sold in USD",
+            "example": "214526094.35"
+          },
+          "totalCostInUsd": {
+            "type": "string",
+            "description": "Total cost basis in USD",
+            "example": "372090700.51"
+          },
+          "currentValue": {
+            "type": "string",
+            "description": "Current portfolio value in USD",
+            "example": "1397331840.48"
           },
           "realizedProfitInUsd": {
             "type": "string",
             "description": "Realized profit in USD",
-            "example": "45.67"
+            "example": "-2699411.26"
           },
           "realizedProfitRatio": {
             "type": "string",
             "description": "Realized profit ratio",
-            "example": "4.56"
+            "example": "-0.0072547130"
           },
-          "totalRealizedProfitInUsd": {
+          "unrealizedProfitInUsd": {
             "type": "string",
-            "description": "Total realized profit in USD",
-            "example": "169.12"
+            "description": "Unrealized profit in USD",
+            "example": "1397331840.48"
           },
-          "totalRealizedProfitRatio": {
+          "totalProfitInUsd": {
             "type": "string",
-            "description": "Total realized profit ratio",
-            "example": "16.91"
+            "description": "Total profit in USD",
+            "example": "1394632429.22"
+          },
+          "avgProfitPerTradeInUsd": {
+            "type": "string",
+            "description": "Average profit per trade in USD",
+            "example": "132.09"
           }
         },
         "required": [
-          "id",
-          "chain",
-          "walletAddress",
-          "tokenAddress",
-          "tokenPriceInUsd",
-          "openTime",
-          "closeTime",
-          "lastTime",
-          "balance",
-          "buyAmount",
-          "buyAmountInUsd",
+          "tokens",
           "buys",
-          "sellAmount",
-          "sellAmountInUsd",
           "sells",
-          "averageBuyPriceInUsd",
-          "averageSellPriceInUsd",
-          "unrealizedProfitInUsd",
-          "unrealizedProfitRatio",
+          "totalTrades",
+          "wins",
+          "losses",
+          "winRate",
+          "buyAmountInUsd",
+          "sellAmountInUsd",
+          "totalCostInUsd",
+          "currentValue",
           "realizedProfitInUsd",
           "realizedProfitRatio",
-          "totalRealizedProfitInUsd",
-          "totalRealizedProfitRatio"
+          "unrealizedProfitInUsd",
+          "totalProfitInUsd",
+          "avgProfitPerTradeInUsd"
         ]
       },
-      "WalletBalanceDetailDTO": {
+      "PnlDetailItemDTO": {
         "type": "object",
         "properties": {
           "tokenAddress": {
             "type": "string",
             "description": "Token contract address",
-            "example": "So11111111111111111111111111111111111111112"
-          },
-          "amount": {
-            "type": "string",
-            "description": "Token amount",
-            "example": "2675.098457775"
-          },
-          "valueInUsd": {
-            "type": "string",
-            "description": "Token amount in USD",
-            "example": "366908.31721324675"
-          },
-          "name": {
-            "type": "string",
-            "description": "Token name",
-            "example": "Solana"
+            "example": "4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p"
           },
           "symbol": {
             "type": "string",
             "description": "Token symbol",
             "example": "SOL"
           },
-          "imageUrl": {
+          "name": {
             "type": "string",
-            "description": "Token logo iamgeUrl",
-            "example": "https://solana.com/images/solana-logo.png"
+            "description": "Token name",
+            "example": "Solana"
           },
-          "priceInSol": {
+          "decimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 9,
+            "format": "int64"
+          },
+          "logoUri": {
             "type": "string",
-            "description": "Price in SOL",
-            "example": "137.15"
+            "description": "Token logo URL",
+            "example": "https://..."
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy"
+          },
+          "balance": {
+            "type": "string",
+            "description": "Current token balance",
+            "example": "1254982158.71"
           },
           "priceInUsd": {
             "type": "string",
-            "description": "Price in USD",
-            "example": "137.15"
+            "description": "Current token price in USD",
+            "example": "0.8466367032"
           },
-          "priceChangeRatioInUsd24h": {
+          "currentValue": {
             "type": "string",
-            "description": "24h price change ratio",
-            "example": "5.23"
-          },
-          "unrealizedProfitInUsd": {
-            "type": "string",
-            "description": "Unrealized profit in USD",
-            "example": "123.45"
-          },
-          "unrealizedProfitRatio": {
-            "type": "string",
-            "description": "Unrealized profit ratio",
-            "example": "12.34"
-          },
-          "openTime": {
-            "type": "integer",
-            "description": "Position opening time",
-            "example": "1741780466000",
-            "format": "int64"
-          },
-          "closeTime": {
-            "type": "integer",
-            "description": "Position closing time",
-            "example": "1741780466000",
-            "format": "int64"
+            "description": "Current holding value in USD",
+            "example": "1062547123.45"
           },
           "buys": {
             "type": "string",
             "description": "Number of buy transactions",
-            "example": 10
-          },
-          "buyAmount": {
-            "type": "string",
-            "description": "Total amount of tokens bought",
-            "example": "1500"
-          },
-          "buyAmountInUsd": {
-            "type": "string",
-            "description": "Total value of tokens bought in USD",
-            "example": "1845"
+            "example": "275"
           },
           "sells": {
             "type": "string",
             "description": "Number of sell transactions",
-            "example": 5
+            "example": "110"
+          },
+          "totalTrades": {
+            "type": "string",
+            "description": "Total trades (buys + sells)",
+            "example": "385"
+          },
+          "buyAmount": {
+            "type": "string",
+            "description": "Total tokens bought",
+            "example": "1457986404.21"
           },
           "sellAmount": {
             "type": "string",
-            "description": "Total amount of tokens sold",
-            "example": "500"
+            "description": "Total tokens sold",
+            "example": "203004245.50"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "Total buy value in USD",
+            "example": "48469.17"
           },
           "sellAmountInUsd": {
             "type": "string",
-            "description": "Total value of tokens sold in USD",
-            "example": "615"
+            "description": "Total sell value in USD",
+            "example": "6467.32"
           },
-          "averageBuyPriceInUsd": {
+          "avgBuyPriceInUsd": {
             "type": "string",
-            "description": "Average buying price",
-            "example": "1.23"
+            "description": "Average buy price in USD",
+            "example": "0.0000332439"
           },
-          "averageSellPriceInUsd": {
+          "avgSellPriceInUsd": {
             "type": "string",
-            "description": "Average selling price",
-            "example": "1.23"
+            "description": "Average sell price in USD",
+            "example": "0.0000318580"
           },
           "realizedProfitInUsd": {
             "type": "string",
             "description": "Realized profit in USD",
-            "example": "1234.56"
+            "example": "67.13"
           },
           "realizedProfitRatio": {
             "type": "string",
             "description": "Realized profit ratio",
-            "example": "12.34"
+            "example": "0.0013849997"
           },
-          "totalRealizedProfitInUsd": {
+          "unrealizedProfitInUsd": {
             "type": "string",
-            "description": "Total realized profit in USD",
-            "example": "169.12"
+            "description": "Unrealized profit in USD",
+            "example": "1234336333.41"
           },
-          "totalRealizedProfitRatio": {
+          "unrealizedProfitRatio": {
             "type": "string",
-            "description": "Total realized profit ratio",
-            "example": "16.91"
-          }
-        },
-        "required": [
-          "tokenAddress",
-          "amount",
-          "valueInUsd",
-          "name",
-          "symbol",
-          "imageUrl",
-          "priceInSol",
-          "priceInUsd",
-          "priceChangeRatioInUsd24h",
-          "unrealizedProfitInUsd",
-          "unrealizedProfitRatio",
-          "openTime",
-          "closeTime",
-          "buys",
-          "buyAmount",
-          "buyAmountInUsd",
-          "sells",
-          "sellAmount",
-          "sellAmountInUsd",
-          "averageBuyPriceInUsd",
-          "averageSellPriceInUsd",
-          "realizedProfitInUsd",
-          "realizedProfitRatio",
-          "totalRealizedProfitInUsd",
-          "totalRealizedProfitRatio"
-        ]
-      },
-      "WalletBalancesDTO": {
-        "type": "object",
-        "properties": {
-          "totalBalancesInUsd": {
-            "type": "string",
-            "description": "Total wallet value",
-            "example": "1000000"
+            "description": "Unrealized profit ratio",
+            "example": "25466.42"
           },
           "totalProfitInUsd": {
             "type": "string",
             "description": "Total profit in USD",
-            "example": "1000000"
+            "example": "1234336400.54"
           },
-          "balances": {
-            "description": "Wallet balance details",
+          "totalProfitRatio": {
+            "type": "string",
+            "description": "Total profit ratio",
+            "example": "25466.42"
+          },
+          "avgProfitPerTradeInUsd": {
+            "type": "string",
+            "description": "Average profit per trade in USD",
+            "example": "3205025.72"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "symbol",
+          "name",
+          "decimals",
+          "walletAddress",
+          "balance",
+          "priceInUsd",
+          "currentValue",
+          "buys",
+          "sells",
+          "totalTrades",
+          "buyAmount",
+          "sellAmount",
+          "buyAmountInUsd",
+          "sellAmountInUsd",
+          "avgBuyPriceInUsd",
+          "avgSellPriceInUsd",
+          "realizedProfitInUsd",
+          "realizedProfitRatio",
+          "unrealizedProfitInUsd",
+          "unrealizedProfitRatio",
+          "totalProfitInUsd",
+          "totalProfitRatio",
+          "avgProfitPerTradeInUsd"
+        ]
+      },
+      "PnlDetailsPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "summary": {
+            "description": "PnL summary across all tokens",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PnlDetailSummaryDTO"
+              }
+            ]
+          },
+          "data": {
+            "description": "Array of data items",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WalletBalanceDetailDTO"
+              "$ref": "#/components/schemas/PnlDetailItemDTO"
             }
           }
         },
         "required": [
-          "totalBalancesInUsd",
-          "totalProfitInUsd",
-          "balances"
+          "summary",
+          "data"
+        ]
+      },
+      "WalletFirstTxDTO": {
+        "type": "object",
+        "properties": {
+          "wallets": {
+            "type": "object",
+            "description": "First transaction signature/hash",
+            "example": {
+              "3bovD5jCRn7eG64jZqyEz6Zbx92mHixZSTRrWLy1Sirx": {
+                "txHash": "5rG9igZk95gbS8ZG66upvRfbcaaDpokQYg4ny3WQ3DrA...",
+                "blockTime": 1717292678,
+                "blockNumber": 398645949,
+                "balanceChange": "0",
+                "tokenAddress": "11111111111111111111111111111111",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "wallets"
         ]
       },
       "CalculatePnlInput": {
@@ -11419,6 +12885,638 @@
         },
         "required": [
           "success"
+        ]
+      },
+      "WalletNetWorthItemDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 6,
+            "format": "int64"
+          },
+          "priceInUsd": {
+            "type": "string",
+            "description": "Token price in USD",
+            "example": "0.00014999198221145974"
+          },
+          "priceInNative": {
+            "type": "string",
+            "description": "Token price in native token",
+            "example": "0.000001855"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Token balance (human-readable)",
+            "example": "69"
+          },
+          "valueInUsd": {
+            "type": "string",
+            "description": "Token holding value in USD",
+            "example": "0.010349446772590722"
+          },
+          "valueInNative": {
+            "type": "string",
+            "description": "Token holding value in native token",
+            "example": "0.000127995"
+          },
+          "chain": {
+            "type": "string",
+            "description": "A chain name listed in supported networks",
+            "example": "sol"
+          },
+          "name": {
+            "type": "string",
+            "description": "Token name",
+            "example": "Smellow"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Token symbol",
+            "example": "SMLO"
+          },
+          "logoUri": {
+            "type": "string",
+            "description": "Token logo URL",
+            "example": "https://pump.mypinata.cloud/ipfs/QmcCjKS4MMeji11PqnNhqDSXd6gD4iGj1nC6zjyfaekuQZ"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "decimals",
+          "priceInUsd",
+          "priceInNative",
+          "amount",
+          "valueInUsd",
+          "valueInNative",
+          "chain",
+          "name",
+          "symbol"
+        ]
+      },
+      "WalletNetWorthPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1"
+          },
+          "totalValueInUsd": {
+            "type": "string",
+            "description": "Total wallet value in USD",
+            "example": "3.369918"
+          },
+          "totalValueInNative": {
+            "type": "string",
+            "description": "Total wallet value in native token",
+            "example": "0.040382"
+          },
+          "currentTimestamp": {
+            "type": "string",
+            "description": "Current server timestamp (ISO 8601)",
+            "example": "2025-05-19T04:47:19.414Z"
+          },
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "totalValueInUsd",
+          "totalValueInNative",
+          "currentTimestamp",
+          "data"
+        ]
+      },
+      "TokensBalancePage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "WalletNetWorthHistoryItemDTO": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "description": "Snapshot timestamp (ISO 8601)",
+            "example": "2025-07-30T23:59:59.000Z"
+          },
+          "netWorth": {
+            "type": "string",
+            "description": "Net worth at this timestamp (USD)",
+            "example": "13210463.21"
+          },
+          "netWorthChange": {
+            "type": "string",
+            "description": "Net worth change from previous snapshot (USD)",
+            "example": "1971274.94"
+          },
+          "netWorthChangePercent": {
+            "type": "string",
+            "description": "Net worth change percentage from previous snapshot",
+            "example": "17.54"
+          }
+        },
+        "required": [
+          "timestamp",
+          "netWorth",
+          "netWorthChange",
+          "netWorthChangePercent"
+        ]
+      },
+      "WalletNetWorthChartDTO": {
+        "type": "object",
+        "properties": {
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K"
+          },
+          "currentTimestamp": {
+            "type": "string",
+            "description": "End timestamp of the chart period (ISO 8601)",
+            "example": "2025-07-31T23:59:59.000Z"
+          },
+          "pastTimestamp": {
+            "type": "string",
+            "description": "Start timestamp of the chart period (ISO 8601)",
+            "example": "2025-07-01T23:59:59.000Z"
+          },
+          "history": {
+            "description": "Historical net worth data points",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthHistoryItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "currentTimestamp",
+          "pastTimestamp",
+          "history"
+        ]
+      },
+      "WalletNetWorthDetailsPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K"
+          },
+          "netWorth": {
+            "type": "string",
+            "description": "Total wallet net worth in USD",
+            "example": "11839478.53162622"
+          },
+          "requestedTimestamp": {
+            "type": "string",
+            "description": "Request timestamp (ISO 8601)",
+            "example": "2025-07-31T04:50:06.303Z"
+          },
+          "resolvedTimestamp": {
+            "type": "string",
+            "description": "Actual data snapshot timestamp (ISO 8601)",
+            "example": "2025-07-31T04:50:06.475Z"
+          },
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "netWorth",
+          "requestedTimestamp",
+          "resolvedTimestamp",
+          "data"
+        ]
+      },
+      "PnlResolution": {
+        "type": "string",
+        "enum": [
+          "1d",
+          "7d",
+          "30d",
+          "all"
+        ]
+      },
+      "WalletPnlSummaryDTO": {
+        "type": "object",
+        "properties": {
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "PnL time resolution",
+            "enum": [
+              "1d",
+              "7d",
+              "30d",
+              "all"
+            ],
+            "example": "1d"
+          },
+          "tokens": {
+            "type": "string",
+            "description": "Number of unique tokens traded",
+            "example": "15126"
+          },
+          "buys": {
+            "type": "string",
+            "description": "Total number of buy transactions",
+            "example": "1515999"
+          },
+          "sells": {
+            "type": "string",
+            "description": "Total number of sell transactions",
+            "example": "1011994"
+          },
+          "totalTrades": {
+            "type": "string",
+            "description": "Total number of trades (buys + sells)",
+            "example": "2527993"
+          },
+          "wins": {
+            "type": "string",
+            "description": "Number of winning token positions",
+            "example": "438944"
+          },
+          "losses": {
+            "type": "string",
+            "description": "Number of losing token positions",
+            "example": "348350"
+          },
+          "winRate": {
+            "type": "string",
+            "description": "Win rate (wins / total closed positions)",
+            "example": "0.5575"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "Total buy amount in USD",
+            "example": "101371192.39"
+          },
+          "sellAmountInUsd": {
+            "type": "string",
+            "description": "Total sell amount in USD",
+            "example": "60369621.10"
+          },
+          "totalCostInUsd": {
+            "type": "string",
+            "description": "Total cost basis in USD",
+            "example": "225944253.64"
+          },
+          "realizedProfitInUsd": {
+            "type": "string",
+            "description": "Realized profit in USD",
+            "example": "802583.91"
+          },
+          "realizedProfitRatio": {
+            "type": "string",
+            "description": "Realized profit ratio",
+            "example": "0.0035521324"
+          },
+          "unrealizedProfitInUsd": {
+            "type": "string",
+            "description": "Unrealized profit in USD",
+            "example": "1017625099.17"
+          },
+          "unrealizedProfitRatio": {
+            "type": "string",
+            "description": "Unrealized profit ratio",
+            "example": "4.5038768756"
+          },
+          "totalProfitInUsd": {
+            "type": "string",
+            "description": "Total profit in USD (realized + unrealized)",
+            "example": "1018427683.08"
+          },
+          "totalProfitRatio": {
+            "type": "string",
+            "description": "Total profit ratio",
+            "example": "4.5074290081"
+          },
+          "avgProfitPerTradeInUsd": {
+            "type": "string",
+            "description": "Average profit per trade in USD",
+            "example": "402.86"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last data update timestamp",
+            "example": "2026-02-04T11:42:50.000Z"
+          }
+        },
+        "required": [
+          "walletAddress",
+          "resolution",
+          "tokens",
+          "buys",
+          "sells",
+          "totalTrades",
+          "wins",
+          "losses",
+          "winRate",
+          "buyAmountInUsd",
+          "sellAmountInUsd",
+          "totalCostInUsd",
+          "realizedProfitInUsd",
+          "realizedProfitRatio",
+          "unrealizedProfitInUsd",
+          "unrealizedProfitRatio",
+          "totalProfitInUsd",
+          "totalProfitRatio",
+          "avgProfitPerTradeInUsd"
+        ]
+      },
+      "TransactionHistoryItemDTO": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "type": "string",
+            "description": "Transaction signature/hash",
+            "example": "4tEHfECrLJm8N7dNCfQSjhLG7LqdMuZhzBhRy7VRhjCt..."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "description": "Block height",
+            "example": 376227481,
+            "format": "int64"
+          },
+          "blockTime": {
+            "type": "integer",
+            "description": "Block timestamp (Unix epoch seconds)",
+            "example": 1738713335,
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "description": "Transaction status",
+            "enum": [
+              "UNKNOWN",
+              "SUCCEEDED",
+              "FAILED"
+            ],
+            "example": "SUCCEEDED"
+          },
+          "from": {
+            "type": "string",
+            "description": "Sender wallet address",
+            "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP"
+          },
+          "to": {
+            "type": "string",
+            "description": "Program/contract address",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          "fee": {
+            "type": "string",
+            "description": "Transaction fee (in lamports)",
+            "example": "15100"
+          },
+          "mainAction": {
+            "type": "string",
+            "description": "Main action type (send or receive)",
+            "enum": [
+              "send",
+              "receive"
+            ],
+            "example": "send"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "tokenAmount": {
+            "type": "string",
+            "description": "Token transfer amount",
+            "example": "0.036416"
+          },
+          "tokenAmountInUsd": {
+            "type": "string",
+            "description": "Token transfer value in USD",
+            "example": "3.349067"
+          },
+          "tokenPriceInUsd": {
+            "type": "string",
+            "description": "Token price at time of transfer in USD",
+            "example": "91.9669269600"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Token symbol",
+            "example": "SOL"
+          },
+          "name": {
+            "type": "string",
+            "description": "Token name",
+            "example": "Wrapped SOL"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 9,
+            "format": "int64"
+          },
+          "logoUri": {
+            "type": "string",
+            "description": "Token logo URL",
+            "example": "https://..."
+          },
+          "fromTokenAccount": {
+            "type": "string",
+            "description": "Sender token account address",
+            "example": "94Vaes4rvAWkAav1uDS27Y88rC7ZRAyFfc6RCX913CLj"
+          },
+          "toTokenAccount": {
+            "type": "string",
+            "description": "Receiver token account address",
+            "example": "FnHnRAigUUm4aU3F8jPksG8rua8yZNBw3TNQddaTmESR"
+          },
+          "fromUserAccount": {
+            "type": "string",
+            "description": "Sender wallet address",
+            "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP"
+          },
+          "toUserAccount": {
+            "type": "string",
+            "description": "Receiver wallet address",
+            "example": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC"
+          },
+          "outerDappProgram": {
+            "type": "string",
+            "description": "Outer dapp program address",
+            "example": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+          },
+          "dappProgram": {
+            "type": "string",
+            "description": "Dapp program address",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          }
+        },
+        "required": [
+          "txHash",
+          "blockNumber",
+          "blockTime",
+          "status",
+          "from",
+          "to",
+          "fee",
+          "mainAction",
+          "tokenAddress",
+          "tokenAmount",
+          "tokenAmountInUsd",
+          "tokenPriceInUsd",
+          "symbol",
+          "name",
+          "decimals",
+          "fromTokenAccount",
+          "toTokenAccount",
+          "fromUserAccount",
+          "toUserAccount",
+          "outerDappProgram",
+          "dappProgram"
+        ]
+      },
+      "TransactionHistoryPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "Indicates if there are more results",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Indicates if there are previous results",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "Cursor for first item in current page"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "Cursor for last item in current page"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionHistoryItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "BalanceTokenType": {

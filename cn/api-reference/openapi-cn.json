@@ -1251,11 +1251,145 @@
         ]
       }
     },
+    "/v1/trade/{chain}/trader-gainers-losers": {
+      "get": {
+        "description": "获取按盈亏排名的顶级盈利者或亏损者",
+        "operationId": "get.trader.gainers.losers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": false,
+            "in": "query",
+            "description": "盈亏时间周期（1d、7d 或 30d）",
+            "schema": {
+              "$ref": "#/components/schemas/TraderPnlResolution"
+            }
+          },
+          {
+            "name": "sortType",
+            "required": false,
+            "in": "query",
+            "description": "排序顺序（desc 为盈利者，asc 为亏损者）",
+            "schema": {
+              "default": "desc",
+              "example": "desc",
+              "enum": [
+                "desc",
+                "asc"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraderGainersLosersPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "交易者 - 盈利者/亏损者",
+        "tags": [
+          "Trade"
+        ]
+      }
+    },
     "/v1/token/search": {
       "get": {
         "description": "根据条件搜索代币信息",
         "operationId": "search",
         "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
           {
             "name": "chains",
             "required": false,
@@ -1277,19 +1411,6 @@
               "minLength": 1,
               "example": "USDC",
               "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "每页结果数量",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "format": "int64",
-              "default": 20,
-              "type": "integer"
             }
           },
           {
@@ -1316,15 +1437,6 @@
               "items": {
                 "type": "string"
               }
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "游标",
-            "schema": {
-              "type": "string"
             }
           },
           {
@@ -4468,23 +4580,11 @@
             }
           },
           {
-            "name": "time",
-            "required": false,
-            "in": "query",
-            "description": "快照查询的目标 Unix 时间戳（秒）。返回该时间之前或该时间点的最近快照。",
-            "schema": {
-              "format": "int64",
-              "example": 1705312800,
-              "type": "integer"
-            }
-          },
-          {
             "name": "cursor",
             "required": false,
             "in": "query",
-            "description": "游标",
+            "description": "分页游标",
             "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
               "type": "string"
             }
           },
@@ -4494,8 +4594,35 @@
             "in": "query",
             "description": "每页结果数量",
             "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "example": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "快照查询的目标 Unix 时间戳（秒）。返回该时间之前或该时间点的最近快照。",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
               "type": "integer"
             }
           }
@@ -4518,6 +4645,218 @@
           }
         ],
         "summary": "代币 - 流动性快照",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/{tokenAddress}/transfers": {
+      "get": {
+        "description": "获取特定代币的转账历史",
+        "operationId": "get.token.transfers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之前的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之后的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770249600,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenTransferPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 转账列表",
+        "tags": [
+          "Token"
+        ]
+      }
+    },
+    "/v1/token/{chain}/{tokenAddress}/transfer-total": {
+      "get": {
+        "description": "获取特定代币的转账总数（支持筛选）",
+        "operationId": "get.token.transfer.total",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": true,
+            "in": "path",
+            "description": "代币地址",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之前的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之后的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770249600,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenTransferTotalDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "代币 - 转账总数",
         "tags": [
           "Token"
         ]
@@ -4596,23 +4935,11 @@
             }
           },
           {
-            "name": "time",
-            "required": false,
-            "in": "query",
-            "description": "快照查询的目标 Unix 时间戳（秒）。返回该时间之前或该时间点的最近快照。",
-            "schema": {
-              "format": "int64",
-              "example": 1705312800,
-              "type": "integer"
-            }
-          },
-          {
             "name": "cursor",
             "required": false,
             "in": "query",
-            "description": "游标",
+            "description": "分页游标",
             "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
               "type": "string"
             }
           },
@@ -4622,8 +4949,35 @@
             "in": "query",
             "description": "每页结果数量",
             "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
               "default": 20,
-              "example": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "time",
+            "required": false,
+            "in": "query",
+            "description": "快照查询的目标 Unix 时间戳（秒）。返回该时间之前或该时间点的最近快照。",
+            "schema": {
+              "format": "int64",
+              "example": 1705312800,
               "type": "integer"
             }
           }
@@ -5612,10 +5966,10 @@
         ]
       }
     },
-    "/v1/wallet/{chain}/{walletAddress}/pnl": {
+    "/v1/wallet/{chain}/net-worth-summary": {
       "get": {
-        "description": "获取钱包代币的盈亏信息",
-        "operationId": "get.pnl",
+        "description": "获取多个钱包的当前净值摘要",
+        "operationId": "get.net.worth.summary",
         "parameters": [
           {
             "name": "chain",
@@ -5627,22 +5981,106 @@
             }
           },
           {
-            "name": "walletAddress",
+            "name": "walletAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的钱包字符串地址列表",
+            "schema": {
+              "example": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1,WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthSummaryDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 净值摘要（多个）",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/pnl-by-wallet": {
+      "get": {
+        "description": "获取特定代币在多个钱包中的盈亏",
+        "operationId": "get.pnl.by.wallet",
+        "parameters": [
+          {
+            "name": "chain",
             "required": true,
             "in": "path",
-            "description": "钱包地址",
+            "description": "支持网络中列出的区块链名称",
             "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "walletAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的钱包字符串地址列表",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy,HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K",
               "type": "string"
             }
           },
           {
             "name": "tokenAddress",
-            "required": false,
+            "required": true,
             "in": "query",
             "description": "代币地址",
             "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "example": "4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p",
               "type": "string"
             }
           }
@@ -5653,10 +6091,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WalletPnlDTO"
-                  }
+                  "$ref": "#/components/schemas/PnlDetailsPage"
                 }
               }
             }
@@ -5667,16 +6102,16 @@
             "bearer": []
           }
         ],
-        "summary": "钱包 - 盈亏",
+        "summary": "钱包 - 按钱包盈亏",
         "tags": [
           "Wallet"
         ]
       }
     },
-    "/v1/wallet/{chain}/{walletAddress}/stats": {
+    "/v1/wallet/{chain}/first-tx": {
       "get": {
-        "description": "获取钱包的盈亏统计",
-        "operationId": "get.pnl.stats",
+        "description": "获取一个或多个钱包的首笔资金交易",
+        "operationId": "get.wallet.first.tx",
         "parameters": [
           {
             "name": "chain",
@@ -5688,73 +6123,12 @@
             }
           },
           {
-            "name": "walletAddress",
+            "name": "walletAddresses",
             "required": true,
-            "in": "path",
-            "description": "钱包地址",
-            "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WalletPnlDTO"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "钱包 - 盈亏统计",
-        "tags": [
-          "Wallet"
-        ]
-      }
-    },
-    "/v1/wallet/{chain}/{walletAddress}/balance": {
-      "get": {
-        "description": "获取钱包余额信息",
-        "operationId": "get.balance",
-        "parameters": [
-          {
-            "name": "chain",
-            "required": true,
-            "in": "path",
-            "description": "支持网络中列出的区块链名称",
-            "schema": {
-              "$ref": "#/components/schemas/ChainSymbol"
-            }
-          },
-          {
-            "name": "walletAddress",
-            "required": true,
-            "in": "path",
-            "description": "钱包地址",
-            "schema": {
-              "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
-              "type": "string"
-            }
-          },
-          {
-            "name": "tokenAddress",
-            "required": false,
             "in": "query",
-            "description": "筛选钱包余额的特定代币地址",
+            "description": "以逗号分隔的钱包字符串地址列表",
             "schema": {
-              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "example": "3bovD5jCRn7eG64jZqyEz6Zbx92mHixZSTRrWLy1Sirx,FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP",
               "type": "string"
             }
           }
@@ -5765,7 +6139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletBalancesDTO"
+                  "$ref": "#/components/schemas/WalletFirstTxDTO"
                 }
               }
             }
@@ -5776,7 +6150,7 @@
             "bearer": []
           }
         ],
-        "summary": "钱包 - 余额",
+        "summary": "钱包 - 首笔资金交易",
         "tags": [
           "Wallet"
         ]
@@ -5840,6 +6214,801 @@
         ]
       }
     },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth": {
+      "get": {
+        "description": "获取钱包的当前净值，包括所有代币持仓及价格",
+        "operationId": "get.net.worth",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 净值",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/tokens-balance": {
+      "get": {
+        "description": "获取钱包的代币余额及当前价格",
+        "operationId": "get.tokens.balance",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensBalancePage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 代币余额",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth-chart": {
+      "get": {
+        "description": "获取钱包历史净值图表数据，按小时快照",
+        "operationId": "get.net.worth.chart",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hours",
+            "required": false,
+            "in": "query",
+            "description": "要获取的历史小时数",
+            "schema": {
+              "minimum": 1,
+              "maximum": 720,
+              "format": "int32",
+              "default": 24,
+              "example": 24,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthChartDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 净值图表",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth-details": {
+      "get": {
+        "description": "获取钱包的详细净值明细，支持实时和历史快照",
+        "operationId": "get.net.worth.details",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "hours",
+            "required": false,
+            "in": "query",
+            "description": "历史快照的小时数（0 表示实时）",
+            "schema": {
+              "minimum": 0,
+              "maximum": 720,
+              "format": "int32",
+              "default": 0,
+              "example": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthDetailsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 净值详情",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/pnl": {
+      "get": {
+        "description": "获取钱包的汇总盈亏摘要",
+        "operationId": "get.pnl",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy",
+              "type": "string"
+            }
+          },
+          {
+            "name": "resolution",
+            "required": false,
+            "in": "query",
+            "description": "盈亏时间周期（1d、7d、30d 或 all）",
+            "schema": {
+              "$ref": "#/components/schemas/PnlResolution"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletPnlSummaryDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 盈亏摘要",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/pnl-details": {
+      "get": {
+        "description": "获取钱包按代币的盈亏明细",
+        "operationId": "get.pnl.details",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PnlDetailsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 盈亏详情",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/pnl-by-token": {
+      "get": {
+        "description": "获取钱包中特定代币的盈亏",
+        "operationId": "get.pnl.by.token",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "以逗号分隔的TOKEN字符串地址列表",
+            "schema": {
+              "example": "4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PnlDetailsPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 按代币盈亏",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/transfers": {
+      "get": {
+        "description": "获取钱包的转账历史（支持按代币筛选）",
+        "operationId": "get.wallet.transfers",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "代币地址",
+            "schema": {
+              "example": "So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之前的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之后的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770163200,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionHistoryPage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 转账列表",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/transfer-total": {
+      "get": {
+        "description": "获取钱包的转账总数（支持按代币筛选）",
+        "operationId": "get.wallet.transfer.total",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddress",
+            "required": false,
+            "in": "query",
+            "description": "代币地址",
+            "schema": {
+              "example": "So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          },
+          {
+            "name": "beforeTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之前的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770336000,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "afterTimestamp",
+            "required": false,
+            "in": "query",
+            "description": "筛选此时间戳之后的转账（Unix 纪元秒）",
+            "schema": {
+              "format": "int64",
+              "example": 1770163200,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenTransferTotalDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 转账总数",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
     "/v1/wallet/{chain}/{walletAddress}/balance-updates": {
       "get": {
         "description": "获取钱包余额变更历史记录，支持过滤和分页",
@@ -5861,6 +7030,42 @@
             "description": "钱包地址",
             "schema": {
               "example": "MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "分页游标",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "每页结果数量",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "format": "int64",
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "分页方向（next或prev）",
+            "schema": {
+              "default": "next",
+              "enum": [
+                "next",
+                "prev"
+              ],
               "type": "string"
             }
           },
@@ -5912,30 +7117,6 @@
             "description": "余额变更方向过滤（INCREASE 或 DECREASE）",
             "schema": {
               "$ref": "#/components/schemas/BalanceChangeType"
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "description": "游标",
-            "schema": {
-              "example": "eyJpZCI6MTAwfQ==",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "每页结果数量",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "format": "int32",
-              "default": 20,
-              "example": 20,
-              "type": "integer"
             }
           }
         ],
@@ -8583,6 +9764,94 @@
           "data"
         ]
       },
+      "TraderPnlResolution": {
+        "type": "string",
+        "enum": [
+          "1d",
+          "7d",
+          "30d"
+        ]
+      },
+      "TraderGainersLosersItemDTO": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "description": "支持网络中列出的区块链名称",
+            "example": "sol",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChainSymbol"
+              }
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC"
+          },
+          "pnl": {
+            "type": "string",
+            "description": "总盈亏金额（美元）",
+            "example": "37765184714.25"
+          },
+          "tradeCount": {
+            "type": "string",
+            "description": "交易总次数",
+            "example": "31904567"
+          },
+          "volume": {
+            "type": "string",
+            "description": "总交易量（美元）",
+            "example": "641087465734.79"
+          }
+        },
+        "required": [
+          "chain",
+          "address",
+          "pnl",
+          "tradeCount",
+          "volume"
+        ]
+      },
+      "TraderGainersLosersPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "涨跌幅数据数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TraderGainersLosersItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
       "TokenCreatorsDTO": {
         "type": "object",
         "properties": {
@@ -9519,7 +10788,8 @@
           "tokenDecimals": {
             "type": "integer",
             "description": "代币小数位数",
-            "example": 6
+            "example": 6,
+            "format": "int64"
           },
           "vaultAmount": {
             "type": "string",
@@ -9620,7 +10890,8 @@
               2,
               3,
               4
-            ]
+            ],
+            "format": "int64"
           },
           "version": {
             "type": "number",
@@ -9631,7 +10902,8 @@
               1,
               2,
               3
-            ]
+            ],
+            "format": "int64"
           },
           "liquidityModel": {
             "type": "number",
@@ -9643,7 +10915,8 @@
               2,
               3,
               4
-            ]
+            ],
+            "format": "int64"
           },
           "feeRate": {
             "type": "string",
@@ -9653,12 +10926,14 @@
           "tickSpacing": {
             "type": "integer",
             "description": "集中流动性池的 tick 间距",
-            "example": 64
+            "example": 64,
+            "format": "int64"
           },
           "tokenCount": {
             "type": "integer",
             "description": "池中代币数量",
-            "example": 2
+            "example": 2,
+            "format": "int64"
           },
           "createdBlockTimestamp": {
             "type": "string",
@@ -10836,7 +12111,8 @@
           "poolCount": {
             "type": "integer",
             "description": "该代币的池数量",
-            "example": 5
+            "example": 5,
+            "format": "int64"
           },
           "priceUsd": {
             "type": "string",
@@ -10903,6 +12179,174 @@
           "hasPrev"
         ]
       },
+      "TokenTransferItemDTO": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "type": "string",
+            "description": "交易签名/哈希",
+            "example": "2vLYZuCrKARicrXRDf2eGnzaKR9PP6qFFuzgPCHUNAnw..."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "description": "区块槽位号",
+            "example": 398544039,
+            "format": "int64"
+          },
+          "blockTime": {
+            "type": "integer",
+            "description": "区块时间戳（Unix 纪元秒）",
+            "example": 1770508507,
+            "format": "int64"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "fromAddress": {
+            "type": "string",
+            "description": "发送方钱包地址",
+            "example": "BLes958hcLyJcXibidW4fmWpCjoXmJEdoewY5itHLZgi"
+          },
+          "toAddress": {
+            "type": "string",
+            "description": "接收方钱包地址",
+            "example": "ARu4n5mFdZogZAravu7CcizaojWnS6oqka37gdLT5SZn"
+          },
+          "fromTokenAccount": {
+            "type": "string",
+            "description": "发送方代币账户地址",
+            "example": "CLoj1mryCYGpNhY1k27UJLeoaAuzM5gLC1dyWX58YLCg"
+          },
+          "toTokenAccount": {
+            "type": "string",
+            "description": "接收方代币账户地址",
+            "example": "8XrtGP8RG33AnrN2yJ6H3gnXPNQ3dYXKqM72bpzhcsd6"
+          },
+          "amount": {
+            "type": "string",
+            "description": "代币转账数量",
+            "example": "149.05"
+          },
+          "price": {
+            "type": "string",
+            "description": "转账时代币价格（美元）",
+            "example": "1.00"
+          },
+          "value": {
+            "type": "string",
+            "description": "转账价值（美元）",
+            "example": "149.05"
+          },
+          "flow": {
+            "type": "string",
+            "description": "转账流向（in 或 out）",
+            "example": "out",
+            "enum": [
+              "in",
+              "out"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "description": "转账操作类型",
+            "example": "transfer"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号",
+            "example": "USDC"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "USD Coin"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 6,
+            "format": "int64"
+          },
+          "logoUri": {
+            "type": "string",
+            "description": "代币图标链接",
+            "example": "https://..."
+          }
+        },
+        "required": [
+          "txHash",
+          "blockNumber",
+          "blockTime",
+          "tokenAddress",
+          "fromAddress",
+          "toAddress",
+          "fromTokenAccount",
+          "toTokenAccount",
+          "amount",
+          "price",
+          "value",
+          "flow",
+          "action",
+          "symbol",
+          "name",
+          "decimals"
+        ]
+      },
+      "TokenTransferPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenTransferItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "TokenTransferTotalDTO": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "转账总数",
+            "example": 123456,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "total"
+        ]
+      },
       "DexPoolTokenSnapshotDTO": {
         "type": "object",
         "properties": {
@@ -10914,7 +12358,8 @@
           "tokenDecimals": {
             "type": "integer",
             "description": "代币小数位数",
-            "example": 6
+            "example": 6,
+            "format": "int64"
           },
           "vaultAmount": {
             "type": "string",
@@ -11057,339 +12502,360 @@
           "hasPrev"
         ]
       },
-      "WalletPnlDTO": {
+      "WalletNetWorthSummaryDTO": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "记录标识符",
-            "example": "1",
-            "format": "int64"
-          },
-          "chain": {
+          "currentTimestamp": {
             "type": "string",
-            "description": "区块链网络",
-            "example": "solana"
+            "description": "当前服务器时间戳（ISO 8601）",
+            "example": "2025-10-30T03:33:40.980Z"
           },
-          "walletAddress": {
+          "wallets": {
+            "type": "object",
+            "description": "钱包地址与净值的映射",
+            "example": {
+              "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1": {
+                "value": "1764819473.530063"
+              },
+              "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh": {
+                "value": "3508619230.707581"
+              }
+            }
+          }
+        },
+        "required": [
+          "currentTimestamp",
+          "wallets"
+        ]
+      },
+      "PnlDetailSummaryDTO": {
+        "type": "object",
+        "properties": {
+          "tokens": {
             "type": "string",
-            "description": "钱包地址",
-            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7"
-          },
-          "tokenAddress": {
-            "type": "string",
-            "description": "代币合约地址",
-            "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
-          },
-          "tokenPriceInUsd": {
-            "type": "string",
-            "description": "当前代币美元价格",
-            "example": "1.23"
-          },
-          "openTime": {
-            "type": "integer",
-            "description": "持仓开始时间",
-            "example": "1741780514000",
-            "format": "int64"
-          },
-          "closeTime": {
-            "type": "integer",
-            "description": "持仓结束时间",
-            "example": "1741780514000",
-            "format": "int64"
-          },
-          "lastTime": {
-            "type": "integer",
-            "description": "最后更新时间",
-            "example": "1741780514000",
-            "format": "int64"
-          },
-          "balance": {
-            "type": "string",
-            "description": "当前代币余额",
-            "example": "1000"
-          },
-          "buyAmount": {
-            "type": "string",
-            "description": "买入代币总量",
-            "example": "1500"
-          },
-          "buyAmountInUsd": {
-            "type": "string",
-            "description": "买入代币总美元价值",
-            "example": "1845"
+            "description": "不同代币数量",
+            "example": "15322"
           },
           "buys": {
             "type": "string",
-            "description": "买入交易次数",
-            "example": "10"
-          },
-          "sellAmount": {
-            "type": "string",
-            "description": "卖出代币总量",
-            "example": "500"
-          },
-          "sellAmountInUsd": {
-            "type": "string",
-            "description": "卖出代币总美元价值",
-            "example": "615"
+            "description": "买入交易总次数",
+            "example": "6546312"
           },
           "sells": {
             "type": "string",
-            "description": "卖出交易次数",
-            "example": "5"
+            "description": "卖出交易总次数",
+            "example": "4012013"
           },
-          "averageBuyPriceInUsd": {
+          "totalTrades": {
             "type": "string",
-            "description": "平均买入价格",
-            "example": "1.23"
+            "description": "交易总次数",
+            "example": "10558325"
           },
-          "averageSellPriceInUsd": {
+          "wins": {
             "type": "string",
-            "description": "平均卖出价格",
-            "example": "1.23"
+            "description": "盈利仓位数",
+            "example": "1999472"
           },
-          "unrealizedProfitInUsd": {
+          "losses": {
             "type": "string",
-            "description": "未实现盈利（美元）",
-            "example": "123.45"
+            "description": "亏损仓位数",
+            "example": "1742452"
           },
-          "unrealizedProfitRatio": {
+          "winRate": {
             "type": "string",
-            "description": "未实现盈利比率",
-            "example": "12.34"
+            "description": "胜率",
+            "example": "0.5343"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "总投入金额（美元）",
+            "example": "372090700.51"
+          },
+          "sellAmountInUsd": {
+            "type": "string",
+            "description": "总卖出金额（美元）",
+            "example": "214526094.35"
+          },
+          "totalCostInUsd": {
+            "type": "string",
+            "description": "总成本（美元）",
+            "example": "372090700.51"
+          },
+          "currentValue": {
+            "type": "string",
+            "description": "当前组合价值（美元）",
+            "example": "1397331840.48"
           },
           "realizedProfitInUsd": {
             "type": "string",
             "description": "已实现盈利（美元）",
-            "example": "45.67"
+            "example": "-2699411.26"
           },
           "realizedProfitRatio": {
             "type": "string",
             "description": "已实现盈利比率",
-            "example": "4.56"
+            "example": "-0.0072547130"
           },
-          "totalRealizedProfitInUsd": {
+          "unrealizedProfitInUsd": {
             "type": "string",
-            "description": "总实现盈利（美元）",
-            "example": "169.12"
+            "description": "未实现盈利（美元）",
+            "example": "1397331840.48"
           },
-          "totalRealizedProfitRatio": {
+          "totalProfitInUsd": {
             "type": "string",
-            "description": "总实现盈利比率",
-            "example": "16.91"
+            "description": "总盈利（美元）",
+            "example": "1394632429.22"
+          },
+          "avgProfitPerTradeInUsd": {
+            "type": "string",
+            "description": "每笔交易平均盈利（美元）",
+            "example": "132.09"
           }
         },
         "required": [
-          "id",
-          "chain",
-          "walletAddress",
-          "tokenAddress",
-          "tokenPriceInUsd",
-          "openTime",
-          "closeTime",
-          "lastTime",
-          "balance",
-          "buyAmount",
-          "buyAmountInUsd",
+          "tokens",
           "buys",
-          "sellAmount",
-          "sellAmountInUsd",
           "sells",
-          "averageBuyPriceInUsd",
-          "averageSellPriceInUsd",
-          "unrealizedProfitInUsd",
-          "unrealizedProfitRatio",
+          "totalTrades",
+          "wins",
+          "losses",
+          "winRate",
+          "buyAmountInUsd",
+          "sellAmountInUsd",
+          "totalCostInUsd",
+          "currentValue",
           "realizedProfitInUsd",
           "realizedProfitRatio",
-          "totalRealizedProfitInUsd",
-          "totalRealizedProfitRatio"
+          "unrealizedProfitInUsd",
+          "totalProfitInUsd",
+          "avgProfitPerTradeInUsd"
         ]
       },
-      "WalletBalanceDetailDTO": {
+      "PnlDetailItemDTO": {
         "type": "object",
         "properties": {
           "tokenAddress": {
             "type": "string",
             "description": "代币合约地址",
-            "example": "So11111111111111111111111111111111111111112"
-          },
-          "amount": {
-            "type": "string",
-            "description": "代币数量",
-            "example": "2675.098457775"
-          },
-          "valueInUsd": {
-            "type": "string",
-            "description": "代币美元价值",
-            "example": "366908.31721324675"
-          },
-          "name": {
-            "type": "string",
-            "description": "代币名称",
-            "example": "Solana"
+            "example": "4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p"
           },
           "symbol": {
             "type": "string",
             "description": "代币符号",
             "example": "SOL"
           },
-          "imageUrl": {
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "Solana"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 9,
+            "format": "int64"
+          },
+          "logoUri": {
             "type": "string",
             "description": "代币图标链接",
-            "example": "https://solana.com/images/solana-logo.png"
+            "example": "https://..."
           },
-          "priceInSol": {
+          "walletAddress": {
             "type": "string",
-            "description": "代币价格(单位:SOL)",
-            "example": "137.15"
+            "description": "钱包地址",
+            "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy"
+          },
+          "balance": {
+            "type": "string",
+            "description": "当前代币余额",
+            "example": "1254982158.71"
           },
           "priceInUsd": {
             "type": "string",
-            "description": "代币价格(单位:USD)",
-            "example": "137.15"
+            "description": "当前代币价格（美元）",
+            "example": "0.8466367032"
           },
-          "priceChangeRatioInUsd24h": {
+          "currentValue": {
             "type": "string",
-            "description": "24小时价格变化比率",
-            "example": "5.23"
-          },
-          "unrealizedProfitInUsd": {
-            "type": "string",
-            "description": "未实现盈亏（美元）",
-            "example": "123.45"
-          },
-          "unrealizedProfitRatio": {
-            "type": "string",
-            "description": "未实现盈亏率",
-            "example": "12.34"
-          },
-          "openTime": {
-            "type": "integer",
-            "description": "开仓时间",
-            "example": "1741780466000",
-            "format": "int64"
-          },
-          "closeTime": {
-            "type": "integer",
-            "description": "平仓时间",
-            "example": "1741780466000",
-            "format": "int64"
+            "description": "当前持仓价值（美元）",
+            "example": "1062547123.45"
           },
           "buys": {
             "type": "string",
             "description": "买入交易次数",
-            "example": 10
-          },
-          "buyAmount": {
-            "type": "string",
-            "description": "买入代币总量",
-            "example": "1500"
-          },
-          "buyAmountInUsd": {
-            "type": "string",
-            "description": "买入总金额（美元）",
-            "example": "1845"
+            "example": "275"
           },
           "sells": {
             "type": "string",
             "description": "卖出交易次数",
-            "example": 5
+            "example": "110"
+          },
+          "totalTrades": {
+            "type": "string",
+            "description": "交易总次数（买入+卖出）",
+            "example": "385"
+          },
+          "buyAmount": {
+            "type": "string",
+            "description": "买入代币总量",
+            "example": "1457986404.21"
           },
           "sellAmount": {
             "type": "string",
             "description": "卖出代币总量",
-            "example": "500"
+            "example": "203004245.50"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "买入总金额（美元）",
+            "example": "48469.17"
           },
           "sellAmountInUsd": {
             "type": "string",
             "description": "卖出总金额（美元）",
-            "example": "615"
+            "example": "6467.32"
           },
-          "averageBuyPriceInUsd": {
+          "avgBuyPriceInUsd": {
             "type": "string",
-            "description": "平均买入价格",
-            "example": "1.23"
+            "description": "平均买入价格（美元）",
+            "example": "0.0000332439"
           },
-          "averageSellPriceInUsd": {
+          "avgSellPriceInUsd": {
             "type": "string",
-            "description": "平均卖出价格",
-            "example": "1.23"
+            "description": "平均卖出价格（美元）",
+            "example": "0.0000318580"
           },
           "realizedProfitInUsd": {
             "type": "string",
             "description": "已实现盈利（美元）",
-            "example": "1234.56"
+            "example": "67.13"
           },
           "realizedProfitRatio": {
             "type": "string",
             "description": "已实现盈利比率",
-            "example": "12.34"
+            "example": "0.0013849997"
           },
-          "totalRealizedProfitInUsd": {
+          "unrealizedProfitInUsd": {
             "type": "string",
-            "description": "总实现盈亏（美元）",
-            "example": "169.12"
+            "description": "未实现盈利（美元）",
+            "example": "1234336333.41"
           },
-          "totalRealizedProfitRatio": {
+          "unrealizedProfitRatio": {
             "type": "string",
-            "description": "总实现盈亏率",
-            "example": "16.91"
+            "description": "未实现盈利比率",
+            "example": "25466.42"
+          },
+          "totalProfitInUsd": {
+            "type": "string",
+            "description": "总盈利（美元）",
+            "example": "1234336400.54"
+          },
+          "totalProfitRatio": {
+            "type": "string",
+            "description": "总盈利比率",
+            "example": "25466.42"
+          },
+          "avgProfitPerTradeInUsd": {
+            "type": "string",
+            "description": "每笔交易平均盈利（美元）",
+            "example": "3205025.72"
           }
         },
         "required": [
           "tokenAddress",
-          "amount",
-          "valueInUsd",
-          "name",
           "symbol",
-          "imageUrl",
-          "priceInSol",
+          "name",
+          "decimals",
+          "walletAddress",
+          "balance",
           "priceInUsd",
-          "priceChangeRatioInUsd24h",
-          "unrealizedProfitInUsd",
-          "unrealizedProfitRatio",
-          "openTime",
-          "closeTime",
+          "currentValue",
           "buys",
-          "buyAmount",
-          "buyAmountInUsd",
           "sells",
+          "totalTrades",
+          "buyAmount",
           "sellAmount",
+          "buyAmountInUsd",
           "sellAmountInUsd",
-          "averageBuyPriceInUsd",
-          "averageSellPriceInUsd",
+          "avgBuyPriceInUsd",
+          "avgSellPriceInUsd",
           "realizedProfitInUsd",
           "realizedProfitRatio",
-          "totalRealizedProfitInUsd",
-          "totalRealizedProfitRatio"
+          "unrealizedProfitInUsd",
+          "unrealizedProfitRatio",
+          "totalProfitInUsd",
+          "totalProfitRatio",
+          "avgProfitPerTradeInUsd"
         ]
       },
-      "WalletBalancesDTO": {
+      "PnlDetailsPage": {
         "type": "object",
         "properties": {
-          "totalBalancesInUsd": {
-            "type": "string",
-            "description": "钱包总价值",
-            "example": "1000000"
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
           },
-          "totalProfitInUsd": {
-            "type": "string",
-            "description": "总盈亏（美元）",
-            "example": "1000000"
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
           },
-          "balances": {
-            "description": "钱包余额详情",
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "summary": {
+            "description": "所有代币的盈亏汇总",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PnlDetailSummaryDTO"
+              }
+            ]
+          },
+          "data": {
+            "description": "数据项数组",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WalletBalanceDetailDTO"
+              "$ref": "#/components/schemas/PnlDetailItemDTO"
             }
           }
         },
         "required": [
-          "totalBalancesInUsd",
-          "totalProfitInUsd",
-          "balances"
+          "summary",
+          "data"
+        ]
+      },
+      "WalletFirstTxDTO": {
+        "type": "object",
+        "properties": {
+          "wallets": {
+            "type": "object",
+            "description": "首笔交易签名/哈希",
+            "example": {
+              "3bovD5jCRn7eG64jZqyEz6Zbx92mHixZSTRrWLy1Sirx": {
+                "txHash": "5rG9igZk95gbS8ZG66upvRfbcaaDpokQYg4ny3WQ3DrA...",
+                "blockTime": 1717292678,
+                "blockNumber": 398645949,
+                "balanceChange": "0",
+                "tokenAddress": "11111111111111111111111111111111",
+                "decimals": 9
+              }
+            }
+          }
+        },
+        "required": [
+          "wallets"
         ]
       },
       "CalculatePnlInput": {
@@ -11419,6 +12885,638 @@
         },
         "required": [
           "success"
+        ]
+      },
+      "WalletNetWorthItemDTO": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 6,
+            "format": "int64"
+          },
+          "priceInUsd": {
+            "type": "string",
+            "description": "代币价格（美元）",
+            "example": "0.00014999198221145974"
+          },
+          "priceInNative": {
+            "type": "string",
+            "description": "代币价格（原生代币）",
+            "example": "0.000001855"
+          },
+          "amount": {
+            "type": "string",
+            "description": "代币余额（可读格式）",
+            "example": "69"
+          },
+          "valueInUsd": {
+            "type": "string",
+            "description": "代币持仓价值（美元）",
+            "example": "0.010349446772590722"
+          },
+          "valueInNative": {
+            "type": "string",
+            "description": "代币持仓价值（原生代币）",
+            "example": "0.000127995"
+          },
+          "chain": {
+            "type": "string",
+            "description": "支持网络中列出的区块链名称",
+            "example": "sol"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "Smellow"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号",
+            "example": "SMLO"
+          },
+          "logoUri": {
+            "type": "string",
+            "description": "代币图标链接",
+            "example": "https://pump.mypinata.cloud/ipfs/QmcCjKS4MMeji11PqnNhqDSXd6gD4iGj1nC6zjyfaekuQZ"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "decimals",
+          "priceInUsd",
+          "priceInNative",
+          "amount",
+          "valueInUsd",
+          "valueInNative",
+          "chain",
+          "name",
+          "symbol"
+        ]
+      },
+      "WalletNetWorthPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1"
+          },
+          "totalValueInUsd": {
+            "type": "string",
+            "description": "钱包总价值（美元）",
+            "example": "3.369918"
+          },
+          "totalValueInNative": {
+            "type": "string",
+            "description": "钱包总价值（原生代币）",
+            "example": "0.040382"
+          },
+          "currentTimestamp": {
+            "type": "string",
+            "description": "当前服务器时间戳（ISO 8601）",
+            "example": "2025-05-19T04:47:19.414Z"
+          },
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "totalValueInUsd",
+          "totalValueInNative",
+          "currentTimestamp",
+          "data"
+        ]
+      },
+      "TokensBalancePage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "WalletNetWorthHistoryItemDTO": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "description": "快照时间戳（ISO 8601）",
+            "example": "2025-07-30T23:59:59.000Z"
+          },
+          "netWorth": {
+            "type": "string",
+            "description": "该时间点的净值（美元）",
+            "example": "13210463.21"
+          },
+          "netWorthChange": {
+            "type": "string",
+            "description": "与上一快照的净值变化（美元）",
+            "example": "1971274.94"
+          },
+          "netWorthChangePercent": {
+            "type": "string",
+            "description": "与上一快照的净值变化百分比",
+            "example": "17.54"
+          }
+        },
+        "required": [
+          "timestamp",
+          "netWorth",
+          "netWorthChange",
+          "netWorthChangePercent"
+        ]
+      },
+      "WalletNetWorthChartDTO": {
+        "type": "object",
+        "properties": {
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K"
+          },
+          "currentTimestamp": {
+            "type": "string",
+            "description": "图表期间结束时间戳（ISO 8601）",
+            "example": "2025-07-31T23:59:59.000Z"
+          },
+          "pastTimestamp": {
+            "type": "string",
+            "description": "图表期间开始时间戳（ISO 8601）",
+            "example": "2025-07-01T23:59:59.000Z"
+          },
+          "history": {
+            "description": "历史净值数据点",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthHistoryItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "currentTimestamp",
+          "pastTimestamp",
+          "history"
+        ]
+      },
+      "WalletNetWorthDetailsPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K"
+          },
+          "netWorth": {
+            "type": "string",
+            "description": "钱包总净值（美元）",
+            "example": "11839478.53162622"
+          },
+          "requestedTimestamp": {
+            "type": "string",
+            "description": "请求时间戳（ISO 8601）",
+            "example": "2025-07-31T04:50:06.303Z"
+          },
+          "resolvedTimestamp": {
+            "type": "string",
+            "description": "实际数据快照时间戳（ISO 8601）",
+            "example": "2025-07-31T04:50:06.475Z"
+          },
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "netWorth",
+          "requestedTimestamp",
+          "resolvedTimestamp",
+          "data"
+        ]
+      },
+      "PnlResolution": {
+        "type": "string",
+        "enum": [
+          "1d",
+          "7d",
+          "30d",
+          "all"
+        ]
+      },
+      "WalletPnlSummaryDTO": {
+        "type": "object",
+        "properties": {
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "盈亏时间周期",
+            "enum": [
+              "1d",
+              "7d",
+              "30d",
+              "all"
+            ],
+            "example": "1d"
+          },
+          "tokens": {
+            "type": "string",
+            "description": "交易的不同代币数量",
+            "example": "15126"
+          },
+          "buys": {
+            "type": "string",
+            "description": "买入交易总次数",
+            "example": "1515999"
+          },
+          "sells": {
+            "type": "string",
+            "description": "卖出交易总次数",
+            "example": "1011994"
+          },
+          "totalTrades": {
+            "type": "string",
+            "description": "交易总次数（买入+卖出）",
+            "example": "2527993"
+          },
+          "wins": {
+            "type": "string",
+            "description": "盈利仓位数量",
+            "example": "438944"
+          },
+          "losses": {
+            "type": "string",
+            "description": "亏损仓位数量",
+            "example": "348350"
+          },
+          "winRate": {
+            "type": "string",
+            "description": "胜率（盈利数/总平仓数）",
+            "example": "0.5575"
+          },
+          "buyAmountInUsd": {
+            "type": "string",
+            "description": "买入总金额（美元）",
+            "example": "101371192.39"
+          },
+          "sellAmountInUsd": {
+            "type": "string",
+            "description": "卖出总金额（美元）",
+            "example": "60369621.10"
+          },
+          "totalCostInUsd": {
+            "type": "string",
+            "description": "总成本（美元）",
+            "example": "225944253.64"
+          },
+          "realizedProfitInUsd": {
+            "type": "string",
+            "description": "已实现盈利（美元）",
+            "example": "802583.91"
+          },
+          "realizedProfitRatio": {
+            "type": "string",
+            "description": "已实现盈利比率",
+            "example": "0.0035521324"
+          },
+          "unrealizedProfitInUsd": {
+            "type": "string",
+            "description": "未实现盈利（美元）",
+            "example": "1017625099.17"
+          },
+          "unrealizedProfitRatio": {
+            "type": "string",
+            "description": "未实现盈利比率",
+            "example": "4.5038768756"
+          },
+          "totalProfitInUsd": {
+            "type": "string",
+            "description": "总盈利（美元，已实现+未实现）",
+            "example": "1018427683.08"
+          },
+          "totalProfitRatio": {
+            "type": "string",
+            "description": "总盈利比率",
+            "example": "4.5074290081"
+          },
+          "avgProfitPerTradeInUsd": {
+            "type": "string",
+            "description": "每笔交易平均盈利（美元）",
+            "example": "402.86"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "最后数据更新时间戳",
+            "example": "2026-02-04T11:42:50.000Z"
+          }
+        },
+        "required": [
+          "walletAddress",
+          "resolution",
+          "tokens",
+          "buys",
+          "sells",
+          "totalTrades",
+          "wins",
+          "losses",
+          "winRate",
+          "buyAmountInUsd",
+          "sellAmountInUsd",
+          "totalCostInUsd",
+          "realizedProfitInUsd",
+          "realizedProfitRatio",
+          "unrealizedProfitInUsd",
+          "unrealizedProfitRatio",
+          "totalProfitInUsd",
+          "totalProfitRatio",
+          "avgProfitPerTradeInUsd"
+        ]
+      },
+      "TransactionHistoryItemDTO": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "type": "string",
+            "description": "交易签名/哈希",
+            "example": "4tEHfECrLJm8N7dNCfQSjhLG7LqdMuZhzBhRy7VRhjCt..."
+          },
+          "blockNumber": {
+            "type": "integer",
+            "description": "区块高度",
+            "example": 376227481,
+            "format": "int64"
+          },
+          "blockTime": {
+            "type": "integer",
+            "description": "区块时间戳（Unix 纪元秒）",
+            "example": 1738713335,
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "description": "交易状态",
+            "enum": [
+              "UNKNOWN",
+              "SUCCEEDED",
+              "FAILED"
+            ],
+            "example": "SUCCEEDED"
+          },
+          "from": {
+            "type": "string",
+            "description": "发送方钱包地址",
+            "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP"
+          },
+          "to": {
+            "type": "string",
+            "description": "程序/合约地址",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          },
+          "fee": {
+            "type": "string",
+            "description": "交易手续费（单位：lamports）",
+            "example": "15100"
+          },
+          "mainAction": {
+            "type": "string",
+            "description": "主要操作类型（发送或接收）",
+            "enum": [
+              "send",
+              "receive"
+            ],
+            "example": "send"
+          },
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "So11111111111111111111111111111111111111112"
+          },
+          "tokenAmount": {
+            "type": "string",
+            "description": "代币转账数量",
+            "example": "0.036416"
+          },
+          "tokenAmountInUsd": {
+            "type": "string",
+            "description": "代币转账美元价值",
+            "example": "3.349067"
+          },
+          "tokenPriceInUsd": {
+            "type": "string",
+            "description": "转账时代币价格（美元）",
+            "example": "91.9669269600"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "代币符号",
+            "example": "SOL"
+          },
+          "name": {
+            "type": "string",
+            "description": "代币名称",
+            "example": "Wrapped SOL"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 9,
+            "format": "int64"
+          },
+          "logoUri": {
+            "type": "string",
+            "description": "代币图标链接",
+            "example": "https://..."
+          },
+          "fromTokenAccount": {
+            "type": "string",
+            "description": "发送方代币账户地址",
+            "example": "94Vaes4rvAWkAav1uDS27Y88rC7ZRAyFfc6RCX913CLj"
+          },
+          "toTokenAccount": {
+            "type": "string",
+            "description": "接收方代币账户地址",
+            "example": "FnHnRAigUUm4aU3F8jPksG8rua8yZNBw3TNQddaTmESR"
+          },
+          "fromUserAccount": {
+            "type": "string",
+            "description": "发送方钱包地址",
+            "example": "FrxXcJ1uUHa9A5jxgNFBxT4bHBnFVQZbxJa2Je3gjotP"
+          },
+          "toUserAccount": {
+            "type": "string",
+            "description": "接收方钱包地址",
+            "example": "HLnpSz9h2S4hiLQ43rnSD9XkcUThA7B8hQMKmDaiTLcC"
+          },
+          "outerDappProgram": {
+            "type": "string",
+            "description": "外部 DApp 程序地址",
+            "example": "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
+          },
+          "dappProgram": {
+            "type": "string",
+            "description": "DApp 程序地址",
+            "example": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          }
+        },
+        "required": [
+          "txHash",
+          "blockNumber",
+          "blockTime",
+          "status",
+          "from",
+          "to",
+          "fee",
+          "mainAction",
+          "tokenAddress",
+          "tokenAmount",
+          "tokenAmountInUsd",
+          "tokenPriceInUsd",
+          "symbol",
+          "name",
+          "decimals",
+          "fromTokenAccount",
+          "toTokenAccount",
+          "fromUserAccount",
+          "toUserAccount",
+          "outerDappProgram",
+          "dappProgram"
+        ]
+      },
+      "TransactionHistoryPage": {
+        "type": "object",
+        "properties": {
+          "hasNext": {
+            "type": "boolean",
+            "description": "指示是否有更多结果",
+            "default": false
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "指示是否有上一页结果",
+            "default": false
+          },
+          "startCursor": {
+            "type": "string",
+            "description": "当前页第一项的游标"
+          },
+          "endCursor": {
+            "type": "string",
+            "description": "当前页最后一项的游标"
+          },
+          "total": {
+            "type": "integer",
+            "description": "总项目数",
+            "default": 0,
+            "format": "int64"
+          },
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionHistoryItemDTO"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "BalanceTokenType": {

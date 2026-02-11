@@ -1754,14 +1754,16 @@
                       "address": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
                       "chain": "solana",
                       "symbol": "TRUMP",
-                      "updatedAt": "2025-05-09T22:23:42.095771831Z",
                       "tokenCreators": "[{\"address\":\"5e2qRc1DNEXmyxP8qwPwJhRWjef7usLyi7v5xjqLr5G7\",\"share\":100,\"isVerified\":true}]",
                       "uri": "https://arweave.net/cSCP0h2n1crjeSWE9KF-XtLciJalDNFs7Vf-Sm0NNY0",
-                      "id": "solana_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
                       "decimals": "6",
                       "name": "OFFICIAL TRUMP",
                       "imageUrl": "https://arweave.net/VQrPjACwnQRmxdKBTqNwPiyo65x7LAT773t8Kd7YBzw",
                       "tokenCreatedAt": 1737165660000,
+                      "tokenCreatedSlot": "230000000",
+                      "tokenCreatedBlockHeight": "220000000",
+                      "tokenCreatedTxSignature": "5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz...",
+                      "coingeckoCoinId": "official-trump",
                       "extra": "{\"collectionAddress\":\"\",\"editionNonce\":255,\"fungible\":true,\"isMutable\":false,\"key\":\"MetadataV1\",\"isNative\":false,\"primarySaleHappened\":false,\"programAddress\":\"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA\",\"sellerFeeBasisPoints\":0,\"tokenStandard\":\"Fungible\",\"updateAuthority\":\"5e2qRc1DNEXmyxP8qwPwJhRWjef7usLyi7v5xjqLr5G7\",\"isVerifiedCollection\":false,\"isWrapped\":false}"
                     },
                     "So11111111111111111111111111111111111111112": {
@@ -6800,6 +6802,46 @@
               "example": 1770163200,
               "type": "integer"
             }
+          },
+          {
+            "name": "minTokenAmount",
+            "required": false,
+            "in": "query",
+            "description": "最小代币数量筛选（包含）",
+            "schema": {
+              "example": "0.01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxTokenAmount",
+            "required": false,
+            "in": "query",
+            "description": "最大代币数量筛选（包含）",
+            "schema": {
+              "example": "1000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "minTokenAmountInUsd",
+            "required": false,
+            "in": "query",
+            "description": "最小代币美元金额筛选（包含）",
+            "schema": {
+              "example": "1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxTokenAmountInUsd",
+            "required": false,
+            "in": "query",
+            "description": "最大代币美元金额筛选（包含）",
+            "schema": {
+              "example": "10000",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6915,6 +6957,46 @@
               "format": "int64",
               "example": 1770163200,
               "type": "integer"
+            }
+          },
+          {
+            "name": "minTokenAmount",
+            "required": false,
+            "in": "query",
+            "description": "最小代币数量筛选（包含）",
+            "schema": {
+              "example": "0.01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxTokenAmount",
+            "required": false,
+            "in": "query",
+            "description": "最大代币数量筛选（包含）",
+            "schema": {
+              "example": "1000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "minTokenAmountInUsd",
+            "required": false,
+            "in": "query",
+            "description": "最小代币美元金额筛选（包含）",
+            "schema": {
+              "example": "1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxTokenAmountInUsd",
+            "required": false,
+            "in": "query",
+            "description": "最大代币美元金额筛选（包含）",
+            "schema": {
+              "example": "10000",
+              "type": "string"
             }
           }
         ],
@@ -9467,9 +9549,17 @@
             "type": "string",
             "description": "美元价格"
           },
+          "tokenPriceInNative": {
+            "type": "string",
+            "description": "代币原生代币价格（如 SOL/ETH/BNB）"
+          },
           "tokenAmountInUsd": {
             "type": "string",
             "description": "代币美元价值"
+          },
+          "tokenAmountInNative": {
+            "type": "string",
+            "description": "代币原生代币计价金额"
           },
           "type": {
             "type": "string",
@@ -9495,6 +9585,10 @@
             "type": "string",
             "description": "美元价格"
           },
+          "sideTokenPriceInNative": {
+            "type": "string",
+            "description": "对手方代币原生代币价格"
+          },
           "sideTokenAmount": {
             "type": "string",
             "description": "对手方代币数量"
@@ -9502,6 +9596,10 @@
           "sideTokenAmountInUsd": {
             "type": "string",
             "description": "对手方代币美元价值"
+          },
+          "sideTokenAmountInNative": {
+            "type": "string",
+            "description": "对手方代币原生代币计价金额"
           },
           "status": {
             "type": "string",
@@ -9524,15 +9622,19 @@
           "dexImage",
           "tokenAmount",
           "tokenPriceInUsd",
+          "tokenPriceInNative",
           "tokenAmountInUsd",
+          "tokenAmountInNative",
           "type",
           "sideTokenName",
           "sideTokenSymbol",
           "sideTokenImageUrl",
           "sideTokenAddress",
           "sideTokenPriceInUsd",
+          "sideTokenPriceInNative",
           "sideTokenAmount",
           "sideTokenAmountInUsd",
+          "sideTokenAmountInNative",
           "status"
         ]
       },
@@ -10884,10 +10986,30 @@
             "example": 1710417600000,
             "format": "int64"
           },
+          "tokenCreatedSlot": {
+            "type": "string",
+            "description": "代币创建时的区块槽位号",
+            "example": "230000000"
+          },
+          "tokenCreatedBlockHeight": {
+            "type": "string",
+            "description": "代币创建时的区块高度",
+            "example": "220000000"
+          },
+          "tokenCreatedTxSignature": {
+            "type": "string",
+            "description": "代币创建的交易签名/哈希",
+            "example": "5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz..."
+          },
           "description": {
             "type": "string",
             "description": "代币描述",
             "example": "USDC is a stablecoin pegged to the US dollar"
+          },
+          "coingeckoCoinId": {
+            "type": "string",
+            "description": "CoinGecko 代币标识符",
+            "example": "usd-coin"
           },
           "devTotalTokens": {
             "type": "string",
@@ -11133,10 +11255,30 @@
             "example": 1710417600000,
             "format": "int64"
           },
+          "tokenCreatedSlot": {
+            "type": "string",
+            "description": "代币创建时的区块槽位号",
+            "example": "230000000"
+          },
+          "tokenCreatedBlockHeight": {
+            "type": "string",
+            "description": "代币创建时的区块高度",
+            "example": "220000000"
+          },
+          "tokenCreatedTxSignature": {
+            "type": "string",
+            "description": "代币创建的交易签名/哈希",
+            "example": "5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz..."
+          },
           "description": {
             "type": "string",
             "description": "代币描述",
             "example": "USDC is a stablecoin pegged to the US dollar"
+          },
+          "coingeckoCoinId": {
+            "type": "string",
+            "description": "CoinGecko 代币标识符",
+            "example": "usd-coin"
           },
           "devTotalTokens": {
             "type": "string",

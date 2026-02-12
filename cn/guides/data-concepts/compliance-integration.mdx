@@ -14,7 +14,7 @@ icon: "shield-check"
 
 | 配置项 | 值 |
 |:--|:--|
-| Base URL | `https://api-dex.chainstream.io/` |
+| Base URL | `https://api.chainstream.io/` |
 | Auth Domain | `dex.asia.auth.chainstream.io` |
 | Audience | `https://api.dex.chainstream.io` |
 
@@ -69,7 +69,7 @@ access_token = token['access_token']
 所有请求需在 Header 中携带 Token：
 
 ```javascript
-const response = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+const response = await fetch('https://api.chainstream.io/v1/kyt/transfer', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${accessToken}`,
@@ -150,7 +150,7 @@ flowchart TD
     调用 KYT API 注册交易：
     ```javascript
     async function registerTransfer(deposit) {
-      const response = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+      const response = await fetch('https://api.chainstream.io/v1/kyt/transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -174,7 +174,7 @@ flowchart TD
     ```javascript
     async function getTransferSummary(transferId) {
       const response = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+        `https://api.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -244,7 +244,7 @@ flowchart TD
 ### 2. 注册阶段
 
 ```bash
-POST https://api-dex.chainstream.io/v1/kyt/transfer
+POST https://api.chainstream.io/v1/kyt/transfer
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -277,7 +277,7 @@ Content-Type: application/json
     async function pollForResult(transferId, maxAttempts = 10) {
       for (let i = 0; i < maxAttempts; i++) {
         const response = await fetch(
-          `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+          `https://api.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
           {
             headers: { 'Authorization': `Bearer ${accessToken}` }
           }
@@ -300,13 +300,13 @@ Content-Type: application/json
     ```javascript
     // 获取直接风险敞口
     const exposures = await fetch(
-      `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/exposures/direct`,
+      `https://api.chainstream.io/v1/kyt/transfers/${transferId}/exposures/direct`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
     // 获取风险告警
     const alerts = await fetch(
-      `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/alerts`,
+      `https://api.chainstream.io/v1/kyt/transfers/${transferId}/alerts`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
     ```
@@ -394,7 +394,7 @@ class ComplianceService {
     const token = await this.getAccessToken();
     
     // 1. 注册交易
-    const registerResponse = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+    const registerResponse = await fetch('https://api.chainstream.io/v1/kyt/transfer', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -424,7 +424,7 @@ class ComplianceService {
   async waitForAnalysis(token, transferId, maxAttempts = 10) {
     for (let i = 0; i < maxAttempts; i++) {
       const response = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+        `https://api.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const result = await response.json();
@@ -491,7 +491,7 @@ class ComplianceService:
     def __init__(self):
         self.access_token = None
         self.token_expiry = 0
-        self.base_url = 'https://api-dex.chainstream.io'
+        self.base_url = 'https://api.chainstream.io'
     
     def get_access_token(self):
         if self.access_token and self.token_expiry > time.time():
@@ -592,7 +592,7 @@ async function handleWithdrawal(request) {
   const token = await complianceService.getAccessToken();
   
   // 1. 注册地址
-  const registerResponse = await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+  const registerResponse = await fetch('https://api.chainstream.io/v1/kyt/address', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -604,7 +604,7 @@ async function handleWithdrawal(request) {
   
   // 2. 获取地址风险
   const riskResponse = await fetch(
-    `https://api-dex.chainstream.io/v1/kyt/addresses/${toAddress}/risk`,
+    `https://api.chainstream.io/v1/kyt/addresses/${toAddress}/risk`,
     { headers: { 'Authorization': `Bearer ${token}` } }
   );
   const addressRisk = await riskResponse.json();
@@ -703,7 +703,7 @@ flowchart TD
       const token = await complianceService.getAccessToken();
       
       // 注册地址
-      await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+      await fetch('https://api.chainstream.io/v1/kyt/address', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -714,7 +714,7 @@ flowchart TD
       
       // 获取风险
       const riskResponse = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/addresses/${address}/risk`,
+        `https://api.chainstream.io/v1/kyt/addresses/${address}/risk`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const result = await riskResponse.json();
@@ -764,7 +764,7 @@ async function batchScreenAddresses(addresses) {
   for (const address of addresses) {
     try {
       // 注册地址
-      await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+      await fetch('https://api.chainstream.io/v1/kyt/address', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -775,7 +775,7 @@ async function batchScreenAddresses(addresses) {
       
       // 获取风险
       const riskResponse = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/addresses/${address}/risk`,
+        `https://api.chainstream.io/v1/kyt/addresses/${address}/risk`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const risk = await riskResponse.json();

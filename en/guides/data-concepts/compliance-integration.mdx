@@ -14,7 +14,7 @@ This guide covers how to integrate ChainStream KYT/KYA compliance capabilities i
 
 | Config | Value |
 |:--|:--|
-| Base URL | `https://api-dex.chainstream.io/` |
+| Base URL | `https://api.chainstream.io/` |
 | Auth Domain | `dex.asia.auth.chainstream.io` |
 | Audience | `https://api.dex.chainstream.io` |
 
@@ -69,7 +69,7 @@ access_token = token['access_token']
 All requests must include the Token in the Header:
 
 ```javascript
-const response = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+const response = await fetch('https://api.chainstream.io/v1/kyt/transfer', {
   method: 'POST',
   headers: {
     'Authorization': `Bearer ${accessToken}`,
@@ -150,7 +150,7 @@ flowchart TD
     Call KYT API to register transaction:
     ```javascript
     async function registerTransfer(deposit) {
-      const response = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+      const response = await fetch('https://api.chainstream.io/v1/kyt/transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -174,7 +174,7 @@ flowchart TD
     ```javascript
     async function getTransferSummary(transferId) {
       const response = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+        `https://api.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -244,7 +244,7 @@ The end-to-end compliance integration flow covers: Detect → Register → Poll 
 ### 2. Registration Phase
 
 ```bash
-POST https://api-dex.chainstream.io/v1/kyt/transfer
+POST https://api.chainstream.io/v1/kyt/transfer
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -277,7 +277,7 @@ Content-Type: application/json
     async function pollForResult(transferId, maxAttempts = 10) {
       for (let i = 0; i < maxAttempts; i++) {
         const response = await fetch(
-          `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+          `https://api.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
           {
             headers: { 'Authorization': `Bearer ${accessToken}` }
           }
@@ -300,13 +300,13 @@ Content-Type: application/json
     ```javascript
     // Get direct risk exposures
     const exposures = await fetch(
-      `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/exposures/direct`,
+      `https://api.chainstream.io/v1/kyt/transfers/${transferId}/exposures/direct`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
     // Get risk alerts
     const alerts = await fetch(
-      `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/alerts`,
+      `https://api.chainstream.io/v1/kyt/transfers/${transferId}/alerts`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
     ```
@@ -394,7 +394,7 @@ class ComplianceService {
     const token = await this.getAccessToken();
     
     // 1. Register transaction
-    const registerResponse = await fetch('https://api-dex.chainstream.io/v1/kyt/transfer', {
+    const registerResponse = await fetch('https://api.chainstream.io/v1/kyt/transfer', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -424,7 +424,7 @@ class ComplianceService {
   async waitForAnalysis(token, transferId, maxAttempts = 10) {
     for (let i = 0; i < maxAttempts; i++) {
       const response = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
+        `https://api.chainstream.io/v1/kyt/transfers/${transferId}/summary`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const result = await response.json();
@@ -491,7 +491,7 @@ class ComplianceService:
     def __init__(self):
         self.access_token = None
         self.token_expiry = 0
-        self.base_url = 'https://api-dex.chainstream.io'
+        self.base_url = 'https://api.chainstream.io'
     
     def get_access_token(self):
         if self.access_token and self.token_expiry > time.time():
@@ -592,7 +592,7 @@ async function handleWithdrawal(request) {
   const token = await complianceService.getAccessToken();
   
   // 1. Register address
-  const registerResponse = await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+  const registerResponse = await fetch('https://api.chainstream.io/v1/kyt/address', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -604,7 +604,7 @@ async function handleWithdrawal(request) {
   
   // 2. Get address risk
   const riskResponse = await fetch(
-    `https://api-dex.chainstream.io/v1/kyt/addresses/${toAddress}/risk`,
+    `https://api.chainstream.io/v1/kyt/addresses/${toAddress}/risk`,
     { headers: { 'Authorization': `Bearer ${token}` } }
   );
   const addressRisk = await riskResponse.json();
@@ -703,7 +703,7 @@ Frontend should never expose clientSecret directly. Use backend API proxy to cal
       const token = await complianceService.getAccessToken();
       
       // Register address
-      await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+      await fetch('https://api.chainstream.io/v1/kyt/address', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -714,7 +714,7 @@ Frontend should never expose clientSecret directly. Use backend API proxy to cal
       
       // Get risk
       const riskResponse = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/addresses/${address}/risk`,
+        `https://api.chainstream.io/v1/kyt/addresses/${address}/risk`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const result = await riskResponse.json();
@@ -764,7 +764,7 @@ async function batchScreenAddresses(addresses) {
   for (const address of addresses) {
     try {
       // Register address
-      await fetch('https://api-dex.chainstream.io/v1/kyt/address', {
+      await fetch('https://api.chainstream.io/v1/kyt/address', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -775,7 +775,7 @@ async function batchScreenAddresses(addresses) {
       
       // Get risk
       const riskResponse = await fetch(
-        `https://api-dex.chainstream.io/v1/kyt/addresses/${address}/risk`,
+        `https://api.chainstream.io/v1/kyt/addresses/${address}/risk`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       const risk = await riskResponse.json();

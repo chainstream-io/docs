@@ -5920,7 +5920,7 @@
             "in": "query",
             "description": "A list of wallet addresses in string separated by commas (,)",
             "schema": {
-              "example": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1,WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+              "example": "6tcUPGWqcJA1GaoqtbbumN2dLMeoneAUsUgNX1vHuJik,An68XCxJvfXc9NRWjNXGSFY55dyFVKjfgtpt8AKGJ2dE",
               "type": "string"
             }
           }
@@ -6227,6 +6227,64 @@
           }
         ],
         "summary": "Wallet - Net Worth",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth/tokens": {
+      "get": {
+        "description": "Get current net worth of a wallet for specific tokens by their addresses",
+        "operationId": "get.net.worth.by.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "An address of a wallet",
+            "schema": {
+              "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated list of token addresses to query net worth for",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v,So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthByTokensResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wallet - Net Worth By Tokens",
         "tags": [
           "Wallet"
         ]
@@ -10497,190 +10555,6 @@
           "periods"
         ]
       },
-      "DexPoolTokenLiquidity": {
-        "type": "object",
-        "properties": {
-          "tokenAddress": {
-            "type": "string",
-            "description": "Token contract address",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "decimals": {
-            "type": "integer",
-            "description": "Token decimals",
-            "example": 6,
-            "format": "int64"
-          },
-          "vaultAmount": {
-            "type": "string",
-            "description": "Raw vault amount (without decimals)",
-            "example": "1000000000000"
-          },
-          "amountInUsd": {
-            "type": "string",
-            "description": "Liquidity value in USD",
-            "example": "1000000.45"
-          },
-          "amountInNative": {
-            "type": "string",
-            "description": "Liquidity value in native token (e.g., SOL)",
-            "example": "5000.123"
-          },
-          "priceUsd": {
-            "type": "string",
-            "description": "Token price in USD",
-            "example": "1.0001"
-          },
-          "priceNative": {
-            "type": "string",
-            "description": "Token price in native token",
-            "example": "0.005"
-          }
-        },
-        "required": [
-          "tokenAddress",
-          "decimals",
-          "vaultAmount",
-          "amountInUsd",
-          "amountInNative",
-          "priceUsd",
-          "priceNative"
-        ]
-      },
-      "DexPoolDTO": {
-        "type": "object",
-        "properties": {
-          "programAddress": {
-            "type": "string",
-            "description": "DEX program address",
-            "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
-          },
-          "protocolFamily": {
-            "type": "string",
-            "description": "DEX protocol family",
-            "example": "OrcaWhirpool"
-          },
-          "image": {
-            "type": "string",
-            "description": "DEX logo image URL",
-            "example": "https://ipfs.io/ipfs/bafkreid7667676767676767676767676767676767676767676767676767676767676767"
-          },
-          "chain": {
-            "type": "string",
-            "description": "Blockchain",
-            "example": "sol"
-          },
-          "poolAddress": {
-            "type": "string",
-            "description": "Pool address",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "protocolName": {
-            "type": "string",
-            "description": "DEX protocol name",
-            "example": "OrcaWhirpool AMM V2"
-          },
-          "tokenAAddress": {
-            "type": "string",
-            "description": "First token in the pool",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "tokenBAddress": {
-            "type": "string",
-            "description": "Second token in the pool",
-            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-          },
-          "tvlInUsd": {
-            "type": "string",
-            "description": "Total value locked in USD",
-            "example": "1000000.45"
-          },
-          "tvlInSol": {
-            "type": "string",
-            "description": "TVL in SOL",
-            "example": "1000000.45"
-          },
-          "type": {
-            "type": "number",
-            "description": "Pool type (0=unknown, 1=standard, 2=concentrated, 3=weighted, 4=stable)",
-            "example": 1,
-            "enum": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
-          },
-          "version": {
-            "type": "number",
-            "description": "Pool version (0=unknown, 1=V1, 2=V2, 3=V3/CLMM)",
-            "example": 2,
-            "enum": [
-              0,
-              1,
-              2,
-              3
-            ]
-          },
-          "liquidityModel": {
-            "type": "number",
-            "description": "Liquidity model (0=unknown, 1=reserve_based, 2=position_based, 3=virtual, 4=shared)",
-            "example": 1,
-            "enum": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
-          },
-          "feeRate": {
-            "type": "string",
-            "description": "Pool fee rate (e.g., 0.003 for 0.3%)",
-            "example": "0.003"
-          },
-          "tickSpacing": {
-            "type": "integer",
-            "description": "Tick spacing for concentrated liquidity pools",
-            "example": 64,
-            "format": "int64"
-          },
-          "tokenCount": {
-            "type": "integer",
-            "description": "Number of tokens in pool",
-            "example": 2,
-            "format": "int64"
-          },
-          "createdBlockTimestamp": {
-            "type": "string",
-            "description": "Block timestamp when pool was created",
-            "example": "2024-01-15T10:30:00Z"
-          },
-          "tokenALiquidity": {
-            "description": "First token liquidity details",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
-              }
-            ]
-          },
-          "tokenBLiquidity": {
-            "description": "Second token liquidity details",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
-              }
-            ]
-          }
-        },
-        "required": [
-          "chain",
-          "poolAddress",
-          "tokenAAddress",
-          "tokenBAddress"
-        ]
-      },
       "TokenMarketData": {
         "type": "object",
         "properties": {
@@ -11043,13 +10917,6 @@
               }
             ]
           },
-          "liquidity": {
-            "description": "Liquidity",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DexPoolDTO"
-            }
-          },
           "marketData": {
             "description": "Market cap",
             "allOf": [
@@ -11298,6 +11165,190 @@
           "name",
           "symbol",
           "address"
+        ]
+      },
+      "DexPoolTokenLiquidity": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "Token contract address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "Token decimals",
+            "example": 6,
+            "format": "int64"
+          },
+          "vaultAmount": {
+            "type": "string",
+            "description": "Raw vault amount (without decimals)",
+            "example": "1000000000000"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "description": "Liquidity value in USD",
+            "example": "1000000.45"
+          },
+          "amountInNative": {
+            "type": "string",
+            "description": "Liquidity value in native token (e.g., SOL)",
+            "example": "5000.123"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "Token price in USD",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "Token price in native token",
+            "example": "0.005"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "decimals",
+          "vaultAmount",
+          "amountInUsd",
+          "amountInNative",
+          "priceUsd",
+          "priceNative"
+        ]
+      },
+      "DexPoolDTO": {
+        "type": "object",
+        "properties": {
+          "programAddress": {
+            "type": "string",
+            "description": "DEX program address",
+            "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
+          },
+          "protocolFamily": {
+            "type": "string",
+            "description": "DEX protocol family",
+            "example": "OrcaWhirpool"
+          },
+          "image": {
+            "type": "string",
+            "description": "DEX logo image URL",
+            "example": "https://ipfs.io/ipfs/bafkreid7667676767676767676767676767676767676767676767676767676767676767"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Blockchain",
+            "example": "sol"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "Pool address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "protocolName": {
+            "type": "string",
+            "description": "DEX protocol name",
+            "example": "OrcaWhirpool AMM V2"
+          },
+          "tokenAAddress": {
+            "type": "string",
+            "description": "First token in the pool",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenBAddress": {
+            "type": "string",
+            "description": "Second token in the pool",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "tvlInUsd": {
+            "type": "string",
+            "description": "Total value locked in USD",
+            "example": "1000000.45"
+          },
+          "tvlInSol": {
+            "type": "string",
+            "description": "TVL in SOL",
+            "example": "1000000.45"
+          },
+          "type": {
+            "type": "number",
+            "description": "Pool type (0=unknown, 1=standard, 2=concentrated, 3=weighted, 4=stable)",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "version": {
+            "type": "number",
+            "description": "Pool version (0=unknown, 1=V1, 2=V2, 3=V3/CLMM)",
+            "example": 2,
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "liquidityModel": {
+            "type": "number",
+            "description": "Liquidity model (0=unknown, 1=reserve_based, 2=position_based, 3=virtual, 4=shared)",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "feeRate": {
+            "type": "string",
+            "description": "Pool fee rate (e.g., 0.003 for 0.3%)",
+            "example": "0.003"
+          },
+          "tickSpacing": {
+            "type": "integer",
+            "description": "Tick spacing for concentrated liquidity pools",
+            "example": 64,
+            "format": "int64"
+          },
+          "tokenCount": {
+            "type": "integer",
+            "description": "Number of tokens in pool",
+            "example": 2,
+            "format": "int64"
+          },
+          "createdBlockTimestamp": {
+            "type": "string",
+            "description": "Block timestamp when pool was created",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "tokenALiquidity": {
+            "description": "First token liquidity details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
+          },
+          "tokenBLiquidity": {
+            "description": "Second token liquidity details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "chain",
+          "poolAddress",
+          "tokenAAddress",
+          "tokenBAddress"
         ]
       },
       "DexPoolPage": {
@@ -12809,6 +12860,45 @@
             "default": 0,
             "format": "int64"
           },
+          "walletAddress": {
+            "type": "string",
+            "description": "Wallet address",
+            "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1"
+          },
+          "totalValueInUsd": {
+            "type": "string",
+            "description": "Total wallet value in USD",
+            "example": "3.369918"
+          },
+          "totalValueInNative": {
+            "type": "string",
+            "description": "Total wallet value in native token",
+            "example": "0.040382"
+          },
+          "currentTimestamp": {
+            "type": "string",
+            "description": "Current server timestamp (ISO 8601)",
+            "example": "2025-05-19T04:47:19.414Z"
+          },
+          "data": {
+            "description": "Array of data items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "totalValueInUsd",
+          "totalValueInNative",
+          "currentTimestamp",
+          "data"
+        ]
+      },
+      "WalletNetWorthByTokensResult": {
+        "type": "object",
+        "properties": {
           "walletAddress": {
             "type": "string",
             "description": "Wallet address",

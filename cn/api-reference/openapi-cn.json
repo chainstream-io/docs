@@ -5920,7 +5920,7 @@
             "in": "query",
             "description": "以逗号分隔的钱包字符串地址列表",
             "schema": {
-              "example": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1,WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+              "example": "6tcUPGWqcJA1GaoqtbbumN2dLMeoneAUsUgNX1vHuJik,An68XCxJvfXc9NRWjNXGSFY55dyFVKjfgtpt8AKGJ2dE",
               "type": "string"
             }
           }
@@ -6227,6 +6227,64 @@
           }
         ],
         "summary": "钱包 - 净值",
+        "tags": [
+          "Wallet"
+        ]
+      }
+    },
+    "/v1/wallet/{chain}/{walletAddress}/net-worth/tokens": {
+      "get": {
+        "description": "根据代币地址获取钱包中指定代币的当前净值",
+        "operationId": "get.net.worth.by.tokens",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "支持网络中列出的区块链名称",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "walletAddress",
+            "required": true,
+            "in": "path",
+            "description": "钱包地址",
+            "schema": {
+              "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tokenAddresses",
+            "required": true,
+            "in": "query",
+            "description": "逗号分隔的代币地址列表，用于查询净值",
+            "schema": {
+              "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v,So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletNetWorthByTokensResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "钱包 - 按代币查询净值",
         "tags": [
           "Wallet"
         ]
@@ -10497,190 +10555,6 @@
           "periods"
         ]
       },
-      "DexPoolTokenLiquidity": {
-        "type": "object",
-        "properties": {
-          "tokenAddress": {
-            "type": "string",
-            "description": "代币合约地址",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "decimals": {
-            "type": "integer",
-            "description": "代币小数位数",
-            "example": 6,
-            "format": "int64"
-          },
-          "vaultAmount": {
-            "type": "string",
-            "description": "原始金库数量（无小数）",
-            "example": "1000000000000"
-          },
-          "amountInUsd": {
-            "type": "string",
-            "description": "流动性价值（美元）",
-            "example": "1000000.45"
-          },
-          "amountInNative": {
-            "type": "string",
-            "description": "流动性价值（原生代币，如 SOL）",
-            "example": "5000.123"
-          },
-          "priceUsd": {
-            "type": "string",
-            "description": "代币美元价格",
-            "example": "1.0001"
-          },
-          "priceNative": {
-            "type": "string",
-            "description": "代币原生代币价格",
-            "example": "0.005"
-          }
-        },
-        "required": [
-          "tokenAddress",
-          "decimals",
-          "vaultAmount",
-          "amountInUsd",
-          "amountInNative",
-          "priceUsd",
-          "priceNative"
-        ]
-      },
-      "DexPoolDTO": {
-        "type": "object",
-        "properties": {
-          "programAddress": {
-            "type": "string",
-            "description": "DEX 程序地址",
-            "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
-          },
-          "protocolFamily": {
-            "type": "string",
-            "description": "DEX协议族",
-            "example": "OrcaWhirpool"
-          },
-          "image": {
-            "type": "string",
-            "description": "DEX标志图片URL",
-            "example": "https://ipfs.io/ipfs/bafkreid7667676767676767676767676767676767676767676767676767676767676767"
-          },
-          "chain": {
-            "type": "string",
-            "description": "区块链",
-            "example": "sol"
-          },
-          "poolAddress": {
-            "type": "string",
-            "description": "资金池地址",
-            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
-          },
-          "protocolName": {
-            "type": "string",
-            "description": "DEX协议名称",
-            "example": "OrcaWhirpool AMM V2"
-          },
-          "tokenAAddress": {
-            "type": "string",
-            "description": "资金池中的第一个代币",
-            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-          },
-          "tokenBAddress": {
-            "type": "string",
-            "description": "资金池中的第二个代币",
-            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-          },
-          "tvlInUsd": {
-            "type": "string",
-            "description": "总流动性价值(单位:USD)",
-            "example": "1000000.45"
-          },
-          "tvlInSol": {
-            "type": "string",
-            "description": "总流动性价值(单位:SOL)",
-            "example": "1000000.45"
-          },
-          "type": {
-            "type": "number",
-            "description": "池类型（0=未知，1=标准，2=集中，3=加权，4=稳定）",
-            "example": 1,
-            "enum": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
-          },
-          "version": {
-            "type": "number",
-            "description": "池版本（0=未知，1=V1，2=V2，3=V3/CLMM）",
-            "example": 2,
-            "enum": [
-              0,
-              1,
-              2,
-              3
-            ]
-          },
-          "liquidityModel": {
-            "type": "number",
-            "description": "流动性模型（0=未知，1=基于储备，2=基于仓位，3=虚拟，4=共享）",
-            "example": 1,
-            "enum": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
-          },
-          "feeRate": {
-            "type": "string",
-            "description": "池费率（例如 0.003 表示 0.3%）",
-            "example": "0.003"
-          },
-          "tickSpacing": {
-            "type": "integer",
-            "description": "集中流动性池的 tick 间距",
-            "example": 64,
-            "format": "int64"
-          },
-          "tokenCount": {
-            "type": "integer",
-            "description": "池中代币数量",
-            "example": 2,
-            "format": "int64"
-          },
-          "createdBlockTimestamp": {
-            "type": "string",
-            "description": "池创建时的区块时间戳",
-            "example": "2024-01-15T10:30:00Z"
-          },
-          "tokenALiquidity": {
-            "description": "第一个代币流动性详情",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
-              }
-            ]
-          },
-          "tokenBLiquidity": {
-            "description": "第二个代币流动性详情",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
-              }
-            ]
-          }
-        },
-        "required": [
-          "chain",
-          "poolAddress",
-          "tokenAAddress",
-          "tokenBAddress"
-        ]
-      },
       "TokenMarketData": {
         "type": "object",
         "properties": {
@@ -11043,13 +10917,6 @@
               }
             ]
           },
-          "liquidity": {
-            "description": "流动性",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DexPoolDTO"
-            }
-          },
           "marketData": {
             "description": "市值",
             "allOf": [
@@ -11298,6 +11165,190 @@
           "name",
           "symbol",
           "address"
+        ]
+      },
+      "DexPoolTokenLiquidity": {
+        "type": "object",
+        "properties": {
+          "tokenAddress": {
+            "type": "string",
+            "description": "代币合约地址",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "decimals": {
+            "type": "integer",
+            "description": "代币小数位数",
+            "example": 6,
+            "format": "int64"
+          },
+          "vaultAmount": {
+            "type": "string",
+            "description": "原始金库数量（无小数）",
+            "example": "1000000000000"
+          },
+          "amountInUsd": {
+            "type": "string",
+            "description": "流动性价值（美元）",
+            "example": "1000000.45"
+          },
+          "amountInNative": {
+            "type": "string",
+            "description": "流动性价值（原生代币，如 SOL）",
+            "example": "5000.123"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "代币美元价格",
+            "example": "1.0001"
+          },
+          "priceNative": {
+            "type": "string",
+            "description": "代币原生代币价格",
+            "example": "0.005"
+          }
+        },
+        "required": [
+          "tokenAddress",
+          "decimals",
+          "vaultAmount",
+          "amountInUsd",
+          "amountInNative",
+          "priceUsd",
+          "priceNative"
+        ]
+      },
+      "DexPoolDTO": {
+        "type": "object",
+        "properties": {
+          "programAddress": {
+            "type": "string",
+            "description": "DEX 程序地址",
+            "example": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc"
+          },
+          "protocolFamily": {
+            "type": "string",
+            "description": "DEX协议族",
+            "example": "OrcaWhirpool"
+          },
+          "image": {
+            "type": "string",
+            "description": "DEX标志图片URL",
+            "example": "https://ipfs.io/ipfs/bafkreid7667676767676767676767676767676767676767676767676767676767676767"
+          },
+          "chain": {
+            "type": "string",
+            "description": "区块链",
+            "example": "sol"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "资金池地址",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "protocolName": {
+            "type": "string",
+            "description": "DEX协议名称",
+            "example": "OrcaWhirpool AMM V2"
+          },
+          "tokenAAddress": {
+            "type": "string",
+            "description": "资金池中的第一个代币",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "tokenBAddress": {
+            "type": "string",
+            "description": "资金池中的第二个代币",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "tvlInUsd": {
+            "type": "string",
+            "description": "总流动性价值(单位:USD)",
+            "example": "1000000.45"
+          },
+          "tvlInSol": {
+            "type": "string",
+            "description": "总流动性价值(单位:SOL)",
+            "example": "1000000.45"
+          },
+          "type": {
+            "type": "number",
+            "description": "池类型（0=未知，1=标准，2=集中，3=加权，4=稳定）",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "version": {
+            "type": "number",
+            "description": "池版本（0=未知，1=V1，2=V2，3=V3/CLMM）",
+            "example": 2,
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "liquidityModel": {
+            "type": "number",
+            "description": "流动性模型（0=未知，1=基于储备，2=基于仓位，3=虚拟，4=共享）",
+            "example": 1,
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "feeRate": {
+            "type": "string",
+            "description": "池费率（例如 0.003 表示 0.3%）",
+            "example": "0.003"
+          },
+          "tickSpacing": {
+            "type": "integer",
+            "description": "集中流动性池的 tick 间距",
+            "example": 64,
+            "format": "int64"
+          },
+          "tokenCount": {
+            "type": "integer",
+            "description": "池中代币数量",
+            "example": 2,
+            "format": "int64"
+          },
+          "createdBlockTimestamp": {
+            "type": "string",
+            "description": "池创建时的区块时间戳",
+            "example": "2024-01-15T10:30:00Z"
+          },
+          "tokenALiquidity": {
+            "description": "第一个代币流动性详情",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
+          },
+          "tokenBLiquidity": {
+            "description": "第二个代币流动性详情",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DexPoolTokenLiquidity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "chain",
+          "poolAddress",
+          "tokenAAddress",
+          "tokenBAddress"
         ]
       },
       "DexPoolPage": {
@@ -12809,6 +12860,45 @@
             "default": 0,
             "format": "int64"
           },
+          "walletAddress": {
+            "type": "string",
+            "description": "钱包地址",
+            "example": "8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1"
+          },
+          "totalValueInUsd": {
+            "type": "string",
+            "description": "钱包总价值（美元）",
+            "example": "3.369918"
+          },
+          "totalValueInNative": {
+            "type": "string",
+            "description": "钱包总价值（原生代币）",
+            "example": "0.040382"
+          },
+          "currentTimestamp": {
+            "type": "string",
+            "description": "当前服务器时间戳（ISO 8601）",
+            "example": "2025-05-19T04:47:19.414Z"
+          },
+          "data": {
+            "description": "数据项数组",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletNetWorthItemDTO"
+            }
+          }
+        },
+        "required": [
+          "walletAddress",
+          "totalValueInUsd",
+          "totalValueInNative",
+          "currentTimestamp",
+          "data"
+        ]
+      },
+      "WalletNetWorthByTokensResult": {
+        "type": "object",
+        "properties": {
           "walletAddress": {
             "type": "string",
             "description": "钱包地址",

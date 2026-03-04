@@ -1,13 +1,34 @@
 const fs = require('fs');
 const path = require('path');
 
-// Rust代码示例模板
+const SERVICES = [
+  { name: 'data', openapiFilePrefix: 'openapi-data' },
+  { name: 'defi', openapiFilePrefix: 'openapi-defi' },
+];
+
+const LANGUAGES = [
+  { code: 'en', baseDir: 'en' },
+  { code: 'cn', baseDir: 'cn' },
+];
+
+function getSelectedServices() {
+  const args = process.argv.slice(2);
+  const idx = args.indexOf('--service');
+  if (idx === -1 || idx + 1 >= args.length) return SERVICES;
+  const name = args[idx + 1].toLowerCase();
+  const matched = SERVICES.filter(s => s.name === name);
+  if (matched.length === 0) {
+    console.error(`Unknown service "${name}". Valid: ${SERVICES.map(s => s.name).join(', ')}`);
+    process.exit(1);
+  }
+  return matched;
+}
+
 const rustTemplates = {
-  // GET请求模板
   get: (endpoint, params = []) => {
     const queryParams = params.filter(p => p.in === 'query').map(p => `${p.name}={${p.name}}`).join('&');
     const queryString = queryParams ? `?${queryParams}` : '';
-    
+
     return `use reqwest::Client;
 use serde_json::Value;
 
@@ -28,7 +49,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }`;
   },
 
-  // POST请求模板
   post: (endpoint, bodySchema = null) => {
     let bodyCode = '';
     if (bodySchema) {
@@ -60,93 +80,78 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   }
 };
 
-// 生成Rust代码示例
-function generateRustCodeSample(operation, path, parameters = [], requestBody = null) {
+function generateRustCodeSample(operation, apiPath, parameters = [], requestBody = null) {
   const method = operation.toLowerCase();
-  
-  if (method === 'get') {
-    return rustTemplates.get(path, parameters);
-  } else if (method === 'post') {
-    return rustTemplates.post(path, requestBody);
-  } else if (method === 'put') {
-    return rustTemplates.post(path, requestBody); // 使用POST模板
-  } else if (method === 'delete') {
-    return rustTemplates.get(path, parameters); // 使用GET模板
+
+  if (method === 'get' || method === 'delete') {
+    return rustTemplates.get(apiPath, parameters);
   }
-  
-  return rustTemplates.get(path, parameters);
+  return rustTemplates.post(apiPath, requestBody);
 }
 
-// 处理OpenAPI文件
 function addRustCodeSamples(filePath) {
   console.log(`Processing ${filePath}...`);
-  
+
   const content = fs.readFileSync(filePath, 'utf8');
   const openapi = JSON.parse(content);
-  
+
   let modified = false;
-  
-  // 遍历所有路径
-  for (const [path, pathItem] of Object.entries(openapi.paths)) {
-    // 遍历所有HTTP方法
+
+  for (const [apiPath, pathItem] of Object.entries(openapi.paths)) {
     for (const [method, operation] of Object.entries(pathItem)) {
       if (typeof operation === 'object' && operation.operationId) {
-        // 检查是否已经有x-codeSamples
         if (!operation['x-codeSamples']) {
           operation['x-codeSamples'] = [];
         }
-        
-        // 检查是否已经有Rust示例
+
         const hasRust = operation['x-codeSamples'].some(sample => sample.lang === 'Rust');
-        
+
         if (!hasRust) {
           const rustCode = generateRustCodeSample(
-            method, 
-            path, 
+            method,
+            apiPath,
             operation.parameters || [],
             operation.requestBody
           );
-          
+
           operation['x-codeSamples'].push({
             lang: 'Rust',
             source: rustCode
           });
-          
+
           modified = true;
-          console.log(`Added Rust code sample for ${method.toUpperCase()} ${path}`);
+          console.log(`Added Rust code sample for ${method.toUpperCase()} ${apiPath}`);
         }
       }
     }
   }
-  
+
   if (modified) {
-    // 写入文件
     fs.writeFileSync(filePath, JSON.stringify(openapi, null, 2));
-    console.log(`✅ Updated ${filePath} with Rust code samples`);
+    console.log(`Updated ${filePath} with Rust code samples`);
   } else {
-    console.log(`ℹ️  No changes needed for ${filePath}`);
+    console.log(`No changes needed for ${filePath}`);
   }
 }
 
-// 主函数
 function main() {
-  const openapiFiles = [
-    'en/api-reference/openapi-en.json',
-    'cn/api-reference/openapi-cn.json'
-  ];
-  
-  for (const file of openapiFiles) {
-    if (fs.existsSync(file)) {
-      addRustCodeSamples(file);
-    } else {
-      console.log(`⚠️  File not found: ${file}`);
+  const services = getSelectedServices();
+  console.log(`Processing services: ${services.map(s => s.name).join(', ')}\n`);
+
+  for (const service of services) {
+    for (const lang of LANGUAGES) {
+      const file = path.join(lang.baseDir, 'api-reference', `${service.openapiFilePrefix}-${lang.code}.json`);
+      if (fs.existsSync(file)) {
+        addRustCodeSamples(file);
+      } else {
+        console.log(`File not found: ${file}`);
+      }
     }
   }
 }
 
-// 运行脚本
 if (require.main === module) {
   main();
 }
 
-module.exports = { addRustCodeSamples, generateRustCodeSample }; 
+module.exports = { addRustCodeSamples, generateRustCodeSample };

@@ -154,8 +154,8 @@ CONTROLLER.TOKEN.GET_TRANSFER_TOTAL='Get Transfer Total'
 CONTROLLER.TOKEN.GET_TRANSFER_TOTAL.DESCRIPTION='Get total count of transfers for a specific token with filters'
 CONTROLLER.TOKEN.GET_TRANSFER_TOTAL.SUMMARY='Token - Transfer Total'
 CONTROLLER.TOKEN.SEARCH='Search'
-CONTROLLER.TOKEN.SEARCH.DESCRIPTION='Get token list of given chain'
-CONTROLLER.TOKEN.SEARCH.SUMMARY='Token - List'
+CONTROLLER.TOKEN.SEARCH.DESCRIPTION='Search tokens by name, symbol or address'
+CONTROLLER.TOKEN.SEARCH.SUMMARY='Token - Search'
 
 //TOKEN DTO
 DTO.TOKEN.CANDLE.LIMIT='Number of candles to return'

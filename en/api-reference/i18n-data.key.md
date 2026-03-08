@@ -159,6 +159,10 @@ CONTROLLER.TOKEN.SEARCH.SUMMARY='Token - List'
 
 //TOKEN DTO
 DTO.TOKEN.CANDLE.LIMIT='Number of candles to return'
+DTO.TOKEN.MARKET_DATA.TOTAL_SUPPLY='Total supply of the token'
+DTO.TOKEN.MARKET_DATA.CIRCULATING_SUPPLY='Circulating supply of the token'
+DTO.TOKEN.MARKET_DATA.FDV_IN_SOL='Fully diluted valuation in native token'
+DTO.TOKEN.MARKET_DATA.FDV_IN_USD='Fully diluted valuation in USD'
 DTO.TOKEN.FILTER.EXCLUDE_KEYWORDS="Exclude Keywords"
 DTO.TOKEN.FILTER.FILTERS="Filters"
 DTO.TOKEN.FILTER.LAUNCHPAD_PLATFORM="Launchpad Platform"
@@ -306,6 +310,7 @@ DTO.TOKEN.REQUEST.SORT_DIRECTION='Sort Direction'
 DTO.TOKEN.SEARCH.CHAINS='Chain filter'
 DTO.TOKEN.SEARCH.PROTOCOLS='Protocol filter'
 DTO.TOKEN.SEARCH.QUERY='Search query string for token name, symbol or address'
+DTO.TOKEN.SEARCH.MODE='Search mode: fast (default, returns basic fields) or normal (returns full token details)'
 DTO.TOKEN.SEARCH.SORT_BY='Field to sort by'
 DTO.TOKEN.SEARCH.SORT_DIRECTION='Sort direction'
 DTO.TOKEN.TRADER.TAG='Token trader tag (fresh, sandwish, bundle, sniper, dev, pro, insider)'

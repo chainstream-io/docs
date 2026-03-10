@@ -127,6 +127,10 @@ DTO.DEX.SWAP.ROUTE_INFO='Detailed routing information'
 DTO.DEX.SWAP.RECIPIENT_ADDRESS='Recipient wallet address for the swap'
 DTO.DEX.SWAP.PERMIT='Permit data for the swap'
 DTO.DEX.SWAP.DEADLINE='Swap deadline timestamp'
+DTO.DEX.SWAP.MAX_FEE_PER_GAS='Maximum fee per gas unit (EIP-1559) in wei'
+DTO.DEX.SWAP.MAX_PRIORITY_FEE_PER_GAS='Maximum priority fee per gas unit (EIP-1559) in wei'
+DTO.DEX.SWAP.GAS_PRICE='Gas price in wei (legacy transactions)'
+DTO.DEX.SWAP.GAS_LIMIT='Gas limit for the transaction'
 
 // DEX SWAP ROUTE INFO DTO
 DTO.DEX.SWAP.ROUTE.CHAIN='Blockchain network for the swap'

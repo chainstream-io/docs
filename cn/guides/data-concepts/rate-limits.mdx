@@ -1,0 +1,275 @@
+---
+title: "速率限制与分页"
+description: "了解 API 速率限制、分页模式和生产环境最佳实践"
+icon: "gauge-high"
+---
+
+## 速率限制
+
+ChainStream 通过速率限制确保公平使用和平台稳定性。限制因计划而异。
+
+### 各计划限制
+
+| 计划 | 请求/秒 | 并发连接数 | WebSocket 订阅数 |
+|:--|:--|:--|:--|
+| **Free** | 10 | 5 | 5 |
+| **Starter** | 50 | 20 | 50 |
+| **Pro** | 200 | 50 | 200 |
+| **Enterprise** | 500+ | 100+ | 500+ |
+| **Custom** | 可协商 | 可协商 | 可协商 |
+
+<Note>
+速率限制按应用（Client ID）计算，而非按 Access Token。同一应用下的多个 Token 共享同一速率限制。
+</Note>
+
+### 速率限制响应头
+
+每个 API 响应都包含速率限制信息：
+
+| 响应头 | 说明 |
+|:--|:--|
+| `X-RateLimit-Limit` | 当前计划的每秒最大请求数 |
+| `X-RateLimit-Remaining` | 当前窗口内剩余请求数 |
+| `X-RateLimit-Reset` | 速率限制重置的 Unix 时间戳 |
+| `Retry-After` | 需等待的重试秒数（仅在 429 响应时返回） |
+
+### 429 请求过多
+
+超出速率限制时，API 返回 `429` 状态码：
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please retry after 1 second.",
+  "retry_after": 1
+}
+```
+
+---
+
+## 处理速率限制
+
+### 指数退避
+
+推荐使用带随机抖动的指数退避重试策略：
+
+<Tabs>
+  <Tab title="JavaScript">
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status !== 429) return response;
+
+    if (attempt === maxRetries) throw new Error('Rate limit exceeded after max retries');
+
+    const retryAfter = response.headers.get('Retry-After');
+    const baseDelay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
+    const jitter = Math.random() * 500;
+
+    await new Promise(resolve => setTimeout(resolve, baseDelay + jitter));
+  }
+}
+```
+  </Tab>
+  <Tab title="Python">
+```python
+import time
+import random
+import requests
+
+def fetch_with_retry(url, headers, max_retries=3):
+    for attempt in range(max_retries + 1):
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 429:
+            return response
+
+        if attempt == max_retries:
+            raise Exception('Rate limit exceeded after max retries')
+
+        retry_after = response.headers.get('Retry-After')
+        base_delay = int(retry_after) if retry_after else (2 ** attempt)
+        jitter = random.uniform(0, 0.5)
+
+        time.sleep(base_delay + jitter)
+```
+  </Tab>
+</Tabs>
+
+### 减少请求量
+
+<AccordionGroup>
+  <Accordion title="使用批量端点">
+    使用批量端点代替单个查询以减少请求次数：
+
+    ```
+    # 不要发起 10 个单独请求：
+    GET /v2/token/{chain}/{address1}/metadata
+    GET /v2/token/{chain}/{address2}/metadata
+    ...
+
+    # 使用一个批量请求：
+    GET /v2/token/{chain}/metadata/multi?addresses=addr1,addr2,...
+    ```
+  </Accordion>
+  <Accordion title="使用 WebSocket 获取实时数据">
+    WebSocket 订阅提供实时数据推送，无需反复轮询：
+
+    ```javascript
+    ws.subscribe('dex-candle:sol_TOKEN_1s');
+    ```
+
+    避免因频繁 REST API 轮询而触发速率限制。
+  </Accordion>
+  <Accordion title="本地缓存响应">
+    对于不经常变化的数据（元数据、Token 信息），使用适当的 TTL 缓存响应，避免冗余 API 调用。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 分页
+
+大多数列表端点支持分页以处理大量结果集。
+
+### 分页参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|:--|:--|:--|:--|
+| `limit` | integer | 20 | 每页条数（最大 100） |
+| `offset` | integer | 0 | 跳过的条数 |
+| `cursor` | string | - | 游标（部分端点支持游标分页） |
+
+### 偏移量分页
+
+大多数端点使用偏移量分页：
+
+```bash
+# 第 1 页（第 1-20 条）
+GET /v2/token/sol/{address}/holders?limit=20&offset=0
+
+# 第 2 页（第 21-40 条）
+GET /v2/token/sol/{address}/holders?limit=20&offset=20
+
+# 第 3 页（第 41-60 条）
+GET /v2/token/sol/{address}/holders?limit=20&offset=40
+```
+
+### 响应格式
+
+分页响应包含总数信息：
+
+```json
+{
+  "data": [...],
+  "total": 1250,
+  "limit": 20,
+  "offset": 0,
+  "hasMore": true
+}
+```
+
+### 分页示例
+
+<Tabs>
+  <Tab title="JavaScript">
+```javascript
+async function fetchAllPages(endpoint, accessToken) {
+  const results = [];
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const response = await fetch(
+      `${endpoint}?limit=${limit}&offset=${offset}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await response.json();
+
+    results.push(...data.data);
+
+    if (!data.hasMore) break;
+    offset += limit;
+  }
+
+  return results;
+}
+```
+  </Tab>
+  <Tab title="Python">
+```python
+async def fetch_all_pages(endpoint, access_token):
+    results = []
+    offset = 0
+    limit = 100
+
+    while True:
+        response = requests.get(
+            f'{endpoint}?limit={limit}&offset={offset}',
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        data = response.json()
+
+        results.extend(data['data'])
+
+        if not data.get('hasMore'):
+            break
+        offset += limit
+
+    return results
+```
+  </Tab>
+</Tabs>
+
+---
+
+## WebSocket 速率限制
+
+WebSocket 连接有独立的速率限制：
+
+| 限制类型 | Free | Starter | Pro | Enterprise |
+|:--|:--|:--|:--|:--|
+| 最大连接数 | 2 | 10 | 50 | 200+ |
+| 每连接订阅数 | 5 | 20 | 50 | 100+ |
+| 每秒消息数（出站） | 10 | 50 | 100 | 500+ |
+
+<Warning>
+超出 WebSocket 速率限制会导致连接以代码 `4029` 关闭。请在客户端实现带退避的重连逻辑。
+</Warning>
+
+---
+
+## 最佳实践
+
+<CardGroup cols={2}>
+  <Card title="实现重试" icon="rotate">
+    对 429 和 5xx 响应始终使用带抖动的指数退避
+  </Card>
+  <Card title="使用批量 API" icon="layer-group">
+    优先使用批量端点（`/multi`）而非单个请求
+  </Card>
+  <Card title="监控用量" icon="chart-line">
+    跟踪速率限制响应头，主动控制在限制范围内
+  </Card>
+  <Card title="使用 WebSocket" icon="plug">
+    将轮询切换为 WebSocket 以满足实时数据需求
+  </Card>
+</CardGroup>
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="计费与 Units" icon="credit-card" href="/cn/guides/getting-started/billing-and-units">
+    了解基于 Unit 的计费模型
+  </Card>
+  <Card title="实时数据流" icon="bolt" href="/cn/guides/data-concepts/realtime-streaming">
+    使用 WebSocket 获取实时数据
+  </Card>
+  <Card title="错误码" icon="triangle-exclamation" href="/cn/guides/resources/error-codes">
+    处理所有错误类型
+  </Card>
+</CardGroup>

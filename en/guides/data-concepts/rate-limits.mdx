@@ -1,0 +1,275 @@
+---
+title: "Rate Limits & Pagination"
+description: "Understanding API rate limits, pagination patterns, and best practices for production usage"
+icon: "gauge-high"
+---
+
+## Rate Limits
+
+ChainStream enforces rate limits to ensure fair usage and platform stability. Limits vary by plan.
+
+### Limits by Plan
+
+| Plan | Requests/Second | Concurrent Connections | WebSocket Subscriptions |
+|:--|:--|:--|:--|
+| **Free** | 10 | 5 | 5 |
+| **Starter** | 50 | 20 | 50 |
+| **Pro** | 200 | 50 | 200 |
+| **Enterprise** | 500+ | 100+ | 500+ |
+| **Custom** | Negotiable | Negotiable | Negotiable |
+
+<Note>
+Rate limits are applied per application (Client ID), not per access token. Multiple tokens under the same application share the same rate limit.
+</Note>
+
+### Rate Limit Headers
+
+Every API response includes rate limit information in the headers:
+
+| Header | Description |
+|:--|:--|
+| `X-RateLimit-Limit` | Maximum requests per second for your plan |
+| `X-RateLimit-Remaining` | Remaining requests in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the rate limit resets |
+| `Retry-After` | Seconds to wait before retrying (only on 429 responses) |
+
+### 429 Too Many Requests
+
+When you exceed the rate limit, the API returns a `429` status code:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please retry after 1 second.",
+  "retry_after": 1
+}
+```
+
+---
+
+## Handling Rate Limits
+
+### Exponential Backoff
+
+The recommended retry strategy uses exponential backoff with jitter:
+
+<Tabs>
+  <Tab title="JavaScript">
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status !== 429) return response;
+
+    if (attempt === maxRetries) throw new Error('Rate limit exceeded after max retries');
+
+    const retryAfter = response.headers.get('Retry-After');
+    const baseDelay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
+    const jitter = Math.random() * 500;
+
+    await new Promise(resolve => setTimeout(resolve, baseDelay + jitter));
+  }
+}
+```
+  </Tab>
+  <Tab title="Python">
+```python
+import time
+import random
+import requests
+
+def fetch_with_retry(url, headers, max_retries=3):
+    for attempt in range(max_retries + 1):
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 429:
+            return response
+
+        if attempt == max_retries:
+            raise Exception('Rate limit exceeded after max retries')
+
+        retry_after = response.headers.get('Retry-After')
+        base_delay = int(retry_after) if retry_after else (2 ** attempt)
+        jitter = random.uniform(0, 0.5)
+
+        time.sleep(base_delay + jitter)
+```
+  </Tab>
+</Tabs>
+
+### Reducing Request Volume
+
+<AccordionGroup>
+  <Accordion title="Use batch endpoints">
+    Instead of individual queries, use batch endpoints to reduce request count:
+
+    ```
+    # Instead of 10 separate calls:
+    GET /v2/token/{chain}/{address1}/metadata
+    GET /v2/token/{chain}/{address2}/metadata
+    ...
+
+    # Use one batch call:
+    GET /v2/token/{chain}/metadata/multi?addresses=addr1,addr2,...
+    ```
+  </Accordion>
+  <Accordion title="Use WebSocket for real-time data">
+    WebSocket subscriptions provide real-time data without repeated polling:
+
+    ```javascript
+    ws.subscribe('dex-candle:sol_TOKEN_1s');
+    ```
+
+    This avoids hitting rate limits from frequent REST API polling.
+  </Accordion>
+  <Accordion title="Cache responses locally">
+    For data that doesn't change frequently (metadata, token info), cache responses with an appropriate TTL to avoid redundant API calls.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Pagination
+
+Most list endpoints support pagination to handle large result sets.
+
+### Pagination Parameters
+
+| Parameter | Type | Default | Description |
+|:--|:--|:--|:--|
+| `limit` | integer | 20 | Number of items per page (max 100) |
+| `offset` | integer | 0 | Number of items to skip |
+| `cursor` | string | - | Cursor for cursor-based pagination (some endpoints) |
+
+### Offset-Based Pagination
+
+Most endpoints use offset-based pagination:
+
+```bash
+# Page 1 (items 1-20)
+GET /v2/token/sol/{address}/holders?limit=20&offset=0
+
+# Page 2 (items 21-40)
+GET /v2/token/sol/{address}/holders?limit=20&offset=20
+
+# Page 3 (items 41-60)
+GET /v2/token/sol/{address}/holders?limit=20&offset=40
+```
+
+### Response Format
+
+Paginated responses include total count information:
+
+```json
+{
+  "data": [...],
+  "total": 1250,
+  "limit": 20,
+  "offset": 0,
+  "hasMore": true
+}
+```
+
+### Pagination Example
+
+<Tabs>
+  <Tab title="JavaScript">
+```javascript
+async function fetchAllPages(endpoint, accessToken) {
+  const results = [];
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const response = await fetch(
+      `${endpoint}?limit=${limit}&offset=${offset}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await response.json();
+
+    results.push(...data.data);
+
+    if (!data.hasMore) break;
+    offset += limit;
+  }
+
+  return results;
+}
+```
+  </Tab>
+  <Tab title="Python">
+```python
+async def fetch_all_pages(endpoint, access_token):
+    results = []
+    offset = 0
+    limit = 100
+
+    while True:
+        response = requests.get(
+            f'{endpoint}?limit={limit}&offset={offset}',
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        data = response.json()
+
+        results.extend(data['data'])
+
+        if not data.get('hasMore'):
+            break
+        offset += limit
+
+    return results
+```
+  </Tab>
+</Tabs>
+
+---
+
+## WebSocket Rate Limits
+
+WebSocket connections have separate rate limits:
+
+| Limit Type | Free | Starter | Pro | Enterprise |
+|:--|:--|:--|:--|:--|
+| Max connections | 2 | 10 | 50 | 200+ |
+| Subscriptions per connection | 5 | 20 | 50 | 100+ |
+| Messages per second (outbound) | 10 | 50 | 100 | 500+ |
+
+<Warning>
+Exceeding WebSocket rate limits will result in the connection being closed with code `4029`. Implement reconnection logic with backoff in your client.
+</Warning>
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Implement retries" icon="rotate">
+    Always use exponential backoff with jitter for 429 and 5xx responses
+  </Card>
+  <Card title="Use batch APIs" icon="layer-group">
+    Prefer batch endpoints (`/multi`) over individual requests
+  </Card>
+  <Card title="Monitor usage" icon="chart-line">
+    Track rate limit headers to stay within limits proactively
+  </Card>
+  <Card title="Use WebSocket" icon="plug">
+    Switch from polling to WebSocket for real-time data needs
+  </Card>
+</CardGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Billing & Units" icon="credit-card" href="/en/guides/getting-started/billing-and-units">
+    Understand the unit-based billing model
+  </Card>
+  <Card title="Realtime Streaming" icon="bolt" href="/en/guides/data-concepts/realtime-streaming">
+    Use WebSocket for real-time data
+  </Card>
+  <Card title="Error Codes" icon="triangle-exclamation" href="/en/guides/resources/error-codes">
+    Handle all error types
+  </Card>
+</CardGroup>

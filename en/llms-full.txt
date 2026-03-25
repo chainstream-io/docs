@@ -1,0 +1,115 @@
+# ChainStream — AI-Native On-Chain Big Data Infrastructure
+
+> Real-time blockchain data, token analytics, wallet profiling, and quantitative
+> trading across 10+ chains. Built for AI agents with MCP, A2A, and x402 support.
+
+## Overview
+
+ChainStream provides AI agents with comprehensive on-chain data access through
+the Model Context Protocol (MCP). Agents can search tokens, analyze wallets,
+monitor real-time trades, generate trading strategies, and execute trades on DEXes.
+
+## MCP Server
+
+Connect to ChainStream's MCP Server for AI-native data access:
+
+- **URL**: `https://mcp.chainstream.io/mcp`
+- **Transport**: Streamable HTTP (supports horizontal scaling, progress reporting)
+- **Authentication**: Bearer Token (API Key) or x402 micropayment
+
+### Tools (18 outcome-oriented tools)
+
+Each tool orchestrates multiple API calls internally and returns curated results.
+
+| Tool | Description | Risk |
+|------|-------------|------|
+| tokens/search | Search tokens by name, symbol, or address across all chains | L0 |
+| tokens/analyze | Comprehensive token analysis: price, volume, holders, security, liquidity | L0 |
+| tokens/price_history | OHLCV candlestick data for charting and technical analysis | L0 |
+| tokens/discover | Find tokens by on-chain metrics (volume, price change, trades) | L0 |
+| tokens/compare | Compare up to 5 tokens side by side | L0 |
+| wallets/profile | Complete wallet profile: holdings, PnL, net worth in one call | L1 |
+| wallets/activity | Recent wallet transfers and balance changes | L1 |
+| market/trending | Trending tokens by category (hot, new, migrated, graduating, stocks) | L0 |
+| dex/quote | Swap quote with expected output, price impact, fees (read-only) | L0 |
+| dex/swap | Execute token swap on DEX (requires confirmation) | L3 |
+| dex/create_token | Create token on launchpad (requires confirmation) | L3 |
+| trading/backtest | Strategy backtesting with historical data | L2 |
+| trading/execute | Execute trade (requires confirmation) | L3 |
+| trades/recent | Recent on-chain trades for a token or wallet | L0 |
+| kyt/assess_risk | KYT risk assessment for an address | L1 |
+| webhooks/manage | Manage webhook endpoints (list, create, delete) | L1 |
+| blockchain/info | Supported chains and DEX protocols | L0 |
+| transaction/send | Broadcast signed transaction (requires confirmation) | L3 |
+
+### Resources
+
+- `chainstream://chains` — Supported chains and status
+- `chainstream://chains/{chain}/dexes` — DEX protocols per chain
+- `chainstream://docs/api_reference` — Full API reference (all /v2/* endpoints)
+- `chainstream://docs/query_examples` — Common query patterns for agents
+
+## Supported Chains
+
+Solana, BSC, Base, Ethereum, Polygon, Arbitrum, Avalanche, Optimism, and more.
+
+## Authentication
+
+1. **API Key**: Traditional Bearer token authentication
+2. **x402 Micropayment**: Agent pays per query via USDC on Base/Solana, no registration needed
+
+## Quick Start
+
+### Claude Desktop
+Add to `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "url": "https://mcp.chainstream.io/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}
+```
+
+### Cursor IDE
+Add to `.cursor/mcp.json`:
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "url": "https://mcp.chainstream.io/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}
+```
+
+### Google ADK
+```python
+from chainstream_adk import ChainStreamToolset
+agent = Agent(model="gemini-2.0-flash", tools=[ChainStreamToolset()])
+```
+
+### Coinbase AgentKit
+```typescript
+import { createChainStreamActions } from '@chainstream/agentkit-action';
+const agent = new CdpAgent({ actions: [...defaultActions, ...createChainStreamActions(config)] });
+```
+
+## Pricing
+
+| Endpoint | Price |
+|----------|-------|
+| tokens/search | $0.001 |
+| tokens/analyze | $0.003 |
+| tokens/price_history | $0.002 |
+| tokens/discover | $0.002 |
+| tokens/compare | $0.005 |
+| wallets/profile | $0.005 |
+| wallets/activity | $0.002 |
+| market/trending | $0.001 |
+| dex/quote | $0.001 |
+| kyt/assess_risk | $0.01 |
+| trading/backtest | $0.05 |

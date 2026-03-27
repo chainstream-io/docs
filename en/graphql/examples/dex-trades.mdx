@@ -1,0 +1,322 @@
+---
+title: "DEX Trades"
+description: "Query examples for DEX trading data"
+icon: "arrow-right-arrow-left"
+---
+
+The **DEXTrades** Cube contains per-trade DEX swap events — the most granular trading data available. Use it to query individual trades, analyze wallet activity, track token prices, and find top traders.
+
+<Note>
+All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+</Note>
+
+---
+
+## Latest Trades
+
+Fetch the 10 most recent DEX trades on Solana, including block info, transaction hash, buy/sell details, and the DEX protocol.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+        Account { Owner }
+      }
+      Dex { ProgramAddress, ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Block.Time` | Block timestamp (ISO 8601) |
+    | `Block.Slot` | Solana slot number (Solana-specific) |
+    | `Transaction.Hash` | On-chain transaction hash — use this to look up the tx on an explorer |
+    | `Trade.Buy.Currency.MintAddress` | Token address of the bought asset |
+    | `Trade.Buy.PriceInUSD` | USD price of the bought token at trade time |
+    | `Trade.Buy.Account.Owner` | Buyer wallet address |
+    | `Trade.Dex.ProtocolName` | DEX name (e.g. Raydium, Orca, Jupiter) |
+    | `Pool.Address` | Liquidity pool address where the trade executed |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Switch chain**: Replace `network: sol` with `network: eth` or `network: bsc`
+    - **Increase results**: Change `count: 10` to up to `10000`
+    - **Add time filter**: Add `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` to scope to a time range
+    - **Filter by DEX**: Add `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` to limit to a specific protocol
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Token Trades
+
+Get trades for a specific token by passing its address via the `tokenAddress` selector.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Trade {
+      Buy { Amount, PriceInUSD, Account { Owner } }
+      Sell { Currency { MintAddress }, Amount }
+      Dex { ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+
+<Tip>
+Replace `TOKEN_ADDRESS` with the actual token mint address (e.g. `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` for USDC on Solana). Use the [TokenSearch](/en/graphql/examples/ohlc-stats#token-lookup) query to look up addresses by name.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Trade.Buy.Amount` | Quantity of tokens bought |
+    | `Trade.Buy.PriceInUSD` | Price per token at trade time |
+    | `Trade.Buy.Account.Owner` | Wallet that executed the buy |
+    | `Trade.Sell.Currency.MintAddress` | Token address of the sold asset (the other side of the pair) |
+    | `Trade.Dex.ProtocolName` | DEX protocol name |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Filter by minimum amount**: Add `where: {Trade: {Buy: {Amount: {gt: 1000}}}}` to only see large trades
+    - **Filter by price range**: Add `where: {Trade: {Buy: {PriceInUSD: {gte: 0.001, lte: 1.0}}}}` to scope to a price band
+    - **Exclude suspect trades**: The `IsSuspect = false` filter is applied by default — bot/MEV trades are already excluded
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Wallet Trades
+
+Get all trades by a specific wallet address.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    walletAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Trade {
+      Buy { Currency { MintAddress }, Amount, PriceInUSD }
+      Sell { Currency { MintAddress }, Amount }
+      Dex { ProtocolName }
+    }
+    Transaction { Hash, FeeInNative }
+  }
+}
+```
+
+<Info>
+The `walletAddress` selector matches trades where the given wallet is either the buyer or the seller.
+</Info>
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Trade.Buy.Currency.MintAddress` | Token bought |
+    | `Trade.Sell.Currency.MintAddress` | Token sold |
+    | `Transaction.FeeInNative` | Gas fee in native token (SOL on Solana) |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Filter to a single token**: Combine with `tokenAddress: {is: "TOKEN_ADDRESS"}` to see only trades for a specific token by this wallet
+    - **Add time window**: Add `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` to limit to recent trades
+    - **Increase limit**: Set `count: 100` to retrieve more history (max 10,000)
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Token Price
+
+Get the latest price for a token from its most recent non-suspect trade.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD, PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Trade.Buy.PriceInUSD` | USD price from the most recent trade |
+    | `Trade.Buy.PriceInNative` | Price denominated in the chain's native token (SOL, ETH, BNB) |
+    | `Block.Time` | Timestamp of the trade — indicates how recent the price is |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Multiple prices**: Increase `count` to get a series of recent prices for averaging
+    - **Cross-chain**: Use `network: eth` to get the same token's price on Ethereum (if it exists on that chain)
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+For reliable token price data over time, consider using the [OHLC](/en/graphql/examples/ohlc-stats#k-line-ohlc-data) Cube instead — it provides pre-computed candlestick data with open/high/low/close prices per minute.
+</Tip>
+
+---
+
+## Top Traders
+
+Find the top traders for a token using aggregation. This query groups trades by buyer wallet and returns the total buy count and volume.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Trade.Buy.Account.Owner` | Wallet address (grouping key) |
+    | `count` | Number of trades by this wallet |
+    | `sum(of: Trade_Buy_Amount)` | Total tokens bought by this wallet |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Sort by volume**: The results are grouped by the dimension fields — select fewer dimensions for higher-level aggregation
+    - **Time-scoped leaderboard**: Add `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` to limit to a specific period
+    - **Exclude small trades**: Add `Trade: {Buy: {Amount: {gt: 100}}}` to the `where` clause
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+When you include metric fields (`count`, `sum`) alongside dimension fields, the API automatically groups results by the selected dimensions. See [Metrics & Aggregation](/en/graphql/schema/metrics-aggregation) for full details.
+</Info>
+
+---
+
+## Multi-Chain Examples
+
+The same queries work across all supported chains — just change the `network` parameter.
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Slot }
+    Trade {
+      Buy { Currency { MintAddress }, PriceInUSD }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  DEXTrades(
+    network: eth
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Height }
+    Trade {
+      Buy { Currency { MintAddress }, PriceInUSD }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  DEXTrades(
+    network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Height }
+    Trade {
+      Buy { Currency { MintAddress }, PriceInUSD }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Transfers" icon="paper-plane" href="/en/graphql/examples/transfers">
+    Query on-chain token transfer data.
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/en/graphql/examples/balance-holders">
+    Look up wallet balances, balance history, and top holders.
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/en/graphql/examples/pools-liquidity">
+    Explore DEX pools and liquidity data.
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/en/graphql/examples/ohlc-stats">
+    Fetch candlestick data, trade stats, market cap, and token metadata.
+  </Card>
+</CardGroup>

@@ -1,0 +1,434 @@
+---
+title: "数据 Cube"
+description: "全部 12 个 GraphQL Cube — 按数仓分层整理的字段结构、selectors、默认值与使用场景"
+icon: "cubes"
+---
+
+## 什么是 Cube？
+
+**Cube** 是映射到一个或多个 OLAP 数据库表的分析数据模型。每个 Cube 定义：
+
+- **Dimensions** — 按嵌套层级组织的可查询字段（例如 `Block.Time`、`Trade.Buy.Currency.MintAddress`）
+- **Selectors** — 顶层的快捷 Filter 参数（例如 `tokenAddress`），用于简化常见 Filter 模式
+- **Metrics** — Record 类型上可用的聚合函数（`count`、`sum` 等）
+- **Defaults** — 自动应用的默认 Filter 与分页限制
+
+查询 Cube 时，activecube-rs 会将 GraphQL 查询编译为针对该 Cube 底表的优化 SQL；表名遵循 `{chain}_{table_name}`（例如 `sol_dex_trades`、`eth_transfers`）。
+
+---
+
+## Cube 总览
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | Layer | Purpose | Key Selectors |
+|:-----|:------|:--------|:--------------|
+| **DEXTrades** | DWD | 逐笔 DEX  swap 事件 | `tokenAddress`, `walletAddress`, `poolAddress`, `dexProgram`, `date` |
+| **Transfers** | DWD | 链上 token 转账 | `tokenAddress`, `senderAddress`, `receiverAddress`, `date` |
+| **BalanceUpdates** | DWD | 钱包余额变更事件 | `ownerAddress`, `tokenAddress`, `date` |
+| **DEXPools** | DWD | DEX 池流动性事件 | `poolAddress`, `tokenAddress`, `date` |
+| **TokenSupplyUpdates** | DWD | Token 供应 mint/burn 事件 | `tokenAddress` |
+| **OHLC** | DWM | K 线 / 蜡烛图数据 | `tokenAddress` |
+| **TokenTradeStats** | DWM | 按分钟的交易统计 | `tokenAddress` |
+| **PoolLiquiditySnapshots** | DWM | 池流动性快照 | `tokenAddress` |
+| **TokenHolders** | DWS | Token 持有者余额 | `tokenAddress` |
+| **WalletTokenPnL** | DWS | 钱包按 token 的 PnL | `walletAddress` |
+| **TokenMarketCap** | DWS | Token 市值快照 | `tokenAddress` |
+| **TokenSearch** | DIM | Token 维度查询 | `tokenAddress` |
+
+</div>
+
+<Note>
+**Layer 缩写**：DWD = Detail（原始事件），DWM = Aggregated（预计算汇总），DWS = Summary（进一步汇总），DIM = Dimension（查找 / 参考数据）。
+</Note>
+
+---
+
+## DWD — Detail 层
+
+Detail Cube 包含**逐事件的原始数据**。粒度最高、返回行数最多。需要单笔交易级记录时使用。
+
+<AccordionGroup>
+  <Accordion title="DEXTrades" icon="arrow-right-arrow-left">
+    **Table**: `{chain}_dex_trades`
+    **Default limit**: 25（最大 10,000）
+    **Default filter**: `IsSuspect = false`（默认排除 bot/MEV 交易）
+    **Selectors**: `tokenAddress`, `walletAddress`, `poolAddress`, `dexProgram`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **Field Structure:**
+    ```graphql
+    DEXTradesRecord {
+      Block {
+        Time          # DateTime — block timestamp
+        Slot          # Int — slot number (Solana)
+        Height        # Int — block height
+      }
+      Transaction {
+        Hash          # String — tx hash
+        FeeInNative   # Float — gas fee in native token
+      }
+      Trade {
+        Buy {
+          Currency { MintAddress }   # String — bought token address
+          Amount                     # Float — bought amount
+          PriceInUSD                 # Float — USD price at trade time
+          PriceInNative              # Float — price in native token
+          Account { Owner }          # String — buyer wallet
+        }
+        Sell {
+          Currency { MintAddress }   # String — sold token address
+          Amount                     # Float — sold amount
+          Account { Owner }          # String — seller wallet
+        }
+        Dex {
+          ProgramAddress    # String — DEX program/contract address
+          ProtocolName      # String — DEX name (Raydium, Orca, Uniswap, etc.)
+        }
+      }
+      Pool {
+        Address       # String — liquidity pool address
+      }
+      IsSuspect       # Boolean — bot/MEV trade flag
+      count           # Metric — trade count
+      sum(of: ...)    # Metric — aggregate sum
+    }
+    ```
+
+    **使用场景**：Token 成交历史、钱包成交分析、DEX 协议成交量拆分、近期大额成交。
+  </Accordion>
+
+  <Accordion title="Transfers" icon="paper-plane">
+    **Table**: `{chain}_transfers`
+    **Selectors**: `tokenAddress`, `senderAddress`, `receiverAddress`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `uniq`
+
+    **Field Structure:**
+    ```graphql
+    TransfersRecord {
+      Block {
+        Time          # DateTime
+        Slot          # Int — slot number
+      }
+      Transaction {
+        Hash          # String — tx hash
+        Signer        # String — transaction signer
+      }
+      Transfer {
+        Currency { MintAddress }       # String — token address
+        Sender {
+          Address                      # String — sender wallet
+          TokenAccount                 # String — sender token account
+        }
+        Receiver {
+          Address                      # String — receiver wallet
+          TokenAccount                 # String — receiver token account
+        }
+        Amount                         # Float — transferred amount
+        AmountInUSD                    # Float — USD value at transfer time
+        PriceInUSD                     # Float — token price at transfer time
+      }
+    }
+    ```
+
+    **使用场景**：钱包转账历史、资金流分析、大额转账监控、交易所充提追踪。
+  </Accordion>
+
+  <Accordion title="BalanceUpdates" icon="scale-balanced">
+    **Table**: `{chain}_balance_updates`
+    **Selectors**: `ownerAddress`, `tokenAddress`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **Field Structure:**
+    ```graphql
+    BalanceUpdatesRecord {
+      Block {
+        Time            # DateTime
+        Slot            # Int — slot number
+      }
+      Transaction {
+        Hash            # String
+      }
+      BalanceUpdate {
+        Currency {
+          MintAddress   # String — token address
+          Decimals      # Int — token decimal places
+        }
+        Account {
+          Address       # String — token account address
+          Owner         # String — wallet owner address
+        }
+        PreBalance          # Float — balance before
+        PostBalance         # Float — balance after
+        PreBalanceInUSD     # Float — previous balance in USD
+        PostBalanceInUSD    # Float — new balance in USD
+      }
+    }
+    ```
+
+    **使用场景**：钱包余额变化追踪、仓位监控、识别吸筹/派发模式。
+  </Accordion>
+
+  <Accordion title="DEXPools" icon="water">
+    **Table**: `{chain}_dex_pool_events`
+    **Selectors**: `poolAddress`, `tokenAddress`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `max`
+
+    **Field Structure:**
+    ```graphql
+    DEXPoolsRecord {
+      Block {
+        Time             # DateTime
+      }
+      Pool {
+        Address          # String — pool address
+        Dex { ProgramAddress }   # String — DEX program address
+        Base {
+          Address        # String — base token address
+          PostAmount     # Float — base token amount after event
+        }
+        Quote {
+          Address        # String — quote token address
+          PostAmount     # Float — quote token amount after event
+        }
+        LiquidityInUSD   # Float — total pool liquidity in USD
+      }
+    }
+    ```
+
+    **使用场景**：池流动性追踪、新池发现、添加/移除流动性监控。
+  </Accordion>
+
+  <Accordion title="TokenSupplyUpdates" icon="coins">
+    **Table**: `{chain}_token_supplies`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    TokenSupplyUpdatesRecord {
+      Block {
+        Time              # DateTime
+      }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress     # String — token address
+          Decimals        # Int — token decimals
+        }
+        PostBalance       # Float — supply after update
+        MarketCapInUSD    # Float — market cap at update time
+        PriceInUSD        # Float — token price at update time
+        FDVInUSD          # Float — fully diluted valuation
+        TotalSupply       # Float — total supply
+      }
+    }
+    ```
+
+    **使用场景**：Mint/burn 事件追踪、供应变化告警、市值历史。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## DWM — Aggregated 层
+
+Aggregated Cube 包含**预计算的汇总**（通常为按分钟）。相对 DWD，用于时间序列与统计分析时查询更快。
+
+<AccordionGroup>
+  <Accordion title="OHLC" icon="chart-candlestick">
+    **Table**: `{chain}_ohlc`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    OHLCRecord {
+      TimeMinute              # DateTime — minute bucket
+      Token { Address }       # String — token address
+      Price {
+        OpenState             # Float — open price
+        HighState             # Float — high price
+        LowState              # Float — low price
+        CloseState            # Float — close price
+      }
+      VolumeUSDState          # Float — USD volume in this interval
+      TradeCountState         # Int — number of trades
+    }
+    ```
+
+    **使用场景**：蜡烛图、价格历史、成交量分析、技术指标。
+  </Accordion>
+
+  <Accordion title="TokenTradeStats" icon="chart-bar">
+    **Table**: `{chain}_token_trade_stats`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    TokenTradeStatsRecord {
+      TimeMinute               # DateTime — minute bucket
+      Token { Address }        # String — token address
+      TradeCountState          # Int — total trades
+      BuyCountState            # Int — buy trades
+      SellCountState           # Int — sell trades
+      VolumeUSDState           # Float — USD volume
+      UniqueBuyersState        # Int — unique buyer wallets
+      UniqueSellersState       # Int — unique seller wallets
+    }
+    ```
+
+    **使用场景**：买卖压力分析、独立交易者数量、成交量趋势、交易活跃度热力图。
+  </Accordion>
+
+  <Accordion title="PoolLiquiditySnapshots" icon="droplet">
+    **Table**: `{chain}_pool_liquidity_snapshots`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    PoolLiquiditySnapshotsRecord {
+      Pool {
+        Address             # String — pool address
+        ProgramAddress      # String — DEX program address
+      }
+      TokenA { Address }    # String — first token address
+      TokenB { Address }    # String — second token address
+      LiquidityUSDState     # Float — total liquidity in USD
+      EventCountState       # Int — number of events in period
+      LastSeenState         # DateTime — last activity timestamp
+    }
+    ```
+
+    **使用场景**：池流动性排名、历史流动性追踪、DEX 对比。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## DWS — Summary 层
+
+Summary Cube 提供**高度汇总**的数据，便于快速查询 — 当前持有者快照、累计 PnL、市值等。
+
+<AccordionGroup>
+  <Accordion title="TokenHolders" icon="users">
+    **Table**: `{chain}_token_holders`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    TokenHoldersRecord {
+      Token { Address }       # String — token address
+      Holder { Address }      # String — holder wallet address
+      LatestBalance           # Float — current token balance
+      LatestBalanceUSD        # Float — current balance in USD
+      FirstSeen               # DateTime — first transaction time
+      LastSeen                # DateTime — most recent transaction time
+    }
+    ```
+
+    **使用场景**：大户列表、持有者分布分析、巨鲸追踪、持有者数量随时间变化。
+  </Accordion>
+
+  <Accordion title="WalletTokenPnL" icon="chart-line">
+    **Table**: `{chain}_wallet_token_pnl`
+    **Selectors**: `walletAddress`
+
+    **Field Structure:**
+    ```graphql
+    WalletTokenPnLRecord {
+      Wallet { Address }        # String — wallet address
+      Token { Address }         # String — token address
+      BuyVolumeUSDState         # Float — total USD spent buying
+      SellVolumeUSDState        # Float — total USD received selling
+      BuyCountState             # Int — number of buy trades
+      SellCountState            # Int — number of sell trades
+      FirstTradeState           # DateTime — first trade time
+      LastTradeState            # DateTime — most recent trade time
+    }
+    ```
+
+    **使用场景**：钱包按 token 的 PnL、交易表现排行榜、组合分析。
+  </Accordion>
+
+  <Accordion title="TokenMarketCap" icon="chart-pie">
+    **Table**: `{chain}_token_market_cap`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    TokenMarketCapRecord {
+      Token { Address }         # String — token address
+      PriceUSDState             # Float — current price in USD
+      MarketCapUSDState         # Float — market capitalization
+      TotalSupplyState          # Float — total supply
+      FDVUSDState               # Float — fully diluted valuation
+      LastSeenState             # DateTime — last updated timestamp
+    }
+    ```
+
+    **使用场景**：市值排名、价格快照、FDV 追踪、Token 筛选。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## DIM — Dimension 层
+
+Dimension Cube 是实体元数据的**参考 / 查找表**。
+
+<AccordionGroup>
+  <Accordion title="TokenSearch" icon="magnifying-glass">
+    **Table**: `{chain}_tokens`
+    **Selectors**: `tokenAddress`
+
+    **Field Structure:**
+    ```graphql
+    TokenSearchRecord {
+      Token {
+        Address           # String — token mint address
+        Decimals          # Int — token decimals
+        PriceUSD          # Float — current price
+        MarketCapUSD      # Float — market cap
+        TotalTradeCount   # Int — all-time trade count
+        TotalVolumeUSD    # Float — all-time volume
+        HolderCount       # Int — number of holders
+        PoolCount         # Int — number of DEX pools
+      }
+    }
+    ```
+
+    **使用场景**：Token 元数据查询、按市值或成交量筛选 Token、按条件发现 Token。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 如何选择合适的 Cube
+
+<Tip>
+在满足查询的前提下，选择**聚合程度最高**的 Cube。对时间序列与汇总数据，DWM/DWS Cube 通常比 DWD Cube 快几个数量级。
+</Tip>
+
+| Need | Recommended Cube | Layer |
+|:-----|:-----------------|:------|
+| 单笔成交事件 | DEXTrades | DWD |
+| Token 转账历史 | Transfers | DWD |
+| 蜡烛图 / 价格图 | OHLC | DWM |
+| 成交量随时间变化 | TokenTradeStats | DWM |
+| 当前大户排名 | TokenHolders | DWS |
+| 钱包 PnL 拆分 | WalletTokenPnL | DWS |
+| Token 元数据查询 | TokenSearch | DIM |
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="筛选" icon="filter" href="/cn/graphql/schema/filtering">
+    学习使用 `where` 与 selector 快捷方式进行筛选。
+  </Card>
+  <Card title="排序与分页" icon="arrow-down-1-9" href="/cn/graphql/schema/ordering-pagination">
+    对查询结果排序与分页。
+  </Card>
+  <Card title="指标与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
+    使用 count、sum、avg、min、max、uniq 聚合数据。
+  </Card>
+</CardGroup>

@@ -122,15 +122,6 @@ ChainStream MCP Server 支持 API Reference 中所有的 REST API 和 WebSocket 
     | 已毕业 | 已迁移到 DEX |
   </Tab>
   
-  <Tab title="KYT API">
-    | 功能 | 说明 |
-    |------|------|
-    | 交易注册 | 注册交易进行风险评估 |
-    | 风险摘要 | 获取交易风险评级 |
-    | 风险告警 | 获取风险告警详情 |
-    | 地址风险 | 地址风险评估 |
-  </Tab>
-  
   <Tab title="WebSocket">
     | 订阅类型 | 说明 |
     |----------|------|
@@ -146,24 +137,15 @@ ChainStream MCP Server 支持 API Reference 中所有的 REST API 和 WebSocket 
 
 ### 支持的区块链
 
-<Tabs>
-  <Tab title="EVM 链">
-    | 链 | 标识 | 状态 |
-    |---|------|------|
-    | Ethereum | `ethereum` | ✅ |
-    | BNB Chain | `bsc` | ✅ |
-    | Polygon | `polygon` | ✅ |
-    | Arbitrum | `arbitrum` | ✅ |
-    | Optimism | `optimism` | ✅ |
-    | Base | `base` | ✅ |
-    | Avalanche | `avalanche` | ✅ |
-  </Tab>
-  <Tab title="非 EVM 链">
-    | 链 | 标识 | 状态 |
-    |---|------|------|
-    | Solana | `solana` | ✅ |
-  </Tab>
-</Tabs>
+| 链 | 标识 | 类型 | 状态 |
+|---|------|------|------|
+| Solana | `sol` | L1 | ✅ |
+| Ethereum | `eth` | L1 | ✅ |
+| BSC | `bsc` | L1 | ✅ |
+
+<Note>
+在所有 MCP 工具参数中使用小写链标识符：`sol`、`eth`、`bsc`。
+</Note>
 
 ---
 
@@ -186,7 +168,7 @@ ChainStream MCP Server 支持 API Reference 中所有的 REST API 和 WebSocket 
     "chainstream": {
       "url": "https://mcp.chainstream.io/mcp",
       "headers": {
-        "Authorization": "Bearer your-access-token"
+        "X-API-KEY": "your-api-key"
       }
     }
   }
@@ -209,7 +191,7 @@ ChainStream MCP Server 支持 API Reference 中所有的 REST API 和 WebSocket 
     "chainstream": {
       "url": "https://mcp.chainstream.io/mcp",
       "headers": {
-        "Authorization": "Bearer your-access-token"
+        "X-API-KEY": "your-api-key"
       }
     }
   }
@@ -222,14 +204,14 @@ ChainStream MCP Server 支持 API Reference 中所有的 REST API 和 WebSocket 
 
 ```javascript
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const transport = new SSEClientTransport(
-  new URL('https://mcp.chainstream.io/sse'),
+const transport = new StreamableHTTPClientTransport(
+  new URL('https://mcp.chainstream.io/mcp'),
   {
     requestInit: {
       headers: {
-        'Authorization': `Bearer ${process.env.CHAINSTREAM_ACCESS_TOKEN}`
+        'X-API-KEY': process.env.CHAINSTREAM_API_KEY
       }
     }
   }
@@ -247,10 +229,10 @@ const { tools } = await client.listTools();
 
 // 调用工具
 const result = await client.callTool({
-  name: 'get_token_balance',
+  name: 'wallets_profile',
   arguments: {
     address: '0x...',
-    chain: 'ethereum'
+    chain: 'eth'
   }
 });
 ```
@@ -268,7 +250,7 @@ const result = await client.callTool({
     分析地址 `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` 的交易风格
   </Step>
   <Step title="AI 调用工具">
-    调用 `analyze_wallet` 工具
+    调用 `wallets_profile` 工具
   </Step>
   <Step title="AI 返回分析">
     基于分析，该地址（Vitalik）的特征如下：
@@ -289,7 +271,7 @@ const result = await client.callTool({
     最近 24 小时有哪些 Smart Money 在买入 ARB？
   </Step>
   <Step title="AI 调用工具">
-    调用 `get_smart_money_activities` 工具
+    调用 `market_trending` 工具
   </Step>
   <Step title="AI 返回结果">
     过去 24 小时，以下 Smart Money 地址买入了 ARB：
@@ -317,7 +299,7 @@ const result = await client.callTool({
     帮我检查这个代币 `0x...` 是否安全
   </Step>
   <Step title="AI 调用工具">
-    调用 `get_token_security` 工具
+    调用 `tokens_analyze` 工具
   </Step>
   <Step title="AI 返回结果">
     该代币安全检查结果：
@@ -339,51 +321,29 @@ const result = await client.callTool({
 ## 技术架构
 
 ```mermaid
-flowchart TD
-    subgraph clients [AI 客户端层]
-        claude[Claude Desktop]
-        cursor[Cursor IDE]
-        custom[Custom Agent]
-    end
-    
-    subgraph mcp [ChainStream MCP Server]
-        endpoint[MCP 端点<br/>https://mcp.chainstream.io/mcp]
-        tools[工具注册层]
-        transport[传输层 HTTP+SSE]
-    end
-    
-    subgraph api [ChainStream API]
-        rest[REST API]
-        ws[WebSocket API]
-        data[多链数据聚合]
-    end
-    
-    clients -->|MCP 协议| mcp
-    mcp -->|REST/WebSocket| api
+sequenceDiagram
+    participant User as 用户
+    participant AI as AI 客户端<br/>(Claude / Cursor)
+    participant MCP as ChainStream MCP<br/>(17 工具)
+    participant API as ChainStream API<br/>(SOL / ETH / BSC)
+
+    User->>AI: "这个代币安全吗？"
+    AI->>AI: 选择 tokens_analyze 工具
+    AI->>MCP: tokens_analyze(chain, address)
+    MCP->>API: GET /v2/token/{chain}/{address}
+    MCP->>API: GET /v2/token/{chain}/{address}/security
+    MCP->>API: GET /v2/token/{chain}/{address}/topHolders
+    API-->>MCP: 代币数据 + 安全标志 + 持有者
+    MCP-->>AI: 结构化分析结果
+    AI-->>User: "该代币无蜜罐风险，<br/>前 10 持有者占比 35%..."
 ```
 
-### 数据流程
+### 连接方式
 
-<Steps>
-  <Step title="用户提问">
-    自然语言输入到 AI 客户端
-  </Step>
-  <Step title="意图识别">
-    AI 理解用户意图，选择合适的工具
-  </Step>
-  <Step title="工具调用">
-    MCP Client 向 MCP Server 发起请求
-  </Step>
-  <Step title="数据获取">
-    MCP Server 调用 ChainStream API
-  </Step>
-  <Step title="结果返回">
-    结构化数据返回给 AI
-  </Step>
-  <Step title="生成回答">
-    AI 基于数据生成自然语言回答
-  </Step>
-</Steps>
+| 方式 | 端点 | 适用场景 |
+|------|------|----------|
+| **云端** | `https://mcp.chainstream.io/mcp` | 零安装，始终最新 |
+| **npm stdio** | `npx @chainstream-io/mcp` | 本地 IDE 集成（Claude Desktop、Cursor） |
 
 ---
 
@@ -401,36 +361,25 @@ flowchart TD
 
 ## 认证方式
 
-ChainStream MCP Server 使用 Access Token 进行认证。
+ChainStream MCP Server 通过 **API Key** 认证。在 [ChainStream Dashboard](https://www.chainstream.io/dashboard) 获取 Key，然后根据传输方式配置：
 
-### 获取 Access Token
+| 传输方式 | 如何传递 API Key |
+|----------|-----------------|
+| **npm 包**（stdio） | `CHAINSTREAM_API_KEY` 环境变量或 `--api-key` CLI 参数 |
+| **云端端点** | `X-API-KEY` 请求头 |
 
-1. 在 [ChainStream Dashboard](https://www.chainstream.io/dashboard) 创建 App
-2. 获取 **Client ID** 和 **Client Secret**
-3. 使用凭据生成 Access Token（参考 [认证文档](/cn/guides/getting-started/authentication)）
-4. 将 Access Token 配置到 MCP Server 环境变量
+```bash
+# Stdio：设置环境变量
+export CHAINSTREAM_API_KEY=your-key
+chainstream-mcp
 
-### 环境变量
-
-| 变量名 | 说明 |
-|--------|------|
-| `CHAINSTREAM_ACCESS_TOKEN` | JWT Access Token |
+# Stdio：或使用 CLI 参数
+chainstream-mcp --api-key your-key
+```
 
 <Note>
-Access Token 有效期为 24 小时，过期后需要重新生成。建议在应用中实现自动刷新机制。
+API Key 除非你在 Dashboard 设置了过期时间，否则不会过期。无需刷新 Token。
 </Note>
-
-### 权限控制
-
-通过 API Scope 控制工具的访问权限：
-
-| Scope | 说明 |
-|-------|------|
-| 默认 | 只读数据查询工具 |
-| `webhook.read` | Webhook 读取权限 |
-| `webhook.write` | Webhook 写入权限 |
-| `kyt.read` | KYT 读取权限 |
-| `kyt.write` | KYT 写入权限 |
 
 ---
 
@@ -438,14 +387,13 @@ Access Token 有效期为 24 小时，过期后需要重新生成。建议在应
 
 <AccordionGroup>
   <Accordion title="认证机制" icon="key">
-    MCP Server 使用 JWT Access Token 进行认证。Access Token 通过 Client ID 和 Client Secret 从 Auth 服务获取，所有 API 请求都需要有效的 Token。
+    所有连接方式均通过 API Key 认证。npm 包从环境变量读取 `CHAINSTREAM_API_KEY`。云端端点接受 `X-API-KEY` 请求头。
   </Accordion>
   
-  <Accordion title="权限控制" icon="lock">
-    通过 API Scope 控制工具的访问权限：
-    - 只读工具：默认可用
-    - 交易工具：需要明确授权
-    - KYT 工具：需要 `kyt.read` scope
+  <Accordion title="工具安全" icon="lock">
+    工具按风险等级分类：
+    - **只读工具**：代币搜索、钱包画像、市场数据 — 默认安全
+    - **交易工具**（`dex_swap`、`dex_create_token`、`transaction_send`）：标记为高风险，MCP 客户端应要求用户明确确认
   </Accordion>
   
   <Accordion title="审计日志" icon="file-lines">

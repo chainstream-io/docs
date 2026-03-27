@@ -1,0 +1,307 @@
+---
+title: "n8n Integration"
+sidebarTitle: "Overview"
+description: "Connect ChainStream to n8n workflow automation with the n8n-nodes-chainstream community node."
+icon: "arrows-split-up-and-left"
+---
+
+# n8n Integration
+
+`n8n-nodes-chainstream` is a community node that brings ChainStream's on-chain data directly into [n8n](https://n8n.io) workflow automation. Query token metadata, monitor trades, and track wallet activity -- all without writing code.
+
+<Info>
+  **Package:** `n8n-nodes-chainstream` v0.0.92 | **Versions published:** 63 | Listed on the [n8n Creator Portal](https://n8n.io)
+</Info>
+
+## Installation
+
+1. Open your n8n instance.
+2. Go to **Settings > Community Nodes**.
+3. Click **Install** and enter:
+
+```
+n8n-nodes-chainstream
+```
+
+4. Confirm the installation and restart n8n if prompted.
+
+## Authentication
+
+The node authenticates via API credentials issued from your ChainStream dashboard.
+
+1. In your ChainStream dashboard, navigate to **Settings > API Keys**.
+2. Create a new key pair. You will receive:
+   - **API Client ID**
+   - **API Client Secret**
+3. In n8n, go to **Credentials > New Credential > ChainStream API**.
+4. Enter the Client ID and Client Secret, then save.
+
+```json
+{
+  "credentials": {
+    "chainstreamApi": {
+      "clientId": "cs_live_xxxxxxxxxxxxxxxx",
+      "clientSecret": "your_client_secret_here"
+    }
+  }
+}
+```
+
+## Supported Resources & Operations
+
+| Resource | Operations |
+| -------- | ---------- |
+| **Token** | Get metadata, get prices, list holders, query liquidity, run security audit, list mint/burn events |
+| **Trade** | List trades, get activities, view leaderboards |
+| **Wallet** | Query balances, get PnL, list activity |
+
+## Node Configuration
+
+Below is a sample n8n node configuration for querying token metadata:
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getMetadata",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112"
+      },
+      "name": "ChainStream",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+Fetching token price data:
+
+```json
+{
+  "parameters": {
+    "resource": "token",
+    "operation": "getPrice",
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "currency": "usd"
+  },
+  "name": "Get Token Price",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [450, 300]
+}
+```
+
+Querying wallet balances:
+
+```json
+{
+  "parameters": {
+    "resource": "wallet",
+    "operation": "getBalances",
+    "chain": "solana",
+    "walletAddress": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+  },
+  "name": "Get Wallet Balance",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [650, 300]
+}
+```
+
+## Example Workflows
+
+### 1. Price Alert Bot
+
+Monitor a token price and send a Telegram notification when it crosses a threshold.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getPrice",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112",
+        "currency": "usd"
+      },
+      "name": "Get SOL Price",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.price }}",
+              "operation": "largerEqual",
+              "value2": 200
+            }
+          ]
+        }
+      },
+      "name": "Price Threshold",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "SOL price alert: ${{ $json.price }}"
+      },
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "position": [850, 200]
+    }
+  ]
+}
+```
+
+### 2. Portfolio Tracker
+
+Run on a schedule to fetch wallet balances and append rows to a Google Sheet.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getBalances",
+        "chain": "solana",
+        "walletAddress": "YOUR_WALLET_ADDRESS"
+      },
+      "name": "Fetch Balances",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_SHEET_ID",
+        "range": "Sheet1!A:D"
+      },
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 3. Whale Watcher
+
+Detect large wallet activity and send a Slack notification.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "solana",
+        "walletAddress": "WHALE_WALLET_ADDRESS"
+      },
+      "name": "Whale Activity",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#whale-alerts",
+        "text": "Whale movement detected: {{ $json.type }} of {{ $json.amount }} {{ $json.token }}"
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 4. Compliance Scanner
+
+When a new deposit arrives, run a KYT (Know Your Transaction) check and flag suspicious activity.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "ethereum",
+        "walletAddress": "DEPOSIT_WALLET_ADDRESS",
+        "activityType": "deposit"
+      },
+      "name": "New Deposits",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "securityAudit",
+        "chain": "ethereum",
+        "tokenAddress": "={{ $json.tokenAddress }}"
+      },
+      "name": "KYT Check",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.flagged }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Flagged?",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Trigger Node" icon="bolt" href="/en/guides/integrations/n8n/trigger-node">
+    Set up real-time event-driven triggers with ChainStream webhooks.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Explore the full ChainStream API that powers this node.
+  </Card>
+</CardGroup>

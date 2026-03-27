@@ -1,0 +1,191 @@
+---
+title: "Cross-Agent Compatibility"
+description: "Compatibility table and configuration details for installing ChainStream skills across 40+ AI agents."
+---
+
+## Overview
+
+The ChainStream skill package (`chainstream-io/skills`) is distributed through the [Vercel Skills CLI](https://skills.dev), which supports **40+ AI agents**. A single command installs and configures the ChainStream MCP tools for your agent of choice.
+
+```bash
+npx skills add chainstream-io/skills
+```
+
+## Compatibility Table
+
+The table below lists the most commonly used agents with their install commands and configuration file locations.
+
+| Agent | Install Command | Config Location |
+|-------|----------------|-----------------|
+| OpenClaw | `npx skills add chainstream-io/skills -a openclaw` | `skills/` or `~/.openclaw/skills/` |
+| Claude Code | `npx skills add chainstream-io/skills -a claude-code` | `.claude.json` |
+| Cursor | `npx skills add chainstream-io/skills -a cursor` | Cursor MCP settings |
+| Cline | `npx skills add chainstream-io/skills -a cline` | Cline config |
+| GitHub Copilot | `npx skills add chainstream-io/skills -a copilot` | `.github/copilot/` |
+| Codex | `npx skills add chainstream-io/skills -a codex` | Codex config |
+
+## Agent-Specific Details
+
+### OpenClaw
+
+The Skills CLI writes the configuration to the OpenClaw skills directory:
+
+- **Project-level**: `./skills/chainstream.yaml`
+- **User-level**: `~/.openclaw/skills/chainstream.yaml`
+
+Generated configuration:
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: ${CHAINSTREAM_API_KEY}
+```
+
+Set the environment variable before running your agent:
+
+```bash
+export CHAINSTREAM_API_KEY=your-key
+openclaw run
+```
+
+### Claude Code
+
+The Skills CLI adds the MCP server entry to `.claude.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+See also: [Stdio Transport](/en/guides/ai-infrastructure/mcp-server/stdio-transport) for manual Claude Code setup.
+
+### Cursor
+
+The Skills CLI configures the MCP server in Cursor's settings. The configuration appears under **Settings > Features > MCP Servers**:
+
+| Field | Value |
+|-------|-------|
+| Name | `chainstream` |
+| Type | `stdio` |
+| Command | `npx @chainstream-io/mcp` |
+
+For project-level config, the CLI writes to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### Cline
+
+The Skills CLI adds the server to Cline's MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### GitHub Copilot
+
+The Skills CLI writes configuration to `.github/copilot/mcp.json` in your repository:
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### Codex
+
+The Skills CLI adds the MCP server to your Codex agent configuration:
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+## Auto-Detection
+
+When you run `npx skills add chainstream-io/skills` without the `-a` flag, the CLI auto-detects your environment by checking for:
+
+1. Agent-specific config files in the current directory
+2. Agent CLI tools installed globally
+3. IDE-specific directories and settings
+
+If multiple agents are detected, the CLI prompts you to choose.
+
+## Updating
+
+To update the ChainStream skill to the latest version:
+
+```bash
+npx skills update chainstream-io/skills
+```
+
+## Removing
+
+To remove the ChainStream skill:
+
+```bash
+npx skills remove chainstream-io/skills
+```
+
+This removes the configuration entry from your agent's config file but does not delete your API key.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools Reference" icon="wrench" href="/en/guides/ai-infrastructure/mcp-server/overview">
+    Explore all 15 MCP tools available after installation.
+  </Card>
+  <Card title="Security" icon="shield" href="/en/guides/integrations/openclaw/security">
+    Security considerations for the ChainStream integration.
+  </Card>
+</CardGroup>

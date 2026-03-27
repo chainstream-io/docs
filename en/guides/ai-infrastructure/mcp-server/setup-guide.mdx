@@ -10,19 +10,17 @@ This guide helps you quickly configure ChainStream MCP Server.
 
 ## Prerequisites
 
-Before you begin, ensure you have:
-
-| Requirement | Details | How to Check |
-|-------------|---------|--------------|
-| ChainStream Account | Registered account | Log in to console to confirm |
-| Access Token | Valid access token | Console → Apps → Generate Token |
+| Requirement | Details | How to Get |
+|-------------|---------|------------|
+| ChainStream Account | Registered account | [Sign up](https://www.chainstream.io/dashboard) |
+| API Key | `X-API-KEY` for authentication | Dashboard → Apps → Create App |
 | AI Client | Claude Desktop / Cursor / Custom client | Installed |
 
 ---
 
 ## MCP Endpoint
 
-ChainStream provides a hosted MCP Server. No local installation required - connect directly via:
+ChainStream provides a hosted MCP Server. No local installation required — connect directly via:
 
 ```
 https://mcp.chainstream.io/mcp
@@ -33,15 +31,10 @@ https://mcp.chainstream.io/mcp
 ## Configuration Steps
 
 <Steps>
-  <Step title="Get Access Token">
-    1. Log in to [ChainStream Console](https://www.chainstream.io/dashboard)
-    2. Navigate to **Apps** page
-    3. Create an App to get Client ID and Client Secret
-    4. Use credentials to generate **Access Token** (see [Authentication docs](/en/guides/getting-started/authentication))
-    
-    <Note>
-    Access Token is valid for 24 hours. We recommend implementing an automatic refresh mechanism in your application.
-    </Note>
+  <Step title="Get API Key">
+    1. Log in to [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+    2. Navigate to **Applications**
+    3. Click **Create New App** and copy your API Key
   </Step>
   
   <Step title="Configure AI Client">
@@ -51,7 +44,7 @@ https://mcp.chainstream.io/mcp
         - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
         - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
         
-        **Configuration**:
+        **Option A — Cloud endpoint (recommended)**:
         
         ```json
         {
@@ -59,7 +52,23 @@ https://mcp.chainstream.io/mcp
             "chainstream": {
               "url": "https://mcp.chainstream.io/mcp",
               "headers": {
-                "Authorization": "Bearer your_access_token"
+                "X-API-KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+
+        **Option B — Local npm package (stdio)**:
+
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "command": "npx",
+              "args": ["@chainstream-io/mcp"],
+              "env": {
+                "CHAINSTREAM_API_KEY": "your_api_key"
               }
             }
           }
@@ -72,9 +81,9 @@ https://mcp.chainstream.io/mcp
       </Tab>
       
       <Tab title="Cursor IDE">
-        **Config file path**: `~/.cursor/mcp.json`
+        **Config file path**: `.cursor/mcp.json` (project-level) or Cursor Settings → Features → MCP Servers
         
-        **Configuration**:
+        **Option A — Cloud endpoint**:
         
         ```json
         {
@@ -82,7 +91,23 @@ https://mcp.chainstream.io/mcp
             "chainstream": {
               "url": "https://mcp.chainstream.io/mcp",
               "headers": {
-                "Authorization": "Bearer your_access_token"
+                "X-API-KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+
+        **Option B — Local npm package (stdio)**:
+
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "command": "npx",
+              "args": ["@chainstream-io/mcp"],
+              "env": {
+                "CHAINSTREAM_API_KEY": "your_api_key"
               }
             }
           }
@@ -91,36 +116,26 @@ https://mcp.chainstream.io/mcp
       </Tab>
       
       <Tab title="Custom Client">
-        If you're using a custom MCP client, connect via HTTP+SSE protocol:
+        Connect to the cloud endpoint via HTTP:
         
-        **Endpoint Information**:
+        | Endpoint | URL | Method |
+        |----------|-----|--------|
+        | MCP Endpoint | `https://mcp.chainstream.io/mcp` | POST |
         
-        | Endpoint | URL |
-        |----------|-----|
-        | MCP Endpoint | `https://mcp.chainstream.io/mcp` |
-        | SSE Endpoint | `https://mcp.chainstream.io/sse` |
-        | Message Endpoint | `https://mcp.chainstream.io/messages` |
-        
-        **Authentication**:
-        
-        Add Authorization header to requests:
-        
-        ```
-        Authorization: Bearer your_access_token
-        ```
+        **Authentication**: pass API Key via `X-API-KEY` header.
         
         **Example Code**:
         
         ```javascript
+        import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
         import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-        import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 
-        const transport = new SSEClientTransport(
-          new URL('https://mcp.chainstream.io/sse'),
+        const transport = new StreamableHTTPClientTransport(
+          new URL('https://mcp.chainstream.io/mcp'),
           {
             requestInit: {
               headers: {
-                'Authorization': `Bearer ${process.env.CHAINSTREAM_ACCESS_TOKEN}`
+                'X-API-KEY': process.env.CHAINSTREAM_API_KEY
               }
             }
           }
@@ -133,7 +148,6 @@ https://mcp.chainstream.io/mcp
 
         await client.connect(transport);
 
-        // List available tools
         const { tools } = await client.listTools();
         console.log('Available tools:', tools.map(t => t.name));
         ```
@@ -158,30 +172,16 @@ https://mcp.chainstream.io/mcp
 Enter the following test question in your AI client:
 
 ```
-Query the token balance of 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on Ethereum
+What is the SOL token on Solana? Is it safe?
 ```
 
 ### Expected Result
 
 If configured successfully, the AI should:
 
-1. Recognize this as a balance query request
-2. Call the `get_token_balance` tool
-3. Return the address's token balance list
-
-**Success example**:
-
-```
-This address (Vitalik.eth) holds the following on Ethereum:
-
-| Token | Balance | Value (USD) |
-|-------|---------|-------------|
-| ETH   | 1,234.56 | $2,469,120 |
-| USDC  | 50,000 | $50,000 |
-| ...   | ... | ... |
-
-Total value: ~$2,500,000
-```
+1. Call `tokens_search` to find the SOL token
+2. Call `tokens_analyze` to get security and holder data
+3. Return a natural language summary
 
 <Note>
 If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](#troubleshooting) below.
@@ -195,22 +195,21 @@ If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](
   <Accordion title="Authentication failed" icon="key">
     **Possible causes**:
     
-    1. **Access Token entered incorrectly**
+    1. **API Key entered incorrectly**
        - Check for extra spaces
        - Confirm complete copy
     
-    2. **Access Token expired**
-       - Token is valid for 24 hours
-       - Need to regenerate
+    2. **API Key revoked or expired**
+       - Check key status in Dashboard
+       - Create a new key if needed
     
-    3. **Token format incorrect**
-       - Confirm it's a complete JWT format
-       - Confirm `Bearer ` prefix is included
+    3. **Wrong header name**
+       - Cloud endpoint: use `X-API-KEY` header
+       - npm package: use `CHAINSTREAM_API_KEY` env var
     
     **Solutions**:
-    - Regenerate Access Token
-    - Check if Token is expired
-    - Confirm Authorization header format is correct
+    - Verify key in Dashboard → Applications
+    - Test directly: `curl -H "X-API-KEY: your_key" https://api.chainstream.io/v2/blockchain`
   </Accordion>
 
   <Accordion title="Connection failed" icon="plug-circle-xmark">
@@ -227,7 +226,6 @@ If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](
     **Solution**:
     
     ```bash
-    # Test endpoint connectivity
     curl -I https://mcp.chainstream.io/mcp
     ```
   </Accordion>
@@ -248,7 +246,6 @@ If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](
     **Solution**:
     
     ```bash
-    # macOS - validate config file
     cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
     ```
   </Accordion>
@@ -260,7 +257,7 @@ If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](
     2. Request rate too high, triggering rate limit
     
     **Solutions**:
-    - Check quota usage in the console
+    - Check quota usage in Dashboard
     - Upgrade plan for more quota
   </Accordion>
 
@@ -269,7 +266,6 @@ If the AI doesn't call the tool or returns an error, refer to [Troubleshooting](
     
     1. Network latency
     2. Query data volume too large
-    3. Server load high
     
     **Solutions**:
     - Check network connection

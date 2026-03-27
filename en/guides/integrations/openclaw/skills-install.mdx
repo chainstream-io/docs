@@ -1,0 +1,152 @@
+---
+title: "Installation Methods"
+description: "Three ways to install ChainStream skills for OpenClaw agents: Vercel Skills CLI, ClawHub, or direct MCP configuration."
+---
+
+## Overview
+
+There are three ways to connect ChainStream to your OpenClaw agent. Choose the method that best fits your workflow.
+
+| Method | Best For | Setup Time |
+|--------|----------|------------|
+| [Vercel Skills CLI](#method-1-vercel-skills-cli) | Cross-agent compatibility, supports 40+ agents | ~30 seconds |
+| [ClawHub](#method-2-clawhub) | OpenClaw-native, community ecosystem | ~1 minute |
+| [Direct MCP Config](#method-3-direct-mcp-config) | Full control, custom deployments | ~2 minutes |
+
+## Method 1: Vercel Skills CLI
+
+The Vercel Skills CLI is a cross-agent package manager that installs ChainStream skills into any supported AI agent with a single command.
+
+### Quick Install
+
+```bash
+npx skills add chainstream-io/skills
+```
+
+This auto-detects your agent environment and configures the ChainStream MCP tools accordingly.
+
+### Agent-Specific Install
+
+To target a specific agent:
+
+```bash
+npx skills add chainstream-io/skills -a openclaw
+```
+
+### Supported Agents
+
+The Vercel Skills CLI supports **40+ agents**, including:
+
+| Agent | Install Command |
+|-------|----------------|
+| OpenClaw | `npx skills add chainstream-io/skills -a openclaw` |
+| Claude Code | `npx skills add chainstream-io/skills -a claude-code` |
+| Cursor | `npx skills add chainstream-io/skills -a cursor` |
+| Cline | `npx skills add chainstream-io/skills -a cline` |
+| GitHub Copilot | `npx skills add chainstream-io/skills -a copilot` |
+| Codex | `npx skills add chainstream-io/skills -a codex` |
+
+See [Cross-Agent Compatibility](/en/guides/integrations/openclaw/cross-agent-compatibility) for the full compatibility table and config file locations.
+
+<Tip>
+  After installation, set your API key as an environment variable:
+
+  ```bash
+  export CHAINSTREAM_API_KEY=your-key
+  ```
+</Tip>
+
+## Method 2: ClawHub
+
+[ClawHub](https://clawhub.ai) is the native skill marketplace for OpenClaw. The ChainStream skill is published as a community package.
+
+### Skill Details
+
+| Field | Value |
+|-------|-------|
+| URL | [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data) |
+| Version | 3.1.1 |
+| MCP Tools | 17 |
+| License | MIT-0 |
+
+### Install via CLI
+
+```bash
+openclaw skills install chainstream-data
+```
+
+### Install via ClawHub UI
+
+1. Visit [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)
+2. Click **Install**
+3. Follow the on-screen instructions to configure your API key
+
+### Configure API Key
+
+After installing from ClawHub, set the API key in your OpenClaw agent configuration:
+
+```yaml
+skills:
+  chainstream-data:
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+<Note>
+  The ClawHub skill exposes 17 MCP tools (the 15 core tools plus 2 ClawHub-specific utilities). See the [Tools Reference](/en/guides/ai-infrastructure/mcp-server/overview) for details on the core toolset.
+</Note>
+
+## Method 3: Direct MCP Config
+
+Configure the ChainStream MCP server directly in your OpenClaw agent's configuration file. ChainStream offers two connection modes:
+
+### Cloud Endpoint (Recommended)
+
+Connect to the hosted MCP endpoint — zero installation, always up-to-date:
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+### Local npm Package
+
+Run the MCP server locally via the `@chainstream-io/mcp` npm package. The package connects to ChainStream's API on your behalf — useful when your agent framework requires a local stdio process:
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    command: npx
+    args:
+      - "@chainstream-io/mcp"
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+See [MCP Server Setup](/en/guides/ai-infrastructure/mcp-server/setup-guide) for detailed configuration with Claude Desktop, Cursor, and other clients.
+
+## Verify Installation
+
+After installing with any method, verify the tools are available by asking your OpenClaw agent:
+
+```
+What ChainStream tools do you have access to?
+```
+
+The agent should list the available tools, including `tokens_search`, `tokens_analyze`, `wallets_profile`, and others.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Cross-Agent Compatibility" icon="arrows-rotate" href="/en/guides/integrations/openclaw/cross-agent-compatibility">
+    Full compatibility table for all supported agents and their config locations.
+  </Card>
+  <Card title="Security" icon="shield" href="/en/guides/integrations/openclaw/security">
+    Important security considerations for production deployments.
+  </Card>
+</CardGroup>

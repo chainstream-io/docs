@@ -1,0 +1,176 @@
+---
+title: "Security Considerations"
+description: "Security review, risk flags, and best practices for using ChainStream with OpenClaw agents."
+---
+
+## ClawHub Security Review
+
+The ChainStream skill published on ClawHub (`chainstream/chainstream-data`) has been flagged as **suspicious** with **medium confidence** by ClawHub's automated security scanner.
+
+<Warning>
+  This flag does not mean the skill is malicious. It indicates that certain patterns in the skill's behavior warrant careful review before production use.
+</Warning>
+
+### Flagged Behaviors
+
+The scanner identified three behaviors that triggered the warning:
+
+| Behavior | Risk Level | Description |
+|----------|------------|-------------|
+| Wallet creation with private key storage | High | The skill includes instructions for creating wallets and storing private keys, which could expose sensitive cryptographic material |
+| x402 auto-payment | Medium | The x402 payment protocol can automatically authorize spending, reducing visibility into outgoing transactions |
+| Remote npm execution | Low | The skill uses `npx` to fetch and execute packages from npm at runtime |
+
+### What This Means
+
+- **Wallet creation**: Some ChainStream tools (`dex_swap`, `dex_create_token`, `transaction_send`) require wallet access. The skill documentation includes wallet setup instructions that involve private key handling.
+- **x402 auto-payment**: The x402 protocol enables machine-to-machine micropayments. When enabled, agents can authorize small payments without explicit per-transaction approval.
+- **Remote npm execution**: Using `npx @chainstream-io/mcp` downloads and executes the package from the npm registry. While this is standard practice, it introduces a supply chain dependency.
+
+## Best Practices
+
+Follow these guidelines to use ChainStream safely with OpenClaw agents in production.
+
+### 1. Prefer Dashboard API Keys Over Wallet Creation
+
+Use API keys generated from the [ChainStream Dashboard](https://app.chainstream.io) for authentication. API keys provide read access to on-chain data without requiring wallet creation or private key management.
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-dashboard-key  # No wallet needed
+```
+
+<Tip>
+  API keys are sufficient for all read-only tools: token search, analysis, wallet profiling, market data, and trade history. Wallet access is only required for execution tools (`dex_swap`, `dex_create_token`, `transaction_send`).
+</Tip>
+
+### 2. Never Import Production Private Keys
+
+If your use case requires execution tools, **never import private keys** from wallets holding significant funds.
+
+- Create a dedicated test wallet with minimal funds
+- Fund it only with the amount needed for the specific operation
+- Treat any wallet connected to an AI agent as a hot wallet with elevated risk
+
+```
+DO:    Create a fresh wallet with 0.1 SOL for testing swaps
+DON'T: Import your main wallet with 100 SOL into an agent config
+```
+
+### 3. Verify npm Packages Before Running
+
+Before running `npx @chainstream-io/mcp`, verify the package:
+
+```bash
+# Check package details on npm
+npm view @chainstream-io/mcp
+
+# Check the publisher
+npm view @chainstream-io/mcp maintainers
+
+# Pin a specific version instead of using latest
+npx @chainstream-io/mcp@0.0.3
+```
+
+For production deployments, install a pinned version globally rather than using `npx`:
+
+```bash
+npm install -g @chainstream-io/mcp@0.0.3
+```
+
+### 4. Run in Isolated Environments
+
+Run the MCP server and OpenClaw agent in isolated environments to limit blast radius:
+
+- **Docker containers** with restricted network access
+- **Dedicated VMs** or cloud instances
+- **Sandboxed agent runtimes** with limited filesystem access
+
+```dockerfile
+FROM node:20-slim
+
+# Non-root user
+RUN useradd -m agent
+USER agent
+
+RUN npm install -g @chainstream-io/mcp@0.0.3
+
+CMD ["chainstream-mcp"]
+```
+
+### 5. Require Explicit Approval for Payment Flows
+
+Configure your OpenClaw agent to require human-in-the-loop confirmation for any tool that moves funds:
+
+- `dex_swap` -- executes token swaps
+- `dex_create_token` -- creates tokens (may require SOL)
+- `transaction_send` -- broadcasts signed transactions
+
+In your OpenClaw agent configuration:
+
+```yaml
+agent:
+  confirmation_required:
+    - dex_swap
+    - dex_create_token
+    - transaction_send
+```
+
+If using x402 auto-payment, set explicit spending limits:
+
+```yaml
+agent:
+  x402:
+    max_per_transaction: 0.01  # USD
+    max_daily: 1.00            # USD
+    require_approval_above: 0.10  # USD
+```
+
+### 6. Monitor Wallet Transactions
+
+If you connect a wallet to your agent, actively monitor its activity:
+
+- Set up webhook alerts for outgoing transactions using `webhooks_manage`
+- Review wallet activity regularly using `wallets_activity`
+- Use a block explorer to independently verify agent-initiated transactions
+
+```bash
+# Example: Set up a webhook for wallet activity
+# (via the agent or direct API call)
+webhooks_manage action=create url=https://your-server.com/alerts events=["wallet_transfer"]
+```
+
+## Security Checklist
+
+Use this checklist before deploying ChainStream with OpenClaw in production:
+
+- [ ] API key stored in environment variables, not in code or config files
+- [ ] No production private keys imported into agent configuration
+- [ ] npm package version pinned (not using `latest`)
+- [ ] Agent runs in an isolated environment (Docker, VM, sandbox)
+- [ ] Execution tools (`dex_swap`, `dex_create_token`, `transaction_send`) require human approval
+- [ ] x402 auto-payment disabled or capped with spending limits
+- [ ] Wallet monitoring and alerting configured
+- [ ] Regular review of agent transaction logs
+
+## Reporting Issues
+
+If you discover a security vulnerability in the ChainStream MCP server or ClawHub skill:
+
+- **ChainStream**: Email [security@chainstream.io](mailto:security@chainstream.io)
+- **ClawHub**: Report via the ClawHub skill page at [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Methods" icon="download" href="/en/guides/integrations/openclaw/skills-install">
+    Choose an installation method that fits your security requirements.
+  </Card>
+  <Card title="Self-Hosted Setup" icon="server" href="/en/guides/ai-infrastructure/mcp-server/installation">
+    Run your own MCP server for maximum control.
+  </Card>
+</CardGroup>

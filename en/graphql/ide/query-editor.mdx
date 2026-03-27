@@ -1,0 +1,174 @@
+---
+title: "Query Editor"
+description: "Monaco-powered GraphQL editor with autocomplete, syntax highlighting, panels, and real-time query execution"
+icon: "pen-to-square"
+---
+
+## Monaco Editor
+
+The query editor is built on [Monaco](https://microsoft.github.io/monaco-editor/) — the same engine behind VS Code — with a GraphQL language worker that provides:
+
+- **Syntax highlighting** for GraphQL operations, fields, arguments, and directives
+- **Schema-driven autocomplete** — press `Ctrl+Space` to see available fields, arguments, and types based on the live schema
+- **Real-time error detection** — red underlines and error markers for invalid field names, missing arguments, or type mismatches
+- **Bracket matching** and **auto-closing** for braces, parentheses, and strings
+- **Multi-cursor editing** for batch changes
+
+<Tip>
+Autocomplete is schema-aware. As you type inside a Cube (e.g. `DEXTrades`), only the fields and arguments valid for that Cube appear in the suggestion list.
+</Tip>
+
+---
+
+## Editor Panels
+
+The editor area is divided into three tabs at the bottom. Switch between them to configure different parts of your request.
+
+### Query Panel
+
+The main editing area where you write GraphQL queries. This is where Monaco's autocomplete, highlighting, and error detection are active.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+### Variables Panel
+
+Use the Variables panel to pass JSON variables to parameterized queries. This keeps your queries reusable — change variable values without editing the query text.
+
+<Tabs>
+  <Tab title="Query">
+    ```graphql
+    query LatestTrades($network: Network!, $limit: Int!) {
+      DEXTrades(
+        network: $network
+        limit: {count: $limit}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Variables">
+    ```json
+    {
+      "network": "sol",
+      "limit": 20
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Headers Panel
+
+Configure HTTP headers sent with every request. The Headers panel is **shown by default** with the `X-API-KEY` header pre-configured.
+
+```json
+{
+  "X-API-KEY": "your_api_key"
+}
+```
+
+You can add additional custom headers as needed. All headers are sent as part of the POST request to the GraphQL endpoint.
+
+<Note>
+The `Content-Type: application/json` header is automatically included — you do not need to set it manually.
+</Note>
+
+---
+
+## Toolbar
+
+The toolbar sits at the top of the editor and provides quick-access actions:
+
+| Button | Action | Description |
+|:--|:--|:--|
+| **Execute** (▶) | Run query | Sends the current query (with variables and headers) to the GraphQL endpoint |
+| **Prettify** | Format query | Auto-formats the query with consistent indentation and line breaks |
+| **Copy** | Copy query | Copies the current query text to the clipboard |
+| **Merge** | Merge fragments | Merges inline fragments into a single flattened query |
+| **Save Query** | Save locally | Saves the current query with a title and optional tags |
+| **Export Code** | Export snippet | Generates a code snippet for the current query in your chosen language |
+
+---
+
+## Executing Queries
+
+To execute a query:
+
+1. Write or load a query into the editor
+2. Set your `X-API-KEY` in the Headers panel
+3. Click the **Execute** button (▶) in the toolbar, or press **Ctrl/Cmd+Enter**
+
+The response appears in the **Results Panel** on the right side of the editor with full JSON syntax highlighting. If the query contains errors, the error response is displayed with the error message and location details.
+
+---
+
+## Results Panel
+
+The results panel displays the JSON response from the GraphQL endpoint with:
+
+- **Syntax highlighting** for JSON keys, strings, numbers, and booleans
+- **Collapsible nodes** for navigating deeply nested responses
+- **Copy response** support via right-click context menu
+
+A typical successful response includes a `data` object matching your query structure, plus an `extensions.credits` object showing billing information.
+
+---
+
+## Status Bar
+
+The status bar at the bottom of the IDE provides real-time feedback on query execution:
+
+| Indicator | Values | Description |
+|:--|:--|:--|
+| **State** | `Ready` · `Executing...` · `Success` · `Error` | Current request lifecycle state |
+| **Latency** | e.g. `120ms` | Round-trip time from request sent to response received |
+| **Size** | e.g. `2.4 KB` | Response body size |
+| **Credits** | e.g. `8 CU` | Credit Units consumed by this query |
+
+<Info>
+Credit Units (CU) reflect the computational cost of your query. Queries scanning more data or returning larger result sets consume more CU. See [Billing & Credits](/en/graphql/billing/graphql-billing) for details.
+</Info>
+
+---
+
+## Keyboard Shortcuts
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Shortcut | Action |
+|:--|:--|
+| `Ctrl/Cmd + Enter` | Execute query |
+| `Ctrl/Cmd + B` | Toggle sidebar |
+| `Ctrl + Space` | Trigger autocomplete |
+| `Ctrl/Cmd + Shift + P` | Command palette |
+| `Ctrl/Cmd + /` | Toggle line comment |
+| `Ctrl/Cmd + D` | Select next occurrence |
+| `Ctrl/Cmd + Shift + F` | Format / Prettify |
+| `Alt + Up/Down` | Move line up/down |
+
+</div>
+
+<Tip>
+On macOS, replace `Ctrl` with `Cmd`. The IDE automatically detects your operating system and displays the appropriate modifier key.
+</Tip>

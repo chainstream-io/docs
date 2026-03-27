@@ -1,0 +1,189 @@
+---
+title: 'Skills Installation'
+description: 'Install ChainStream Agent Skills on Cursor, Claude Code, ClawHub, and more'
+icon: "download"
+---
+
+## Installation Methods
+
+ChainStream skills can be installed through multiple channels depending on your agent platform.
+
+| Platform | Method | Setup Time |
+|----------|--------|------------|
+| [ClawHub](#clawhub) | Marketplace install | ~30 seconds |
+| [Cursor](#cursor) | Plugin auto-discovery | ~1 minute |
+| [Claude Code](#claude-code) | Plugin install | ~30 seconds |
+| [Codex](#codex) | Git clone | ~1 minute |
+| [OpenCode](#opencode) | Git clone | ~1 minute |
+| [Gemini CLI](#gemini-cli) | Extension install | ~30 seconds |
+
+---
+
+## ClawHub
+
+ChainStream skills are published on [ClawHub](https://clawhub.ai), the OpenClaw skill marketplace.
+
+| Skill | ClawHub URL | Version |
+|-------|------------|---------|
+| chainstream-data | [clawhub.ai/chainstream-data](https://clawhub.ai/chainstream-data) | Latest |
+| chainstream-defi | [clawhub.ai/chainstream-defi](https://clawhub.ai/chainstream-defi) | Latest |
+
+```bash
+# Install via ClawHub CLI
+openclaw skills install chainstream-data
+openclaw skills install chainstream-defi
+```
+
+Or install from the ClawHub web UI — click **Install** on the skill page and follow the instructions.
+
+---
+
+## Cursor
+
+Skills are automatically discovered via the `.cursor-plugin/plugin.json` configuration included in the skills repository.
+
+<Steps>
+  <Step title="Clone the skills repo">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git
+    ```
+  </Step>
+  <Step title="Open in Cursor">
+    Open the cloned `skills/` directory in Cursor. The `.cursor-plugin/plugin.json` tells Cursor to load the skills automatically.
+  </Step>
+  <Step title="Configure API Key">
+    Set your API Key for CLI and MCP access:
+    ```bash
+    npx @chainstream-io/cli config set --key apiKey --value <your-api-key>
+    ```
+  </Step>
+  <Step title="Start using">
+    Ask your AI assistant:
+    ```
+    search for meme tokens on Solana
+    is <token_address> safe to buy?
+    swap 0.1 SOL for <token_address>
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Cursor will also publish ChainStream as a marketplace plugin. Once available, you can install directly from Cursor Settings > Extensions.
+</Note>
+
+---
+
+## Claude Code
+
+```bash
+/plugin install chainstream
+```
+
+The `.claude-plugin/plugin.json` in the skills repo provides the plugin metadata for Claude Code.
+
+<Note>
+Claude Code marketplace plugin is coming soon. Once published, install directly from the Claude Code plugin store.
+</Note>
+
+---
+
+## Codex
+
+<Steps>
+  <Step title="Clone the repo">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git ~/.agents/skills/chainstream
+    ```
+  </Step>
+  <Step title="Follow setup">
+    See the instructions in `.codex/INSTALL.md` within the cloned repo.
+  </Step>
+</Steps>
+
+---
+
+## OpenCode
+
+<Steps>
+  <Step title="Clone the repo">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git ~/.agents/skills/chainstream
+    ```
+  </Step>
+  <Step title="Follow setup">
+    See the instructions in `.opencode/INSTALL.md` within the cloned repo.
+  </Step>
+</Steps>
+
+---
+
+## Gemini CLI
+
+```bash
+gemini extensions install https://github.com/chainstream-io/skills
+```
+
+The `gemini-extension.json` in the repo root configures Gemini CLI to load the context file.
+
+---
+
+## MCP Server Configuration
+
+Skills work best when paired with the ChainStream MCP Server. Add this to your MCP client configuration:
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+Get your API Key from [ChainStream Dashboard](https://app.chainstream.io) or via [x402 / MPP payment](/en/guides/getting-started/x402-payments).
+</Note>
+
+---
+
+## Verify Installation
+
+After installation, test with a simple query:
+
+```bash
+# Via CLI
+npx @chainstream-io/cli token search --keyword PUMP --chain sol
+
+# Via AI assistant (if skills are loaded)
+# Ask: "search for PUMP tokens on Solana"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="chainstream-data" icon="magnifying-glass" href="/en/guides/ai-infrastructure/agent-skills/chainstream-data">
+    Data query capabilities: token, market, wallet
+  </Card>
+  <Card title="chainstream-defi" icon="right-left" href="/en/guides/ai-infrastructure/agent-skills/chainstream-defi">
+    DeFi execution: swap, launchpad, transaction
+  </Card>
+</CardGroup>

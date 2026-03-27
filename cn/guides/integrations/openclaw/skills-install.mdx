@@ -1,0 +1,152 @@
+---
+title: "安装方式"
+description: "三种为 OpenClaw Agent 安装 ChainStream Skill 的方式：Vercel Skills CLI、ClawHub 或直接 MCP 配置。"
+---
+
+## 概述
+
+有三种方式将 ChainStream 连接到你的 OpenClaw Agent。请选择最适合你工作流程的方式。
+
+| 方式 | 适用场景 | 设置时间 |
+|------|----------|----------|
+| [Vercel Skills CLI](#method-1-vercel-skills-cli) | 跨 Agent 兼容，支持 40+ Agent | ~30 秒 |
+| [ClawHub](#method-2-clawhub) | OpenClaw 原生，社区生态 | ~1 分钟 |
+| [直接 MCP 配置](#method-3-direct-mcp-config) | 完全控制，自定义部署 | ~2 分钟 |
+
+## Method 1: Vercel Skills CLI
+
+Vercel Skills CLI 是一个跨 Agent 的包管理器，只需一条命令即可将 ChainStream Skill 安装到任何支持的 AI Agent 中。
+
+### 快速安装
+
+```bash
+npx skills add chainstream-io/skills
+```
+
+这会自动检测你的 Agent 环境并相应地配置 ChainStream MCP 工具。
+
+### 指定 Agent 安装
+
+要针对特定 Agent 安装：
+
+```bash
+npx skills add chainstream-io/skills -a openclaw
+```
+
+### 支持的 Agent
+
+Vercel Skills CLI 支持 **40+ Agent**，包括：
+
+| Agent | 安装命令 |
+|-------|----------|
+| OpenClaw | `npx skills add chainstream-io/skills -a openclaw` |
+| Claude Code | `npx skills add chainstream-io/skills -a claude-code` |
+| Cursor | `npx skills add chainstream-io/skills -a cursor` |
+| Cline | `npx skills add chainstream-io/skills -a cline` |
+| GitHub Copilot | `npx skills add chainstream-io/skills -a copilot` |
+| Codex | `npx skills add chainstream-io/skills -a codex` |
+
+完整兼容性表格和配置文件位置请参阅[跨 Agent 兼容性](/cn/guides/integrations/openclaw/cross-agent-compatibility)。
+
+<Tip>
+  安装完成后，将 API Key 设置为环境变量：
+
+  ```bash
+  export CHAINSTREAM_API_KEY=your-key
+  ```
+</Tip>
+
+## Method 2: ClawHub
+
+[ClawHub](https://clawhub.ai) 是 OpenClaw 的原生 Skill 市场。ChainStream Skill 作为社区包发布。
+
+### Skill 详情
+
+| 字段 | 值 |
+|------|-----|
+| URL | [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data) |
+| 版本 | 3.1.1 |
+| MCP 工具数 | 17 |
+| 许可证 | MIT-0 |
+
+### 通过 CLI 安装
+
+```bash
+openclaw skills install chainstream-data
+```
+
+### 通过 ClawHub UI 安装
+
+1. 访问 [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)
+2. 点击 **Install**
+3. 按照屏幕上的指引配置你的 API Key
+
+### 配置 API Key
+
+从 ClawHub 安装后，在 OpenClaw Agent 配置中设置 API Key：
+
+```yaml
+skills:
+  chainstream-data:
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+<Note>
+  ClawHub Skill 提供 17 个 MCP 工具（15 个核心工具加 2 个 ClawHub 专用工具）。核心工具集详情请参阅[工具参考](/cn/guides/ai-infrastructure/mcp-server/overview)。
+</Note>
+
+## 方式三：直接 MCP 配置
+
+直接在 OpenClaw Agent 的配置文件中配置 ChainStream MCP Server。ChainStream 提供两种连接模式：
+
+### 云端端点（推荐）
+
+连接托管的 MCP 端点 — 零安装，始终最新：
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+### 本地 npm 包
+
+通过 `@chainstream-io/mcp` npm 包在本地运行 MCP Server。该包代你连接 ChainStream API — 适用于 Agent 框架要求本地 stdio 进程的场景：
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    command: npx
+    args:
+      - "@chainstream-io/mcp"
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+详见 [MCP Server 设置](/cn/guides/ai-infrastructure/mcp-server/setup-guide) 了解 Claude Desktop、Cursor 等客户端的详细配置。
+
+## 验证安装
+
+使用任意方式安装后，通过向 OpenClaw Agent 提问来验证工具是否可用：
+
+```
+What ChainStream tools do you have access to?
+```
+
+Agent 应列出可用工具，包括 `tokens_search`、`tokens_analyze`、`wallets_profile` 等。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="跨 Agent 兼容性" icon="arrows-rotate" href="/cn/guides/integrations/openclaw/cross-agent-compatibility">
+    所有支持的 Agent 的完整兼容性表格及其配置文件位置。
+  </Card>
+  <Card title="安全注意事项" icon="shield" href="/cn/guides/integrations/openclaw/security">
+    生产部署的重要安全注意事项。
+  </Card>
+</CardGroup>

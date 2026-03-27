@@ -1,0 +1,245 @@
+---
+title: "端点与认证"
+description: "GraphQL 端点 URL、认证、请求格式与支持的网络"
+icon: "key"
+---
+
+## GraphQL 端点
+
+所有 GraphQL 查询发往同一端点：
+
+```
+https://graphql.chainstream.io/graphql
+```
+
+同时支持 **POST** 与 **GET**。
+
+| Method | Content-Type | 使用场景 |
+|:--|:--|:--|
+| `POST` | `application/json` | 推荐用于所有查询 —— 支持 variables 与复杂查询 |
+| `GET` | 查询字符串（`?query=...`） | 简单查询、浏览器测试、利于缓存 |
+
+<Tip>
+生产环境请使用 **POST**。GET 将查询编码在 URL 中，存在长度限制，复杂查询不便使用。
+</Tip>
+
+---
+
+## 认证
+
+在 `X-API-KEY` 请求头中传入 API Key 即可完成认证。与 REST Data API 使用同一 API Key，无需单独凭证。
+
+```
+X-API-KEY: your_api_key
+```
+
+<Note>
+在 [ChainStream Dashboard](https://www.chainstream.io/dashboard) → **Applications** → **Create New App** 获取 API Key。Key 以 `cs_live_...` 开头。
+</Note>
+
+### 必填请求头
+
+| Header | Value | 是否必填 |
+|:--|:--|:--|
+| `Content-Type` | `application/json` | 是（POST） |
+| `X-API-KEY` | `cs_live_...` | 是 |
+
+---
+
+## 请求格式
+
+GraphQL 请求体为包含两个字段的 JSON 对象：
+
+| Field | Type | 说明 |
+|:--|:--|:--|
+| `query` | `string` | GraphQL query 或 mutation 字符串 |
+| `variables` | `object` | 可选，在查询中通过 `$variable` 语法引用的变量 |
+
+### POST 示例
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d '{
+    "query": "query ($network: Network!) { DEXTrades(network: $network, limit: {count: 5}) { Block { Time } Trade { Buy { Currency { MintAddress } Amount } } } }",
+    "variables": { "network": "sol" }
+  }'
+```
+  </Tab>
+  <Tab title="cURL (query file)">
+复杂查询可保存为文件再引用：
+
+```bash
+# Save query to file
+cat > query.graphql << 'EOF'
+query ($network: Network!) {
+  DEXTrades(network: $network, limit: {count: 5}) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+      }
+    }
+  }
+}
+EOF
+
+# Send with variables
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d "{\"query\": \"$(cat query.graphql | tr '\n' ' ')\", \"variables\": {\"network\": \"sol\"}}"
+```
+  </Tab>
+  <Tab title="JavaScript (fetch)">
+```javascript
+const response = await fetch("https://graphql.chainstream.io/graphql", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-KEY": "your_api_key",
+  },
+  body: JSON.stringify({
+    query: `query ($network: Network!) {
+      DEXTrades(network: $network, limit: {count: 5}) {
+        Block { Time }
+        Trade { Buy { Currency { MintAddress } Amount } }
+      }
+    }`,
+    variables: { network: "sol" },
+  }),
+});
+
+const { data, extensions } = await response.json();
+console.log(data.DEXTrades);
+```
+  </Tab>
+  <Tab title="Python (requests)">
+```python
+import requests
+
+resp = requests.post(
+    "https://graphql.chainstream.io/graphql",
+    headers={
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    },
+    json={
+        "query": """query ($network: Network!) {
+            DEXTrades(network: $network, limit: {count: 5}) {
+                Block { Time }
+                Trade { Buy { Currency { MintAddress } Amount } }
+            }
+        }""",
+        "variables": {"network": "sol"},
+    },
+)
+
+data = resp.json()
+print(data["data"]["DEXTrades"])
+```
+  </Tab>
+</Tabs>
+
+### GET 示例
+
+```bash
+curl -G "https://graphql.chainstream.io/graphql" \
+  -H "X-API-KEY: your_api_key" \
+  --data-urlencode 'query={ DEXTrades(network: sol, limit: {count: 5}) { Block { Time } } }'
+```
+
+---
+
+## 支持的网络
+
+在每个顶层 Cube 查询上将 `network` 作为枚举传入：
+
+| Network Enum | Blockchain | Chain ID |
+|:--|:--|:--|
+| `sol` | Solana | — |
+| `eth` | Ethereum | 1 |
+| `bsc` | BNB Chain (BSC) | 56 |
+
+```graphql
+# Solana
+{ DEXTrades(network: sol, limit: {count: 5}) { ... } }
+
+# Ethereum
+{ DEXTrades(network: eth, limit: {count: 5}) { ... } }
+
+# BSC
+{ DEXTrades(network: bsc, limit: {count: 5}) { ... } }
+```
+
+---
+
+## 响应格式
+
+所有响应均为 JSON，结构如下：
+
+```json
+{
+  "data": {
+    "DEXTrades": [
+      { "Block": { "Time": "2025-03-27T10:15:30Z" }, "..." : "..." }
+    ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        { "cube": "DEXTrades", "credits": 50, "row_count": 5 }
+      ]
+    }
+  }
+}
+```
+
+| Field | 说明 |
+|:--|:--|
+| `data` | 查询结果 —— 与查询结构一致 |
+| `errors` | 仅在存在校验或执行错误时出现 |
+| `extensions.credits.total` | 本次查询消耗的 credit 单位总计 |
+| `extensions.credits.cubes` | 按 Cube 拆分：Cube 名称、计费 credits 与返回行数 |
+
+<Note>
+在产生 credits 消耗时，响应会包含 `extensions.credits` 字段。Credits 计算方式见 [计费与额度](/cn/graphql/billing/graphql-billing)。
+</Note>
+
+### 错误响应
+
+当查询格式错误或执行失败时，响应会包含 `errors` 数组：
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTrades'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ]
+}
+```
+
+<Tip>
+在接入应用前，可使用 [GraphQL IDE](https://ide.chainstream.io) 交互式校验查询。IDE 提供自动补全与行内错误高亮。
+</Tip>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="运行首次查询" icon="play" href="/cn/graphql/getting-started/first-query">
+    跟随分步教程，在 IDE 或 cURL 中执行真实查询。
+  </Card>
+  <Card title="探索 Schema" icon="diagram-project" href="/cn/graphql/schema/schema-overview">
+    深入了解 12 个 Cube、字段类型、过滤运算符与聚合函数。
+  </Card>
+</CardGroup>

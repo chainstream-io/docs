@@ -1,0 +1,189 @@
+---
+title: '技能安装'
+description: '在 Cursor、Claude Code、ClawHub 等平台上安装 ChainStream Agent 技能'
+icon: "download"
+---
+
+## 安装方式
+
+ChainStream 技能可以通过多种渠道安装，取决于你的 Agent 平台。
+
+| 平台 | 方式 | 安装时间 |
+|------|------|----------|
+| [ClawHub](#clawhub) | 市场安装 | 约 30 秒 |
+| [Cursor](#cursor) | 插件自动发现 | 约 1 分钟 |
+| [Claude Code](#claude-code) | 插件安装 | 约 30 秒 |
+| [Codex](#codex) | Git 克隆 | 约 1 分钟 |
+| [OpenCode](#opencode) | Git 克隆 | 约 1 分钟 |
+| [Gemini CLI](#gemini-cli) | 扩展安装 | 约 30 秒 |
+
+---
+
+## ClawHub
+
+ChainStream 技能已发布在 [ClawHub](https://clawhub.ai)（OpenClaw 技能市场）。
+
+| 技能 | ClawHub 地址 | 版本 |
+|------|-------------|------|
+| chainstream-data | [clawhub.ai/chainstream-data](https://clawhub.ai/chainstream-data) | 最新 |
+| chainstream-defi | [clawhub.ai/chainstream-defi](https://clawhub.ai/chainstream-defi) | 最新 |
+
+```bash
+# 通过 ClawHub CLI 安装
+openclaw skills install chainstream-data
+openclaw skills install chainstream-defi
+```
+
+或在 ClawHub 网页上点击 **Install** 并按照指引操作。
+
+---
+
+## Cursor
+
+技能通过 skills 仓库中的 `.cursor-plugin/plugin.json` 配置自动发现。
+
+<Steps>
+  <Step title="克隆 skills 仓库">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git
+    ```
+  </Step>
+  <Step title="在 Cursor 中打开">
+    在 Cursor 中打开克隆的 `skills/` 目录。`.cursor-plugin/plugin.json` 会让 Cursor 自动加载技能。
+  </Step>
+  <Step title="配置 API Key">
+    设置 API Key 用于 CLI 和 MCP 访问：
+    ```bash
+    npx @chainstream-io/cli config set --key apiKey --value <your-api-key>
+    ```
+  </Step>
+  <Step title="开始使用">
+    向 AI 助手提问：
+    ```
+    搜索 Solana 上的 meme 代币
+    <token_address> 安全吗？
+    用 0.1 SOL 兑换 <token_address>
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Cursor 市场插件即将发布。届时可直接从 Cursor 设置 > 扩展中安装。
+</Note>
+
+---
+
+## Claude Code
+
+```bash
+/plugin install chainstream
+```
+
+skills 仓库中的 `.claude-plugin/plugin.json` 提供了 Claude Code 的插件元数据。
+
+<Note>
+Claude Code 市场插件即将发布。届时可直接从 Claude Code 插件商店安装。
+</Note>
+
+---
+
+## Codex
+
+<Steps>
+  <Step title="克隆仓库">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git ~/.agents/skills/chainstream
+    ```
+  </Step>
+  <Step title="按照说明配置">
+    参见克隆仓库中 `.codex/INSTALL.md` 的说明。
+  </Step>
+</Steps>
+
+---
+
+## OpenCode
+
+<Steps>
+  <Step title="克隆仓库">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git ~/.agents/skills/chainstream
+    ```
+  </Step>
+  <Step title="按照说明配置">
+    参见克隆仓库中 `.opencode/INSTALL.md` 的说明。
+  </Step>
+</Steps>
+
+---
+
+## Gemini CLI
+
+```bash
+gemini extensions install https://github.com/chainstream-io/skills
+```
+
+仓库根目录的 `gemini-extension.json` 配置 Gemini CLI 加载上下文文件。
+
+---
+
+## MCP Server 配置
+
+技能与 ChainStream MCP Server 配合使用效果最佳。将以下配置添加到你的 MCP 客户端：
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    添加到 `~/Library/Application Support/Claude/claude_desktop_config.json`（macOS）或 `%APPDATA%\Claude\claude_desktop_config.json`（Windows）：
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+在 [ChainStream Dashboard](https://app.chainstream.io) 获取 API Key，或通过 [x402 / MPP 支付](/cn/guides/getting-started/x402-payments) 购买。
+</Note>
+
+---
+
+## 验证安装
+
+安装后，用简单查询测试：
+
+```bash
+# 通过 CLI
+npx @chainstream-io/cli token search --keyword PUMP --chain sol
+
+# 通过 AI 助手（如果技能已加载）
+# 提问："搜索 Solana 上的 PUMP 代币"
+```
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="chainstream-data" icon="magnifying-glass" href="/cn/guides/ai-infrastructure/agent-skills/chainstream-data">
+    数据查询能力：代币、市场、钱包
+  </Card>
+  <Card title="chainstream-defi" icon="right-left" href="/cn/guides/ai-infrastructure/agent-skills/chainstream-defi">
+    DeFi 执行：兑换、发射台、交易
+  </Card>
+</CardGroup>

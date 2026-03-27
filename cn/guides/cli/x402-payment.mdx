@@ -1,0 +1,96 @@
+---
+title: '自动支付'
+description: 'CLI 在遇到 402 响应时自动购买订阅'
+icon: "credit-card"
+---
+
+## 概述
+
+ChainStream CLI 在遇到 402（Payment Required）响应时可以自动购买订阅。购买成功后，返回的 **API Key 会保存到配置中** — 后续所有调用都使用该 Key，无需再次钱包签名。
+
+## 工作流程
+
+当任何 CLI 命令收到 402 错误时，自动支付流程启动：
+
+1. CLI 从 `/x402/pricing` 获取可用套餐并显示选择表格
+2. 你交互式选择套餐
+3. CLI 询问支付方式：**x402**（Base/Solana USDC）或 **MPP**（Tempo 稳定币 / Stripe 信用卡）
+4. 如果选 x402：自动签名并发送支付，保存返回的 API Key
+5. 如果选 MPP：打印 `tempo request` 命令供手动购买
+6. 使用新 API Key 重试原始命令
+
+```bash
+$ chainstream token info --chain sol --address So11111111111111111111111111111111111111112
+
+[chainstream] No active subscription. Available plans:
+
+   #  Plan       Price    Quota           Duration
+   ── ────────── ──────── ──────────────── ────────
+   1  nano       $5             500,000 CU  30 days
+   2  starter    $199        10,000,000 CU  30 days
+   3  pro        $699        50,000,000 CU  30 days
+
+Select plan (1-3): 1
+
+[chainstream] Choose payment method:
+  1. x402 (USDC on Base/Solana)
+  2. MPP Tempo (USDC.e on Tempo)
+
+Select method (1-2): 1
+
+[chainstream] Purchasing nano plan via x402...
+[chainstream] Subscription activated: nano (expires: 2026-04-25T12:00:00.000Z)
+[chainstream] API Key saved to config.
+```
+
+<Note>
+如果你只有 API Key（没有钱包），CLI 会跳过 x402 并打印 MPP 购买指引。
+</Note>
+
+## 钱包设置
+
+x402 支付需要一个有余额的钱包：
+
+```bash
+# 创建 ChainStream TEE 钱包（推荐）
+chainstream login
+
+# 或导入原始私钥（仅用于开发/测试）
+chainstream wallet set-raw --chain base
+```
+
+## 查看套餐
+
+```bash
+chainstream wallet pricing
+
+# 或通过 curl
+curl https://api.chainstream.io/x402/pricing
+```
+
+## 购买后
+
+1. API Key（`cs_live_...`）自动保存到 `~/.config/chainstream/config.json`
+2. CLI 客户端使用新 Key 重新初始化
+3. 原始命令重试并成功
+4. 后续所有命令使用 API Key — 数据查询无需再次钱包签名
+
+## 故障排查
+
+| 问题 | 解决方案 |
+|------|----------|
+| "Insufficient USDC balance" | 在 Base 或 Solana 上为钱包充值 USDC |
+| 购买后仍然 402 | 检查 `chainstream config get` 确认 API Key 已保存 |
+| 选错了链 | 使用 `chainstream config set --key walletChain --value base` |
+| 想更换套餐 | 购买新套餐 — 会替换现有订阅 |
+
+## 了解更多
+
+<CardGroup cols={2}>
+  <Card title="x402 支付协议" icon="money-bill-wave" href="/cn/guides/getting-started/x402-payments">
+    x402 协议的工作原理、详细流程和手动集成
+  </Card>
+  <Card title="MPP 支付协议" icon="coins" href="/cn/guides/getting-started/mpp-payments">
+    MPP 如何通过 Tempo 稳定币和 Stripe 信用卡支付
+  </Card>
+</CardGroup>

@@ -1,0 +1,258 @@
+---
+title: "首次查询"
+description: "分步运行第一条 GraphQL 查询 —— 通过 IDE 与 cURL"
+icon: "play"
+---
+
+<Note>
+**预计耗时**：约 5 分钟
+</Note>
+
+## 准备工作
+
+开始前请确认：
+
+- 已注册 ChainStream 账号（[点此注册](https://www.chainstream.io/dashboard)）
+- 已拥有 API Key（以 `cs_live_...` 开头）
+
+<Tip>
+GraphQL API 与 REST Data API 共用同一 API Key。若你已有 REST API 的 Key，可直接复用。
+</Tip>
+
+---
+
+## 步骤 1：获取 API Key
+
+1. 登录 [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+2. 进入 **Applications**
+3. 点击 **Create New App**（或选择已有应用）
+4. 复制 **API Key**
+
+---
+
+## 步骤 2：打开 GraphQL IDE
+
+访问 ChainStream GraphQL IDE：
+
+<Card title="GraphQL IDE" icon="code" href="https://ide.chainstream.io">
+  https://ide.chainstream.io
+</Card>
+
+IDE 提供自动补全、语法高亮、行内文档与查询历史 —— 是探索 schema 与编写查询最快的方式。
+
+---
+
+## 步骤 3：配置认证
+
+在 IDE 左下角的 **Headers** 面板中添加 API Key：
+
+```json
+{
+  "X-API-KEY": "your_api_key"
+}
+```
+
+---
+
+## 步骤 4：运行示例查询
+
+将以下查询粘贴到编辑器。它会拉取 **Solana 上最近 10 笔 DEX 成交**，包含区块时间、交易哈希、买卖代币信息、数量、USD 价格与 DEX 协议名称。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block {
+      Time
+      Slot
+    }
+    Transaction {
+      Hash
+    }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+点击 **Play** 按钮（或按 `Ctrl+Enter` / `Cmd+Enter`）执行。
+
+---
+
+## cURL 等价写法
+
+在终端中可执行相同查询：
+
+```bash
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d '{
+    "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time Slot } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+  }'
+```
+
+---
+
+## 响应示例
+
+成功响应大致如下：
+
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "Block": {
+          "Time": "2025-03-27T10:32:18Z",
+          "Slot": 325847291
+        },
+        "Transaction": {
+          "Hash": "4vKzR8g...x9bQ"
+        },
+        "Trade": {
+          "Buy": {
+            "Currency": { "MintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+            "Amount": 1523.45,
+            "PriceInUSD": 1.0001
+          },
+          "Sell": {
+            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+            "Amount": 10.237
+          },
+          "Dex": { "ProtocolName": "Raydium" }
+        }
+      },
+      {
+        "Block": {
+          "Time": "2025-03-27T10:32:17Z",
+          "Slot": 325847289
+        },
+        "Transaction": {
+          "Hash": "3mPqW7n...kR2J"
+        },
+        "Trade": {
+          "Buy": {
+            "Currency": { "MintAddress": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
+            "Amount": 48291037.12,
+            "PriceInUSD": 0.00003152
+          },
+          "Sell": {
+            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+            "Amount": 10.5
+          },
+          "Dex": { "ProtocolName": "Orca" }
+        }
+      }
+    ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        { "cube": "DEXTrades", "credits": 50, "row_count": 10 }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## 理解响应
+
+响应结构与查询一一对应：
+
+| Path | 说明 |
+|:--|:--|
+| `Block.Time` | 区块时间戳（ISO 8601） |
+| `Block.Slot` | Solana slot 编号（Solana 特有） |
+| `Transaction.Hash` | 链上交易哈希 |
+| `Trade.Buy.Currency.MintAddress` | 买入资产的代币地址 |
+| `Trade.Buy.Amount` | 买入代币数量 |
+| `Trade.Buy.PriceInUSD` | 成交时买入代币的 USD 价格 |
+| `Trade.Sell.Currency.MintAddress` | 卖出资产的代币地址 |
+| `Trade.Sell.Amount` | 卖出代币数量 |
+| `Trade.Dex.ProtocolName` | 执行成交的 DEX 协议（如 Raydium、Orca、PancakeSwap） |
+
+<Info>
+`extensions.credits` 表示本次查询消耗的计费 credits 与剩余额度。详见 [计费与额度](/cn/graphql/billing/graphql-billing)。
+</Info>
+
+---
+
+## 尝试修改查询
+
+在能跑通基础查询后，可以试试这些改动：
+
+<AccordionGroup>
+  <Accordion title="切换到 Ethereum">
+    将 `network: sol` 改为 `network: eth` 即可查询 Ethereum DEX 成交（Uniswap、SushiSwap 等）。
+  </Accordion>
+  <Accordion title="增加时间过滤">
+    通过 `where` 子句筛选最近一小时的成交：
+    ```graphql
+    DEXTrades(
+      network: sol
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+      where: {Block: {Time: {after: "2025-03-27T09:00:00Z"}}}
+    ) { ... }
+    ```
+  </Accordion>
+  <Accordion title="查询指定代币">
+    按代币 mint 地址过滤，查看该代币相关成交：
+    ```graphql
+    DEXTrades(
+      network: sol
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+      where: {Trade: {Buy: {Currency: {MintAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}}}}}
+    ) { ... }
+    ```
+  </Accordion>
+  <Accordion title="增加聚合">
+    按 DEX 协议统计成交笔数：
+    ```graphql
+    DEXTrades(
+      network: sol
+      where: {Block: {Time: {after: "2025-03-27T00:00:00Z"}}}
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Schema 与数据模型" icon="diagram-project" href="/cn/graphql/schema/schema-overview">
+    浏览全部 12 个 Cube、字段类型、过滤运算符与聚合函数。
+  </Card>
+  <Card title="查询示例" icon="flask" href="/cn/graphql/examples/dex-trades">
+    查看 DEX 成交、转账、OHLC、持有者等实际查询示例。
+  </Card>
+  <Card title="GraphQL IDE 指南" icon="code" href="/cn/graphql/ide/introduction">
+    掌握 IDE —— 查询模板、已保存查询、变量面板与代码导出。
+  </Card>
+  <Card title="计费与额度" icon="credit-card" href="/cn/graphql/billing/graphql-billing">
+    了解 query credits 的计算方式与成本优化思路。
+  </Card>
+</CardGroup>

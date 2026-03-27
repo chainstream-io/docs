@@ -1,0 +1,284 @@
+---
+title: "OHLC & Statistics"
+description: "Query examples for K-line data, trade statistics, market cap, and token search"
+icon: "chart-candlestick"
+---
+
+This page covers the aggregated and summary Cubes for market data analysis:
+
+- **OHLC** (DWM) — per-minute candlestick / K-line data
+- **TokenTradeStats** (DWM) — per-minute trade statistics with buy/sell breakdown
+- **TokenMarketCap** (DWS) — token market cap, price, and FDV
+- **TokenSearch** (DIM) — token metadata and aggregate metrics lookup
+
+<Note>
+All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+</Note>
+
+---
+
+## K-Line (OHLC) Data
+
+Fetch candlestick data for a token — open, high, low, close prices per minute, plus volume and trade count.
+
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 24}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+
+<Tip>
+Replace `TOKEN_ADDRESS` with the token mint address. Each row represents one minute of trading data — request `count: 60` for 1 hour, `count: 1440` for 24 hours.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `TimeMinute` | Minute bucket timestamp |
+    | `Token.Address` | Token address |
+    | `Price.OpenState` | Opening price for the interval |
+    | `Price.HighState` | Highest price during the interval |
+    | `Price.LowState` | Lowest price during the interval |
+    | `Price.CloseState` | Closing price for the interval |
+    | `VolumeUSDState` | Total USD volume traded in this interval |
+    | `TradeCountState` | Number of trades in this interval |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Longer timeframes**: To get hourly or daily candles, query per-minute data and aggregate client-side, or increase the limit for a wider window
+    - **Volume filter**: Add `where: {VolumeUSDState: {gt: 100}}` to skip low-volume intervals
+    - **Time range**: Add `where: {TimeMinute: {since: "2025-03-27T00:00:00Z"}}` for a specific day
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+The **OHLC** Cube is a DWM (Aggregated) layer table — data is pre-computed per minute from raw trades. It's significantly faster than scanning individual trades for chart data.
+</Info>
+
+---
+
+## Trade Statistics
+
+Get per-minute trade statistics with buy/sell breakdown, unique trader counts, and volume.
+
+```graphql
+query {
+  TokenTradeStats(
+    network: sol
+    limit: {count: 24}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    TradeCountState
+    BuyCountState
+    SellCountState
+    VolumeUSDState
+    UniqueBuyersState
+    UniqueSellersState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `TimeMinute` | Minute bucket timestamp |
+    | `TradeCountState` | Total trades in this interval |
+    | `BuyCountState` | Number of buy trades |
+    | `SellCountState` | Number of sell trades |
+    | `VolumeUSDState` | Total USD volume |
+    | `UniqueBuyersState` | Count of unique buyer wallets |
+    | `UniqueSellersState` | Count of unique seller wallets |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Buy/sell pressure**: Compare `BuyCountState` vs `SellCountState` to gauge market sentiment
+    - **Unique traders**: `UniqueBuyersState` and `UniqueSellersState` reveal whether volume comes from many wallets or a few large players
+    - **Activity heatmap**: Query a full day (`count: 1440`) and visualize by minute to spot peak trading times
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+Combine **OHLC** and **TokenTradeStats** queries for the same time range to build comprehensive trading dashboards — price candles alongside volume and trader metrics.
+</Tip>
+
+---
+
+## Market Cap
+
+Get the latest market cap, price, supply, and FDV for a token.
+
+```graphql
+query {
+  TokenMarketCap(
+    network: sol
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    limit: {count: 1}
+  ) {
+    Token { Address }
+    PriceUSDState
+    MarketCapUSDState
+    TotalSupplyState
+    FDVUSDState
+    LastSeenState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Token.Address` | Token address |
+    | `PriceUSDState` | Current price in USD |
+    | `MarketCapUSDState` | Market capitalization (circulating supply x price) |
+    | `TotalSupplyState` | Total token supply |
+    | `FDVUSDState` | Fully diluted valuation (total supply x price) |
+    | `LastSeenState` | Last time this data was updated |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Compare tokens**: Query multiple tokens by making separate requests and comparing metrics
+    - **For historical supply/mcap events**: Use [TokenSupplyUpdates](/en/graphql/examples/pools-liquidity#token-supply--market-cap) to get time-series market cap data
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**TokenMarketCap** is a DWS (Summary) layer Cube — it returns a single pre-aggregated snapshot, making it ideal for quick lookups and screening. For time-series market cap history, use the **TokenSupplyUpdates** Cube.
+</Info>
+
+---
+
+## Token Lookup
+
+Look up token metadata and aggregate metrics — decimals, current price, market cap, total trade count, volume, holder count, and pool count.
+
+```graphql
+query {
+  TokenSearch(
+    network: sol
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    limit: {count: 1}
+  ) {
+    Token {
+      Address
+      Decimals
+      PriceUSD
+      MarketCapUSD
+      TotalTradeCount
+      TotalVolumeUSD
+      HolderCount
+      PoolCount
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Token.Address` | Token mint address |
+    | `Token.Decimals` | Token decimal places |
+    | `Token.PriceUSD` | Current USD price |
+    | `Token.MarketCapUSD` | Market capitalization |
+    | `Token.TotalTradeCount` | All-time number of DEX trades |
+    | `Token.TotalVolumeUSD` | All-time USD trading volume |
+    | `Token.HolderCount` | Number of current holders |
+    | `Token.PoolCount` | Number of DEX pools this token is in |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Token screening**: Remove the `tokenAddress` filter and increase `count` to discover tokens by criteria (e.g. filter by `MarketCapUSD`, `HolderCount`)
+    - **Verify token**: Use this query to confirm a token address exists and has trading activity before running more expensive queries
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**TokenSearch** is a DIM (Dimension) layer Cube — it's a lightweight lookup table. Use it as a first step to verify token addresses and get basic metrics before diving into detailed trade or holder queries.
+</Tip>
+
+---
+
+## Multi-Chain Examples
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Price { OpenState, CloseState }
+    VolumeUSDState
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  OHLC(
+    network: eth
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Price { OpenState, CloseState }
+    VolumeUSDState
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  OHLC(
+    network: bsc
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Price { OpenState, CloseState }
+    VolumeUSDState
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/en/graphql/examples/dex-trades">
+    Query DEX trading data — token trades, wallet activity, and top traders.
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/en/graphql/examples/transfers">
+    Track on-chain token transfers between wallets.
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/en/graphql/examples/balance-holders">
+    Look up wallet balances, balance history, and top holders.
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/en/graphql/examples/pools-liquidity">
+    Explore DEX pool and liquidity data.
+  </Card>
+</CardGroup>

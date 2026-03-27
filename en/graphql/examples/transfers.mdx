@@ -1,0 +1,247 @@
+---
+title: "Transfers"
+description: "Query examples for on-chain transfer data"
+icon: "paper-plane"
+---
+
+The **Transfers** Cube contains on-chain token transfer events — every time tokens move from one wallet to another. Use it to track wallet activity, monitor whale movements, analyze token flows, and detect exchange deposits/withdrawals.
+
+<Note>
+All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+</Note>
+
+---
+
+## Latest Transfers
+
+Fetch the 10 most recent token transfers on Solana, including sender, receiver, amount, and USD value.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Block.Time` | Block timestamp (ISO 8601) |
+    | `Transaction.Hash` | On-chain transaction hash |
+    | `Transfer.Currency.MintAddress` | Token address being transferred |
+    | `Transfer.Sender.Address` | Wallet that sent the tokens |
+    | `Transfer.Receiver.Address` | Wallet that received the tokens |
+    | `Transfer.Amount` | Number of tokens transferred |
+    | `Transfer.AmountInUSD` | USD value of the transfer at the time it occurred |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Filter by token**: Add `tokenAddress: {is: "TOKEN_ADDRESS"}` to see only transfers of a specific token
+    - **Large transfers only**: Add `where: {Transfer: {AmountInUSD: {gt: 10000}}}` to find whale movements
+    - **Time range**: Add `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` to scope to a period
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Wallet Transfers (Outgoing)
+
+Get outgoing transfers from a specific wallet using the `senderAddress` selector.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    senderAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+Replace `WALLET_ADDRESS` with the actual wallet address you want to investigate.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Transfer.Currency.MintAddress` | Which token was sent |
+    | `Transfer.Receiver.Address` | Who received the tokens |
+    | `Transfer.Amount` | How many tokens were sent |
+    | `Transfer.AmountInUSD` | USD value at the time of transfer |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Specific token only**: Add `tokenAddress: {is: "TOKEN_ADDRESS"}` to narrow down to one token
+    - **Increase results**: Change `count: 20` to up to `10000` for deeper history
+    - **Add receiver filter**: Use `where: {Transfer: {Receiver: {Address: {is: "RECEIVER_ADDRESS"}}}}` to trace transfers between two specific wallets
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Wallet Transfers (Incoming)
+
+Find incoming transfers to a wallet using the `receiverAddress` selector.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    receiverAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+The Transfers Cube supports both `senderAddress` and `receiverAddress` selectors. Combine them with `where` for additional filtering (e.g., time range or minimum amount).
+</Tip>
+
+---
+
+## Token Transfers
+
+Track all transfers of a specific token across the network.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Customization tips">
+    - **Whale alerts**: Add `where: {Transfer: {AmountInUSD: {gt: 100000}}}` to only see large transfers (>$100K)
+    - **Exclude dust**: Add `where: {Transfer: {Amount: {gt: 0.01}}}` to filter out negligible amounts
+    - **Time-bounded**: Combine with `where: {Block: {Time: {since: "2025-03-27T00:00:00Z"}}}` for today's transfers
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Multi-Chain Examples
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  Transfers(
+    network: eth
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  Transfers(
+    network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/en/graphql/examples/dex-trades">
+    Query DEX trading data — token trades, wallet activity, and top traders.
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/en/graphql/examples/balance-holders">
+    Look up wallet balances, balance history, and top token holders.
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/en/graphql/examples/pools-liquidity">
+    Explore DEX pool and liquidity data.
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/en/graphql/examples/ohlc-stats">
+    Fetch candlestick data, trade stats, market cap, and token metadata.
+  </Card>
+</CardGroup>

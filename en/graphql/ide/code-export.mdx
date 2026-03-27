@@ -1,0 +1,278 @@
+---
+title: "Code Export"
+description: "Generate ready-to-use code snippets from your GraphQL queries in 8 programming languages"
+icon: "file-export"
+---
+
+## Overview
+
+The Code Export feature converts your current GraphQL query into a ready-to-use code snippet in your language of choice. The generated code includes the full HTTP request setup — endpoint URL, authentication headers, query body, and variables — so you can copy it directly into your project.
+
+---
+
+## Supported Languages
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Language | Format | Use Case |
+|:--|:--|:--|
+| **cURL** | Shell command | Quick terminal testing, CI/CD scripts |
+| **Python** | `requests` library | Backend services, data pipelines, Jupyter notebooks |
+| **JavaScript** | `fetch` API | Browser apps, Node.js services |
+| **Go** | `net/http` | Backend microservices, CLI tools |
+| **Rust** | `reqwest` crate | High-performance services |
+| **Ruby** | `net/http` | Rails applications, scripts |
+| **PHP** | `cURL` extension | PHP backends, WordPress plugins |
+| **WebSocket** | `graphql-ws` protocol | Real-time subscriptions, streaming |
+
+</div>
+
+---
+
+## How to Export
+
+<Steps>
+  <Step title="Write your query">
+    Enter or load a query into the editor. Make sure it executes successfully before exporting.
+  </Step>
+  <Step title="Click Export Code">
+    Click the **Export Code** button in the toolbar. A modal opens with the language selector and generated snippet.
+  </Step>
+  <Step title="Select a language">
+    Choose your target language from the dropdown. The snippet updates immediately.
+  </Step>
+  <Step title="Copy the snippet">
+    Click the **Copy** button to copy the generated code to your clipboard.
+  </Step>
+</Steps>
+
+<Tip>
+The exported code uses the GraphQL endpoint and API key from your current IDE configuration. If you've set a custom endpoint or headers, those are reflected in the generated snippet.
+</Tip>
+
+---
+
+## Example Snippets
+
+The following examples export a simple DEXTrades query — fetching the 10 latest Solana DEX trades:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST "https://graphql.chainstream.io/graphql" \
+      -H "Content-Type: application/json" \
+      -H "X-API-KEY: your_api_key" \
+      -d '{
+        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    url = "https://graphql.chainstream.io/graphql"
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    }
+    query = """
+    {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Transaction { Hash }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    """
+
+    response = requests.post(url, json={"query": query}, headers=headers)
+    data = response.json()
+    print(data)
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch("https://graphql.chainstream.io/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+      },
+      body: JSON.stringify({
+        query: `{
+          DEXTrades(
+            network: sol
+            limit: {count: 10}
+            orderBy: Block_Time_DESC
+          ) {
+            Block { Time }
+            Transaction { Hash }
+            Trade {
+              Buy { Currency { MintAddress } Amount PriceInUSD }
+              Sell { Currency { MintAddress } Amount }
+              Dex { ProtocolName }
+            }
+          }
+        }`,
+      }),
+    });
+
+    const data = await response.json();
+    console.log(data);
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+    )
+
+    func main() {
+        payload := map[string]string{
+            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+        }
+        body, _ := json.Marshal(payload)
+
+        req, _ := http.NewRequest("POST", "https://graphql.chainstream.io/graphql", bytes.NewBuffer(body))
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("X-API-KEY", "your_api_key")
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            panic(err)
+        }
+        defer resp.Body.Close()
+
+        result, _ := io.ReadAll(resp.Body)
+        fmt.Println(string(result))
+    }
+    ```
+  </Tab>
+  <Tab title="Rust">
+    ```rust
+    use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+    use serde_json::json;
+
+    #[tokio::main]
+    async fn main() -> Result<(), reqwest::Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
+
+        let body = json!({
+            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+        });
+
+        let client = reqwest::Client::new();
+        let res = client
+            .post("https://graphql.chainstream.io/graphql")
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
+
+        println!("{}", res.text().await?);
+        Ok(())
+    }
+    ```
+  </Tab>
+  <Tab title="WebSocket">
+    ```javascript
+    const ws = new WebSocket("wss://graphql.chainstream.io/graphql", "graphql-ws");
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: "connection_init",
+        payload: { "X-API-KEY": "your_api_key" },
+      }));
+
+      ws.send(JSON.stringify({
+        id: "1",
+        type: "start",
+        payload: {
+          query: `{
+            DEXTrades(
+              network: sol
+              limit: {count: 10}
+              orderBy: Block_Time_DESC
+            ) {
+              Block { Time }
+              Transaction { Hash }
+              Trade {
+                Buy { Currency { MintAddress } Amount PriceInUSD }
+                Sell { Currency { MintAddress } Amount }
+                Dex { ProtocolName }
+              }
+            }
+          }`,
+        },
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      console.log(message);
+    };
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## What's Included in Exported Code
+
+Every generated snippet includes:
+
+| Component | Description |
+|:--|:--|
+| **Endpoint URL** | `https://graphql.chainstream.io/graphql` |
+| **Authentication** | `X-API-KEY` header from your IDE Headers panel |
+| **Content-Type** | `application/json` |
+| **Query body** | The full GraphQL query from the editor |
+| **Variables** | Included if the Variables panel contains values |
+
+<Note>
+Remember to replace `your_api_key` with your actual API key before running the exported code. The IDE does not embed your real key in exported snippets for security.
+</Note>
+
+---
+
+## Tips
+
+- **Test before exporting** — Run the query in the IDE first to confirm it works. Exported code copies the query as-is.
+- **Parameterize with variables** — Use GraphQL variables instead of hardcoded values. The exported code includes the `variables` JSON alongside the query.
+- **Check dependencies** — Python snippets use `requests`, Rust uses `reqwest`, Go uses the standard library. Make sure the required packages are installed in your project.
+- **WebSocket for streaming** — The WebSocket export uses the `graphql-ws` protocol, suitable for subscriptions and long-lived connections.

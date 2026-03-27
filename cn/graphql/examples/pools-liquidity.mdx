@@ -1,0 +1,275 @@
+---
+title: "池与流动性"
+description: "DEX 池与流动性数据的查询示例"
+icon: "droplet"
+---
+
+本页涵盖用于 DEX 池与流动性分析的 Cube：
+
+- **DEXPools** (DWD) — 逐事件的池子流动性变动
+- **PoolLiquiditySnapshots** (DWM) — 预聚合的池子流动性快照
+- **TokenSupplyUpdates** (DWD) — 代币供应量、市值与 FDV 更新
+
+<Note>
+以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth` 或 `bsc`。
+</Note>
+
+---
+
+## 代币池
+
+查找某代币的全部 DEX 池，展示 base/quote 代币数量与总流动性。
+
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Dex { ProgramAddress }
+      Base { Address, PostAmount }
+      Quote { Address, PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<Tip>
+将 `TOKEN_ADDRESS` 替换为代币 mint 地址。查询返回该代币作为 base 或 quote 出现的池。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Pool.Address` | 流动性池地址 |
+    | `Pool.Dex.ProgramAddress` | DEX program/合约地址 |
+    | `Pool.Base.Address` | 交易对中 base 代币地址 |
+    | `Pool.Base.PostAmount` | 事件后 base 代币储备 |
+    | `Pool.Quote.Address` | 交易对中 quote 代币地址 |
+    | `Pool.Quote.PostAmount` | 事件后 quote 代币储备 |
+    | `Pool.LiquidityInUSD` | 池子总流动性（USD） |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **按流动性过滤**：增加 `where: {Pool: {LiquidityInUSD: {gt: 10000}}}` 只看有意义深度的池
+    - **指定 DEX**：增加 `where: {Pool: {Dex: {ProgramAddress: {is: "DEX_PROGRAM_ADDRESS"}}}}`
+    - **更多池**：提高 `count` 以发现某代币的全部池
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 池子详情
+
+按池地址获取某一池的最新状态。
+
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 1}
+    poolAddress: {is: "POOL_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Base { Address, PostAmount }
+      Quote { Address, PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Pool.Base.PostAmount` | 当前 base 代币储备 |
+    | `Pool.Quote.PostAmount` | 当前 quote 代币储备 |
+    | `Pool.LiquidityInUSD` | 总流动性（USD） |
+    | `Block.Time` | 最近池事件时间戳 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **池历史**：去掉 `limit: {count: 1}` 并提高 count 可查看储备随时间变化
+    - **时间范围**：增加 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定时段
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+`poolAddress` 选择器是按 `Pool.Address` 过滤的快捷方式，仅在 **DEXPools** Cube 上可用。
+</Info>
+
+---
+
+## 池流动性快照
+
+获取包含某代币的池的预聚合流动性快照。做趋势分析时比查原始池事件更快。
+
+```graphql
+query {
+  PoolLiquiditySnapshots(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Pool { Address, ProgramAddress }
+    TokenA { Address }
+    TokenB { Address }
+    LiquidityUSDState
+    EventCountState
+    LastSeenState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Pool.Address` | 池地址 |
+    | `Pool.ProgramAddress` | DEX program 地址 |
+    | `TokenA.Address` | 交易对中第一个代币 |
+    | `TokenB.Address` | 交易对中第二个代币 |
+    | `LiquidityUSDState` | 总流动性（USD） |
+    | `EventCountState` | 快照周期内流动性事件数 |
+    | `LastSeenState` | 最近活动时间戳 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **按流动性排名**：结果可按 `LiquidityUSDState` 排序
+    - **活跃池**：按 `LastSeenState` 过滤找出近期活跃池
+    - **对比 DEX**：按 `Pool.ProgramAddress` 分组对比各 DEX 流动性
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**PoolLiquiditySnapshots** 是 DWM（聚合）层 Cube — 做流动性趋势与池排名查询时比原始 **DEXPools** 快得多。
+</Tip>
+
+---
+
+## 代币供应与市值
+
+获取代币最新供应量、市值、价格与 FDV。
+
+```graphql
+query {
+  TokenSupplyUpdates(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    TokenSupplyUpdate {
+      Currency { MintAddress, Decimals }
+      PostBalance
+      MarketCapInUSD
+      PriceInUSD
+      FDVInUSD
+      TotalSupply
+    }
+    Block { Time }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `TokenSupplyUpdate.Currency.MintAddress` | 代币地址 |
+    | `TokenSupplyUpdate.Currency.Decimals` | 代币小数位 |
+    | `TokenSupplyUpdate.PostBalance` | 事件后当前供应量 |
+    | `TokenSupplyUpdate.MarketCapInUSD` | 市值（USD） |
+    | `TokenSupplyUpdate.PriceInUSD` | 供应事件时的代币价格（USD） |
+    | `TokenSupplyUpdate.FDVInUSD` | 完全稀释估值 |
+    | `TokenSupplyUpdate.TotalSupply` | 代币总供应 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **供应历史**：提高 `count` 查看供应量随时间变化（mint/burn）
+    - **市值历史**：查询多条供应更新以绘制市值曲线
+    - **与价格结合**：用 `PriceInUSD` 与 `TotalSupply` 交叉校验市值计算
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+若只需快速查市值而不需要历史供应事件，可考虑 [TokenMarketCap](/cn/graphql/examples/ohlc-stats#market-cap) Cube — 提供预聚合摘要。
+</Info>
+
+---
+
+## 多链示例
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 5}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool { Address, LiquidityInUSD }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  DEXPools(
+    network: eth
+    limit: {count: 5}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool { Address, LiquidityInUSD }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  DEXPools(
+    network: bsc
+    limit: {count: 5}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool { Address, LiquidityInUSD }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    查询 DEX 交易数据 — 代币交易、钱包活动与头部交易者。
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/cn/graphql/examples/transfers">
+    追踪钱包间的链上代币转账。
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/cn/graphql/examples/balance-holders">
+    查询钱包余额、余额历史与头部持有者。
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
+    获取 K 线、成交统计、市值与代币元数据。
+  </Card>
+</CardGroup>

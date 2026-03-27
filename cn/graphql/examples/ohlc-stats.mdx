@@ -1,0 +1,284 @@
+---
+title: "OHLC 与统计"
+description: "K 线、成交统计、市值与代币搜索的查询示例"
+icon: "chart-candlestick"
+---
+
+本页涵盖用于市场数据分析的聚合与摘要 Cube：
+
+- **OHLC** (DWM) — 每分钟 K 线数据
+- **TokenTradeStats** (DWM) — 每分钟成交统计（含买卖拆分）
+- **TokenMarketCap** (DWS) — 代币市值、价格与 FDV
+- **TokenSearch** (DIM) — 代币元数据与聚合指标查询
+
+<Note>
+以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth` 或 `bsc`。
+</Note>
+
+---
+
+## K 线（OHLC）数据
+
+获取代币 K 线 — 每分钟 open、high、low、close，以及成交量与成交笔数。
+
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 24}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+
+<Tip>
+将 `TOKEN_ADDRESS` 替换为代币 mint 地址。每行代表一分钟交易数据 — `count: 60` 约 1 小时，`count: 1440` 约 24 小时。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `TimeMinute` | 分钟桶时间戳 |
+    | `Token.Address` | 代币地址 |
+    | `Price.OpenState` | 区间开盘价 |
+    | `Price.HighState` | 区间最高价 |
+    | `Price.LowState` | 区间最低价 |
+    | `Price.CloseState` | 区间收盘价 |
+    | `VolumeUSDState` | 该区间 USD 成交总额 |
+    | `TradeCountState` | 该区间成交笔数 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **更长周期**：小时或日 K 可在客户端对分钟数据聚合，或提高 limit 拉更宽窗口
+    - **成交量过滤**：增加 `where: {VolumeUSDState: {gt: 100}}` 跳过低量区间
+    - **时间范围**：增加 `where: {TimeMinute: {since: "2025-03-27T00:00:00Z"}}` 限定某日
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**OHLC** Cube 为 DWM（聚合）层表 — 数据由原始成交按分钟预计算，用于图表比逐笔扫交易快得多。
+</Info>
+
+---
+
+## 成交统计
+
+获取每分钟成交统计，含买卖拆分、独立交易者数量与成交量。
+
+```graphql
+query {
+  TokenTradeStats(
+    network: sol
+    limit: {count: 24}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    TradeCountState
+    BuyCountState
+    SellCountState
+    VolumeUSDState
+    UniqueBuyersState
+    UniqueSellersState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `TimeMinute` | 分钟桶时间戳 |
+    | `TradeCountState` | 该区间总成交笔数 |
+    | `BuyCountState` | 买入笔数 |
+    | `SellCountState` | 卖出笔数 |
+    | `VolumeUSDState` | USD 成交总额 |
+    | `UniqueBuyersState` | 独立买方钱包数 |
+    | `UniqueSellersState` | 独立卖方钱包数 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **买卖压力**：比较 `BuyCountState` 与 `SellCountState` 判断情绪
+    - **独立交易者**：`UniqueBuyersState` 与 `UniqueSellersState` 反映量是分散还是集中
+    - **活动热力图**：查满一天（`count: 1440`）按分钟可视化找出成交高峰
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+对同一时间范围同时查询 **OHLC** 与 **TokenTradeStats**，可搭建完整交易看板 — K 线配合成交量与交易者指标。
+</Tip>
+
+---
+
+## 市值
+
+获取代币最新市值、价格、供应量与 FDV。
+
+```graphql
+query {
+  TokenMarketCap(
+    network: sol
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    limit: {count: 1}
+  ) {
+    Token { Address }
+    PriceUSDState
+    MarketCapUSDState
+    TotalSupplyState
+    FDVUSDState
+    LastSeenState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Token.Address` | 代币地址 |
+    | `PriceUSDState` | 当前 USD 价格 |
+    | `MarketCapUSDState` | 市值（流通供应 × 价格） |
+    | `TotalSupplyState` | 代币总供应 |
+    | `FDVUSDState` | 完全稀释估值（总供应 × 价格） |
+    | `LastSeenState` | 该数据最近更新时间 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **多代币对比**：分别请求多个代币后对比指标
+    - **历史供应/市值序列**：使用 [TokenSupplyUpdates](/cn/graphql/examples/pools-liquidity#token-supply--market-cap) 获取时间序列市值数据
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**TokenMarketCap** 为 DWS（Summary）层 Cube — 返回单条预聚合快照，适合快速查询与筛选。时间序列市值历史请用 **TokenSupplyUpdates** Cube。
+</Info>
+
+---
+
+## 代币查询
+
+查询代币元数据与聚合指标 — 小数位、当前价格、市值、历史成交笔数、成交量、持有者数与池子数。
+
+```graphql
+query {
+  TokenSearch(
+    network: sol
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    limit: {count: 1}
+  ) {
+    Token {
+      Address
+      Decimals
+      PriceUSD
+      MarketCapUSD
+      TotalTradeCount
+      TotalVolumeUSD
+      HolderCount
+      PoolCount
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Token.Address` | 代币 mint 地址 |
+    | `Token.Decimals` | 代币小数位 |
+    | `Token.PriceUSD` | 当前 USD 价格 |
+    | `Token.MarketCapUSD` | 市值 |
+    | `Token.TotalTradeCount` | 历史 DEX 成交总笔数 |
+    | `Token.TotalVolumeUSD` | 历史 USD 成交额 |
+    | `Token.HolderCount` | 当前持有者数量 |
+    | `Token.PoolCount` | 该代币所在 DEX 池数量 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **代币筛选**：去掉 `tokenAddress` 过滤并提高 `count`，按 `MarketCapUSD`、`HolderCount` 等条件发现代币
+    - **校验代币**：在跑更重的交易或持有者查询前，用本查询确认地址存在且有交易活动
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**TokenSearch** 为 DIM（维度）层 Cube — 轻量查找表。作为第一步校验代币地址并获取基础指标，再深入交易或持有者查询。
+</Tip>
+
+---
+
+## 多链示例
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Price { OpenState, CloseState }
+    VolumeUSDState
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  OHLC(
+    network: eth
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Price { OpenState, CloseState }
+    VolumeUSDState
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  OHLC(
+    network: bsc
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Price { OpenState, CloseState }
+    VolumeUSDState
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    查询 DEX 交易数据 — 代币交易、钱包活动与头部交易者。
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/cn/graphql/examples/transfers">
+    追踪钱包间的链上代币转账。
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/cn/graphql/examples/balance-holders">
+    查询钱包余额、余额历史与头部持有者。
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/cn/graphql/examples/pools-liquidity">
+    探索 DEX 池与流动性数据。
+  </Card>
+</CardGroup>

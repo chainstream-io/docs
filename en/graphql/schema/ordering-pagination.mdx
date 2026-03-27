@@ -1,0 +1,253 @@
+---
+title: "Ordering & Pagination"
+description: "Sort query results with orderBy enums and paginate with limit — naming conventions, defaults, and offset-based pagination"
+icon: "arrow-down-1-9"
+---
+
+## orderBy Enum
+
+Each Cube generates an `{Cube}OrderBy` enum with ASC and DESC variants for every sortable dimension. The naming convention follows the dimension path joined by underscores:
+
+```
+{DimensionGroup}_{DimensionField}_ASC
+{DimensionGroup}_{DimensionField}_DESC
+```
+
+For nested dimensions, each level is joined:
+
+```
+Trade_Buy_Amount_ASC
+Trade_Buy_PriceInUSD_DESC
+Block_Time_ASC
+```
+
+### Common orderBy Values
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Enum Value | Cube(s) | Description |
+|:-----------|:--------|:------------|
+| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | Oldest first |
+| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | Newest first |
+| `Trade_Buy_Amount_DESC` | DEXTrades | Largest buy amount first |
+| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | Highest USD price first |
+| `Transfer_AmountInUSD_DESC` | Transfers | Largest USD transfer first |
+| `TimeMinute_ASC` | OHLC, TokenTradeStats | Chronological order |
+| `TimeMinute_DESC` | OHLC, TokenTradeStats | Reverse chronological |
+| `LatestBalanceUSD_DESC` | TokenHolders | Largest holder first |
+| `BuyVolumeUSDState_DESC` | WalletTokenPnL | Highest buy volume first |
+| `MarketCapUSDState_DESC` | TokenMarketCap | Highest market cap first |
+| `Token_PriceUSD_DESC` | TokenSearch | Highest price first |
+| `Token_MarketCapUSD_DESC` | TokenSearch | Highest market cap first |
+
+</div>
+
+<Tip>
+Use the [GraphQL IDE](https://ide.chainstream.io) auto-complete to discover all available `orderBy` values for a Cube — type `orderBy:` and the IDE will show the full enum.
+</Tip>
+
+### Usage
+
+Pass a single enum value to the `orderBy` argument:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+<Note>
+`orderBy` accepts a **single** enum value. Multi-column sorting is not supported — the query is sorted by one dimension at a time.
+</Note>
+
+---
+
+## limit Argument
+
+The `limit` argument controls how many rows are returned and supports offset-based pagination:
+
+```graphql
+input LimitInput {
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip
+}
+```
+
+### Default and Maximum Limits
+
+Each Cube has a **default** limit applied when you omit the `limit` argument, and a **maximum** cap:
+
+| Cube | Default `count` | Maximum `count` |
+|:-----|:----------------|:----------------|
+| DEXTrades | 25 | 10,000 |
+| Transfers | 25 | 10,000 |
+| BalanceUpdates | 25 | 10,000 |
+| DEXPools | 25 | 10,000 |
+| TokenSupplyUpdates | 25 | 10,000 |
+| OHLC | 25 | 10,000 |
+| TokenTradeStats | 25 | 10,000 |
+| PoolLiquiditySnapshots | 25 | 10,000 |
+| TokenHolders | 25 | 10,000 |
+| WalletTokenPnL | 25 | 10,000 |
+| TokenMarketCap | 25 | 10,000 |
+| TokenSearch | 25 | 10,000 |
+
+<Info>
+If you request a `count` exceeding the maximum, the server silently caps it at the maximum value.
+</Info>
+
+---
+
+## Offset-Based Pagination
+
+Use `offset` to page through result sets. The pattern is straightforward:
+
+- **Page 1**: `limit: { count: 50, offset: 0 }`
+- **Page 2**: `limit: { count: 50, offset: 50 }`
+- **Page 3**: `limit: { count: 50, offset: 100 }`
+
+### Example: Paginated Token Holders
+
+<Tabs>
+  <Tab title="Page 1">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 0 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+  <Tab title="Page 2">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 20 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### Pagination Tips
+
+<AccordionGroup>
+  <Accordion title="Always use orderBy with pagination">
+    Without a stable sort order, rows may shift between pages. Always pair `limit` with an `orderBy` that produces a deterministic order.
+  </Accordion>
+  <Accordion title="Avoid deep offsets">
+    Large `offset` values (e.g., 50,000+) may degrade performance since the database must scan and skip rows. For very large datasets, narrow your query with `where` filters instead of paginating deeply.
+  </Accordion>
+  <Accordion title="Use count to detect end of results">
+    If a page returns fewer rows than the requested `count`, you've reached the end of the dataset. Alternatively, use the `count` metric field to get total row count upfront.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Practical Examples
+
+### Latest Large Trades
+
+Fetch the 10 most recent DEX trades on Solana with a buy value over $10,000:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+### OHLC Candles — Last 60 Minutes
+
+Fetch 1-minute candles for a token, sorted chronologically:
+
+```graphql
+query {
+  OHLC(
+    network: sol
+    tokenAddress: "So11111111111111111111111111111111111111112"
+    orderBy: TimeMinute_ASC
+    limit: { count: 60 }
+    where: {
+      TimeMinute: { after: "2025-03-27T09:00:00Z" }
+    }
+  ) {
+    TimeMinute
+    Price { OpenState HighState LowState CloseState }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+
+### Top 50 Token Holders
+
+Fetch the top 50 holders sorted by USD balance:
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 50 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Filtering" icon="filter" href="/en/graphql/schema/filtering">
+    Combine ordering with filters to build precise analytical queries.
+  </Card>
+  <Card title="Metrics & Aggregation" icon="chart-simple" href="/en/graphql/schema/metrics-aggregation">
+    Aggregate ordered data with count, sum, avg, min, max, uniq.
+  </Card>
+</CardGroup>

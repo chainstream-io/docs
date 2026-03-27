@@ -145,93 +145,140 @@ Unit is ChainStream's billing unit. Different APIs consume different amounts of 
 
 ### Data API Consumption
 
+Unit costs are tiered by computational complexity. Simple lookups cost less; aggregation-heavy and on-chain execution endpoints cost more.
+
 <Tabs>
   <Tab title="Token API">
-    | API | Units | Endpoint |
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Token Price | 1 | `GET /v1/token/{chain}/{tokenAddress}/price` |
-    | Batch Price | 1 | `GET /v1/token/{chain}/{tokenAddress}/prices` |
-    | Token Metadata | 1 | `GET /v1/token/{chain}/metadata/multi` |
-    | Token Market Data | 1 | `GET /v1/token/{chain}/{tokenAddress}/marketdata` |
-    | Batch Market Data | 1 | `GET /v1/token/{chain}/marketdata/multi` |
-    | Token Stats | 1 | `GET /v1/token/{chain}/{tokenAddress}/stats` |
-    | Batch Stats | 1 | `GET /v1/token/{chain}/stats/multi` |
-    | Token Candles | 1 | `GET /v1/token/{chain}/{tokenAddress}/candles` |
-    | Token Holders | 2 | `GET /v1/token/{chain}/{tokenAddress}/holders` |
-    | Batch Holders | 2 | `GET /v1/token/{chain}/{tokenAddress}/holders/multi` |
-    | Top Holders | 2 | `GET /v1/token/{chain}/{tokenAddress}/topholders` |
-    | Liquidity Snapshots | 2 | `GET /v1/token/{chain}/{tokenAddress}/liquiditysnapshots` |
-    | Security Check | 2 | `GET /v1/token/{chain}/{tokenAddress}/security` |
-    | Creation Info | 1 | `GET /v1/token/{chain}/{tokenAddress}/creation` |
-    | Mint/Burn | 2 | `GET /v1/token/{chain}/{tokenAddress}/mintandburn` |
-    | Traders by Tag | 2 | `GET /v1/token/{chain}/{tokenAddress}/traders/{tag}` |
-    | Token List | 1 | `GET /v1/token/{chain}/list` |
-    | Dev Tokens | 2 | `GET /v1/token/{chain}/dev/{devAddress}/tokens` |
-    | Token Pools | 1 | `GET /v1/token/{chain}/{tokenAddress}/pools` |
+    | Token Search | 0.25 | `GET /v2/token/search` |
+    | Token Detail | 1.00 | `GET /v2/token/{chain}/{tokenAddress}` |
+    | Batch Detail | 0.75 | `GET /v2/token/{chain}/multi` |
+    | Token Metadata | 0.05 | `GET /v2/token/{chain}/{tokenAddress}/metadata` |
+    | Batch Metadata | 0.05 | `GET /v2/token/{chain}/metadata/multi` |
+    | Token Price | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/price` |
+    | Price History | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/prices` |
+    | Market Data | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/marketData` |
+    | Batch Market Data | 0.10 | `GET /v2/token/{chain}/marketData/multi` |
+    | Token Stats | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/stats` |
+    | Batch Stats | 2.50 | `GET /v2/token/{chain}/stats/multi` |
+    | Candles (OHLCV) | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/candles` |
+    | Pair Candles | 0.25 | `GET /v2/token/{chain}/pair/{pair}/candles` |
+    | Pool Candles | 0.25 | `GET /v2/token/{chain}/pool/{poolAddress}/candles` |
+    | Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders` |
+    | Batch Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders/multi` |
+    | Top Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/topHolders` |
+    | Pools | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/pools` |
+    | Security | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/security` |
+    | Creation Info | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/creation` |
+    | Mint/Burn | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/mintAndBurn` |
+    | Traders by Tag | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/traders/{tag}` |
+    | Liquidity Snapshots | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/liquiditySnapshots` |
+    | Token List | 0.05 | `GET /v2/token/{chain}/list` |
+    | Dev Tokens | 0.50 | `GET /v2/token/{chain}/dev/{devAddress}/tokens` |
+    | Transfer Total | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfer-total` |
+    | Transfers | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfers` |
   </Tab>
   <Tab title="Wallet API">
-    | API | Units | Endpoint |
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Wallet Balance | 2 | `GET /v1/wallet/{chain}/{walletAddress}/balance` |
-    | Balance Updates | 2 | `GET /v1/wallet/{chain}/{walletAddress}/balance/updates` |
-    | Wallet Info | 1 | `GET /v1/wallet/{chain}/{walletAddress}` |
-    | Wallet Stats | 2 | `GET /v1/wallet/{chain}/{walletAddress}/stats` |
-    | PnL Calculation | 3 | `POST /v1/wallet/{chain}/{walletAddress}/calculate-pnl` |
-    | Add to Watchlist | 1 | `POST /v1/watchlist/{chain}/{walletAddress}` |
+    | Token Balances | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/tokens-balance` |
+    | Balance Updates | 0.50 | `GET /v2/wallet/{chain}/{walletAddress}/balance-updates` |
+    | PnL | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl` |
+    | PnL by Token | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-by-token` |
+    | PnL Details | 1.50 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-details` |
+    | Calculate PnL | 1.50 | `POST /v2/wallet/{chain}/{walletAddress}/calculate-pnl` |
+    | Net Worth | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth` |
+    | Net Worth Chart | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-chart` |
+    | Net Worth Details | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-details` |
+    | Net Worth Tokens | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth/tokens` |
+    | Transfers | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfers` |
+    | Transfer Total | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfer-total` |
+    | First Transaction | 0.10 | `GET /v2/wallet/{chain}/first-tx` |
+    | Net Worth Summary | 1.00 | `GET /v2/wallet/{chain}/net-worth-summary` |
+    | PnL by Wallet | 1.00 | `GET /v2/wallet/{chain}/pnl-by-wallet` |
+    | Add to Watchlist | 0.05 | `POST /v2/watchlist/{chain}/{walletAddress}` |
   </Tab>
   <Tab title="Trade API">
-    | API | Units | Endpoint |
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Token Trades | 2 | `GET /v1/trade/{chain}` |
-    | Trade Activities | 2 | `GET /v1/trade/{chain}/activities` |
-    | Top Traders | 2 | `GET /v1/trade/{chain}/top-traders` |
+    | Trades | 0.25 | `GET /v2/trade/{chain}` |
+    | Activities | 0.25 | `GET /v2/trade/{chain}/activities` |
+    | Top Traders | 0.50 | `GET /v2/trade/{chain}/top-traders` |
+    | Gainers/Losers | 0.50 | `GET /v2/trade/{chain}/trader-gainers-losers` |
   </Tab>
   <Tab title="Pool API">
-    | API | Units | Endpoint |
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Pool Info | 1 | `GET /v1/dexpools/{chain}/{poolAddress}` |
-    | Pool Snapshots | 2 | `GET /v1/dexpools/{chain}/{poolAddress}/snapshots` |
+    | Pool Info | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}` |
+    | Pool Snapshots | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}/snapshots` |
   </Tab>
   <Tab title="Ranking API">
-    | API | Units | Endpoint |
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Hot Tokens | 1 | `GET /v1/ranking/{chain}/hottokens/{duration}` |
-    | New Tokens | 1 | `GET /v1/ranking/{chain}/newtokens` |
-    | Graduated Tokens | 1 | `GET /v1/ranking/{chain}/migrated` |
-    | Final Stretch | 1 | `GET /v1/ranking/{chain}/finalstretch` |
-    | Stock Tokens | 1 | `GET /v1/ranking/{chain}/stocks` |
+    | Hot Tokens | 0.25 | `GET /v2/ranking/{chain}/hotTokens/{duration}` |
+    | New Tokens | 0.25 | `GET /v2/ranking/{chain}/newTokens` |
+    | Migrated Tokens | 0.25 | `GET /v2/ranking/{chain}/migrated` |
+    | Final Stretch | 0.25 | `GET /v2/ranking/{chain}/finalStretch` |
+    | Stock Tokens | 0.25 | `GET /v2/ranking/{chain}/stocks` |
   </Tab>
-  <Tab title="DEX API">
-    | API | Units | Endpoint |
+  <Tab title="DEX / DeFi API">
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Supported DEXs | 1 | `GET /v1/dex` |
-    | Quote | 2 | `GET /v1/dex/{chain}/quote` |
-    | Route | 2 | `POST /v1/dex/{chain}/route` |
-    | Create Tx | 3 | `POST /v1/dex/{chain}/create` |
-    | Execute Swap | 5 | `POST /v1/dex/{chain}/swap` |
+    | Supported DEXs | 0.05 | `GET /v2/dex` |
+    | Quote | 0.25 | `GET /v2/dex/{chain}/quote` |
+    | Route | 0.25 | `POST /v2/dex/{chain}/route` |
+    | Token Creation | 5.00 | `POST /v2/dex/{chain}/create` |
+    | Execute Swap | 5.00 | `POST /v2/dex/{chain}/swap` |
+    | Job Status | 0.05 | `GET /v2/job/{id}` |
+    | Job Streaming | 0.05 | `GET /v2/job/{id}/streaming` |
   </Tab>
-  <Tab title="Blockchain API">
-    | API | Units | Endpoint |
+  <Tab title="Blockchain / Tx API">
+    | API | CU | Endpoint |
     |:--|:--|:--|
-    | Supported Chains | 1 | `GET /v1/blockchain` |
-    | Latest Block | 1 | `GET /v1/blockchain/{chain}/latest_block` |
-    | Gas Price | 1 | `GET /v1/transaction/{chain}/gas-price` |
-    | Gas Estimate | 2 | `POST /v1/transaction/{chain}/estimate-gas-limit` |
-    | Send Transaction | 3 | `POST /v1/transaction/{chain}/send` |
+    | Supported Chains | 0.05 | `GET /v2/blockchain` |
+    | Latest Block | 0.05 | `GET /v2/blockchain/{chain}/latest_block` |
+    | Gas Price | 0.10 | `GET /v2/transaction/{chain}/gas-price` |
+    | Gas Estimate | 0.25 | `POST /v2/transaction/{chain}/estimate-gas-limit` |
+    | Send Transaction | 5.00 | `POST /v2/transaction/{chain}/send` |
+  </Tab>
+  <Tab title="Webhook API">
+    | API | CU | Endpoint |
+    |:--|:--|:--|
+    | List Endpoints | 0.05 | `GET /v2/webhook/endpoint` |
+    | Create Endpoint | 0.05 | `POST /v2/webhook/endpoint` |
+    | Get Endpoint | 0.05 | `GET /v2/webhook/endpoint/{id}` |
+    | Update Endpoint | 0.05 | `PATCH /v2/webhook/endpoint` |
+    | Delete Endpoint | 0.05 | `DELETE /v2/webhook/endpoint/{id}` |
+    | Get Secret | 0.05 | `GET /v2/webhook/endpoint/{id}/secret` |
+    | Rotate Secret | 0.10 | `POST /v2/webhook/endpoint/{id}/secret/rotate` |
+  </Tab>
+  <Tab title="RedPacket API">
+    | API | CU | Endpoint |
+    |:--|:--|:--|
+    | List Red Packets | 0.05 | `GET /v2/redpacket` |
+    | Get Red Packet | 0.05 | `GET /v2/redpacket/{id}` |
+    | Get Claims | 0.05 | `GET /v2/redpacket/{id}/claims` |
+    | Wallet Claims | 0.05 | `GET /v2/redpacket/wallet/{address}/claims` |
+    | Wallet Red Packets | 0.05 | `GET /v2/redpacket/wallet/{address}/redpackets` |
+    | Create Red Packet | 5.00 | `POST /v2/redpacket/{chain}/create` |
+    | Claim Red Packet | 5.00 | `POST /v2/redpacket/{chain}/claim` |
+    | Send Red Packet | 5.00 | `POST /v2/redpacket/{chain}/send` |
   </Tab>
 </Tabs>
 
-### Webhook API Consumption
+### CU Pricing Tiers
 
-| API | Units | Endpoint |
-|:--|:--|:--|
-| List Webhooks | 1 | `GET /v1/webhook/endpoint` |
-| Create Webhook | 2 | `POST /v1/webhook/endpoint` |
-| Get Webhook | 1 | `GET /v1/webhook/endpoint/{id}` |
-| Update Webhook | 2 | `PATCH /v1/webhook/endpoint` |
-| Delete Webhook | 1 | `DELETE /v1/webhook/endpoint/{id}` |
-| Get Secret | 1 | `GET /v1/webhook/endpoint/{id}/secret` |
-| Rotate Secret | 2 | `POST /v1/webhook/endpoint/{id}/secret/rotate` |
+| Tier | CU Cost | Description | Examples |
+|:--|:--|:--|:--|
+| Tier 1 | 0.05 | Metadata, list, simple lookups | Token list, blockchain info, webhook CRUD, job status |
+| Tier 2 | 0.10 | Single-field queries | Price, market data, creation info, gas price |
+| Tier 3 | 0.25 | Search, trades, rankings, candles | Token search, OHLCV, trade activities, rankings |
+| Tier 4 | 0.50 | Holders, security, snapshots | Holders, security audit, pool snapshots, top traders |
+| Tier 5 | 1.00 | Full profile, PnL, net worth | Token detail, wallet PnL, net worth |
+| Tier 6 | 1.50 | Compute-heavy analytics | PnL details, calculate PnL |
+| Tier 7 | 2.50 | Aggregation-heavy | Token stats, pools (multi-source aggregation) |
+| Tier 8 | 5.00 | On-chain execution | Swap, token creation, send transaction |
 
 ---
 
@@ -326,9 +373,10 @@ KYT/KYA APIs **do not consume plan Units**. They are charged from a separate KYT
 
 | API | Cost | Endpoint |
 |:--|:--|:--|
-| Deposit Risk Assessment | $0.25/call | `POST /v1/kyt/transfer` |
-| Withdrawal Risk Assessment | $0.25/call | `POST /v1/kyt/withdrawal` |
-| Register Address | $1.25/call | `POST /v1/kyt/address` |
+| Register Transfer | $0.25/call | `POST /v2/kyt/transfer` |
+| Register Withdrawal | $0.25/call | `POST /v2/kyt/withdrawal` |
+| Register Address | $1.25/call | `POST /v2/kyt/address` |
+| Query Risk / Alerts / Exposures | Included | `GET /v2/kyt/addresses/*/risk`, `GET /v2/kyt/transfers/*/summary`, etc. |
 
 ---
 
@@ -339,37 +387,37 @@ KYT/KYA APIs **do not consume plan Units**. They are charged from a separate KYT
     **Scenario:** A DeFi market website showing 50 token prices, refreshing every 10 seconds
     ```
     Calculation:
-    - Request frequency: 50 tokens × 6 times/min = 300 times/min
-    - Monthly requests: 300 × 60 × 24 × 30 = 12,960,000 times
-    - Monthly consumption: 12,960,000 × 1 Unit = 12,960,000 Units
+    - Request frequency: 50 tokens × 6 times/min = 300 requests/min
+    - Monthly requests: 300 × 60 × 24 × 30 = 12,960,000 requests
+    - CU per request: 0.10 (Token Price endpoint)
+    - Monthly CU: 12,960,000 × 0.10 = 1,296,000 CU
 
-    Recommended: Enterprise plan
+    Recommended: Starter plan (10M CU)
     ```
   </Tab>
   <Tab title="Trading Bot">
     **Scenario:** An arbitrage bot monitoring 5 trading pairs, querying price every second
     ```
-    Calculation:
-    - Request frequency: 5 × 1 time/sec = 5 times/sec
-    - Monthly requests: 5 × 86400 × 30 = 12,960,000 times
-    - Monthly consumption: 12,960,000 × 1 Unit = 12,960,000 Units
+    REST approach:
+    - 5 × 1/sec × 86,400 × 30 = 12,960,000 requests
+    - CU: 12,960,000 × 0.10 = 1,296,000 CU
 
-    Recommended: Enterprise plan, or use WebSocket to reduce consumption
+    WebSocket approach (recommended):
+    - 5 pairs × ~200 bytes/msg × 1 msg/sec × 86,400 × 30
+    - = 2,592,000,000 bytes × 0.005 CU/byte = 12,960,000 CU
 
-    Optimized with WebSocket:
-    - 5 pairs × 0.1 Unit/message × 86400 × 30 = 1,296,000 Units
-    - Recommended: Pro plan + overage
+    Recommended: Pro plan for REST; Starter for WebSocket
     ```
   </Tab>
   <Tab title="Exchange Risk Control">
     **Scenario:** Small exchange, 1000 deposits/day requiring KYT check
     ```
     Calculation:
-    - Daily requests: 1000 transactions
-    - Monthly requests: 1000 × 30 = 30,000 times
-    - Monthly consumption: 30,000 × 5 Units = 150,000 Units
+    - Daily: 1,000 KYT transfer registrations
+    - Monthly: 1,000 × 30 = 30,000 calls
+    - Cost: 30,000 × $0.25 = $7,500/month (KYT billed separately in USD)
 
-    Recommended: Pro plan
+    Note: KYT does not consume plan CU. Top up KYT balance separately.
     ```
   </Tab>
 </Tabs>
@@ -447,6 +495,48 @@ Service is interrupted immediately when quota is exhausted (returns 403 error). 
 
 - **Monthly plans:** Invoice generated on the 1st for the previous month
 - **Annual plans:** Get 2 months free (equivalent to 16.7% discount)
+
+---
+
+## AI Agent Payment (x402 / MPP)
+
+For AI agents that need programmatic access without dashboard signup, ChainStream supports two on-chain payment protocols:
+
+### x402 (Base / Solana USDC)
+
+The [x402 protocol](https://www.x402.org/) enables HTTP-native micropayments. When an API call returns 402, the agent's wallet signs a USDC transfer and retries — no account registration required.
+
+| Property | Value |
+|----------|-------|
+| Networks | Base (chain ID 8453), Solana |
+| Currency | USDC |
+| Standard | EIP-3009 (Base), native transfer (Solana) |
+| Gas Fee | **Free** — ChainStream's facilitator covers all gas costs |
+
+<Tip>
+You only pay the subscription price in USDC. ChainStream operates its own x402 facilitator that submits the on-chain transaction and pays the gas fee on your behalf — the agent wallet does not need ETH or SOL for gas.
+</Tip>
+
+### MPP (Tempo USDC.e)
+
+MPP uses the Tempo network for payments. Gas is paid in USDC.e directly — no ETH needed.
+
+| Property | Value |
+|----------|-------|
+| Network | Tempo (chain ID 4217) |
+| Currency | USDC.e |
+
+### How It Works
+
+1. Agent calls any ChainStream API
+2. Server returns 402 (no active subscription)
+3. Agent fetches available plans from `/x402/pricing`
+4. Agent purchases a plan via x402 or MPP
+5. Server returns an **API Key** — agent saves it for all future calls
+
+<Card title="x402 Payment Guide" icon="credit-card" href="/en/guides/cli/x402-payment">
+  Full details on x402 and MPP payment flows
+</Card>
 
 ---
 

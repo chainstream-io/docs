@@ -8,13 +8,13 @@ icon: "rocket"
 
 After completing this tutorial, you will be able to:
 
-- Create an application and obtain credentials
-- Generate an Access Token for API authentication
+- Authenticate with ChainStream using an API Key or OAuth token
 - Call the API to get token metadata
+- Use the CLI and SDK for the same query
 - Understand the API response structure
 
 <Note>
-**Estimated time**: 5-10 minutes
+**Estimated time**: 5 minutes
 </Note>
 
 ---
@@ -25,26 +25,72 @@ After completing this tutorial, you will be able to:
 
 ---
 
-## Step 1: Create Application and Get Credentials
+## Step 1: Get Your API Key
 
 1. Log in to [ChainStream Dashboard](https://www.chainstream.io/dashboard)
 2. Go to **Applications**
 3. Click **Create New App**
-4. After creation, you will get your `Client ID` and `Client Secret`
+4. Copy your **API Key** (starts with `cs_live_...`)
 
 <Tip>
-Save your `Client ID` and `Client Secret` securely. You'll use them to generate Access Tokens.
+The API Key is the fastest way to authenticate. For OAuth 2.0 JWT flow, see [Authentication](/en/guides/getting-started/authentication).
 </Tip>
 
 ---
 
-## Step 2: Generate Access Token
+## Step 2: Make Your First Request
 
-Use your credentials to generate an Access Token. The token is used for API authentication.
+Query the SOL token metadata on Solana. Choose your preferred method:
 
 <Tabs>
   <Tab title="cURL">
 ```bash
+curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="CLI">
+```bash
+# One-liner with npx (no install needed)
+npx @chainstream-io/cli token info --chain sol \
+  --address So11111111111111111111111111111111111111112
+```
+
+The CLI will prompt you to authenticate on first run. Or set your key upfront:
+
+```bash
+npx @chainstream-io/cli config set --key apiKey --value your_api_key
+```
+  </Tab>
+  <Tab title="SDK (TypeScript)">
+```typescript
+import { ChainStreamClient } from "@chainstream-io/sdk";
+
+const cs = new ChainStreamClient({ apiKey: "your_api_key" });
+
+const token = await cs.token.getToken(
+  "So11111111111111111111111111111111111111112",
+  "solana"
+);
+console.log(token.name, token.symbol, token.decimals);
+```
+  </Tab>
+  <Tab title="MCP (AI Agent)">
+Connect your AI agent to ChainStream data — no code needed:
+
+```bash
+CHAINSTREAM_API_KEY=your_api_key npx @chainstream-io/mcp
+```
+
+Then ask your AI: *"What is the SOL token on Solana?"*
+
+See [MCP Server Setup](/en/guides/ai-infrastructure/mcp-server/setup-guide) for Claude/Cursor configuration.
+  </Tab>
+  <Tab title="OAuth 2.0 (JWT)">
+For apps using OAuth 2.0 Client Credentials flow:
+
+```bash
+# Step 1: Get access token
 curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -53,91 +99,10 @@ curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
     "audience": "https://api.dex.chainstream.io",
     "grant_type": "client_credentials"
   }'
-```
-  </Tab>
-  <Tab title="JavaScript">
-```javascript
-const response = await fetch('https://dex.asia.auth.chainstream.io/oauth/token', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    client_id: 'YOUR_CLIENT_ID',
-    client_secret: 'YOUR_CLIENT_SECRET',
-    audience: 'https://api.dex.chainstream.io',
-    grant_type: 'client_credentials'
-  })
-});
 
-const data = await response.json();
-const accessToken = data.access_token;
-console.log('Access Token:', accessToken);
-```
-  </Tab>
-  <Tab title="Python">
-```python
-import requests
-
-response = requests.post(
-    'https://dex.asia.auth.chainstream.io/oauth/token',
-    json={
-        'client_id': 'YOUR_CLIENT_ID',
-        'client_secret': 'YOUR_CLIENT_SECRET',
-        'audience': 'https://api.dex.chainstream.io',
-        'grant_type': 'client_credentials'
-    }
-)
-
-access_token = response.json()['access_token']
-print('Access Token:', access_token)
-```
-  </Tab>
-</Tabs>
-
-<Note>
-Access Tokens are valid for 24 hours. You can generate a new token anytime using your credentials.
-</Note>
-
----
-
-## Step 3: Make Your First Request
-
-Let's use "Get Token Metadata" as an example. We'll query information about the SOL token on Solana.
-
-<Tabs>
-  <Tab title="cURL">
-```bash
-curl -X GET "https://api.chainstream.io/v1/token/sol/So11111111111111111111111111111111111111112/metadata" \
+# Step 2: Use the token
+curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-  </Tab>
-  <Tab title="JavaScript">
-```javascript
-const response = await fetch(
-  'https://api.chainstream.io/v1/token/sol/So11111111111111111111111111111111111111112/metadata',
-  {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`
-    }
-  }
-);
-
-const tokenMetadata = await response.json();
-console.log(tokenMetadata);
-```
-  </Tab>
-  <Tab title="Python">
-```python
-import requests
-
-response = requests.get(
-    'https://api.chainstream.io/v1/token/sol/So11111111111111111111111111111111111111112/metadata',
-    headers={'Authorization': f'Bearer {access_token}'}
-)
-
-token_metadata = response.json()
-print(token_metadata)
 ```
   </Tab>
 </Tabs>
@@ -230,15 +195,21 @@ Now that you've successfully completed your first call, try these APIs:
 
 Choose your next learning path based on your use case:
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="Data Developer" icon="database" href="/en/guides/data-concepts/realtime-streaming">
     Go to Data Concepts to understand data models
+  </Card>
+  <Card title="GraphQL API" icon="diagram-project" href="/en/graphql/getting-started/overview">
+    Explore the OLAP analytical GraphQL API for flexible on-chain queries
   </Card>
   <Card title="Compliance User" icon="shield" href="/en/guides/security-compliance/overview">
     Go to Security Compliance to learn about KYT/KYA
   </Card>
   <Card title="AI Developer" icon="robot" href="/en/guides/ai-infrastructure/overview">
-    Go to AI Infrastructure to learn about MCP integration
+    Go to AI Infrastructure to learn about MCP and Agent Skills
+  </Card>
+  <Card title="CLI" icon="terminal" href="/en/guides/cli/overview">
+    Use the CLI for scripting, CI/CD, and AI agent workflows
   </Card>
 </CardGroup>
 

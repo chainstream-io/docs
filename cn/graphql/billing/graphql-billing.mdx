@@ -1,0 +1,154 @@
+---
+title: "计费与 Credits"
+description: "了解 GraphQL API 如何通过 Credit Unit（CU）体系计费"
+icon: "credit-card"
+---
+
+## 概述
+
+每条 GraphQL 查询会根据所查 **Cube**、请求行数与聚合复杂度消耗 **Credit Units (CU)**。Credits 与 REST API 使用同一套计费计划 — 你的 API Key 在两者间通用。
+
+<Info>
+GraphQL API 与 REST Data API 共用同一 API Key 与计费计划。GraphQL 查询消耗的 Credits 计入整体用量。
+</Info>
+
+---
+
+## Credit 计算公式
+
+Credits 按 Cube 分别计算，公式如下：
+
+```
+Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+```
+
+| Factor | Calculation | Description |
+|:-------|:-----------|:------------|
+| **BaseCost** | 各 Cube 基础价（见下表） | 随 Cube 复杂度变化的固定成本 |
+| **LimitFactor** | `ceil(limit / 100)`，最小为 1 | 随请求行数缩放 |
+| **AggregationFactor** | 1.0（无）、1.5（GROUP BY）、2.0（HAVING） | 使用聚合或 HAVING 过滤时更高 |
+| **MetricFactor** | `1.0 + (metric_count × 0.2)` | 每增加一个 metric（如 count、sum）都会提高 |
+
+<Tip>
+在默认 limit（25 行）且无聚合的简单查询中，通常只支付基础成本。提高行数或增加聚合类 metric 时，Credits 会上升。
+</Tip>
+
+### 计算示例
+
+<AccordionGroup>
+  <Accordion title="简单查询：10 行 DEXTrades">
+    ```
+    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ```
+  </Accordion>
+  <Accordion title="大结果集：500 行 DEXTrades">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ```
+  </Accordion>
+  <Accordion title="聚合查询：500 行 + GROUP BY + 2 个 metrics">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
+    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 各 Cube 基础成本
+
+| Cube | Base Cost (CU) |
+|:-----|:---------------|
+| **DEXTrades** | 50 |
+| **DEXPools** | 30 |
+| **WalletTokenPnL** | 25 |
+| **Transfers** | 15 |
+| **BalanceUpdates** | 10 |
+| 其余所有 Cube | 20（默认） |
+
+<Note>
+基础成本反映查询复杂度与各 Cube 底层数据规模。**DEXTrades** 最贵，因为会扫描维度最多、体量最大的表。
+</Note>
+
+---
+
+## 响应：`extensions.credits`
+
+每条 GraphQL 响应都会在 `extensions` 中附带 Credits 消耗详情：
+
+```json
+{
+  "data": {
+    "DEXTrades": [ ... ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        {
+          "cube": "DEXTrades",
+          "credits": 50,
+          "row_count": 10
+        }
+      ]
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `total` | `Int` | 整条查询消耗的 Credits 合计 |
+| `cubes` | `Array` | 按 Cube 拆分 |
+| `cubes[].cube` | `String` | Cube 名称 |
+| `cubes[].credits` | `Int` | 该 Cube 计费的 Credits |
+| `cubes[].row_count` | `Int` | 返回行数 |
+
+<Note>
+在发生扣费（即 `total > 0`）时会出现 `extensions.credits`。即使返回 0 行，仍会收取基础成本。
+</Note>
+
+---
+
+## 在 IDE 中查看用量
+
+[GraphQL IDE](https://ide.chainstream.io) 状态栏会在每次查询后显示 Credits 消耗：
+
+- **CU 指示**：以 `total / 100` 显示，保留 **2 位小数**（例如 50 CU 显示为 `0.50 CU`）
+- **Latency**：请求耗时（毫秒）
+- **Response size**：响应体大小
+
+---
+
+## 优化 Credits 使用的建议
+
+<CardGroup cols={3}>
+  <Card title="少选字段" icon="minimize">
+    只请求需要的维度字段。字段越少，处理的数据量通常越小。
+  </Card>
+  <Card title="合理 limit" icon="gauge">
+    在业务允许范围内尽量压低 `limit.count`。Credits 随 `ceil(limit / 100)` 缩放。
+  </Card>
+  <Card title="优先预聚合 Cube" icon="layer-group">
+    需要汇总数据时，优先使用 DWM/DWS Cube（如 OHLC、TokenTradeStats、TokenMarketCap），而不是在 DWD Cube（如 DEXTrades）上堆 metrics。
+  </Card>
+</CardGroup>
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="计费与 Units 总览" icon="receipt" href="/cn/guides/getting-started/billing-and-units">
+    ChainStream 计费计划、单位配额与支付方式概览。
+  </Card>
+  <Card title="Metrics 与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
+    了解聚合 metrics 如何影响查询 Credits。
+  </Card>
+</CardGroup>

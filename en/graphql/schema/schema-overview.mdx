@@ -1,0 +1,232 @@
+---
+title: "Schema Overview"
+description: "How the ChainStream GraphQL schema is structured — root types, Cube fields, generated types, and introspection"
+icon: "sitemap"
+---
+
+## Dynamic Schema Generation
+
+The ChainStream GraphQL schema is **dynamically generated** at startup by **activecube-rs**, a Rust library that compiles **Cube** definitions into a fully-typed [async-graphql](https://github.com/async-graphql/async-graphql) schema. Each Cube maps to an analytical data model backed by an OLAP table, and activecube-rs automatically produces:
+
+- A **top-level Query field** for the Cube
+- A **Record type** (`{Cube}Record`) representing the selectable dimensions
+- A **Filter input** (`{Cube}Filter`) matching the dimension hierarchy
+- An **OrderBy enum** (`{Cube}OrderBy`) with ASC/DESC variants for every dimension path
+
+This means the schema is always in sync with the underlying data models — no handwritten SDL files to maintain.
+
+<Info>
+Because the schema is generated from Cube definitions, any new data model added in Rust is automatically reflected in the GraphQL endpoint after deployment.
+</Info>
+
+---
+
+## Root Query Type
+
+The schema has a single root type: `Query`. Every Cube is exposed as a top-level field on `Query`:
+
+```graphql
+type Query {
+  DEXTrades(...): [DEXTradesRecord!]!
+  Transfers(...): [TransfersRecord!]!
+  BalanceUpdates(...): [BalanceUpdatesRecord!]!
+  DEXPools(...): [DEXPoolsRecord!]!
+  TokenSupplyUpdates(...): [TokenSupplyUpdatesRecord!]!
+  OHLC(...): [OHLCRecord!]!
+  TokenTradeStats(...): [TokenTradeStatsRecord!]!
+  PoolLiquiditySnapshots(...): [PoolLiquiditySnapshotsRecord!]!
+  TokenHolders(...): [TokenHoldersRecord!]!
+  WalletTokenPnL(...): [WalletTokenPnLRecord!]!
+  TokenMarketCap(...): [TokenMarketCapRecord!]!
+  TokenSearch(...): [TokenSearchRecord!]!
+}
+```
+
+There are no `Mutation` or `Subscription` types — the GraphQL API is read-only analytical queries.
+
+---
+
+## Network Enum
+
+Every Cube field requires a `network` argument that specifies which blockchain to query. The enum values are:
+
+| Value | Blockchain |
+|:------|:-----------|
+| `sol` | Solana |
+| `eth` | Ethereum |
+| `bsc` | BNB Chain (BSC) |
+
+```graphql
+query {
+  DEXTrades(network: sol) { ... }
+}
+```
+
+<Note>
+The `network` argument is **required** on every top-level Cube query. Omitting it will result in a validation error.
+</Note>
+
+---
+
+## Common Argument Pattern
+
+Every Cube field accepts the same set of standard arguments, plus optional Cube-specific **selectors**:
+
+| Argument | Type | Required | Description |
+|:---------|:-----|:---------|:------------|
+| `network` | `Network!` | Yes | Target blockchain (`sol`, `eth`, `bsc`) |
+| `where` | `{Cube}Filter` | No | Nested filter object matching the dimension hierarchy |
+| `limit` | `LimitInput` | No | Pagination: `{count: Int, offset: Int}` |
+| `orderBy` | `{Cube}OrderBy` | No | Sort order enum (`{Path}_ASC` / `{Path}_DESC`) |
+| *selectors* | Filter input | No | Shortcut filters (e.g., `tokenAddress: {is: "..."}`) |
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    where: { Block: { Time: { after: "2025-01-01T00:00:00Z" } } }
+    limit: { count: 50, offset: 0 }
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+### LimitInput
+
+```graphql
+input LimitInput {
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip (for pagination)
+}
+```
+
+Default `count` varies by Cube (typically 25). Maximum is 10,000 for most Cubes.
+
+---
+
+## Generated Types per Cube
+
+For each Cube, activecube-rs generates three companion types:
+
+<CardGroup cols={3}>
+  <Card title="Record Type" icon="table">
+    `{Cube}Record` — The return type containing all selectable dimensions and metrics. Field structure mirrors the Cube's dimension hierarchy.
+  </Card>
+  <Card title="Filter Input" icon="filter">
+    `{Cube}Filter` — A nested input object where each dimension maps to a filter primitive (`StringFilter`, `IntFilter`, `DateTimeFilter`, etc.).
+  </Card>
+  <Card title="OrderBy Enum" icon="arrow-down-a-z">
+    `{Cube}OrderBy` — Enum variants for every dimension path in both ASC and DESC directions (e.g., `Block_Time_ASC`, `Trade_Buy_Amount_DESC`).
+  </Card>
+</CardGroup>
+
+**Example for DEXTrades:**
+
+```graphql
+# Record type (return shape)
+type DEXTradesRecord {
+  Block: DEXTradesBlockRecord
+  Transaction: DEXTradesTransactionRecord
+  Trade: DEXTradesTradeRecord
+  Pool: DEXTradesPoolRecord
+  IsSuspect: Boolean
+  count: Int
+  sum(of: DEXTradesSumOf!): Float
+}
+
+# Filter input
+input DEXTradesFilter {
+  Block: DEXTradesBlockFilter
+  Transaction: DEXTradesTransactionFilter
+  Trade: DEXTradesTradeFilter
+  Pool: DEXTradesPoolFilter
+  IsSuspect: BoolFilter
+  any: [DEXTradesFilter!]  # OR logic
+}
+
+# OrderBy enum (partial)
+enum DEXTradesOrderBy {
+  Block_Time_ASC
+  Block_Time_DESC
+  Trade_Buy_Amount_ASC
+  Trade_Buy_Amount_DESC
+  # ...
+}
+```
+
+---
+
+## Introspection
+
+The schema supports standard GraphQL introspection. You can explore types, fields, and arguments using `__schema` and `__type` queries:
+
+<Tabs>
+  <Tab title="List All Cubes">
+```graphql
+query {
+  __schema {
+    queryType {
+      fields {
+        name
+        description
+        args { name type { name } }
+      }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Inspect a Cube Type">
+```graphql
+query {
+  __type(name: "DEXTradesRecord") {
+    name
+    fields {
+      name
+      type { name kind ofType { name } }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="List Filter Operators">
+```graphql
+query {
+  __type(name: "StringFilter") {
+    name
+    inputFields {
+      name
+      type { name kind }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+The [GraphQL IDE](https://ide.chainstream.io) auto-fetches the introspection schema to power auto-complete and inline documentation. You can explore the full schema interactively without writing introspection queries manually.
+</Tip>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
+    Explore all 12 Cubes — their fields, selectors, and data warehouse layers.
+  </Card>
+  <Card title="Filtering" icon="filter" href="/en/graphql/schema/filtering">
+    Learn how to use `where` filters and selector shortcuts to narrow your queries.
+  </Card>
+  <Card title="Ordering & Pagination" icon="arrow-down-1-9" href="/en/graphql/schema/ordering-pagination">
+    Sort results and paginate through large datasets with `orderBy` and `limit`.
+  </Card>
+  <Card title="Metrics & Aggregation" icon="chart-simple" href="/en/graphql/schema/metrics-aggregation">
+    Use `count`, `sum`, `avg`, `min`, `max`, and `uniq` to aggregate data in your queries.
+  </Card>
+</CardGroup>

@@ -1,0 +1,258 @@
+---
+title: "First Query"
+description: "Run your first GraphQL query step by step — from the IDE and cURL"
+icon: "play"
+---
+
+<Note>
+**Estimated time**: 5 minutes
+</Note>
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A registered ChainStream account ([Register here](https://www.chainstream.io/dashboard))
+- An API Key (starts with `cs_live_...`)
+
+<Tip>
+The GraphQL API shares the same API Key as the REST Data API. If you already have a key from the REST API, you can reuse it here.
+</Tip>
+
+---
+
+## Step 1: Get Your API Key
+
+1. Log in to [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+2. Go to **Applications**
+3. Click **Create New App** (or select an existing app)
+4. Copy your **API Key**
+
+---
+
+## Step 2: Open the GraphQL IDE
+
+Visit the ChainStream GraphQL IDE:
+
+<Card title="GraphQL IDE" icon="code" href="https://ide.chainstream.io">
+  https://ide.chainstream.io
+</Card>
+
+The IDE provides auto-complete, syntax highlighting, inline documentation, and query history — making it the fastest way to explore the schema and build queries.
+
+---
+
+## Step 3: Configure Authentication
+
+In the IDE, open the **Headers** panel (bottom-left) and add your API Key:
+
+```json
+{
+  "X-API-KEY": "your_api_key"
+}
+```
+
+---
+
+## Step 4: Run a Sample Query
+
+Paste the following query into the editor. It fetches the **latest 10 DEX trades on Solana**, including block time, transaction hash, buy/sell token info, amounts, USD price, and the DEX protocol name.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block {
+      Time
+      Slot
+    }
+    Transaction {
+      Hash
+    }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+Click the **Play** button (or press `Ctrl+Enter` / `Cmd+Enter`) to execute.
+
+---
+
+## cURL Equivalent
+
+You can run the same query from your terminal:
+
+```bash
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d '{
+    "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time Slot } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+  }'
+```
+
+---
+
+## Response Example
+
+A successful response looks like this:
+
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "Block": {
+          "Time": "2025-03-27T10:32:18Z",
+          "Slot": 325847291
+        },
+        "Transaction": {
+          "Hash": "4vKzR8g...x9bQ"
+        },
+        "Trade": {
+          "Buy": {
+            "Currency": { "MintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+            "Amount": 1523.45,
+            "PriceInUSD": 1.0001
+          },
+          "Sell": {
+            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+            "Amount": 10.237
+          },
+          "Dex": { "ProtocolName": "Raydium" }
+        }
+      },
+      {
+        "Block": {
+          "Time": "2025-03-27T10:32:17Z",
+          "Slot": 325847289
+        },
+        "Transaction": {
+          "Hash": "3mPqW7n...kR2J"
+        },
+        "Trade": {
+          "Buy": {
+            "Currency": { "MintAddress": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
+            "Amount": 48291037.12,
+            "PriceInUSD": 0.00003152
+          },
+          "Sell": {
+            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+            "Amount": 10.5
+          },
+          "Dex": { "ProtocolName": "Orca" }
+        }
+      }
+    ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        { "cube": "DEXTrades", "credits": 50, "row_count": 10 }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Understanding the Response
+
+The response mirrors the structure of your query:
+
+| Path | Description |
+|:--|:--|
+| `Block.Time` | Block timestamp in ISO 8601 format |
+| `Block.Slot` | Solana slot number (Solana-specific) |
+| `Transaction.Hash` | On-chain transaction hash |
+| `Trade.Buy.Currency.MintAddress` | Token address of the bought asset |
+| `Trade.Buy.Amount` | Amount of the bought token |
+| `Trade.Buy.PriceInUSD` | USD price of the bought token at trade time |
+| `Trade.Sell.Currency.MintAddress` | Token address of the sold asset |
+| `Trade.Sell.Amount` | Amount of the sold token |
+| `Trade.Dex.ProtocolName` | DEX protocol that executed the trade (e.g. Raydium, Orca, PancakeSwap) |
+
+<Info>
+The `extensions.credits` object shows how many billing credits this query consumed and your remaining balance. See [Billing & Credits](/en/graphql/billing/graphql-billing) for details.
+</Info>
+
+---
+
+## Try Modifying the Query
+
+Now that you have a working query, try these modifications:
+
+<AccordionGroup>
+  <Accordion title="Switch to Ethereum">
+    Change `network: sol` to `network: eth` to query Ethereum DEX trades (Uniswap, SushiSwap, etc.).
+  </Accordion>
+  <Accordion title="Add a time filter">
+    Filter trades from the last hour by adding a `where` clause:
+    ```graphql
+    DEXTrades(
+      network: sol
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+      where: {Block: {Time: {after: "2025-03-27T09:00:00Z"}}}
+    ) { ... }
+    ```
+  </Accordion>
+  <Accordion title="Query a specific token">
+    Filter by token mint address to see trades for a specific token:
+    ```graphql
+    DEXTrades(
+      network: sol
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+      where: {Trade: {Buy: {Currency: {MintAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}}}}}
+    ) { ... }
+    ```
+  </Accordion>
+  <Accordion title="Add aggregation">
+    Count total trades per DEX protocol:
+    ```graphql
+    DEXTrades(
+      network: sol
+      where: {Block: {Time: {after: "2025-03-27T00:00:00Z"}}}
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Schema & Data Model" icon="diagram-project" href="/en/graphql/schema/schema-overview">
+    Explore all 12 Cubes, field types, filtering operators, and aggregation functions.
+  </Card>
+  <Card title="Query Examples" icon="flask" href="/en/graphql/examples/dex-trades">
+    Browse real-world query examples for DEX trades, transfers, OHLC, holders, and more.
+  </Card>
+  <Card title="GraphQL IDE Guide" icon="code" href="/en/graphql/ide/introduction">
+    Master the IDE — query templates, saved queries, variables panel, and code export.
+  </Card>
+  <Card title="Billing & Credits" icon="credit-card" href="/en/graphql/billing/graphql-billing">
+    Understand how query credits are calculated and how to optimize costs.
+  </Card>
+</CardGroup>

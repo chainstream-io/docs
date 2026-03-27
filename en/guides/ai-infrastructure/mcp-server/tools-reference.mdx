@@ -1,0 +1,398 @@
+---
+title: "MCP Tools Reference"
+description: "Complete reference for all 17 MCP tools in the ChainStream MCP server."
+icon: "wrench"
+---
+
+The ChainStream MCP server exposes **17 tools** for token analytics, wallet profiling, DEX trading, market trends, and blockchain operations. The same 17 tools are available whether you use the **cloud endpoint** (`https://mcp.chainstream.io/mcp`) or the **npm package** (`@chainstream-io/mcp`).
+
+---
+
+## Tools (17)
+
+### Token Tools (5)
+
+#### `tokens_search`
+
+Search tokens by name, symbol, or contract address across all supported chains. Returns top matches with name, symbol, chain, price, 24h change, and market cap. Use this as the first step when a user mentions a token by name.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `query` | string | Yes | — | Search query: token name, symbol, or contract address |
+| `chain` | string | No | — | Filter by chain (omit to search all chains) |
+| `limit` | number | No | `10` | Maximum results (1–50) |
+
+#### `tokens_analyze`
+
+Comprehensive token analysis combining price, volume, holder distribution, security assessment, and liquidity depth. This is the primary tool for evaluating any token — use it whenever someone asks "tell me about token X" or "is this token safe?". For price charts, use `tokens_price_history` instead.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `address` | string | Yes | — | Token contract address |
+| `sections` | array | No | `["overview","metrics","holders","security"]` | Data sections to include. Values: `overview`, `metrics`, `holders`, `security`, `liquidity` |
+
+<Info>
+  This tool aggregates multiple REST API calls (token detail, stats, market data, top holders, security) into a single response.
+</Info>
+
+#### `tokens_price_history`
+
+Get OHLCV candlestick data for charting and technical analysis. Returns up to 100 candles with open, high, low, close, volume. Use `1h` or `4h` resolution for intraday analysis, `1d` for longer trends.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `address` | string | Yes | — | Token contract address |
+| `resolution` | enum | No | `"1h"` | Candle resolution: `1m`, `5m`, `15m`, `1h`, `4h`, `1d` |
+| `limit` | number | No | `50` | Number of candles (1–100) |
+
+#### `tokens_discover`
+
+Discover tokens by on-chain metrics. Use this to find tokens matching specific criteria like "high volume tokens on Solana" or "tokens with biggest price increase".
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `sort_by` | enum | No | `"volume"` | Sort metric: `volume`, `price_change`, `trades`, `market_cap` |
+| `time_frame` | enum | No | `"24h"` | Time window: `1h`, `4h`, `24h` |
+| `min_volume_usd` | number | No | — | Minimum volume in USD |
+| `limit` | number | No | `20` | Maximum results (1–50) |
+
+#### `tokens_compare`
+
+Compare up to 5 tokens side by side. Returns standardized metrics for each: price, volume, market cap, holder count, 24h change. Use when the user asks "which token is better?" or needs to compare options.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `tokens` | array | Yes | — | Array of `{ chain, address }` objects (2–5 items) |
+
+---
+
+### Wallet Tools (2)
+
+#### `wallets_profile`
+
+Complete wallet profile: current token holdings with values, realized/unrealized PnL, and total net worth. Use when someone asks "what does this wallet hold?" or "how profitable is this wallet?". For recent transactions, use `wallets_activity` instead.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `address` | string | Yes | — | Wallet address |
+| `include` | array | No | `["holdings","pnl"]` | Data sections: `holdings` (token balances), `pnl` (profit/loss), `net_worth` (total value) |
+
+<Info>
+  Equivalent to `wallet_get_balance` + `wallet_get_pnl` + `wallet_get_net_worth` on the hosted endpoint.
+</Info>
+
+#### `wallets_activity`
+
+Recent wallet activity: token transfers and transaction history. Use when investigating "what has this wallet been doing recently?" or checking for suspicious activity. For portfolio and PnL data, use `wallets_profile` instead.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `address` | string | Yes | — | Wallet address |
+| `limit` | number | No | `20` | Number of transfers (1–50) |
+
+---
+
+### Market Tools (1)
+
+#### `market_trending`
+
+Get trending tokens by category. `hot` = most actively traded, `new` = recently created tokens, `migrated` = tokens that moved from launchpad to DEX, `graduating` = tokens approaching migration threshold, `stocks` = stock-related meme tokens. Default chain is solana.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | No | `"solana"` | Chain to query |
+| `category` | enum | No | `"hot"` | Trending category: `hot`, `new`, `migrated`, `graduating`, `stocks` |
+| `limit` | number | No | `20` | Maximum results (1–50) |
+
+---
+
+### DEX Tools (3)
+
+#### `dex_quote`
+
+Get a swap quote showing expected output amount, price impact, and fees. Read-only — no funds are moved. Always call this before `dex_swap` to show the user what they will receive and confirm before executing.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `dex` | string | Yes | — | DEX protocol (jupiter, raydium, pumpfun, etc.) |
+| `inputMint` | string | Yes | — | Input token address |
+| `outputMint` | string | Yes | — | Output token address |
+| `amount` | string | Yes | — | Input amount in smallest unit |
+| `slippage` | number | Yes | — | Slippage tolerance in percent (0–100) |
+
+#### `dex_swap`
+
+Execute a token swap on a DEX. **HIGH RISK** — this creates a real transaction that moves funds. Always call `dex_quote` first and present the quote to the user. The user must explicitly confirm before this tool is called.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `dex` | string | Yes | — | DEX protocol |
+| `userAddress` | string | Yes | — | User wallet address |
+| `inputMint` | string | Yes | — | Input token address |
+| `outputMint` | string | Yes | — | Output token address |
+| `amount` | string | Yes | — | Input amount in smallest unit |
+| `slippage` | number | Yes | — | Slippage tolerance in percent (0–100) |
+| `swapMode` | enum | No | `"ExactIn"` | Swap mode: `ExactIn`, `ExactOut` |
+| `poolAddress` | string | No | — | Specific pool address |
+| `priorityFee` | string | No | — | Priority fee for Solana |
+
+<Warning>
+  Executes a real on-chain transaction. MCP clients should require explicit user confirmation.
+</Warning>
+
+#### `dex_create_token`
+
+Create a new token on a launchpad DEX (PumpFun, Raydium, Moonshot, etc.). **HIGH RISK** — this deploys a real token contract. Requires user confirmation.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `dex` | enum | Yes | — | Launchpad DEX: `raydium`, `pumpfun`, `moonshot`, `candy`, `launchpad` |
+| `userAddress` | string | Yes | — | Creator wallet address |
+| `name` | string | Yes | — | Token name (max 32 chars) |
+| `symbol` | string | Yes | — | Token symbol (max 10 chars) |
+| `uri` | string | No | — | Token metadata URI |
+| `image` | string | No | — | Token image URL |
+| `priorityFee` | string | No | — | Priority fee for Solana |
+
+<Warning>
+  Creates a real on-chain token. Require explicit user confirmation.
+</Warning>
+
+---
+
+### Trading Tools (2)
+
+#### `trading_backtest`
+
+Backtest a trading strategy against historical data. Returns PnL curve, Sharpe ratio, max drawdown, and trade details. Currently in development — results will be delivered via progress notifications when available.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `token` | string | Yes | — | Token address |
+| `strategy` | string | Yes | — | Strategy description or code |
+| `startTime` | number | Yes | — | Start timestamp (unix seconds) |
+| `endTime` | number | Yes | — | End timestamp (unix seconds) |
+| `initialCapital` | number | No | `10000` | Starting capital in USD |
+
+<Note>
+  This tool is in development and returns a placeholder response with the submitted parameters.
+</Note>
+
+#### `trading_execute`
+
+Execute a trade on a DEX based on a trading signal. **HIGH RISK** — this moves real funds. Requires explicit user confirmation. Consider using `dex_swap` directly for more control over swap parameters.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `action` | enum | Yes | — | Trade action: `buy`, `sell` |
+| `token` | string | Yes | — | Token address |
+| `amount` | string | Yes | — | Trade amount |
+| `maxSlippage` | number | No | `3.0` | Max slippage percent |
+| `userAddress` | string | Yes | — | User wallet address |
+
+<Warning>
+  Executes a real on-chain transaction. MCP clients should require explicit user confirmation.
+</Warning>
+
+<Note>
+  This tool is in development and returns a placeholder response.
+</Note>
+
+---
+
+### Trade Tools (1)
+
+#### `trades_recent`
+
+Get recent on-chain trades with optional token or wallet filter. Returns trade details including price, amount, buyer/seller, and timestamp.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `tokenAddress` | string | No | — | Filter trades for a specific token |
+| `walletAddress` | string | No | — | Filter trades for a specific wallet |
+| `limit` | number | No | `20` | Number of trades (1–50) |
+
+---
+
+### Infrastructure Tools (3)
+
+#### `webhooks_manage`
+
+Manage webhook endpoints for real-time event notifications. Use `list` to see existing webhooks, `create` to set up new event subscriptions, `delete` to remove an endpoint.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `action` | enum | Yes | — | Action: `list`, `create`, `delete` |
+| `endpoint_id` | string | No | — | Required for `delete` action |
+| `url` | string | No | — | Webhook URL (required for `create`) |
+| `events` | array | No | — | Event types to subscribe (required for `create`) |
+
+#### `blockchain_info`
+
+Get information about supported blockchains and available DEX protocols. Use when the agent needs to know what chains or DEXes are available.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | No | — | Specific chain to query (omit for all chains) |
+
+#### `transaction_send`
+
+Broadcast a signed transaction to the blockchain. **HIGH RISK** — this submits a real transaction that cannot be reversed. The transaction must already be signed by the user's wallet.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `chain` | string | Yes | — | Blockchain identifier |
+| `signedTransaction` | string | Yes | — | Signed transaction data (base64 or hex) |
+
+<Warning>
+  Irreversible on-chain transaction. Ensure proper signing and review.
+</Warning>
+
+---
+
+## REST API Coverage
+
+The 17 MCP tools aggregate multiple REST API endpoints into higher-level operations. Below is the mapping to the underlying REST API for reference.
+
+### Token API (27 endpoints)
+
+| Tool | Description |
+|---|---|
+| `token_search` | Search tokens by name/symbol/address |
+| `token_get` | Detailed token information |
+| `token_get_metadata` | Token metadata (name, symbol, logo) |
+| `token_get_stats` | Trading statistics |
+| `token_get_price` | Current price |
+| `token_get_prices` | Historical price data |
+| `token_get_candles` | Candlestick chart data |
+| `token_get_holders` | Holder count |
+| `token_get_top_holders` | Top holders list |
+| `token_get_pools` | Liquidity pools |
+| `token_get_security` | Security/audit check |
+| `token_get_creation` | Creation details (deployer, tx, time) |
+| `token_get_mint_and_burn` | Mint/burn history |
+| `token_list` | Paginated token list with filters |
+| `token_get_traders_tag` | Trader type distribution |
+| `token_get_liquidity_snapshots` | Historical liquidity |
+| `token_dev_get_tokens` | All tokens by a developer |
+
+### Wallet (5 tools)
+
+| Tool | Description |
+|---|---|
+| `wallet_get_balance` | Token balances |
+| `wallet_get_balance_updates` | Balance change history |
+| `wallet_get_pnl` | Profit and loss metrics |
+| `wallet_calculate_pnl` | PnL for specific periods |
+| `wallet_get_stats` | Trading patterns and activity |
+
+### Trade (3 tools)
+
+| Tool | Description |
+|---|---|
+| `trade_get` | Trade records |
+| `trade_get_activities` | Trading activity stream |
+| `trade_get_top_traders` | Top performers |
+
+### DexPool (2 tools)
+
+| Tool | Description |
+|---|---|
+| `dexpool_get` | Pool information |
+| `dexpool_get_snapshots` | Historical pool state |
+
+### Ranking (5 tools)
+
+| Tool | Description |
+|---|---|
+| `ranking_get_hot_tokens` | Trending tokens |
+| `ranking_get_new_tokens` | Newly created tokens |
+| `ranking_get_stocks` | Bonding curve tokens |
+| `ranking_get_final_stretch` | Near-graduation tokens |
+| `ranking_get_migrated` | Recently graduated tokens |
+
+### Blockchain (2 tools)
+
+| Tool | Description |
+|---|---|
+| `blockchain_list` | Supported blockchains |
+| `blockchain_get_latest_block` | Current block info |
+
+### DEX (5 tools)
+
+| Tool | Description |
+|---|---|
+| `dex_list` | Supported DEXs |
+| `dex_get_quote` | Swap quote |
+| `dex_get_route` | Optimal route |
+| `dex_swap` | Execute swap |
+| `dex_create` | Create unsigned swap tx |
+
+### DeFi / Token Creation (3 tools)
+
+| Tool | Description |
+|---|---|
+| `pumpfun_create` | Create token on Pump.fun |
+| `moonshot_create` | Create token on Moonshot |
+| `moonshot_submit_create_token` | Submit Moonshot creation tx |
+
+### Transaction (3 tools)
+
+| Tool | Description |
+|---|---|
+| `transaction_send` | Send signed transaction |
+| `transaction_get_gas_price` | Current gas prices |
+| `transaction_estimate_gas_limit` | Gas estimation |
+
+### RedPacket (4 tools)
+
+| Tool | Description |
+|---|---|
+| `redpacket_create` | Create red packets |
+| `redpacket_claim` | Claim rewards |
+| `redpacket_get` | Red packet details |
+| `redpacket_get_claims` | Claim records |
+
+### KYT Compliance (7 tools)
+
+| Tool | Description |
+|---|---|
+| `kyt_register_transfer` | Register tx for risk assessment |
+| `kyt_get_transfer_summary` | Transaction risk summary |
+| `kyt_get_transfer_exposures` | Risk entities in transaction |
+| `kyt_get_transfer_alerts` | Risk alerts |
+| `kyt_register_withdrawal` | Register withdrawal for screening |
+| `kyt_register_address` | Register address for monitoring |
+| `kyt_get_address_risk` | Address risk assessment |
+
+### Webhook (6 tools)
+
+| Tool | Description |
+|---|---|
+| `webhook_list_endpoints` | List endpoints |
+| `webhook_create_endpoint` | Create subscription |
+| `webhook_update_endpoint` | Modify config |
+| `webhook_delete_endpoint` | Remove endpoint |
+| `webhook_get_secret` | Get signing secret |
+| `webhook_rotate_secret` | Regenerate secret |
+
+---
+
+## Connection Options
+
+| Mode | Endpoint | Description |
+|------|----------|-------------|
+| **Cloud** | `https://mcp.chainstream.io/mcp` | Zero setup, same 17 tools |
+| **npm stdio** | `npx @chainstream-io/mcp` | Local process for IDE integration |
+| **npm HTTP** | `chainstream-mcp --transport http` | Team servers, cloud deployment |

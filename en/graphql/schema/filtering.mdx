@@ -1,0 +1,315 @@
+---
+title: "Filtering"
+description: "Filter query results using selector shortcuts and the where argument — operators, nested filters, OR logic, and defaults"
+icon: "filter"
+---
+
+There are two ways to filter data in ChainStream GraphQL:
+
+1. **Selector shortcuts** — top-level arguments like `tokenAddress` that provide a convenient shorthand for common filters
+2. **`where` argument** — a nested filter object that supports the full range of operators and arbitrary dimension filtering
+
+You can combine both in the same query.
+
+---
+
+## Selector Shortcuts
+
+Selectors are **convenience arguments** on Cube fields that map to common `where` filter patterns. They accept the same filter input types as `where` fields (e.g., `StringFilter` with `is`, `in`, `like`, etc.), not plain strings.
+
+| Selector | Maps To | Available On |
+|:---------|:--------|:-------------|
+| `tokenAddress` | Primary token address column for each Cube | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, OHLC, TokenTradeStats, PoolLiquiditySnapshots, TokenHolders, TokenMarketCap, TokenSearch |
+| `walletAddress` | Wallet/account owner address | DEXTrades, WalletTokenPnL |
+| `poolAddress` | Pool contract address | DEXTrades, DEXPools |
+| `senderAddress` | Transfer sender address | Transfers |
+| `receiverAddress` | Transfer receiver address | Transfers |
+| `ownerAddress` | Token account owner address | BalanceUpdates |
+| `dexProgram` | DEX program/contract address | DEXTrades |
+| `date` | Block timestamp (DateTime filter) | DEXTrades, Transfers, BalanceUpdates, DEXPools |
+
+**These two queries are equivalent:**
+
+<Tabs>
+  <Tab title="With Selector">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+  </Tab>
+  <Tab title="With where Filter">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: {
+        Buy: {
+          Currency: {
+            MintAddress: {
+              is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+            }
+          }
+        }
+      }
+    }
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+Selectors support all filter operators — not just exact match. For example, `tokenAddress: {in: ["ADDR_1", "ADDR_2"]}` matches multiple tokens, and `date: {after: "2025-01-01T00:00:00Z"}` filters by time.
+</Tip>
+
+---
+
+## The `where` Argument
+
+The `where` argument accepts a nested input object that mirrors the Cube's dimension hierarchy. Each leaf field maps to a **filter primitive** with typed operators.
+
+### Structure
+
+```graphql
+where: {
+  DimensionGroup: {
+    DimensionField: {
+      operator: value
+    }
+  }
+}
+```
+
+**Example** — Filter DEXTrades where block time is after a date AND buy amount is greater than 1000:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Block: { Time: { after: "2025-01-01T00:00:00Z" } }
+      Trade: { Buy: { Amount: { gt: 1000 } } }
+    }
+    limit: { count: 20 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+When multiple fields are specified at the same level in `where`, they are combined with **AND** logic.
+
+---
+
+## Filter Primitive Types
+
+Every leaf dimension maps to one of these filter input types:
+
+### StringFilter
+
+For text fields like addresses, hashes, protocol names.
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `is` | `String` | Exact match |
+| `not` | `String` | Not equal |
+| `in` | `[String!]` | Matches any value in the list |
+| `notIn` | `[String!]` | Excludes all values in the list |
+| `like` | `String` | SQL LIKE pattern matching (`%` wildcard) |
+
+```graphql
+where: {
+  Trade: {
+    Dex: {
+      ProtocolName: { in: ["Raydium", "Orca"] }
+    }
+  }
+}
+```
+
+### IntFilter / FloatFilter
+
+For numeric fields like amounts, prices, counts.
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `eq` | `Number` | Equal to |
+| `ne` | `Number` | Not equal to |
+| `gt` | `Number` | Greater than |
+| `gte` | `Number` | Greater than or equal |
+| `lt` | `Number` | Less than |
+| `lte` | `Number` | Less than or equal |
+| `in` | `[Number!]` | Matches any value in the list |
+| `notIn` | `[Number!]` | Excludes all values in the list |
+
+```graphql
+where: {
+  Trade: {
+    Buy: {
+      PriceInUSD: { gte: 0.001, lte: 1.0 }
+    }
+  }
+}
+```
+
+### DateTimeFilter
+
+For timestamp fields. Values are ISO 8601 strings.
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `after` | `DateTime` | After this timestamp (exclusive) |
+| `before` | `DateTime` | Before this timestamp (exclusive) |
+| `since` | `DateTime` | Since this timestamp (inclusive) |
+| `till` | `DateTime` | Until this timestamp (inclusive) |
+| `between` | `[DateTime!, DateTime!]` | Between two timestamps (inclusive) |
+
+```graphql
+where: {
+  Block: {
+    Time: { since: "2025-03-01T00:00:00Z", till: "2025-03-31T23:59:59Z" }
+  }
+}
+```
+
+<Note>
+`after`/`before` are **exclusive** (strict inequality). `since`/`till` are **inclusive**. `between` takes a two-element array and is inclusive on both ends.
+</Note>
+
+### BoolFilter
+
+For boolean fields.
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `eq` | `Boolean` | Equal to `true` or `false` |
+
+```graphql
+where: {
+  IsSuspect: { eq: true }
+}
+```
+
+---
+
+## OR Logic with `any`
+
+By default, all conditions in `where` are combined with AND. To express OR logic, use the `any` array field — each element is a full filter object, and records matching **any** of them are returned.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      any: [
+        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
+        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
+      ]
+    }
+    limit: { count: 20 }
+  ) {
+    Trade {
+      Buy { Currency { MintAddress } Amount }
+    }
+  }
+}
+```
+
+<Info>
+`any` can be combined with other top-level `where` fields. The `any` conditions are OR'd together, then AND'd with any sibling conditions.
+</Info>
+
+---
+
+## Default Filters
+
+Some Cubes apply default filters automatically. You can override them by explicitly setting the filter in your `where` clause.
+
+| Cube | Default Filter | Effect |
+|:-----|:---------------|:-------|
+| DEXTrades | `IsSuspect = false` | Excludes bot/MEV trades by default |
+
+To **include** suspect trades, explicitly set the filter:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { IsSuspect: { eq: true } }
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount } }
+    IsSuspect
+  }
+}
+```
+
+Or remove the filter entirely by not specifying `IsSuspect` in `where` — the default `false` still applies. To query **all** trades regardless of suspect status, use OR:
+
+```graphql
+where: {
+  any: [
+    { IsSuspect: { eq: true } }
+    { IsSuspect: { eq: false } }
+  ]
+}
+```
+
+---
+
+## Combining Selectors and `where`
+
+Selectors and `where` filters are combined with AND. This lets you use selectors for the primary entity and `where` for additional refinement:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    where: {
+      Block: { Time: { after: "2025-03-01T00:00:00Z" } }
+      Trade: { Buy: { Amount: { gt: 100 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 50 }
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+This query fetches the 50 most recent USDC trades on Solana where the buy amount exceeds 100, ordered by time descending.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Ordering & Pagination" icon="arrow-down-1-9" href="/en/graphql/schema/ordering-pagination">
+    Sort results and page through data with `orderBy` and `limit`.
+  </Card>
+  <Card title="Metrics & Aggregation" icon="chart-simple" href="/en/graphql/schema/metrics-aggregation">
+    Aggregate filtered data with count, sum, avg, min, max, uniq.
+  </Card>
+</CardGroup>

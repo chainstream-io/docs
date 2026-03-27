@@ -1,0 +1,239 @@
+---
+title: "Trigger Node"
+sidebarTitle: "Trigger Node"
+description: "Receive real-time on-chain events in n8n using the ChainStream Trigger node."
+icon: "bolt"
+---
+
+# ChainStream Trigger Node
+
+The `ChainstreamTrigger` node enables event-driven workflows in n8n. Instead of polling for changes on a schedule, this node receives real-time events from ChainStream via webhooks and kicks off your workflow the moment something happens on-chain.
+
+## How It Works
+
+```
+ChainStream Event ──webhook POST──> n8n Webhook URL ──> ChainstreamTrigger Node ──> Your Workflow
+```
+
+1. n8n exposes a webhook endpoint when the trigger node is active.
+2. You register that endpoint in your ChainStream dashboard.
+3. When a matching on-chain event occurs, ChainStream sends a POST request to the webhook.
+4. The trigger node parses the payload and starts the workflow.
+
+## Setup
+
+### Step 1 -- Add the Trigger Node
+
+In the n8n workflow editor:
+
+1. Click **Add Node** and search for **ChainStream Trigger**.
+2. Drag the node onto the canvas as the first node in your workflow.
+3. Select the **Event Type** you want to listen for (see table below).
+
+### Step 2 -- Copy the Webhook URL
+
+Once the trigger node is placed:
+
+1. Open the node settings.
+2. Copy the **Webhook URL** displayed at the top. It will look like:
+
+```
+https://your-n8n-instance.com/webhook/chainstream-trigger/XXXXXXXX
+```
+
+<Warning>
+  In production mode, use the **Production URL** (not the test URL) so the trigger remains active when the workflow editor is closed.
+</Warning>
+
+### Step 3 -- Register the Webhook in ChainStream
+
+1. In your ChainStream dashboard, go to **Settings > Webhooks**.
+2. Click **Create Webhook**.
+3. Paste the n8n webhook URL.
+4. Select the event types to subscribe to.
+5. Save and activate.
+
+### Step 4 -- Test the Connection
+
+1. In n8n, click **Listen for Test Event** on the trigger node.
+2. In ChainStream, click **Send Test Event** on the webhook you just created.
+3. Verify that the trigger node receives the payload.
+
+## Supported Events
+
+| Event | Description | Example Payload Field |
+| ----- | ----------- | -------------------- |
+| `token.price.change` | A token price moves beyond a configured threshold | `tokenAddress`, `price`, `changePercent` |
+| `token.transfer.large` | A transfer exceeds a specified value | `from`, `to`, `amount`, `tokenAddress` |
+| `token.new` | A new token is detected on a monitored chain | `tokenAddress`, `chain`, `name`, `symbol` |
+| `trade.activity` | Trade activity is detected for a monitored pair or wallet | `tradeType`, `amount`, `wallet`, `pair` |
+
+## Node Configuration
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "event": "token.price.change",
+        "options": {
+          "chain": "solana",
+          "tokenAddress": "So11111111111111111111111111111111111111112",
+          "threshold": 5
+        }
+      },
+      "name": "ChainStream Trigger",
+      "type": "n8n-nodes-chainstream.chainstreamTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "chainstream-trigger",
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+## Event Payloads
+
+### token.price.change
+
+```json
+{
+  "event": "token.price.change",
+  "timestamp": "2026-03-26T12:00:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "So11111111111111111111111111111111111111112",
+    "symbol": "SOL",
+    "price": 185.42,
+    "previousPrice": 176.10,
+    "changePercent": 5.29,
+    "currency": "usd"
+  }
+}
+```
+
+### token.transfer.large
+
+```json
+{
+  "event": "token.transfer.large",
+  "timestamp": "2026-03-26T12:05:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "symbol": "USDC",
+    "from": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "to": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "amount": 2500000,
+    "txSignature": "5K4u...xQ7p"
+  }
+}
+```
+
+### token.new
+
+```json
+{
+  "event": "token.new",
+  "timestamp": "2026-03-26T12:10:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "NEW_TOKEN_MINT_ADDRESS",
+    "name": "Example Token",
+    "symbol": "EXT",
+    "decimals": 9,
+    "creator": "CREATOR_WALLET_ADDRESS"
+  }
+}
+```
+
+### trade.activity
+
+```json
+{
+  "event": "trade.activity",
+  "timestamp": "2026-03-26T12:15:00Z",
+  "data": {
+    "chain": "solana",
+    "tradeType": "buy",
+    "wallet": "TRADER_WALLET_ADDRESS",
+    "pair": "SOL/USDC",
+    "amount": 1500,
+    "price": 185.42,
+    "dex": "raydium",
+    "txSignature": "3Fj2...mN8k"
+  }
+}
+```
+
+## Example: Large Transfer to Telegram Alert
+
+A complete workflow that sends a Telegram message when a large USDC transfer is detected.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "event": "token.transfer.large",
+        "options": {
+          "chain": "solana",
+          "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "minAmount": 1000000
+        }
+      },
+      "name": "Large Transfer Trigger",
+      "type": "n8n-nodes-chainstream.chainstreamTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "large-transfer",
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "Large USDC transfer detected:\nFrom: {{ $json.data.from }}\nTo: {{ $json.data.to }}\nAmount: {{ $json.data.amount }} USDC\nTx: {{ $json.data.txSignature }}"
+      },
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Large Transfer Trigger": {
+      "main": [[{ "node": "Telegram", "type": "main", "index": 0 }]]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+| Issue | Solution |
+| ----- | -------- |
+| Trigger not firing | Verify the webhook is **active** in the ChainStream dashboard and the workflow is **activated** in n8n (not just open in the editor). |
+| Test events work but live events do not | Make sure you are using the **production** webhook URL, not the test URL. |
+| Duplicate events | ChainStream may retry on timeout. Ensure your n8n instance responds within 10 seconds. Use the `txSignature` or event `timestamp` to deduplicate. |
+| Authentication errors | Confirm your ChainStream API credentials are correctly configured in the n8n credential store. |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="n8n Overview" icon="arrows-split-up-and-left" href="/en/guides/integrations/n8n/overview">
+    See all available resources and operations in the ChainStream n8n node.
+  </Card>
+  <Card title="Webhooks API" icon="webhook" href="/api-reference/webhooks">
+    Manage webhook subscriptions programmatically via the ChainStream API.
+  </Card>
+</CardGroup>

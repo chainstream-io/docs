@@ -1,0 +1,275 @@
+---
+title: "Pools & Liquidity"
+description: "Query examples for DEX pools and liquidity data"
+icon: "droplet"
+---
+
+This page covers Cubes for DEX pool and liquidity analysis:
+
+- **DEXPools** (DWD) — per-event pool liquidity changes
+- **PoolLiquiditySnapshots** (DWM) — pre-aggregated pool liquidity snapshots
+- **TokenSupplyUpdates** (DWD) — token supply, market cap, and FDV updates
+
+<Note>
+All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+</Note>
+
+---
+
+## Token Pools
+
+Find all DEX pools for a specific token, showing the base/quote token amounts and total liquidity.
+
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Dex { ProgramAddress }
+      Base { Address, PostAmount }
+      Quote { Address, PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<Tip>
+Replace `TOKEN_ADDRESS` with the token mint address. The query returns pools where the token appears as either the base or quote asset.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Pool.Address` | Liquidity pool address |
+    | `Pool.Dex.ProgramAddress` | DEX program/contract address |
+    | `Pool.Base.Address` | Base token address in the pair |
+    | `Pool.Base.PostAmount` | Base token reserve after the event |
+    | `Pool.Quote.Address` | Quote token address in the pair |
+    | `Pool.Quote.PostAmount` | Quote token reserve after the event |
+    | `Pool.LiquidityInUSD` | Total pool liquidity in USD |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Filter by liquidity**: Add `where: {Pool: {LiquidityInUSD: {gt: 10000}}}` to only see pools with meaningful liquidity
+    - **Specific DEX**: Add `where: {Pool: {Dex: {ProgramAddress: {is: "DEX_PROGRAM_ADDRESS"}}}}` to filter by DEX
+    - **More pools**: Increase `count` to discover all available pools for a token
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Pool Details
+
+Get the latest state of a specific pool by its address.
+
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 1}
+    poolAddress: {is: "POOL_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Base { Address, PostAmount }
+      Quote { Address, PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Pool.Base.PostAmount` | Current base token reserve |
+    | `Pool.Quote.PostAmount` | Current quote token reserve |
+    | `Pool.LiquidityInUSD` | Total liquidity value in USD |
+    | `Block.Time` | Timestamp of the latest pool event |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Pool history**: Remove `limit: {count: 1}` and increase the count to see how pool reserves changed over time
+    - **Time range**: Add `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` to scope to a period
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+The `poolAddress` selector is a shortcut for filtering by `Pool.Address`. It's only available on the **DEXPools** Cube.
+</Info>
+
+---
+
+## Pool Liquidity Snapshots
+
+Get pre-aggregated liquidity snapshots for pools containing a token. This is faster than querying raw pool events for trend analysis.
+
+```graphql
+query {
+  PoolLiquiditySnapshots(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Pool { Address, ProgramAddress }
+    TokenA { Address }
+    TokenB { Address }
+    LiquidityUSDState
+    EventCountState
+    LastSeenState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Pool.Address` | Pool address |
+    | `Pool.ProgramAddress` | DEX program address |
+    | `TokenA.Address` | First token in the pair |
+    | `TokenB.Address` | Second token in the pair |
+    | `LiquidityUSDState` | Total liquidity in USD |
+    | `EventCountState` | Number of liquidity events in the snapshot period |
+    | `LastSeenState` | Last activity timestamp |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Rank by liquidity**: The results can be used to rank pools by `LiquidityUSDState`
+    - **Active pools**: Filter by `LastSeenState` to find recently active pools
+    - **Compare DEXes**: Group by `Pool.ProgramAddress` to compare liquidity across DEXes
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**PoolLiquiditySnapshots** is a DWM (Aggregated) layer Cube — it's much faster than the raw **DEXPools** Cube for liquidity trend analysis and pool ranking queries.
+</Tip>
+
+---
+
+## Token Supply & Market Cap
+
+Get the latest supply, market cap, price, and FDV for a token.
+
+```graphql
+query {
+  TokenSupplyUpdates(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    TokenSupplyUpdate {
+      Currency { MintAddress, Decimals }
+      PostBalance
+      MarketCapInUSD
+      PriceInUSD
+      FDVInUSD
+      TotalSupply
+    }
+    Block { Time }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `TokenSupplyUpdate.Currency.MintAddress` | Token address |
+    | `TokenSupplyUpdate.Currency.Decimals` | Token decimals |
+    | `TokenSupplyUpdate.PostBalance` | Current supply after the event |
+    | `TokenSupplyUpdate.MarketCapInUSD` | Market capitalization in USD |
+    | `TokenSupplyUpdate.PriceInUSD` | Token price at the time of the supply event |
+    | `TokenSupplyUpdate.FDVInUSD` | Fully diluted valuation |
+    | `TokenSupplyUpdate.TotalSupply` | Total token supply |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Supply history**: Increase `count` to see how supply changed over time (mint/burn events)
+    - **Market cap history**: Query multiple supply updates to chart market cap over time
+    - **Combined with price**: Use `PriceInUSD` alongside `TotalSupply` to verify market cap calculations
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+For a quick market cap lookup without historical supply events, consider using the [TokenMarketCap](/en/graphql/examples/ohlc-stats#market-cap) Cube instead — it provides a pre-aggregated summary.
+</Info>
+
+---
+
+## Multi-Chain Examples
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 5}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool { Address, LiquidityInUSD }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  DEXPools(
+    network: eth
+    limit: {count: 5}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool { Address, LiquidityInUSD }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  DEXPools(
+    network: bsc
+    limit: {count: 5}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool { Address, LiquidityInUSD }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/en/graphql/examples/dex-trades">
+    Query DEX trading data — token trades, wallet activity, and top traders.
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/en/graphql/examples/transfers">
+    Track on-chain token transfers between wallets.
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/en/graphql/examples/balance-holders">
+    Look up wallet balances, balance history, and top holders.
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/en/graphql/examples/ohlc-stats">
+    Fetch candlestick data, trade stats, market cap, and token metadata.
+  </Card>
+</CardGroup>

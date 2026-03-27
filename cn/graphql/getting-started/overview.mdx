@@ -1,0 +1,130 @@
+---
+title: "概览"
+description: "ChainStream GraphQL — 面向多链链上数据的 OLAP 分析型 GraphQL 接口"
+icon: "circle-nodes"
+---
+
+<Info>
+ChainStream GraphQL 是一种 OLAP 分析型 API，通过单一 GraphQL 端点暴露多链链上数据（Solana、Ethereum、BSC）。按需查询字段、即时聚合数据，并交互式探索 schema —— 底层由高性能 OLAP 数据库驱动。
+</Info>
+
+## 什么是 ChainStream GraphQL
+
+ChainStream GraphQL 为链上分析数据提供**声明式查询接口**。无需调用大量固定响应形态的 REST 端点，你可以编写一条 GraphQL 查询，精确指定需要的数据、过滤方式与聚合方式。
+
+服务基于 **activecube-rs** 构建，由 **Cube** 定义动态生成 GraphQL schema —— 每个 Cube 代表一种分析数据模型（例如 DEX 成交、代币转账、OHLC K 线）。查询会被编译为优化后的 SQL，并在高性能 OLAP 数据库上执行。
+
+---
+
+## GraphQL 与 REST Data API
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| | **GraphQL API** | **REST Data API** |
+|:--|:--|:--|
+| **查询方式** | 声明式 —— 自定义形态、过滤与聚合 | 命令式 —— 固定端点与预定义参数 |
+| **字段选择** | 客户端只取所需字段 | 服务端返回固定响应 schema |
+| **聚合** | 单次查询内置 `count`、`sum`、`avg`、`min`、`max` | 仅预定义的聚合端点 |
+| **端点** | 单一端点覆盖所有数据模型 | 每个资源一个端点 |
+| **分页** | 查询参数中的 `limit` + `offset` | 查询参数中的 `limit` + `offset` / 游标 |
+| **适用场景** | 分析、仪表盘、灵活探索 | 简单查询、实时价格、钱包余额 |
+| **延迟** | 侧重吞吐优化 | 侧重低延迟单资源读取 |
+
+</div>
+
+<Tip>
+当你需要灵活的分析查询时 —— 聚合成交、按时间范围计算 PnL、或构建自定义仪表盘 —— 请使用 **GraphQL**。当你需要快速、简单的查询（如当前代币价格或钱包余额）时，请使用 **REST API**。
+</Tip>
+
+---
+
+## 核心优势
+
+<CardGroup cols={3}>
+  <Card title="单一端点" icon="bullseye">
+    一个 URL 覆盖 3 条链上的 12 个数据 Cube。无需维护大量端点 —— 只需修改查询。
+  </Card>
+  <Card title="客户端自选字段" icon="filter">
+    只请求需要的列。避免过度获取或获取不足 —— 适合带宽受限的客户端。
+  </Card>
+  <Card title="内置聚合" icon="chart-column">
+    在查询中直接计算 `count`、`sum`、`avg`、`min`、`max`，无需事后处理。
+  </Card>
+</CardGroup>
+
+---
+
+## 支持的链
+
+| Network ID | Blockchain | 覆盖范围 |
+|:--|:--|:--|
+| `sol` | Solana | 完整 DEX、转账、代币持有者、OHLC、PnL |
+| `eth` | Ethereum | 完整 DEX、转账、余额更新、代币统计 |
+| `bsc` | BNB Chain (BSC) | 完整 DEX、转账、余额更新、代币统计 |
+
+<Note>
+每个顶层 Cube 查询都必须传入 `network` 参数。请使用枚举值：`sol`、`eth` 或 `bsc`。
+</Note>
+
+---
+
+## 可用的数据 Cube
+
+共 12 个 Cube，每个对应一种分析模型：
+
+<AccordionGroup>
+  <Accordion title="交易与市场">
+    - **DEXTrades** —— 单笔 DEX 兑换事件，含买卖数量、价格与 DEX 协议信息
+    - **OHLC** —— 可配置时间间隔的开盘/最高/最低/收盘 K 线数据
+    - **TokenTradeStats** —— 按代币聚合的成交统计（成交量、笔数、独立交易者数）
+    - **TokenMarketCap** —— 代币市值快照
+  </Accordion>
+  <Accordion title="代币与转账">
+    - **Transfers** —— 代币转账事件，含发送方、接收方、数量与 USD 价值
+    - **BalanceUpdates** —— 按代币的钱包余额变动事件
+    - **TokenSupplyUpdates** —— 影响代币供应的铸造与销毁事件
+    - **TokenSearch** —— 按名称、符号或地址的全文代币搜索
+  </Accordion>
+  <Accordion title="池子与流动性">
+    - **DEXPools** —— DEX 流动性池元数据与当前储备
+    - **PoolLiquiditySnapshots** —— 随时间变化的历史池流动性快照
+  </Accordion>
+  <Accordion title="钱包与 PnL">
+    - **TokenHolders** —— 代币当前持有者列表与分布
+    - **WalletTokenPnL** —— 按钱包-代币对的已实现与未实现 PnL
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 架构
+
+```mermaid
+graph LR
+    A[Your App / AI Agent] --> B[GraphQL IDE]
+    A --> C[Any GraphQL Client]
+    B --> D[APISIX Gateway]
+    C --> D
+    D -->|Auth + Rate Limit| E[chainstream-graphql]
+    E -->|SQL| F[(OLAP Database)]
+```
+
+<Info>
+所有请求经 APISIX 网关进行认证与限流。`chainstream-graphql` 服务将 GraphQL 查询编译为优化 SQL，并在 OLAP 分析数据库上执行。
+</Info>
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="端点与认证" icon="key" href="/cn/graphql/getting-started/endpoints">
+    配置端点 URL、认证请求头，并了解请求/响应格式。
+  </Card>
+  <Card title="首次查询" icon="play" href="/cn/graphql/getting-started/first-query">
+    分步运行第一条 GraphQL 查询 —— 通过 IDE 或 cURL。
+  </Card>
+  <Card title="GraphQL IDE" icon="code" href="/cn/graphql/ide/introduction">
+    使用带自动补全、查询模板与代码导出的交互式 GraphQL IDE。
+  </Card>
+</CardGroup>

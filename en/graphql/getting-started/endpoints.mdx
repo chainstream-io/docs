@@ -1,0 +1,245 @@
+---
+title: "Endpoints & Authentication"
+description: "GraphQL endpoint URL, authentication, request format, and supported networks"
+icon: "key"
+---
+
+## GraphQL Endpoint
+
+All GraphQL queries are sent to a single endpoint:
+
+```
+https://graphql.chainstream.io/graphql
+```
+
+Both **POST** and **GET** methods are supported.
+
+| Method | Content-Type | Use Case |
+|:--|:--|:--|
+| `POST` | `application/json` | Recommended for all queries — supports variables and complex queries |
+| `GET` | Query string (`?query=...`) | Simple queries, browser testing, caching-friendly |
+
+<Tip>
+Use **POST** for production workloads. GET requests encode the query in the URL, which has length limits and makes complex queries unwieldy.
+</Tip>
+
+---
+
+## Authentication
+
+Authenticate by passing your API Key in the `X-API-KEY` header. This is the same API Key used for the REST Data API — no separate credentials needed.
+
+```
+X-API-KEY: your_api_key
+```
+
+<Note>
+Get your API Key from [ChainStream Dashboard](https://www.chainstream.io/dashboard) → **Applications** → **Create New App**. The key starts with `cs_live_...`.
+</Note>
+
+### Required Headers
+
+| Header | Value | Required |
+|:--|:--|:--|
+| `Content-Type` | `application/json` | Yes (POST) |
+| `X-API-KEY` | `cs_live_...` | Yes |
+
+---
+
+## Request Format
+
+A GraphQL request body is a JSON object with two fields:
+
+| Field | Type | Description |
+|:--|:--|:--|
+| `query` | `string` | The GraphQL query or mutation string |
+| `variables` | `object` | Optional variables referenced in the query via `$variable` syntax |
+
+### POST Example
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d '{
+    "query": "query ($network: Network!) { DEXTrades(network: $network, limit: {count: 5}) { Block { Time } Trade { Buy { Currency { MintAddress } Amount } } } }",
+    "variables": { "network": "sol" }
+  }'
+```
+  </Tab>
+  <Tab title="cURL (query file)">
+For complex queries, save the query to a file and reference it:
+
+```bash
+# Save query to file
+cat > query.graphql << 'EOF'
+query ($network: Network!) {
+  DEXTrades(network: $network, limit: {count: 5}) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+      }
+    }
+  }
+}
+EOF
+
+# Send with variables
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d "{\"query\": \"$(cat query.graphql | tr '\n' ' ')\", \"variables\": {\"network\": \"sol\"}}"
+```
+  </Tab>
+  <Tab title="JavaScript (fetch)">
+```javascript
+const response = await fetch("https://graphql.chainstream.io/graphql", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-KEY": "your_api_key",
+  },
+  body: JSON.stringify({
+    query: `query ($network: Network!) {
+      DEXTrades(network: $network, limit: {count: 5}) {
+        Block { Time }
+        Trade { Buy { Currency { MintAddress } Amount } }
+      }
+    }`,
+    variables: { network: "sol" },
+  }),
+});
+
+const { data, extensions } = await response.json();
+console.log(data.DEXTrades);
+```
+  </Tab>
+  <Tab title="Python (requests)">
+```python
+import requests
+
+resp = requests.post(
+    "https://graphql.chainstream.io/graphql",
+    headers={
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    },
+    json={
+        "query": """query ($network: Network!) {
+            DEXTrades(network: $network, limit: {count: 5}) {
+                Block { Time }
+                Trade { Buy { Currency { MintAddress } Amount } }
+            }
+        }""",
+        "variables": {"network": "sol"},
+    },
+)
+
+data = resp.json()
+print(data["data"]["DEXTrades"])
+```
+  </Tab>
+</Tabs>
+
+### GET Example
+
+```bash
+curl -G "https://graphql.chainstream.io/graphql" \
+  -H "X-API-KEY: your_api_key" \
+  --data-urlencode 'query={ DEXTrades(network: sol, limit: {count: 5}) { Block { Time } } }'
+```
+
+---
+
+## Supported Networks
+
+Pass the `network` argument as an enum value on every top-level Cube query:
+
+| Network Enum | Blockchain | Chain ID |
+|:--|:--|:--|
+| `sol` | Solana | — |
+| `eth` | Ethereum | 1 |
+| `bsc` | BNB Chain (BSC) | 56 |
+
+```graphql
+# Solana
+{ DEXTrades(network: sol, limit: {count: 5}) { ... } }
+
+# Ethereum
+{ DEXTrades(network: eth, limit: {count: 5}) { ... } }
+
+# BSC
+{ DEXTrades(network: bsc, limit: {count: 5}) { ... } }
+```
+
+---
+
+## Response Format
+
+All responses are JSON with the following structure:
+
+```json
+{
+  "data": {
+    "DEXTrades": [
+      { "Block": { "Time": "2025-03-27T10:15:30Z" }, "..." : "..." }
+    ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        { "cube": "DEXTrades", "credits": 50, "row_count": 5 }
+      ]
+    }
+  }
+}
+```
+
+| Field | Description |
+|:--|:--|
+| `data` | The query result — matches the shape of your query |
+| `errors` | Present only when there are validation or execution errors |
+| `extensions.credits.total` | Total credit units consumed by this query |
+| `extensions.credits.cubes` | Per-Cube breakdown: Cube name, credits charged, and rows returned |
+
+<Note>
+The `extensions.credits` field is included when credits are consumed. See [Billing & Credits](/en/graphql/billing/graphql-billing) for details on how credits are calculated.
+</Note>
+
+### Error Response
+
+When a query is malformed or fails, the response includes an `errors` array:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTrades'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ]
+}
+```
+
+<Tip>
+Use the [GraphQL IDE](https://ide.chainstream.io) to validate queries interactively before integrating them into your application. The IDE provides auto-complete and inline error highlighting.
+</Tip>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Run Your First Query" icon="play" href="/en/graphql/getting-started/first-query">
+    Follow the step-by-step tutorial to run a real query from the IDE or cURL.
+  </Card>
+  <Card title="Explore the Schema" icon="diagram-project" href="/en/graphql/schema/schema-overview">
+    Dive into the 12 Cubes, field types, filtering operators, and aggregation functions.
+  </Card>
+</CardGroup>

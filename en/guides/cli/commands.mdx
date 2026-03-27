@@ -1,0 +1,349 @@
+---
+title: 'Command Reference'
+description: 'Complete reference for all ChainStream CLI commands'
+icon: "book"
+---
+
+## Global Options
+
+| Option | Description |
+|--------|-------------|
+| `--raw` | Output single-line JSON (for piping to `jq` or other tools). Available on data query commands. |
+| `--help` | Show command help |
+| `--version` | Show CLI version |
+
+```bash
+chainstream token info --chain sol --address <addr> --raw | jq '.marketData.priceInUsd'
+```
+
+## Token Commands
+
+Query token data including metadata, security, holders, and price history.
+
+### `token search`
+
+Search tokens by keyword.
+
+```bash
+chainstream token search --keyword PUMP --chain sol --limit 20
+```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--keyword` | Yes | — | Search keyword |
+| `--chain` | Yes | — | Chain ID (`sol`, `bsc`, `eth`) |
+| `--limit` | No | 20 | Max results |
+
+### `token info`
+
+Get full token detail including metadata, market data, and stats.
+
+```bash
+chainstream token info --chain sol --address <token_address>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Token contract address |
+
+### `token security`
+
+Check token security: honeypot detection, mint authority, freeze authority, holder concentration.
+
+```bash
+chainstream token security --chain sol --address <token_address>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Token contract address |
+
+### `token holders`
+
+Get top token holders and their balances.
+
+```bash
+chainstream token holders --chain sol --address <token_address> --limit 20
+```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--chain` | Yes | — | Chain ID |
+| `--address` | Yes | — | Token contract address |
+| `--limit` | No | 20 | Max results |
+
+### `token candles`
+
+Get OHLCV candlestick data.
+
+```bash
+chainstream token candles --chain sol --address <token_address> --resolution 1h
+```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--chain` | Yes | — | Chain ID |
+| `--address` | Yes | — | Token contract address |
+| `--resolution` | Yes | — | Candle interval: `1m`, `5m`, `15m`, `1h`, `4h`, `1d` |
+| `--from` | No | — | Start timestamp |
+| `--to` | No | — | End timestamp |
+| `--limit` | No | 100 | Max candles |
+
+### `token pools`
+
+Get liquidity pools for a token.
+
+```bash
+chainstream token pools --chain sol --address <token_address>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Token contract address |
+
+## Market Commands
+
+Track market trends, new listings, and recent trades.
+
+### `market trending`
+
+Get hot/trending tokens sorted by activity.
+
+```bash
+chainstream market trending --chain sol --duration 1h --limit 20
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--duration` | Yes | Time window: `1h`, `6h`, `24h` |
+| `--limit` | No | Max results |
+
+### `market new`
+
+Get newly created tokens.
+
+```bash
+chainstream market new --chain sol --limit 20
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--limit` | No | Max results |
+
+### `market trades`
+
+Get recent trades on a chain, optionally filtered by token.
+
+```bash
+chainstream market trades --chain sol --token <token_address> --limit 20
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--token` | No | Filter by token address |
+| `--limit` | No | Max results |
+
+## Wallet Commands
+
+Analyze any wallet's holdings, PnL, and activity. Also manage your CLI wallet.
+
+### `wallet profile`
+
+Get wallet overview: PnL, net worth, and top holdings.
+
+```bash
+chainstream wallet profile --chain sol --address <wallet_address>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Wallet address to analyze |
+
+### `wallet pnl`
+
+Get detailed PnL breakdown.
+
+```bash
+chainstream wallet pnl --chain sol --address <wallet_address>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Wallet address |
+
+### `wallet holdings`
+
+Get token balances in a wallet.
+
+```bash
+chainstream wallet holdings --chain sol --address <wallet_address> --limit 50
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Wallet address |
+| `--limit` | No | Max results |
+
+### `wallet activity`
+
+Get transfer history for a wallet.
+
+```bash
+chainstream wallet activity --chain sol --address <wallet_address> --limit 20
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--address` | Yes | Wallet address |
+| `--limit` | No | Max results |
+
+### `wallet address`
+
+Show your CLI wallet addresses.
+
+```bash
+chainstream wallet address
+```
+
+### `wallet balance`
+
+Check your CLI wallet balance on a specific chain.
+
+```bash
+chainstream wallet balance --chain sol
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+
+### `wallet set-raw`
+
+Import a raw private key for dev/testing.
+
+```bash
+chainstream wallet set-raw --chain base
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | `base` or `sol` |
+
+### `wallet pricing`
+
+Fetch x402 subscription pricing.
+
+```bash
+chainstream wallet pricing
+```
+
+## DeFi Commands
+
+Execute on-chain DeFi operations. Requires a wallet (see [Authentication](/en/guides/cli/authentication)).
+
+<Warning>
+DeFi operations are **irreversible**. Always verify the quote before confirming a swap.
+</Warning>
+
+### `dex quote`
+
+Get a swap quote (read-only, no wallet needed).
+
+```bash
+chainstream dex quote --chain sol --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--chain` | Yes | Chain ID |
+| `--input-token` | Yes | Input token address or symbol |
+| `--output-token` | Yes | Output token address or symbol |
+| `--amount` | Yes | Amount in smallest unit (lamports, wei, etc.) |
+
+### `dex swap`
+
+Execute a token swap.
+
+```bash
+chainstream dex swap --chain sol --from <wallet> --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--chain` | Yes | — | Chain ID |
+| `--from` | Yes | — | Sender wallet address |
+| `--input-token` | Yes | — | Input token |
+| `--output-token` | Yes | — | Output token |
+| `--amount` | Yes | — | Amount in smallest unit |
+| `--slippage` | No | 0.01 | Slippage tolerance (0.01 = 1%) |
+| `--yes` | No | false | Skip confirmation prompt |
+
+The swap flow: **quote** → **confirm** → **sign** → **send** → **poll job**.
+
+### `dex create`
+
+Create a token on a launchpad (e.g., PumpFun, Raydium).
+
+```bash
+chainstream dex create --chain sol --name "My Token" --symbol MTK --uri <metadata_uri>
+```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--chain` | Yes | — | Chain ID |
+| `--name` | Yes | — | Token name |
+| `--symbol` | Yes | — | Token symbol |
+| `--uri` | Yes | — | Metadata URI |
+| `--platform` | No | — | `pumpfun` or `raydium` |
+
+## Job Commands
+
+Track the status of async DeFi operations.
+
+### `job status`
+
+Check the status of a job.
+
+```bash
+chainstream job status --id <job_id> --wait --timeout 60000
+```
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `--id` | Yes | — | Job ID |
+| `--wait` | No | false | Poll until complete |
+| `--timeout` | No | 60000 | Max wait time in ms |
+
+## Auth Commands
+
+Manage authentication. See [CLI Authentication](/en/guides/cli/authentication) for details.
+
+| Command | Description |
+|---------|-------------|
+| `login [email]` | Login (P-256 key default, or email OTP) |
+| `login --key` | Re-login with existing device key |
+| `login --email` | Explicitly use email OTP login |
+| `verify` | Complete email OTP verification |
+| `logout` | Clear session |
+| `bind-email [email]` | Bind email for account recovery |
+| `bind-email-verify` | Complete email binding (non-interactive) |
+
+## Config Commands
+
+Manage CLI configuration. See [CLI Authentication](/en/guides/cli/authentication) for details.
+
+| Command | Description |
+|---------|-------------|
+| `config set --key <key> --value <val>` | Set a config value (`apiKey`, `baseUrl`, `walletChain`) |
+| `config get [--key <key>]` | View config (or a specific key) |
+| `config auth` | Show authentication status |

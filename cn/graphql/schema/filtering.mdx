@@ -1,0 +1,315 @@
+---
+title: "筛选"
+description: "使用 selector 快捷方式与 where 参数筛选查询结果 — 运算符、嵌套 Filter、OR 逻辑与默认值"
+icon: "filter"
+---
+
+在 ChainStream GraphQL 中有两种方式筛选数据：
+
+1. **Selector shortcuts** — 顶层参数如 `tokenAddress`，为常见 Filter 提供便捷写法
+2. **`where` 参数** — 嵌套 Filter 对象，支持完整运算符范围与任意维度筛选
+
+同一查询中可以同时使用两者。
+
+---
+
+## Selector shortcuts
+
+Selectors 是 Cube 字段上的**便捷参数**，映射到常见的 `where` Filter 模式。它们与 `where` 字段接受**相同的 Filter 输入类型**（例如带 `is`、`in`、`like` 等的 `StringFilter`），而非普通字符串。
+
+| Selector | 映射关系 | 可用 Cube |
+|:---------|:---------|:----------|
+| `tokenAddress` | 各 Cube 的主 token 地址列 | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, OHLC, TokenTradeStats, PoolLiquiditySnapshots, TokenHolders, TokenMarketCap, TokenSearch |
+| `walletAddress` | 钱包 / 账户所有者地址 | DEXTrades, WalletTokenPnL |
+| `poolAddress` | 流动性池合约地址 | DEXTrades, DEXPools |
+| `senderAddress` | 转账发送方地址 | Transfers |
+| `receiverAddress` | 转账接收方地址 | Transfers |
+| `ownerAddress` | Token 账户所有者地址 | BalanceUpdates |
+| `dexProgram` | DEX 程序 / 合约地址 | DEXTrades |
+| `date` | 区块时间戳（`DateTime` Filter） | DEXTrades, Transfers, BalanceUpdates, DEXPools |
+
+**以下两个查询等价：**
+
+<Tabs>
+  <Tab title="使用 Selector">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+  </Tab>
+  <Tab title="使用 where Filter">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: {
+        Buy: {
+          Currency: {
+            MintAddress: {
+              is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+            }
+          }
+        }
+      }
+    }
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+Selectors 支持全部 Filter 运算符，不仅限于精确匹配。例如 `tokenAddress: {in: ["ADDR_1", "ADDR_2"]}` 可匹配多个 token，`date: {after: "2025-01-01T00:00:00Z"}` 可按时间筛选。
+</Tip>
+
+---
+
+## `where` 参数
+
+`where` 接受嵌套输入对象，结构镜像 Cube 的维度层级。每个叶子字段映射到带类型运算符的 **Filter 原语**。
+
+### 结构
+
+```graphql
+where: {
+  DimensionGroup: {
+    DimensionField: {
+      operator: value
+    }
+  }
+}
+```
+
+**示例** — 筛选区块时间在某日期之后 **且** 买入金额大于 1000 的 DEXTrades：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Block: { Time: { after: "2025-01-01T00:00:00Z" } }
+      Trade: { Buy: { Amount: { gt: 1000 } } }
+    }
+    limit: { count: 20 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+`where` 中同一层级多个字段以 **AND** 逻辑组合。
+
+---
+
+## Filter 原语类型
+
+每个叶子维度映射到以下 Filter 输入类型之一：
+
+### StringFilter
+
+用于地址、哈希、协议名等文本字段。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `is` | `String` | 精确匹配 |
+| `not` | `String` | 不等于 |
+| `in` | `[String!]` | 匹配列表中任一值 |
+| `notIn` | `[String!]` | 排除列表中所有值 |
+| `like` | `String` | SQL LIKE 模式匹配（`%` 通配符） |
+
+```graphql
+where: {
+  Trade: {
+    Dex: {
+      ProtocolName: { in: ["Raydium", "Orca"] }
+    }
+  }
+}
+```
+
+### IntFilter / FloatFilter
+
+用于金额、价格、计数等数值字段。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `eq` | `Number` | 等于 |
+| `ne` | `Number` | 不等于 |
+| `gt` | `Number` | 大于 |
+| `gte` | `Number` | 大于等于 |
+| `lt` | `Number` | 小于 |
+| `lte` | `Number` | 小于等于 |
+| `in` | `[Number!]` | 匹配列表中任一值 |
+| `notIn` | `[Number!]` | 排除列表中所有值 |
+
+```graphql
+where: {
+  Trade: {
+    Buy: {
+      PriceInUSD: { gte: 0.001, lte: 1.0 }
+    }
+  }
+}
+```
+
+### DateTimeFilter
+
+用于时间戳字段。值为 ISO 8601 字符串。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `after` | `DateTime` | 晚于该时间戳（不含边界） |
+| `before` | `DateTime` | 早于该时间戳（不含边界） |
+| `since` | `DateTime` | 从该时间戳起（含边界） |
+| `till` | `DateTime` | 直到该时间戳（含边界） |
+| `between` | `[DateTime!, DateTime!]` | 两时间戳之间（两端含边界） |
+
+```graphql
+where: {
+  Block: {
+    Time: { since: "2025-03-01T00:00:00Z", till: "2025-03-31T23:59:59Z" }
+  }
+}
+```
+
+<Note>
+`after`/`before` 为**不含边界**（严格不等）。`since`/`till` 为**含边界**。`between` 为二元数组，两端均含边界。
+</Note>
+
+### BoolFilter
+
+用于布尔字段。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `eq` | `Boolean` | 等于 `true` 或 `false` |
+
+```graphql
+where: {
+  IsSuspect: { eq: true }
+}
+```
+
+---
+
+## 使用 `any` 表达 OR 逻辑
+
+默认 `where` 中所有条件以 AND 组合。要表达 OR，使用 `any` 数组字段 — 每个元素为完整 Filter 对象，匹配**任意**一条即返回。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      any: [
+        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
+        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
+      ]
+    }
+    limit: { count: 20 }
+  ) {
+    Trade {
+      Buy { Currency { MintAddress } Amount }
+    }
+  }
+}
+```
+
+<Info>
+`any` 可与其他顶层 `where` 字段组合：`any` 内条件先 OR，再与同层其他条件 AND。
+</Info>
+
+---
+
+## 默认 Filter
+
+部分 Cube 会自动应用默认 Filter。可在 `where` 中显式写出以覆盖。
+
+| Cube | Default Filter | Effect |
+|:-----|:---------------|:-------|
+| DEXTrades | `IsSuspect = false` | 默认排除 bot/MEV 交易 |
+
+要**包含** suspect 交易，显式设置 Filter：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { IsSuspect: { eq: true } }
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount } }
+    IsSuspect
+  }
+}
+```
+
+若不在 `where` 中指定 `IsSuspect`，默认仍为 `false`。要查询**全部**交易（无论 suspect 状态），使用 OR：
+
+```graphql
+where: {
+  any: [
+    { IsSuspect: { eq: true } }
+    { IsSuspect: { eq: false } }
+  ]
+}
+```
+
+---
+
+## 组合 Selectors 与 `where`
+
+Selectors 与 `where` 以 AND 组合。可用 selector 锁定主体实体，用 `where` 进一步细化：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    where: {
+      Block: { Time: { after: "2025-03-01T00:00:00Z" } }
+      Trade: { Buy: { Amount: { gt: 100 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 50 }
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+该查询获取 Solana 上 USDC 最近 50 笔买入金额大于 100 的 DEX 成交，按时间降序。
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="排序与分页" icon="arrow-down-1-9" href="/cn/graphql/schema/ordering-pagination">
+    使用 `orderBy` 与 `limit` 排序并分页浏览数据。
+  </Card>
+  <Card title="指标与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
+    使用 count、sum、avg、min、max、uniq 对筛选后数据聚合。
+  </Card>
+</CardGroup>

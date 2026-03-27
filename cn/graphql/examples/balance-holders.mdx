@@ -1,0 +1,277 @@
+---
+title: "余额与持有者"
+description: "钱包余额、余额历史与代币持有者的查询示例"
+icon: "wallet"
+---
+
+本页涵盖三个用于钱包与持有者分析的 Cube：
+
+- **BalanceUpdates** (DWD) — 钱包逐事件的余额变动
+- **TokenHolders** (DWS) — 代币当前持有者快照
+- **WalletTokenPnL** (DWS) — 钱包按代币的盈亏
+
+<Note>
+以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth` 或 `bsc`。
+</Note>
+
+---
+
+## 钱包余额
+
+获取钱包当前代币余额。本查询返回该钱包持有的每种代币的最新一条余额更新事件。
+
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 50}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      Account { Owner }
+      PostBalance
+      PostBalanceInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<Tip>
+将 `WALLET_ADDRESS` 替换为要查看的钱包。`ownerAddress` 选择器按钱包所有者过滤余额更新事件。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `BalanceUpdate.Currency.MintAddress` | 代币地址 |
+    | `BalanceUpdate.Account.Owner` | 钱包所有者地址 |
+    | `BalanceUpdate.PostBalance` | 更新后的代币余额 |
+    | `BalanceUpdate.PostBalanceInUSD` | 余额的 USD 价值 |
+    | `Block.Time` | 余额更新时间戳 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **提高 limit**：设 `count: 200` 以覆盖持仓较多的钱包
+    - **按价值过滤**：增加 `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}` 排除 dust 余额
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 余额历史
+
+追踪某钱包对特定代币的余额如何随时间变化。
+
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 20}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    BalanceUpdate {
+      PreBalance
+      PostBalance
+      PostBalanceInUSD
+    }
+    Block { Time }
+    Transaction { Hash }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `BalanceUpdate.PreBalance` | 事件前余额 |
+    | `BalanceUpdate.PostBalance` | 事件后余额 |
+    | `BalanceUpdate.PostBalanceInUSD` | 更新后余额的 USD 价值 |
+    | `Block.Time` | 余额变动时间 |
+    | `Transaction.Hash` | 引起变动的交易 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **识别累积**：比较 `PreBalance` 与 `PostBalance` — 当 `PostBalance > PreBalance` 表示在加仓
+    - **时间范围**：增加 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定时段
+    - **更长历史**：将 `count` 提高到最多 `10000` 以覆盖完整历史
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+`PostBalance` 与 `PreBalance` 的差值表示该事件的净变动。正增量表示代币流入；负增量表示流出。
+</Info>
+
+---
+
+## 头部持有者
+
+按余额排序获取某代币的头部持有者。
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Token.Address` | 代币地址 |
+    | `Holder.Address` | 持有者钱包地址 |
+    | `LatestBalance` | 当前代币余额 |
+    | `LatestBalanceUSD` | 当前余额的 USD 价值 |
+    | `FirstSeen` | 该持有者首次持有该代币的时间 |
+    | `LastSeen` | 涉及该代币的最近一笔交易时间 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **巨鲸阈值**：增加 `where: {LatestBalanceUSD: {gt: 10000}}` 只看大额持有者
+    - **活跃持有者**：增加 `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}` 筛选近期活跃
+    - **持有者数量**：使用 `count` 度量获取持有者总数
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**TokenHolders** Cube 属于 DWS（Summary）层表 — 已预聚合，比逐条扫余额更新快得多。适用于持有者排名与分布分析。
+</Tip>
+
+---
+
+## 钱包 PnL
+
+获取钱包按代币的盈亏数据，包含买卖成交额与成交笔数。
+
+```graphql
+query {
+  WalletTokenPnL(
+    network: sol
+    limit: {count: 20}
+    walletAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    Wallet { Address }
+    Token { Address }
+    BuyVolumeUSDState
+    SellVolumeUSDState
+    BuyCountState
+    SellCountState
+    FirstTradeState
+    LastTradeState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Wallet.Address` | 钱包地址 |
+    | `Token.Address` | 代币地址 |
+    | `BuyVolumeUSDState` | 买入该代币累计花费（USD） |
+    | `SellVolumeUSDState` | 卖出该代币累计收到（USD） |
+    | `BuyCountState` | 买入笔数 |
+    | `SellCountState` | 卖出笔数 |
+    | `FirstTradeState` | 首笔交易时间戳 |
+    | `LastTradeState` | 最近一笔交易时间戳 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **计算 PnL**：`SellVolumeUSDState - BuyVolumeUSDState` 为各代币已实现盈亏
+    - **仍在持仓**：筛选 `SellCountState < BuyCountState` 找出钱包仍持有的代币
+    - **高频代币**：按 `BuyCountState` 或 `SellCountState` 排序找出交易最频繁的代币
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**WalletTokenPnL** Cube 使用 `walletAddress` 选择器（不是 `ownerAddress`）。提供累计交易指标 — 适合组合分析与业绩排行。
+</Info>
+
+---
+
+## 多链示例
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  BalanceUpdates(
+    network: eth
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  BalanceUpdates(
+    network: bsc
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    查询 DEX 交易数据 — 代币交易、钱包活动与头部交易者。
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/cn/graphql/examples/transfers">
+    追踪钱包间的链上代币转账。
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/cn/graphql/examples/pools-liquidity">
+    探索 DEX 池与流动性数据。
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
+    获取 K 线、成交统计、市值与代币元数据。
+  </Card>
+</CardGroup>

@@ -1,0 +1,140 @@
+---
+title: "Prompts & Resources"
+description: "Built-in MCP prompts, resources, supported chains, and DEX protocols exposed by the ChainStream MCP server (aligned with mcp-app source)."
+icon: "book-open"
+---
+
+## MCP Prompts
+
+The ChainStream MCP server registers **4 prompts** in `registerAllPrompts`. Parameter names and optionality match the Zod argument schemas passed to `server.prompt`.
+
+### `token_analysis`
+
+**Description (from code):** Deep analysis template for evaluating a token across multiple dimensions
+
+| Parameter | Type | Required | Zod description |
+|-----------|------|----------|-----------------|
+| `chain` | string | Yes | Blockchain (solana, ethereum, bsc) |
+| `token` | string | Yes | Token address or symbol |
+
+---
+
+### `wallet_profiling`
+
+**Description (from code):** Wallet profiling template for analyzing trading patterns and performance
+
+| Parameter | Type | Required | Zod description |
+|-----------|------|----------|-----------------|
+| `chain` | string | Yes | Blockchain |
+| `address` | string | Yes | Wallet address |
+
+---
+
+### `trading_strategy`
+
+**Description (from code):** Generate and backtest a trading strategy from natural language description
+
+| Parameter | Type | Required | Zod description |
+|-----------|------|----------|-----------------|
+| `description` | string | Yes | Strategy description in natural language |
+| `chain` | string | No | Target blockchain |
+| `token` | string | No | Target token |
+
+---
+
+### `risk_assessment`
+
+**Description (from code):** Comprehensive risk assessment for a token or trading position
+
+| Parameter | Type | Required | Zod description |
+|-----------|------|----------|-----------------|
+| `chain` | string | Yes | Blockchain |
+| `token` | string | Yes | Token address |
+
+## MCP Resources
+
+The server registers **4 resources** in `registerAllResources`: three fixed URIs and one `ResourceTemplate`.
+
+### `chainstream://chains`
+
+**Resource name (code):** `chains`  
+**MIME type:** `application/json`
+
+The handler returns `CHAINS_DATA` from code — the exact JSON payload is:
+
+```json
+{ "chains": [{ "id": "solana", "name": "Solana", "status": "active", "avgBlockTime": "400ms" }, { "id": "ethereum", "name": "Ethereum", "status": "active", "avgBlockTime": "12s" }, { "id": "bsc", "name": "BNB Smart Chain", "status": "active", "avgBlockTime": "3s" }] }
+```
+
+Pretty-printed for readability:
+
+```json
+{
+  "chains": [
+    { "id": "solana", "name": "Solana", "status": "active", "avgBlockTime": "400ms" },
+    { "id": "ethereum", "name": "Ethereum", "status": "active", "avgBlockTime": "12s" },
+    { "id": "bsc", "name": "BNB Smart Chain", "status": "active", "avgBlockTime": "3s" }
+  ]
+}
+```
+
+---
+
+### `chainstream://docs/api_reference`
+
+**Resource name (code):** `api-reference`  
+**MIME type:** `text/markdown`
+
+Markdown body built from the `API_REFERENCE` constant (base URL, Data API and DeFi API endpoint list).
+
+---
+
+### `chainstream://docs/query_examples`
+
+**Resource name (code):** `query-examples`  
+**MIME type:** `text/markdown`
+
+Markdown body built from the `QUERY_EXAMPLES` constant (common query patterns for agents).
+
+---
+
+### `chainstream://chains/{chain}/dexes`
+
+**Resource name (code):** `chain-dexes`  
+**Type:** `ResourceTemplate('chainstream://chains/{chain}/dexes', { list: undefined })`  
+**MIME type:** `application/json`
+
+The handler resolves `variables.chain` and responds with JSON: `{ "chain": "<resolved>", "dexes": string[] }`, where `dexes` is `DEXES_BY_CHAIN[chain]` or `[]` if the chain is unknown.
+
+Example URI: `chainstream://chains/solana/dexes`.
+
+## Supported Chains
+
+The `CHAINS_DATA` / `DEXES_BY_CHAIN` configuration in code covers **3** chains:
+
+| Identifier | Display name (from `chains` resource) |
+|------------|--------------------------------------|
+| `solana` | Solana |
+| `ethereum` | Ethereum |
+| `bsc` | BNB Smart Chain |
+
+## DEXes by Chain
+
+Values match `DEXES_BY_CHAIN` in `resources/index.ts` (lowercase protocol ids as in code):
+
+| Chain | `dexes` array |
+|-------|----------------|
+| `solana` | `jupiter`, `raydium`, `pumpfun`, `moonshot`, `candy` |
+| `ethereum` | `kyberswap` |
+| `bsc` | `kyberswap` |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools Reference" icon="wrench" href="/en/guides/ai-infrastructure/mcp-server/tools-reference">
+    Detailed parameter docs for all MCP tools.
+  </Card>
+  <Card title="Agent Skills" icon="robot" href="/en/guides/ai-infrastructure/agent-skills/introduction">
+    Connect ChainStream to AI coding agents.
+  </Card>
+</CardGroup>

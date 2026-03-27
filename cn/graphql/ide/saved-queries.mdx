@@ -1,0 +1,105 @@
+---
+title: "保存的查询"
+description: "在 IDE 中本地保存、整理并管理常用 GraphQL 查询"
+icon: "bookmark"
+---
+
+## 概述
+
+GraphQL IDE 支持将查询保存到浏览器，便于日后快速访问。保存的查询在浏览器会话之间仍然保留，并显示在侧边栏 **Saved** 标签中，形成个人常用查询库，无需借助外部工具。
+
+---
+
+## 保存查询
+
+<Steps>
+  <Step title="编写或加载查询">
+    在编辑器中输入查询，或从[模板](/cn/graphql/ide/query-templates)加载。
+  </Step>
+  <Step title="点击 Save Query">
+    点击工具栏中的 **Save Query** 按钮。弹出对话框包含两个字段：
+    - **Title**（必填）— 查询的描述性名称
+    - **Tags**（可选）— 用于分类的逗号分隔标签（例如 `solana, dex, monitoring`）
+  </Step>
+  <Step title="确认">
+    点击 **Save**。查询保存在本地并立即出现在侧边栏 **Saved** 标签中。
+  </Step>
+</Steps>
+
+<Tip>
+建议使用包含链与 Cube 名称的描述性标题，例如「Solana — Latest Raydium Trades」或「ETH — USDC Top Holders」，这样在查询增多时更容易查找。
+</Tip>
+
+---
+
+## 加载已保存查询
+
+1. 打开侧边栏（**Ctrl/Cmd+B**）
+2. 切换到 **Saved** 标签
+3. 点击任意已保存查询即可载入编辑器
+
+查询正文、variables 与 headers 会恢复为保存时的状态。
+
+---
+
+## 删除已保存查询
+
+删除步骤：
+
+1. 打开侧边栏并切换到 **Saved** 标签
+2. 将鼠标悬停在要移除的查询上 — 会出现 **delete** 图标
+3. 点击删除图标移除该查询
+
+<Note>
+删除不可恢复。没有撤销 — 一旦删除，查询无法找回。
+</Note>
+
+---
+
+## 存储说明
+
+| 属性 | 说明 |
+|:--|:--|
+| **存储机制** | 浏览器 `localStorage` |
+| **持久性** | 页面刷新与重启浏览器后仍存在 |
+| **范围** | 按浏览器、按源（同一域名） |
+| **同步** | 不在设备或浏览器之间同步 |
+| **清理** | 清除浏览器数据或 `localStorage` 会移除全部已保存查询 |
+
+<Info>
+已保存查询完全存放在浏览器的 `localStorage` 中，**不会**上传到任何服务器，其他设备也无法访问。若需分享查询，请使用[代码导出](/cn/graphql/ide/code-export)生成可携带的代码片段。
+</Info>
+
+---
+
+## 用标签整理
+
+标签有助于在查询变多时分类与筛选。可参考以下策略：
+
+<AccordionGroup>
+  <Accordion title="按链">
+    使用链相关标签如 `solana`、`ethereum`、`bsc`，快速筛选某网络的查询。
+  </Accordion>
+  <Accordion title="按 Cube">
+    用 Cube 名称打标签：`dextrades`、`transfers`、`ohlc`、`holders` 等。
+  </Accordion>
+  <Accordion title="按使用场景">
+    功能标签如 `monitoring`、`analysis`、`debug`、`dashboard` 标明查询用途。
+  </Accordion>
+  <Accordion title="按代币或项目">
+    用具体项目名或代币符号：`usdc`、`bonk`、`raydium`、`uniswap`。
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+每条查询的标签数量没有上限。可组合多个维度 — 例如 `solana, dextrades, raydium, monitoring` — 以提高可检索性。
+</Tip>
+
+---
+
+## 最佳实践
+
+- **迭代保存** — 在打磨查询过程中保存可用版本。必要时使用带版本号的标题，如「OHLC v1」「OHLC v2」。
+- **定期清理** — 删除不再使用的查询，保持侧边栏简洁。
+- **清理前导出** — 若计划清除浏览器数据，请先用[代码导出](/cn/graphql/ide/code-export)导出重要查询。
+- **一查询一职责** — 避免保存职责过多的巨型查询。更小、更聚焦的查询更易复用与组合。

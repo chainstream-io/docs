@@ -1,0 +1,176 @@
+---
+title: "安全注意事项"
+description: "使用 ChainStream 与 OpenClaw Agent 的安全审查、风险标志和最佳实践。"
+---
+
+## ClawHub 安全审查
+
+发布在 ClawHub 上的 ChainStream Skill（`chainstream/chainstream-data`）已被 ClawHub 的自动安全扫描器标记为 **可疑**，置信度为 **中等**。
+
+<Warning>
+  此标志并不意味着该 Skill 是恶意的。它表示该 Skill 行为中的某些模式需要在生产使用前进行仔细审查。
+</Warning>
+
+### 被标记的行为
+
+扫描器识别出三种触发警告的行为：
+
+| 行为 | 风险等级 | 描述 |
+|------|----------|------|
+| 钱包创建与私钥存储 | 高 | 该 Skill 包含创建钱包和存储私钥的指令，可能暴露敏感的加密材料 |
+| x402 自动支付 | 中 | x402 支付协议可以自动授权支出，降低了对外发交易的可见性 |
+| 远程 npm 执行 | 低 | 该 Skill 使用 `npx` 在运行时从 npm 获取并执行包 |
+
+### 含义说明
+
+- **钱包创建**：部分 ChainStream 工具（`dex_swap`、`dex_create_token`、`transaction_send`）需要钱包访问权限。Skill 文档包含涉及私钥处理的钱包设置说明。
+- **x402 自动支付**：x402 协议支持机器对机器的微支付。启用后，Agent 可以在无需逐笔交易明确审批的情况下授权小额支付。
+- **远程 npm 执行**：使用 `npx @chainstream-io/mcp` 会从 npm 注册表下载并执行包。虽然这是标准做法，但引入了供应链依赖。
+
+## 最佳实践
+
+遵循以下指南，在生产环境中安全地使用 ChainStream 与 OpenClaw Agent。
+
+### 1. 优先使用 Dashboard API Key 而非创建钱包
+
+使用从 [ChainStream Dashboard](https://app.chainstream.io) 生成的 API Key 进行认证。API Key 提供对链上数据的只读访问，无需创建钱包或管理私钥。
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-dashboard-key  # No wallet needed
+```
+
+<Tip>
+  API Key 足以使用所有只读工具：代币搜索、分析、钱包画像、市场数据和交易历史。只有执行工具（`dex_swap`、`dex_create_token`、`transaction_send`）才需要钱包访问权限。
+</Tip>
+
+### 2. 永远不要导入生产私钥
+
+如果你的用例需要执行工具，**永远不要导入** 持有大量资金的钱包的私钥。
+
+- 创建一个专用的测试钱包，仅存入最少资金
+- 仅充入特定操作所需的金额
+- 将任何连接到 AI Agent 的钱包视为具有较高风险的热钱包
+
+```
+DO:    Create a fresh wallet with 0.1 SOL for testing swaps
+DON'T: Import your main wallet with 100 SOL into an agent config
+```
+
+### 3. 运行前验证 npm 包
+
+在运行 `npx @chainstream-io/mcp` 之前，验证该包：
+
+```bash
+# Check package details on npm
+npm view @chainstream-io/mcp
+
+# Check the publisher
+npm view @chainstream-io/mcp maintainers
+
+# Pin a specific version instead of using latest
+npx @chainstream-io/mcp@0.0.3
+```
+
+对于生产部署，建议全局安装固定版本而非使用 `npx`：
+
+```bash
+npm install -g @chainstream-io/mcp@0.0.3
+```
+
+### 4. 在隔离环境中运行
+
+在隔离环境中运行 MCP Server 和 OpenClaw Agent，以限制影响范围：
+
+- **Docker 容器**，限制网络访问
+- **专用虚拟机** 或云实例
+- **沙箱化的 Agent 运行时**，限制文件系统访问
+
+```dockerfile
+FROM node:20-slim
+
+# Non-root user
+RUN useradd -m agent
+USER agent
+
+RUN npm install -g @chainstream-io/mcp@0.0.3
+
+CMD ["chainstream-mcp"]
+```
+
+### 5. 支付流程需要明确审批
+
+配置你的 OpenClaw Agent，要求对任何涉及资金转移的工具进行人工确认：
+
+- `dex_swap` —— 执行代币交换
+- `dex_create_token` —— 创建代币（可能需要 SOL）
+- `transaction_send` —— 广播已签名的交易
+
+在 OpenClaw Agent 配置中：
+
+```yaml
+agent:
+  confirmation_required:
+    - dex_swap
+    - dex_create_token
+    - transaction_send
+```
+
+如果使用 x402 自动支付，设置明确的消费限额：
+
+```yaml
+agent:
+  x402:
+    max_per_transaction: 0.01  # USD
+    max_daily: 1.00            # USD
+    require_approval_above: 0.10  # USD
+```
+
+### 6. 监控钱包交易
+
+如果你将钱包连接到 Agent，请主动监控其活动：
+
+- 使用 `webhooks_manage` 设置外发交易的 Webhook 告警
+- 使用 `wallets_activity` 定期查看钱包活动
+- 使用区块浏览器独立验证 Agent 发起的交易
+
+```bash
+# Example: Set up a webhook for wallet activity
+# (via the agent or direct API call)
+webhooks_manage action=create url=https://your-server.com/alerts events=["wallet_transfer"]
+```
+
+## 安全检查清单
+
+在生产环境中部署 ChainStream 与 OpenClaw 之前，请使用此检查清单：
+
+- [ ] API Key 存储在环境变量中，而非代码或配置文件中
+- [ ] 未将生产私钥导入 Agent 配置
+- [ ] npm 包版本已固定（未使用 `latest`）
+- [ ] Agent 在隔离环境中运行（Docker、VM、沙箱）
+- [ ] 执行工具（`dex_swap`、`dex_create_token`、`transaction_send`）需要人工审批
+- [ ] x402 自动支付已禁用或设置了消费限额
+- [ ] 已配置钱包监控和告警
+- [ ] 定期审查 Agent 交易日志
+
+## 报告问题
+
+如果你发现 ChainStream MCP Server 或 ClawHub Skill 中的安全漏洞：
+
+- **ChainStream**：发送邮件至 [security@chainstream.io](mailto:security@chainstream.io)
+- **ClawHub**：通过 ClawHub Skill 页面报告 [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="安装方式" icon="download" href="/cn/guides/integrations/openclaw/skills-install">
+    选择适合你安全需求的安装方式。
+  </Card>
+  <Card title="自托管部署" icon="server" href="/cn/guides/ai-infrastructure/mcp-server/installation">
+    运行你自己的 MCP Server 以获得最大控制权。
+  </Card>
+</CardGroup>

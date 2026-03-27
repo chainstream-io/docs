@@ -1,0 +1,232 @@
+---
+title: "Schema 概览"
+description: "ChainStream GraphQL Schema 的结构说明 — root types、Cube 字段、生成类型与 introspection"
+icon: "sitemap"
+---
+
+## 动态 Schema 生成
+
+ChainStream GraphQL Schema 在启动时由 **activecube-rs**（Rust 库）**动态生成**，该库将 **Cube** 定义编译为类型完整的 [async-graphql](https://github.com/async-graphql/async-graphql) Schema。每个 Cube 对应一个由 OLAP 表支撑的分析数据模型，activecube-rs 会自动生成：
+
+- 该 Cube 的 **顶层 Query 字段**
+- 表示可选维度的 **Record 类型**（`{Cube}Record`）
+- 与维度层级匹配的 **Filter 输入**（`{Cube}Filter`）
+- 每个维度路径的 ASC/DESC 变体组成的 **OrderBy 枚举**（`{Cube}OrderBy`）
+
+因此 Schema 始终与底层数据模型一致，无需维护手写的 SDL 文件。
+
+<Info>
+由于 Schema 由 Cube 定义生成，在 Rust 中新增任意数据模型后，部署即可在 GraphQL 端点中自动反映。
+</Info>
+
+---
+
+## 根 Query 类型
+
+Schema 只有一个根类型：`Query`。每个 Cube 都作为 `Query` 上的顶层字段暴露：
+
+```graphql
+type Query {
+  DEXTrades(...): [DEXTradesRecord!]!
+  Transfers(...): [TransfersRecord!]!
+  BalanceUpdates(...): [BalanceUpdatesRecord!]!
+  DEXPools(...): [DEXPoolsRecord!]!
+  TokenSupplyUpdates(...): [TokenSupplyUpdatesRecord!]!
+  OHLC(...): [OHLCRecord!]!
+  TokenTradeStats(...): [TokenTradeStatsRecord!]!
+  PoolLiquiditySnapshots(...): [PoolLiquiditySnapshotsRecord!]!
+  TokenHolders(...): [TokenHoldersRecord!]!
+  WalletTokenPnL(...): [WalletTokenPnLRecord!]!
+  TokenMarketCap(...): [TokenMarketCapRecord!]!
+  TokenSearch(...): [TokenSearchRecord!]!
+}
+```
+
+不存在 `Mutation` 或 `Subscription` 类型 — GraphQL API 为只读分析查询。
+
+---
+
+## Network 枚举
+
+每个 Cube 字段都需要 `network` 参数以指定要查询的区块链。枚举值为：
+
+| Value | Blockchain |
+|:------|:-----------|
+| `sol` | Solana |
+| `eth` | Ethereum |
+| `bsc` | BNB Chain (BSC) |
+
+```graphql
+query {
+  DEXTrades(network: sol) { ... }
+}
+```
+
+<Note>
+`network` 参数在**每个**顶层 Cube 查询上均为**必填**。省略将导致校验错误。
+</Note>
+
+---
+
+## 通用参数模式
+
+每个 Cube 字段接受同一套标准参数，以及可选的 Cube 专属 **selectors**：
+
+| Argument | Type | Required | Description |
+|:---------|:-----|:---------|:------------|
+| `network` | `Network!` | Yes | 目标区块链（`sol`、`eth`、`bsc`） |
+| `where` | `{Cube}Filter` | No | 与维度层级嵌套匹配的 Filter 对象 |
+| `limit` | `LimitInput` | No | 分页：`{count: Int, offset: Int}` |
+| `orderBy` | `{Cube}OrderBy` | No | 排序枚举（`{Path}_ASC` / `{Path}_DESC`） |
+| *selectors* | Filter input | No | 快捷筛选（例如 `tokenAddress: {is: "..."}`） |
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    where: { Block: { Time: { after: "2025-01-01T00:00:00Z" } } }
+    limit: { count: 50, offset: 0 }
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+### LimitInput
+
+```graphql
+input LimitInput {
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip (for pagination)
+}
+```
+
+默认 `count` 因 Cube 而异（常见为 25）。多数 Cube 最大为 10,000。
+
+---
+
+## 每个 Cube 的生成类型
+
+对每个 Cube，activecube-rs 会生成三个配套类型：
+
+<CardGroup cols={3}>
+  <Card title="Record 类型" icon="table">
+    `{Cube}Record` — 包含所有可选维度与指标的返回类型。字段结构镜像 Cube 的维度层级。
+  </Card>
+  <Card title="Filter 输入" icon="filter">
+    `{Cube}Filter` — 嵌套输入对象，每个维度映射到 Filter 原语（`StringFilter`、`IntFilter`、`DateTimeFilter` 等）。
+  </Card>
+  <Card title="OrderBy 枚举" icon="arrow-down-a-z">
+    `{Cube}OrderBy` — 每个维度路径在 ASC 与 DESC 两个方向上的枚举变体（例如 `Block_Time_ASC`、`Trade_Buy_Amount_DESC`）。
+  </Card>
+</CardGroup>
+
+**以 DEXTrades 为例：**
+
+```graphql
+# Record type (return shape)
+type DEXTradesRecord {
+  Block: DEXTradesBlockRecord
+  Transaction: DEXTradesTransactionRecord
+  Trade: DEXTradesTradeRecord
+  Pool: DEXTradesPoolRecord
+  IsSuspect: Boolean
+  count: Int
+  sum(of: DEXTradesSumOf!): Float
+}
+
+# Filter input
+input DEXTradesFilter {
+  Block: DEXTradesBlockFilter
+  Transaction: DEXTradesTransactionFilter
+  Trade: DEXTradesTradeFilter
+  Pool: DEXTradesPoolFilter
+  IsSuspect: BoolFilter
+  any: [DEXTradesFilter!]  # OR logic
+}
+
+# OrderBy enum (partial)
+enum DEXTradesOrderBy {
+  Block_Time_ASC
+  Block_Time_DESC
+  Trade_Buy_Amount_ASC
+  Trade_Buy_Amount_DESC
+  # ...
+}
+```
+
+---
+
+## Introspection
+
+Schema 支持标准 GraphQL introspection。可使用 `__schema` 与 `__type` 查询探索类型、字段与参数：
+
+<Tabs>
+  <Tab title="列出所有 Cube">
+```graphql
+query {
+  __schema {
+    queryType {
+      fields {
+        name
+        description
+        args { name type { name } }
+      }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="检查某个 Cube 类型">
+```graphql
+query {
+  __type(name: "DEXTradesRecord") {
+    name
+    fields {
+      name
+      type { name kind ofType { name } }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="列出 Filter 运算符">
+```graphql
+query {
+  __type(name: "StringFilter") {
+    name
+    inputFields {
+      name
+      type { name kind }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+[GraphQL IDE](https://ide.chainstream.io) 会自动拉取 introspection Schema 以提供自动补全与内联文档。无需手写 introspection 查询即可交互式浏览完整 Schema。
+</Tip>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
+    浏览全部 12 个 Cube — 字段、selectors 与数仓分层。
+  </Card>
+  <Card title="筛选" icon="filter" href="/cn/graphql/schema/filtering">
+    学习如何用 `where` Filter 与 selector 快捷方式缩小查询范围。
+  </Card>
+  <Card title="排序与分页" icon="arrow-down-1-9" href="/cn/graphql/schema/ordering-pagination">
+    使用 `orderBy` 与 `limit` 对结果排序并分页遍历大数据集。
+  </Card>
+  <Card title="指标与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
+    在查询中使用 `count`、`sum`、`avg`、`min`、`max`、`uniq` 聚合数据。
+  </Card>
+</CardGroup>

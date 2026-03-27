@@ -1,0 +1,247 @@
+---
+title: "转账"
+description: "链上转账数据的查询示例"
+icon: "paper-plane"
+---
+
+**Transfers** Cube 包含链上代币转账事件 — 代币从一个钱包转到另一个钱包的每一次记录。可用它追踪钱包活动、监控巨鲸动向、分析代币流向并识别交易所充提。
+
+<Note>
+以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth` 或 `bsc`。
+</Note>
+
+---
+
+## 最新转账
+
+获取 Solana 上最近 10 笔代币转账，包含发送方、接收方、数量与 USD 价值。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Block.Time` | 区块时间戳（ISO 8601） |
+    | `Transaction.Hash` | 链上交易哈希 |
+    | `Transfer.Currency.MintAddress` | 被转账的代币地址 |
+    | `Transfer.Sender.Address` | 发送代币的钱包 |
+    | `Transfer.Receiver.Address` | 接收代币的钱包 |
+    | `Transfer.Amount` | 转账代币数量 |
+    | `Transfer.AmountInUSD` | 发生时的 USD 价值 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **按代币过滤**：增加 `tokenAddress: {is: "TOKEN_ADDRESS"}` 只看某一代币
+    - **仅大额**：增加 `where: {Transfer: {AmountInUSD: {gt: 10000}}}` 查找巨鲸动向
+    - **时间范围**：增加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定时段
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 钱包转出
+
+使用 `senderAddress` 选择器获取某钱包的转出记录。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    senderAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+将 `WALLET_ADDRESS` 替换为你要分析的实际钱包地址。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="关键字段">
+    | Field | Description |
+    |:------|:------------|
+    | `Transfer.Currency.MintAddress` | 发送的代币 |
+    | `Transfer.Receiver.Address` | 接收方 |
+    | `Transfer.Amount` | 发送数量 |
+    | `Transfer.AmountInUSD` | 转账时的 USD 价值 |
+  </Accordion>
+  <Accordion title="自定义技巧">
+    - **仅某代币**：增加 `tokenAddress: {is: "TOKEN_ADDRESS"}` 缩小范围
+    - **增加条数**：将 `count: 20` 提高到最多 `10000` 以拉更深历史
+    - **接收方过滤**：使用 `where: {Transfer: {Receiver: {Address: {is: "RECEIVER_ADDRESS"}}}}` 追踪两钱包间转账
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 钱包转入
+
+使用 `receiverAddress` 选择器查找转入某钱包的记录。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    receiverAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+Transfers Cube 同时支持 `senderAddress` 与 `receiverAddress` 选择器。可与 `where` 组合做进一步过滤（例如时间范围或最小金额）。
+</Tip>
+
+---
+
+## 代币转账
+
+追踪全网约某一代币的所有转账。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="自定义技巧">
+    - **巨鲸提醒**：增加 `where: {Transfer: {AmountInUSD: {gt: 100000}}}` 只看大额（> $100K）
+    - **排除 dust**：增加 `where: {Transfer: {Amount: {gt: 0.01}}}` 过滤极小金额
+    - **时间边界**：与 `where: {Block: {Time: {since: "2025-03-27T00:00:00Z"}}}` 组合查看当日
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 多链示例
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  Transfers(
+    network: eth
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  Transfers(
+    network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    查询 DEX 交易数据 — 代币交易、钱包活动与头部交易者。
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/cn/graphql/examples/balance-holders">
+    查询钱包余额、余额历史与头部持有者。
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/cn/graphql/examples/pools-liquidity">
+    探索 DEX 池与流动性数据。
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
+    获取 K 线、成交统计、市值与代币元数据。
+  </Card>
+</CardGroup>

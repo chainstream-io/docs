@@ -1,0 +1,253 @@
+---
+title: "排序与分页"
+description: "使用 orderBy 枚举排序查询结果，使用 limit 分页 — 命名约定、默认值与基于 offset 的分页"
+icon: "arrow-down-1-9"
+---
+
+## orderBy 枚举
+
+每个 Cube 会生成 `{Cube}OrderBy` 枚举，包含每个可排序维度的 ASC 与 DESC 变体。命名规则为维度路径以下划线连接：
+
+```
+{DimensionGroup}_{DimensionField}_ASC
+{DimensionGroup}_{DimensionField}_DESC
+```
+
+嵌套维度每一级都参与拼接：
+
+```
+Trade_Buy_Amount_ASC
+Trade_Buy_PriceInUSD_DESC
+Block_Time_ASC
+```
+
+### 常见 orderBy 取值
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Enum Value | Cube(s) | Description |
+|:-----------|:--------|:------------|
+| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | 最旧在前 |
+| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | 最新在前 |
+| `Trade_Buy_Amount_DESC` | DEXTrades | 买入量最大在前 |
+| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | USD 价格最高在前 |
+| `Transfer_AmountInUSD_DESC` | Transfers | USD 转账额最大在前 |
+| `TimeMinute_ASC` | OHLC, TokenTradeStats | 时间正序 |
+| `TimeMinute_DESC` | OHLC, TokenTradeStats | 时间倒序 |
+| `LatestBalanceUSD_DESC` | TokenHolders | 持仓 USD 最大在前 |
+| `BuyVolumeUSDState_DESC` | WalletTokenPnL | 买入量 USD 最大在前 |
+| `MarketCapUSDState_DESC` | TokenMarketCap | 市值最大在前 |
+| `Token_PriceUSD_DESC` | TokenSearch | 价格最高在前 |
+| `Token_MarketCapUSD_DESC` | TokenSearch | 市值最高在前 |
+
+</div>
+
+<Tip>
+在 [GraphQL IDE](https://ide.chainstream.io) 中用自动补全查看某 Cube 全部可用 `orderBy` — 输入 `orderBy:` 即可列出完整枚举。
+</Tip>
+
+### 用法
+
+向 `orderBy` 传入**单个**枚举值：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+<Note>
+`orderBy` 只接受**一个**枚举值。不支持多列排序 — 查询仅按单一维度排序。
+</Note>
+
+---
+
+## limit 参数
+
+`limit` 控制返回行数，并支持基于 offset 的分页：
+
+```graphql
+input LimitInput {
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip
+}
+```
+
+### 默认与最大限制
+
+每个 Cube 在省略 `limit` 时有**默认**行数上限，并有**最大**上限：
+
+| Cube | Default `count` | Maximum `count` |
+|:-----|:----------------|:----------------|
+| DEXTrades | 25 | 10,000 |
+| Transfers | 25 | 10,000 |
+| BalanceUpdates | 25 | 10,000 |
+| DEXPools | 25 | 10,000 |
+| TokenSupplyUpdates | 25 | 10,000 |
+| OHLC | 25 | 10,000 |
+| TokenTradeStats | 25 | 10,000 |
+| PoolLiquiditySnapshots | 25 | 10,000 |
+| TokenHolders | 25 | 10,000 |
+| WalletTokenPnL | 25 | 10,000 |
+| TokenMarketCap | 25 | 10,000 |
+| TokenSearch | 25 | 10,000 |
+
+<Info>
+若请求的 `count` 超过最大值，服务端会静默截断为最大值。
+</Info>
+
+---
+
+## 基于 offset 的分页
+
+使用 `offset` 翻页，模式如下：
+
+- **第 1 页**：`limit: { count: 50, offset: 0 }`
+- **第 2 页**：`limit: { count: 50, offset: 50 }`
+- **第 3 页**：`limit: { count: 50, offset: 100 }`
+
+### 示例：Token 持有者分页
+
+<Tabs>
+  <Tab title="第 1 页">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 0 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+  <Tab title="第 2 页">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 20 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### 分页建议
+
+<AccordionGroup>
+  <Accordion title="分页务必配合 orderBy">
+    没有稳定排序时，行间顺序可能在翻页时变化。请始终将 `limit` 与能产生确定顺序的 `orderBy` 一起使用。
+  </Accordion>
+  <Accordion title="避免过大的 offset">
+    很大的 `offset`（例如 50,000+）可能拖慢查询，因为数据库需要扫描并跳过行。对超大数据集，优先用 `where` 收窄结果，而非深度分页。
+  </Accordion>
+  <Accordion title="用 count 判断是否到底">
+    若某页返回行数少于请求的 `count`，说明已到数据集末尾。也可事先使用指标字段 `count` 获取总行数。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 实用示例
+
+### 最新大额成交
+
+获取 Solana 上最近 10 笔买入价值超过 $10,000 的 DEX 成交：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+### OHLC 蜡烛 — 最近 60 分钟
+
+获取某 token 的 1 分钟 K 线，按时间正序：
+
+```graphql
+query {
+  OHLC(
+    network: sol
+    tokenAddress: "So11111111111111111111111111111111111111112"
+    orderBy: TimeMinute_ASC
+    limit: { count: 60 }
+    where: {
+      TimeMinute: { after: "2025-03-27T09:00:00Z" }
+    }
+  ) {
+    TimeMinute
+    Price { OpenState HighState LowState CloseState }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+
+### Top 50 Token 持有者
+
+按 USD 余额排序取前 50 名持有者：
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 50 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="筛选" icon="filter" href="/cn/graphql/schema/filtering">
+    将排序与 Filter 结合，构建精确的分析查询。
+  </Card>
+  <Card title="指标与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
+    使用 count、sum、avg、min、max、uniq 对已排序数据聚合。
+  </Card>
+</CardGroup>

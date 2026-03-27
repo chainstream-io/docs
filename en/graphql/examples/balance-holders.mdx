@@ -1,0 +1,277 @@
+---
+title: "Balances & Holders"
+description: "Query examples for wallet balances, balance history, and token holders"
+icon: "wallet"
+---
+
+This page covers four Cubes for wallet and holder analytics:
+
+- **BalanceUpdates** (DWD) — per-event balance changes for a wallet
+- **TokenHolders** (DWS) — current holder snapshots for a token
+- **WalletTokenPnL** (DWS) — per-token profit & loss for a wallet
+
+<Note>
+All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+</Note>
+
+---
+
+## Wallet Balances
+
+Get current token balances for a wallet. This query returns the latest balance update event for each token the wallet holds.
+
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 50}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      Account { Owner }
+      PostBalance
+      PostBalanceInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<Tip>
+Replace `WALLET_ADDRESS` with the wallet you want to inspect. The `ownerAddress` selector filters balance update events by wallet owner.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `BalanceUpdate.Currency.MintAddress` | Token address |
+    | `BalanceUpdate.Account.Owner` | Wallet owner address |
+    | `BalanceUpdate.PostBalance` | Token balance after the update |
+    | `BalanceUpdate.PostBalanceInUSD` | Balance value in USD |
+    | `Block.Time` | Timestamp of the balance update |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Increase limit**: Set `count: 200` to retrieve more tokens (wallets with many holdings)
+    - **Filter by value**: Add `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}` to exclude dust balances
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Balance History
+
+Track how a wallet's balance for a specific token changes over time.
+
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 20}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    BalanceUpdate {
+      PreBalance
+      PostBalance
+      PostBalanceInUSD
+    }
+    Block { Time }
+    Transaction { Hash }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `BalanceUpdate.PreBalance` | Balance before the event |
+    | `BalanceUpdate.PostBalance` | Balance after the event |
+    | `BalanceUpdate.PostBalanceInUSD` | Post-balance value in USD |
+    | `Block.Time` | When the balance changed |
+    | `Transaction.Hash` | Transaction that caused the change |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Detect accumulation**: Compare `PreBalance` and `PostBalance` — when `PostBalance > PreBalance`, the wallet is accumulating
+    - **Time range**: Add `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` to scope to a specific period
+    - **Larger history**: Increase `count` to up to `10000` for comprehensive balance history
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+The difference between `PostBalance` and `PreBalance` shows the net change per event. A positive delta means tokens flowed in; a negative delta means tokens flowed out.
+</Info>
+
+---
+
+## Top Holders
+
+Get the top holders for a token, ranked by balance.
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Token.Address` | Token address |
+    | `Holder.Address` | Holder wallet address |
+    | `LatestBalance` | Current token balance |
+    | `LatestBalanceUSD` | Current balance in USD |
+    | `FirstSeen` | When this holder first acquired the token |
+    | `LastSeen` | Most recent transaction involving this token |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Whale threshold**: Add `where: {LatestBalanceUSD: {gt: 10000}}` to only show large holders
+    - **Active holders**: Add `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}` to filter to recently active holders
+    - **Holder count**: Use `count` metric to get the total number of holders
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+The **TokenHolders** Cube is a DWS (Summary) layer table — it's pre-aggregated and much faster to query than scanning individual balance updates. Use it for holder rankings and distribution analysis.
+</Tip>
+
+---
+
+## Wallet PnL
+
+Get per-token profit and loss data for a wallet, including buy/sell volumes and trade counts.
+
+```graphql
+query {
+  WalletTokenPnL(
+    network: sol
+    limit: {count: 20}
+    walletAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    Wallet { Address }
+    Token { Address }
+    BuyVolumeUSDState
+    SellVolumeUSDState
+    BuyCountState
+    SellCountState
+    FirstTradeState
+    LastTradeState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Wallet.Address` | Wallet address |
+    | `Token.Address` | Token address |
+    | `BuyVolumeUSDState` | Total USD spent buying this token |
+    | `SellVolumeUSDState` | Total USD received selling this token |
+    | `BuyCountState` | Number of buy trades |
+    | `SellCountState` | Number of sell trades |
+    | `FirstTradeState` | Timestamp of the first trade |
+    | `LastTradeState` | Timestamp of the most recent trade |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Calculate PnL**: `SellVolumeUSDState - BuyVolumeUSDState` gives the realized PnL for each token
+    - **Active positions**: Filter for tokens where `SellCountState < BuyCountState` to find tokens the wallet is still holding
+    - **High-activity tokens**: Sort by `BuyCountState` or `SellCountState` to find the most frequently traded tokens
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+The **WalletTokenPnL** Cube uses the `walletAddress` selector (not `ownerAddress`). It provides cumulative trading metrics — ideal for portfolio analysis and performance leaderboards.
+</Info>
+
+---
+
+## Multi-Chain Examples
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  BalanceUpdates(
+    network: eth
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  BalanceUpdates(
+    network: bsc
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/en/graphql/examples/dex-trades">
+    Query DEX trading data — token trades, wallet activity, and top traders.
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/en/graphql/examples/transfers">
+    Track on-chain token transfers between wallets.
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/en/graphql/examples/pools-liquidity">
+    Explore DEX pool and liquidity data.
+  </Card>
+  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/en/graphql/examples/ohlc-stats">
+    Fetch candlestick data, trade stats, market cap, and token metadata.
+  </Card>
+</CardGroup>

@@ -1,0 +1,278 @@
+---
+title: "代码导出"
+description: "将 GraphQL 查询导出为 8 种编程语言的即用代码片段"
+icon: "file-export"
+---
+
+## 概述
+
+代码导出功能将当前 GraphQL 查询转换为你所选语言的即用代码片段。生成代码包含完整 HTTP 请求设置 — 端点 URL、鉴权请求头、查询 body 与 variables — 可直接复制到项目中使用。
+
+---
+
+## 支持的语言
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| 语言 | 格式 | 适用场景 |
+|:--|:--|:--|
+| **cURL** | Shell 命令 | 终端快速验证、CI/CD 脚本 |
+| **Python** | `requests` 库 | 后端服务、数据管道、Jupyter notebook |
+| **JavaScript** | `fetch` API | 浏览器应用、Node.js 服务 |
+| **Go** | `net/http` | 后端微服务、CLI 工具 |
+| **Rust** | `reqwest` crate | 高性能服务 |
+| **Ruby** | `net/http` | Rails 应用、脚本 |
+| **PHP** | `cURL` 扩展 | PHP 后端、WordPress 插件 |
+| **WebSocket** | `graphql-ws` 协议 | 实时 subscription、流式场景 |
+
+</div>
+
+---
+
+## 如何导出
+
+<Steps>
+  <Step title="编写查询">
+    在编辑器中输入或加载查询。导出前请确保能成功执行。
+  </Step>
+  <Step title="点击 Export Code">
+    点击工具栏中的 **Export Code** 按钮。弹出窗口包含语言选择与生成的片段。
+  </Step>
+  <Step title="选择语言">
+    在下拉框中选择目标语言。片段会立即更新。
+  </Step>
+  <Step title="复制片段">
+    点击 **Copy** 将生成代码复制到剪贴板。
+  </Step>
+</Steps>
+
+<Tip>
+导出代码会使用当前 IDE 配置中的 GraphQL 端点与 API key。若你设置了自定义端点或 headers，生成片段中会体现这些配置。
+</Tip>
+
+---
+
+## 示例片段
+
+以下示例导出一条简单的 DEXTrades 查询 — 获取 Solana 上最近 10 笔 DEX 成交：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST "https://graphql.chainstream.io/graphql" \
+      -H "Content-Type: application/json" \
+      -H "X-API-KEY: your_api_key" \
+      -d '{
+        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    url = "https://graphql.chainstream.io/graphql"
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    }
+    query = """
+    {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Transaction { Hash }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    """
+
+    response = requests.post(url, json={"query": query}, headers=headers)
+    data = response.json()
+    print(data)
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch("https://graphql.chainstream.io/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+      },
+      body: JSON.stringify({
+        query: `{
+          DEXTrades(
+            network: sol
+            limit: {count: 10}
+            orderBy: Block_Time_DESC
+          ) {
+            Block { Time }
+            Transaction { Hash }
+            Trade {
+              Buy { Currency { MintAddress } Amount PriceInUSD }
+              Sell { Currency { MintAddress } Amount }
+              Dex { ProtocolName }
+            }
+          }
+        }`,
+      }),
+    });
+
+    const data = await response.json();
+    console.log(data);
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+    )
+
+    func main() {
+        payload := map[string]string{
+            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+        }
+        body, _ := json.Marshal(payload)
+
+        req, _ := http.NewRequest("POST", "https://graphql.chainstream.io/graphql", bytes.NewBuffer(body))
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("X-API-KEY", "your_api_key")
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            panic(err)
+        }
+        defer resp.Body.Close()
+
+        result, _ := io.ReadAll(resp.Body)
+        fmt.Println(string(result))
+    }
+    ```
+  </Tab>
+  <Tab title="Rust">
+    ```rust
+    use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+    use serde_json::json;
+
+    #[tokio::main]
+    async fn main() -> Result<(), reqwest::Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
+
+        let body = json!({
+            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+        });
+
+        let client = reqwest::Client::new();
+        let res = client
+            .post("https://graphql.chainstream.io/graphql")
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
+
+        println!("{}", res.text().await?);
+        Ok(())
+    }
+    ```
+  </Tab>
+  <Tab title="WebSocket">
+    ```javascript
+    const ws = new WebSocket("wss://graphql.chainstream.io/graphql", "graphql-ws");
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: "connection_init",
+        payload: { "X-API-KEY": "your_api_key" },
+      }));
+
+      ws.send(JSON.stringify({
+        id: "1",
+        type: "start",
+        payload: {
+          query: `{
+            DEXTrades(
+              network: sol
+              limit: {count: 10}
+              orderBy: Block_Time_DESC
+            ) {
+              Block { Time }
+              Transaction { Hash }
+              Trade {
+                Buy { Currency { MintAddress } Amount PriceInUSD }
+                Sell { Currency { MintAddress } Amount }
+                Dex { ProtocolName }
+              }
+            }
+          }`,
+        },
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      console.log(message);
+    };
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 导出代码包含的内容
+
+每个生成片段均包含：
+
+| 组成部分 | 说明 |
+|:--|:--|
+| **Endpoint URL** | `https://graphql.chainstream.io/graphql` |
+| **Authentication** | 来自 IDE Headers 面板的 `X-API-KEY` |
+| **Content-Type** | `application/json` |
+| **Query body** | 编辑器中的完整 GraphQL 查询 |
+| **Variables** | 若 Variables 面板有值则一并包含 |
+
+<Note>
+运行导出代码前，请将 `your_api_key` 替换为你的真实 API key。出于安全考虑，IDE 不会在导出片段中嵌入真实 key。
+</Note>
+
+---
+
+## 提示
+
+- **先测再导出** — 先在 IDE 中执行查询确认可用。导出代码会原样复制查询。
+- **用 variables 参数化** — 使用 GraphQL variables 替代硬编码值。导出代码会同时包含 `variables` JSON 与查询。
+- **检查依赖** — Python 片段使用 `requests`，Rust 使用 `reqwest`，Go 使用标准库。请确保项目中已安装所需包。
+- **流式用 WebSocket** — WebSocket 导出采用 `graphql-ws` 协议，适合 subscription 与长连接场景。

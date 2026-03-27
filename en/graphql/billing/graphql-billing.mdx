@@ -1,0 +1,154 @@
+---
+title: "Billing & Credits"
+description: "Understand how GraphQL API queries are billed using the Credit Unit system"
+icon: "credit-card"
+---
+
+## Overview
+
+Every GraphQL query consumes **Credit Units (CU)** based on the Cube queried, the number of rows requested, and the complexity of aggregation. Credits are deducted from the same billing plan as the REST API — your API Key works across both.
+
+<Info>
+The GraphQL API shares the same API Key and billing plan as the REST Data API. Credits consumed by GraphQL queries count toward your overall usage.
+</Info>
+
+---
+
+## Credit Calculation Formula
+
+Credits are calculated per Cube using the following formula:
+
+```
+Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+```
+
+| Factor | Calculation | Description |
+|:-------|:-----------|:------------|
+| **BaseCost** | Per-Cube base price (see table below) | Fixed cost that varies by Cube complexity |
+| **LimitFactor** | `ceil(limit / 100)`, minimum 1 | Scales with the number of rows requested |
+| **AggregationFactor** | 1.0 (none), 1.5 (GROUP BY), 2.0 (HAVING) | Higher for queries using aggregation or HAVING filters |
+| **MetricFactor** | `1.0 + (metric_count × 0.2)` | Increases with each additional metric (count, sum, etc.) |
+
+<Tip>
+A simple query with default limit (25 rows) and no aggregation pays only the base cost. Credits increase when you request more rows or add aggregation metrics.
+</Tip>
+
+### Calculation Examples
+
+<AccordionGroup>
+  <Accordion title="Simple query: 10 DEXTrades rows">
+    ```
+    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ```
+  </Accordion>
+  <Accordion title="Large query: 500 DEXTrades rows">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ```
+  </Accordion>
+  <Accordion title="Aggregation query: 500 rows + GROUP BY + 2 metrics">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
+    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Base Cost per Cube
+
+| Cube | Base Cost (CU) |
+|:-----|:---------------|
+| **DEXTrades** | 50 |
+| **DEXPools** | 30 |
+| **WalletTokenPnL** | 25 |
+| **Transfers** | 15 |
+| **BalanceUpdates** | 10 |
+| All other Cubes | 20 (default) |
+
+<Note>
+Base costs reflect query complexity and the underlying data volume of each Cube. DEXTrades is the most expensive because it scans the largest tables with the most dimensions.
+</Note>
+
+---
+
+## Response: `extensions.credits`
+
+Every GraphQL response includes credit consumption details in the `extensions` field:
+
+```json
+{
+  "data": {
+    "DEXTrades": [ ... ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        {
+          "cube": "DEXTrades",
+          "credits": 50,
+          "row_count": 10
+        }
+      ]
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `total` | `Int` | Total credits consumed by the entire query |
+| `cubes` | `Array` | Per-Cube breakdown |
+| `cubes[].cube` | `String` | Cube name |
+| `cubes[].credits` | `Int` | Credits charged for this Cube |
+| `cubes[].row_count` | `Int` | Number of rows returned |
+
+<Note>
+The `extensions.credits` field is present when credits are consumed (i.e., `total > 0`). Queries that return zero rows still incur the base cost.
+</Note>
+
+---
+
+## Monitoring Usage in the IDE
+
+The [GraphQL IDE](https://ide.chainstream.io) status bar displays credit consumption after each query:
+
+- **CU indicator**: Shows `total / 100` formatted to 2 decimal places (e.g., 50 CU displays as `0.50 CU`)
+- **Latency**: Request duration in milliseconds
+- **Response size**: Payload size
+
+---
+
+## Tips for Optimizing Credit Usage
+
+<CardGroup cols={3}>
+  <Card title="Select Fewer Fields" icon="minimize">
+    Only request the dimensions you need. Fewer fields means less data processed.
+  </Card>
+  <Card title="Use Appropriate Limits" icon="gauge">
+    Keep `limit.count` as low as practical. Credits scale with `ceil(limit / 100)`.
+  </Card>
+  <Card title="Use Pre-aggregated Cubes" icon="layer-group">
+    For aggregated data, prefer DWM/DWS Cubes (OHLC, TokenTradeStats, TokenMarketCap) over running metrics on DWD Cubes (DEXTrades).
+  </Card>
+</CardGroup>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="General Billing & Units" icon="receipt" href="/en/guides/getting-started/billing-and-units">
+    Overview of ChainStream billing plans, unit quotas, and payment methods.
+  </Card>
+  <Card title="Metrics & Aggregation" icon="chart-simple" href="/en/graphql/schema/metrics-aggregation">
+    Learn how aggregation metrics affect query credits.
+  </Card>
+</CardGroup>

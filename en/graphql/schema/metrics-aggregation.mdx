@@ -1,0 +1,321 @@
+---
+title: "Metrics & Aggregation"
+description: "Aggregate data with count, sum, avg, min, max, and uniq — the of parameter, selectWhere for HAVING, and when to use metrics vs pre-aggregated Cubes"
+icon: "chart-simple"
+---
+
+## What Are Metrics?
+
+Metrics are **aggregation functions** available as fields on Cube Record types. They let you compute statistics directly in your GraphQL query without post-processing. When you select a metric field alongside dimension fields, the query groups by the selected dimensions and computes the metric for each group.
+
+**Supported metrics:**
+
+| Metric | SQL Equivalent | Description |
+|:-------|:---------------|:------------|
+| `count` | `COUNT(*)` or `COUNT(column)` | Count rows or distinct values |
+| `sum` | `SUM(column)` | Sum of numeric values |
+| `avg` | `AVG(column)` | Average of numeric values |
+| `min` | `MIN(column)` | Minimum value |
+| `max` | `MAX(column)` | Maximum value |
+| `uniq` | `COUNT(DISTINCT column)` | Count of unique values |
+
+---
+
+## Metric Fields on Record Types
+
+Metrics appear as **top-level fields** on each Cube's Record type. Not all Cubes support all metrics — it depends on the Cube definition.
+
+```graphql
+type DEXTradesRecord {
+  # Dimension fields...
+  Block { ... }
+  Trade { ... }
+
+  # Metric fields
+  count: Int
+  sum(of: DEXTradesSumOf!): Float
+}
+```
+
+To use a metric, simply include it in your field selection:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+This query groups DEX trades by protocol name and returns the count for each group.
+
+---
+
+## The `of` Parameter
+
+Metrics like `sum`, `avg`, `min`, `max`, and `uniq` require an `of` parameter that specifies **which dimension** to aggregate. The `of` value is an enum generated per Cube, following the dimension path naming convention.
+
+```graphql
+sum(of: Trade_Buy_Amount)
+avg(of: Trade_Buy_PriceInUSD)
+min(of: Block_Time)
+max(of: Trade_Sell_Amount)
+uniq(of: Trade_Buy_Account_Owner)
+```
+
+### Example: Total Buy Volume by DEX
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+    sum(of: Trade_Buy_Amount)
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "count": 1842,
+        "sum": 2847291.45,
+        "Trade": { "Dex": { "ProtocolName": "Raydium" } }
+      },
+      {
+        "count": 923,
+        "sum": 1293847.12,
+        "Trade": { "Dex": { "ProtocolName": "Orca" } }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## count — Counting Rows
+
+`count` without an `of` parameter counts the total rows in each group (equivalent to `COUNT(*)`):
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+  }
+}
+```
+
+When used with dimension fields, it returns the count per group:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+---
+
+## uniq — Count Distinct
+
+`uniq` maps to `COUNT(DISTINCT column)` in SQL. Use it to count unique values of a dimension:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    uniq(of: Trade_Buy_Account_Owner)
+  }
+}
+```
+
+This returns the number of **unique buyer wallets** that traded USDC today on Solana.
+
+---
+
+## selectWhere — HAVING-Style Filtering
+
+`selectWhere` lets you filter **on aggregation results**, similar to SQL's `HAVING` clause. It is applied after grouping and aggregation, allowing you to filter groups based on their metric values.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count(selectWhere: { gt: 100 })
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+This returns only DEX protocols that had **more than 100 trades** today — protocols with fewer trades are excluded from the result.
+
+`selectWhere` supports the same numeric operators as `IntFilter`/`FloatFilter`:
+
+| Operator | Description |
+|:---------|:------------|
+| `gt` | Greater than |
+| `gte` | Greater than or equal |
+| `lt` | Less than |
+| `lte` | Less than or equal |
+| `eq` | Equal to |
+| `ne` | Not equal to |
+
+---
+
+## Practical Example: Top Traders
+
+Find the top 10 wallets by trade count for a token today, showing their total buy volume and unique trade count:
+
+```graphql
+query TopTraders {
+  DEXTrades(
+    network: sol
+    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+    where: {
+      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    count
+    sum(of: Trade_Buy_Amount)
+    Trade {
+      Buy {
+        Account { Owner }
+      }
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "count": 47,
+        "sum": 892341023.5,
+        "Trade": {
+          "Buy": {
+            "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+          }
+        }
+      },
+      {
+        "count": 31,
+        "sum": 451203847.2,
+        "Trade": {
+          "Buy": {
+            "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Combining Multiple Metrics
+
+You can select multiple metric fields in a single query:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "So11111111111111111111111111111111111111112"
+    where: {
+      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+    }
+  ) {
+    count
+    sum(of: Trade_Buy_Amount)
+    min(of: Trade_Buy_PriceInUSD)
+    max(of: Trade_Buy_PriceInUSD)
+    uniq(of: Trade_Buy_Account_Owner)
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+This returns per-DEX statistics: trade count, total volume, price range, and unique traders — all in one query.
+
+---
+
+## Metrics vs Pre-Aggregated Cubes
+
+<Info>
+A common question: should I use metrics on DWD Cubes or query DWM/DWS Cubes directly?
+</Info>
+
+| Approach | When to Use | Performance |
+|:---------|:------------|:------------|
+| **Metrics on DWD** (e.g., `DEXTrades.count`) | Custom aggregations, ad-hoc groupings, flexible time windows | Slower — aggregates raw events at query time |
+| **DWM Cubes** (e.g., `OHLC`, `TokenTradeStats`) | Standard time-series analysis, OHLC charts, volume over time | Fast — reads pre-computed minute-level rollups |
+| **DWS Cubes** (e.g., `TokenHolders`, `WalletTokenPnL`) | Current snapshots, cumulative totals, leaderboards | Fastest — reads pre-aggregated summary data |
+
+<Tip>
+**Rule of thumb**: Use DWM/DWS Cubes when they cover your use case — they're pre-aggregated and significantly faster. Fall back to DWD Cubes with metrics when you need custom groupings or aggregation logic that pre-built Cubes don't support.
+</Tip>
+
+### Decision Guide
+
+<AccordionGroup>
+  <Accordion title="I need a candlestick chart">
+    Use **OHLC** (DWM). It already has pre-computed open/high/low/close/volume per minute. No need to aggregate DEXTrades yourself.
+  </Accordion>
+  <Accordion title="I need buy/sell counts per token">
+    Use **TokenTradeStats** (DWM). It pre-aggregates trade counts, volumes, and unique traders per minute.
+  </Accordion>
+  <Accordion title="I need token holder rankings">
+    Use **TokenHolders** (DWS). Pre-computed latest balances per holder — much faster than aggregating BalanceUpdates.
+  </Accordion>
+  <Accordion title="I need custom per-DEX volume breakdown">
+    Use **DEXTrades** with `count` + `sum(of: Trade_Buy_Amount)` grouped by `Trade.Dex.ProtocolName`. This isn't available as a pre-built Cube, so DWD metrics are the right choice.
+  </Accordion>
+  <Accordion title="I need wallet PnL per token">
+    Use **WalletTokenPnL** (DWS). Pre-computed buy/sell volumes and trade counts per wallet-token pair.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
+    Explore all 12 Cubes and their field structures.
+  </Card>
+  <Card title="Query Examples" icon="flask" href="/en/graphql/examples/dex-trades">
+    See real-world query examples with metrics and aggregation.
+  </Card>
+</CardGroup>

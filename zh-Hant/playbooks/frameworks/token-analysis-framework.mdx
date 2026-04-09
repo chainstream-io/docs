@@ -1,0 +1,390 @@
+---
+title: "Token 分析框架"
+description: "系統化的 Token 分析方法，從基本面到鏈上指標"
+icon: "chart-pie"
+---
+
+本文件介紹使用 ChainStream 進行全面 Token 分析的框架，涵蓋基本面資料、鏈上指標、持有者分析和風險評估。
+
+---
+
+## 分析框架概覽
+
+<CardGroup cols={4}>
+  <Card title="基本資訊" icon="circle-info">
+    名稱/符號、小數位、合約地址、建立時間
+  </Card>
+  <Card title="市場資料" icon="chart-line">
+    價格、市值、流動性、交易量
+  </Card>
+  <Card title="持有者分析" icon="users">
+    持有者數量、Top 10/100 佔比、建立者持倉
+  </Card>
+  <Card title="交易統計" icon="arrow-right-arrow-left">
+    買賣次數、交易量、價格變化
+  </Card>
+</CardGroup>
+
+---
+
+## 1. 基本資訊
+
+### API 端點
+
+```bash
+GET /v2/token/{chain}/{tokenAddress}
+```
+
+### 核心欄位
+
+| 欄位 | 型別 | 描述 |
+|------|------|------|
+| `chain` | string | 區塊鏈網路識別符號，如 `sol` |
+| `name` | string | 代幣名稱 |
+| `symbol` | string | 代幣符號 |
+| `decimals` | integer | 代幣小數位數 |
+| `address` | string | 代幣鑄造地址 |
+| `imageUrl` | string | 代幣圖片 URL |
+| `tokenCreatedAt` | integer | 代幣建立時間戳（毫秒） |
+| `description` | string | 代幣描述 |
+| `tokenCreators` | array | 代幣建立者地址列表 |
+
+### 響應示例
+
+```json
+{
+  "chain": "sol",
+  "name": "USD Coin",
+  "symbol": "USDC",
+  "decimals": 9,
+  "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "imageUrl": "https://raw.githubusercontent.com/.../logo.png",
+  "tokenCreatedAt": 1710417600000,
+  "description": "USDC is a stablecoin pegged to the US dollar",
+  "tokenCreators": [
+    {
+      "address": "...",
+      "share": 100
+    }
+  ]
+}
+```
+
+---
+
+## 2. 市場資料
+
+市場資料包含在 Token 詳情介面的 `marketData` 欄位中。
+
+### 價格與市值
+
+| 欄位 | 型別 | 描述 |
+|------|------|------|
+| `priceInUsd` | string | 代幣價格（美元） |
+| `priceInSol` | string | 代幣價格（SOL） |
+| `marketCapInUsd` | string | 流通市值（美元） |
+| `marketCapInSol` | string | 流通市值（SOL） |
+| `totalSupply` | string | 總供應量 |
+
+### 流動性指標
+
+| 欄位 | 型別 | 描述 | 健康標準 |
+|------|------|------|----------|
+| `maxPoolTvlInUsd` | string | 最大池的 TVL（美元） | 深度越大滑點越小 |
+| `totalTvlInUsd` | string | 所有池的總 TVL（美元） | &gt; 市值 5% |
+| `maxPoolTvlInSol` | string | 最大池的 TVL（SOL） | - |
+| `totalTvlInSol` | string | 所有池的總 TVL（SOL） | - |
+
+### 持有者概覽
+
+| 欄位 | 型別 | 描述 | 健康標準 |
+|------|------|------|----------|
+| `holders` | string | 代幣持有者總數 | 越多越分散 |
+| `top10HoldingsRatio` | string | 前10名持有者佔比 | &lt; 0.5 (50%) |
+| `top10TotalHoldings` | string | 前10名持有者總持有量 | - |
+| `top100HoldingsRatio` | string | 前100名持有者佔比 | &lt; 0.7 (70%) |
+| `top100TotalHoldings` | string | 前100名持有者總持有量 | - |
+
+### 響應示例
+
+```json
+{
+  "marketData": {
+    "priceInUsd": "0.00123456",
+    "priceInSol": "0.0000089",
+    "marketCapInUsd": "1234567.89",
+    "totalSupply": "1000000000",
+    "holders": "5432",
+    "top10HoldingsRatio": "0.35",
+    "top100HoldingsRatio": "0.58",
+    "maxPoolTvlInUsd": "50000.00",
+    "totalTvlInUsd": "85000.00"
+  }
+}
+```
+
+---
+
+## 3. 交易統計
+
+交易統計資料包含在 Token 詳情介面的 `stats` 欄位中，也可透過專用端點獲取。
+
+### API 端點
+
+```bash
+GET /v2/token/{chain}/{tokenAddress}/stats
+```
+
+### 統計欄位（按時間週期）
+
+支援的時間週期：`1m`、`5m`、`15m`、`30m`、`1h`、`4h`、`24h`
+
+| 欄位模式 | 描述 | 示例欄位 |
+|----------|------|----------|
+| `price{period}` | 週期內價格 | `price1m`, `price5m`, `price1h` |
+| `buys{period}` | 週期內買入次數 | `buys1m`, `buys5m`, `buys1h` |
+| `sells{period}` | 週期內賣出次數 | `sells1m`, `sells5m`, `sells1h` |
+| `buyVolumesInUsd{period}` | 週期內買入交易量（美元） | `buyVolumesInUsd1m` |
+| `sellVolumesInUsd{period}` | 週期內賣出交易量（美元） | `sellVolumesInUsd1m` |
+| `volumesInUsd{period}` | 週期內總交易量（美元） | `volumesInUsd1m` |
+| `priceChangeRatioInUsd{period}` | 週期內價格變化比率 | `priceChangeRatioInUsd1h` |
+
+### 響應示例
+
+```json
+{
+  "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "price1m": "1.234",
+  "buys1m": "150",
+  "sells1m": "120",
+  "buyVolumesInUsd1m": "50000.45",
+  "sellVolumesInUsd1m": "45000.32",
+  "volumesInUsd1m": "95000.77",
+  "buys1h": "2500",
+  "sells1h": "2100",
+  "volumesInUsd1h": "1500000.00",
+  "priceChangeRatioInUsd1h": "0.025"
+}
+```
+
+---
+
+## 4. 持有者分析
+
+### API 端點
+
+```bash
+GET /v2/token/{chain}/{tokenAddress}/holders
+```
+
+### 查詢引數
+
+| 引數 | 型別 | 必填 | 描述 |
+|------|------|------|------|
+| `cursor` | string | 否 | 分頁遊標 |
+| `limit` | number | 否 | 每頁結果數量（1-100，預設20） |
+| `direction` | string | 否 | 分頁方向（`next` 或 `prev`） |
+
+### 持有者欄位
+
+| 欄位 | 型別 | 描述 |
+|------|------|------|
+| `walletAddress` | string | 錢包地址 |
+| `amount` | string | 持有數量 |
+| `amountInUsd` | string | 持有金額（美元） |
+| `percentage` | string | 持有佔比 |
+
+### 響應示例
+
+```json
+{
+  "hasNext": true,
+  "hasPrev": false,
+  "startCursor": "abc123",
+  "endCursor": "xyz789",
+  "data": [
+    {
+      "walletAddress": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+      "amount": "1000000000000000000",
+      "amountInUsd": "12345.67",
+      "percentage": "10.5"
+    }
+  ]
+}
+```
+
+### 持有者分佈評估
+
+<Tabs>
+  <Tab title="健康分佈">
+    **特徵**：
+    - Top 10 佔比 &lt; 50%
+    - Top 100 佔比 &lt; 70%
+    - 持有者數量較多
+    - 分佈均勻，去中心化
+    
+    **風險等級**：🟢 低風險
+  </Tab>
+  <Tab title="風險分佈">
+    **特徵**：
+    - Top 10 佔比 &gt; 80%
+    - 少數地址控制大部分供應
+    - 持有者數量較少
+    - 高度集中，存在控盤風險
+    
+    **風險等級**：🔴 高風險
+  </Tab>
+</Tabs>
+
+### 持有者型別識別
+
+| 型別 | 識別方式 | 意義 |
+|------|----------|------|
+| **專案方/團隊** | 合約部署者、`tokenCreators` 中的地址 | 解鎖風險 |
+| **巨鯨** | 持有 &gt; 1% | 市場影響力 |
+| **Smart Money** | 高勝率交易者（需配合錢包分析） | 資訊優勢 |
+| **CEX** | 交易所熱錢包 | 流動性來源 |
+
+---
+
+## 5. 風險評估
+
+### 風險評估維度
+
+| 維度 | 權重 | 評估指標 |
+|------|------|----------|
+| **集中度風險** | 30% | `top10HoldingsRatio`、`top100HoldingsRatio` |
+| **流動性風險** | 25% | `totalTvlInUsd`、TVL/市值比率 |
+| **新幣風險** | 20% | `tokenCreatedAt`（建立時間） |
+| **交易活躍度** | 15% | `holders`、交易量、買賣次數 |
+| **建立者持倉** | 10% | 建立者地址的持倉佔比 |
+
+### 風險標識
+
+| 標識 | 等級 | 觸發條件 |
+|------|------|----------|
+| 🔴 高風險 | Critical | `top10HoldingsRatio` &gt; 0.8、TVL &lt; 市值1%、建立不足24小時 |
+| 🟡 中風險 | Warning | `top10HoldingsRatio` &gt; 0.5、建立不足7天 |
+| 🟢 低風險 | Safe | 各項指標健康 |
+
+---
+
+## 分析流程
+
+<Steps>
+  <Step title="獲取基本資訊">
+    呼叫 `GET /v2/token/{chain}/{tokenAddress}` 獲取完整代幣資訊
+    - 確認合約地址正確
+    - 檢查建立時間 `tokenCreatedAt`
+  </Step>
+  <Step title="分析市場資料">
+    檢視 `marketData` 欄位
+    - 當前價格 `priceInUsd`
+    - 市值 `marketCapInUsd`
+    - 流動性 `totalTvlInUsd`
+  </Step>
+  <Step title="評估持有者分佈">
+    檢視 `marketData` 中的持有者資料
+    - 持有者數量 `holders`
+    - Top 10 佔比 `top10HoldingsRatio`
+    - Top 100 佔比 `top100HoldingsRatio`
+  </Step>
+  <Step title="檢查交易活躍度">
+    檢視 `stats` 欄位
+    - 交易量 `volumesInUsd1h`、`volumesInUsd24h`
+    - 買賣比率 `buys1h` vs `sells1h`
+  </Step>
+  <Step title="綜合風險評估">
+    基於以上資料計算風險等級
+    - 高集中度 + 低流動性 = 🔴 高風險
+    - 健康分佈 + 充足流動性 = 🟢 低風險
+  </Step>
+</Steps>
+
+---
+
+## 實戰示例
+
+### 示例：分析新上線 Token
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+
+async function analyzeToken(chain: string, tokenAddress: string) {
+  // 1. 获取代币完整信息
+  const token = await client.token.getToken(chain, tokenAddress);
+  
+  // 2. 检查创建时间
+  const ageInDays = (Date.now() - token.tokenCreatedAt) / (1000 * 60 * 60 * 24);
+  if (ageInDays < 7) {
+    console.warn('⚠️ 新币风险：创建不足 7 天');
+  }
+  
+  // 3. 分析持有者分布
+  const top10Ratio = parseFloat(token.marketData.top10HoldingsRatio);
+  if (top10Ratio > 0.5) {
+    console.warn('⚠️ 集中度风险：Top 10 持有 > 50%');
+  }
+  
+  // 4. 检查流动性
+  const tvl = parseFloat(token.marketData.totalTvlInUsd);
+  const marketCap = parseFloat(token.marketData.marketCapInUsd);
+  if (tvl < marketCap * 0.05) {
+    console.warn('⚠️ 流动性风险：TVL 不足市值 5%');
+  }
+  
+  // 5. 综合评估
+  const riskLevel = calculateRiskLevel(token);
+  console.log(`风险等级: ${riskLevel}`);
+  
+  return {
+    token,
+    ageInDays,
+    top10Ratio,
+    tvlRatio: tvl / marketCap,
+    riskLevel
+  };
+}
+
+function calculateRiskLevel(token: any): string {
+  const top10Ratio = parseFloat(token.marketData.top10HoldingsRatio);
+  const tvl = parseFloat(token.marketData.totalTvlInUsd);
+  const marketCap = parseFloat(token.marketData.marketCapInUsd);
+  
+  if (top10Ratio > 0.8 || tvl < marketCap * 0.01) {
+    return '🔴 高风险';
+  } else if (top10Ratio > 0.5) {
+    return '🟡 中风险';
+  }
+  return '🟢 低风险';
+}
+```
+
+---
+
+## API 端點彙總
+
+| 分析需求 | API 端點 |
+|----------|----------|
+| 代幣詳情（含市場資料、統計） | `GET /v2/token/{chain}/{tokenAddress}` |
+| 代幣後設資料 | `GET /v2/token/{chain}/{tokenAddress}/metadata` |
+| 代幣統計 | `GET /v2/token/{chain}/{tokenAddress}/stats` |
+| 持有者列表 | `GET /v2/token/{chain}/{tokenAddress}/holders` |
+| Top 持有者 | `GET /v2/token/{chain}/{tokenAddress}/topholders` |
+| 代幣流動池 | `GET /v2/token/{chain}/{tokenAddress}/pools` |
+| 代幣市場資料 | `GET /v2/token/{chain}/{tokenAddress}/marketdata` |
+
+---
+
+## 相關文件
+
+<CardGroup cols={2}>
+  <Card title="Smart Money 方法論" icon="brain" href="/zh-Hant/guides/data-concepts/smart-money-methodology">
+    瞭解 Smart Money 分析方法
+  </Card>
+  <Card title="MCP 工具目錄" icon="wrench" href="/zh-Hant/guides/ai-infrastructure/mcp-server/tools-catalog">
+    檢視完整 MCP 工具列表
+  </Card>
+</CardGroup>

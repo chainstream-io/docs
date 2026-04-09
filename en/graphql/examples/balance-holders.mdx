@@ -11,12 +11,12 @@ This page covers four Cubes for wallet and holder analytics:
 - **WalletTokenPnL** (DWS) — per-token profit & loss for a wallet
 
 <Note>
-All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+All examples below use `network: sol` (Solana). Replace with `eth`, `bsc`, or `polygon` for other supported chains.
 </Note>
 
 ---
 
-## Wallet Balances
+## How do I get a wallet's token balances?
 
 Get current token balances for a wallet. This query returns the latest balance update event for each token the wallet holds.
 
@@ -37,6 +37,10 @@ query {
   }
 }
 ```
+
+<Tip>
+[Open in GraphQL IDE](https://ide.chainstream.io) — paste the query above to run it interactively with auto-complete and schema exploration.
+</Tip>
 
 <Tip>
 Replace `WALLET_ADDRESS` with the wallet you want to inspect. The `ownerAddress` selector filters balance update events by wallet owner.
@@ -60,7 +64,7 @@ Replace `WALLET_ADDRESS` with the wallet you want to inspect. The `ownerAddress`
 
 ---
 
-## Balance History
+## How do I get balance change history?
 
 Track how a wallet's balance for a specific token changes over time.
 
@@ -107,7 +111,7 @@ The difference between `PostBalance` and `PreBalance` shows the net change per e
 
 ---
 
-## Top Holders
+## How do I get a token's top holders?
 
 Get the top holders for a token, ranked by balance.
 
@@ -152,7 +156,7 @@ The **TokenHolders** Cube is a DWS (Summary) layer table — it's pre-aggregated
 
 ---
 
-## Wallet PnL
+## How do I get wallet profit and loss?
 
 Get per-token profit and loss data for a wallet, including buy/sell volumes and trade counts.
 
@@ -255,6 +259,23 @@ query {
 }
 ```
   </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  BalanceUpdates(
+    network: polygon
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
 </Tabs>
 
 ---
@@ -272,6 +293,6 @@ query {
     Explore DEX pool and liquidity data.
   </Card>
   <Card title="OHLC & Statistics" icon="chart-candlestick" href="/en/graphql/examples/ohlc-stats">
-    Fetch candlestick data, trade stats, market cap, and token metadata.
+    Fetch candlestick data, trade stats, TokenSupplyUpdates, and token metadata.
   </Card>
 </CardGroup>

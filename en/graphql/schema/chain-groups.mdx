@@ -1,0 +1,201 @@
+---
+title: "Chain Groups"
+description: "How Cubes are organized into EVM, Solana, and Trading Chain Groups"
+icon: "layer-group"
+---
+
+## Overview
+
+ChainStream GraphQL organizes its 25 Cubes into three **Chain Groups**. Each group represents a blockchain ecosystem and determines which Cubes are available, how the `network` parameter works, and what chain-specific fields exist.
+
+```graphql
+type ChainStream {
+  EVM(network: Network!, dataset: Dataset, aggregates: Aggregates) { ... }
+  Solana(dataset: Dataset, aggregates: Aggregates) { ... }
+  Trading(dataset: Dataset, aggregates: Aggregates) { ... }
+}
+```
+
+---
+
+## EVM
+
+The **EVM** group contains Cubes for all EVM-compatible blockchains. It **requires** a `network` argument to specify which chain to query.
+
+### Available Networks
+
+| Network ID | Blockchain |
+|:-----------|:-----------|
+| `eth` | Ethereum |
+| `bsc` | BNB Chain (BSC) |
+| `polygon` | Polygon |
+
+### Cubes
+
+**Shared with Solana:**
+`DEXTrades`, `DEXTradeByTokens`, `Transfers`, `BalanceUpdates`, `DEXPoolEvents`, `TokenSupplyUpdates`, `Blocks`, `Transactions`, `TransactionBalances`, `DEXPools`, `TokenHolders`, `WalletTokenPnL`
+
+**EVM-only:**
+- `Events` — Smart contract event logs (decoded topics and data)
+- `Calls` — Internal call traces (CALL, DELEGATECALL, CREATE, etc.)
+- `MinerRewards` — Block rewards breakdown (static, dynamic, uncle, burned fees)
+- `DEXPoolSlippages` — Pool price slippage analysis
+- `Uncles` — Uncle block data (primarily Ethereum PoW historical)
+- `PredictionTrades` — Prediction market trades *(primarily Polygon)*
+- `PredictionManagements` — Prediction market management events *(primarily Polygon)*
+- `PredictionSettlements` — Prediction market settlements *(primarily Polygon)*
+
+### Example Query
+
+```graphql
+query {
+  EVM(network: eth, dataset: combined) {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { SmartContract Symbol } Amount PriceInUSD }
+        Sell { Currency { SmartContract Symbol } Amount }
+        Dex { ProtocolName }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Solana
+
+The **Solana** group contains Cubes for the Solana blockchain. The network is implicit (`sol`) — no `network` argument is needed.
+
+### Cubes
+
+**Shared with EVM:**
+`DEXTrades`, `DEXTradeByTokens`, `Transfers`, `BalanceUpdates`, `DEXPoolEvents`, `TokenSupplyUpdates`, `Blocks`, `Transactions`, `TransactionBalances`, `DEXPools`, `TokenHolders`, `WalletTokenPnL`
+
+**Solana-only:**
+- `Instructions` — Program instruction data (program address, method, accounts, logs)
+- `InstructionBalanceUpdates` — Balance changes at instruction level
+- `Rewards` — Validator and staking rewards
+- `DEXOrders` — DEX order book events (limit orders, cancellations, fills)
+
+### Example Query
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress Symbol } Amount PriceInUSD }
+        Sell { Currency { MintAddress Symbol } Amount }
+        Dex { ProgramAddress ProtocolName }
+      }
+    }
+  }
+}
+```
+
+### Solana-Specific Fields
+
+Solana Cubes use different field names for some dimensions compared to EVM:
+
+| Concept | Solana | EVM |
+|:--------|:-------|:----|
+| Token address | `MintAddress` | `SmartContract` |
+| Transaction ID | `Signature` / `Hash` | `Hash` |
+| Block identifier | `Slot` | `Number` |
+| Program/Contract | `ProgramAddress` | `SmartContract` |
+| Fee payer | `FeePayer` | `From` |
+
+---
+
+## Trading
+
+The **Trading** group provides **cross-chain pre-aggregated** trading analytics. It combines data from all supported chains into unified materialized views with a `chain` dimension for filtering.
+
+### Cubes
+
+- `Pairs` — OHLC candlestick data (open/high/low/close, volume, trade count)
+- `Tokens` — Per-token trade statistics (volume, buy/sell breakdown, unique traders)
+
+### Key Differences from EVM/Solana Groups
+
+1. **No `network` argument** — The Trading group combines data across chains. Use the `chain` dimension within the data to filter by network.
+2. **Cross-chain data** — A single query can return data for `sol`, `eth`, and `bsc` together.
+3. **Pre-aggregated** — Data is materialized at minute granularity from the DWM layer.
+
+### Example: Cross-Chain OHLC
+
+```graphql
+query {
+  Trading(aggregates: yes) {
+    Pairs(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Token { Address }
+      Market { Network }
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd Native }
+      Stats { TradeCount BuyCount SellCount }
+    }
+  }
+}
+```
+
+### Example: Token Trade Stats by Chain
+
+```graphql
+query {
+  Trading {
+    Tokens(
+      where: {
+        Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } }
+        Market: { Network: { is: "eth" } }
+      }
+      limit: {count: 30}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+---
+
+## Chain Group Comparison
+
+| Feature | EVM | Solana | Trading |
+|:--------|:----|:-------|:--------|
+| **`network` argument** | Required (`eth`, `bsc`, `polygon`) | Not needed (implicit `sol`) | Not needed (cross-chain) |
+| **Unique Cubes** | Events, Calls, MinerRewards, Uncles, DEXPoolSlippages, Prediction* | Instructions, InstructionBalanceUpdates, Rewards, DEXOrders | Pairs, Tokens |
+| **Data granularity** | Per-event (DWD) + aggregated (DWM/DWS) | Per-event + instruction-level | Pre-aggregated (DWM) |
+| **`dataset` support** | Yes (most Cubes) | Yes (most Cubes) | Yes |
+| **`aggregates` support** | Yes | Yes | Yes |
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
+    Detailed field structures and use cases for all 25 Cubes.
+  </Card>
+  <Card title="Dataset & Aggregates" icon="database" href="/en/graphql/schema/dataset-aggregates">
+    Control data source scope and pre-aggregation behavior.
+  </Card>
+</CardGroup>

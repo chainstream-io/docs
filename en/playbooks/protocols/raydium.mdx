@@ -1,0 +1,400 @@
+---
+title: "Raydium"
+description: "Complete guide to analyzing Raydium DEX on Solana — trades, liquidity pools, token launches, and price data"
+icon: "droplet"
+---
+
+Raydium is the largest AMM and liquidity provider on Solana. ChainStream provides full data coverage for Raydium trades and pools through REST API, GraphQL, WebSocket, and MCP Tools.
+
+<Info>
+**Supported operations**: Trade analysis, liquidity pool monitoring, token price tracking, OHLCV data, holder analytics, and token creation via Raydium launchpad.
+</Info>
+
+---
+
+## How do I get recent trades on Raydium?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol?limit=20" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Trade - List](/en/api-reference/endpoint/data/trade/v2/trade-chain-get) for full parameter reference.
+  </Tab>
+  <Tab title="GraphQL">
+
+Query `DEXTrades` and filter by Raydium's protocol name:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    dexProgram: {is: "RAYDIUM_PROGRAM_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+      }
+      Dex { ProgramAddress ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get({ chain: "solana", limit: 20 })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get the price of a token on Raydium?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/price" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Price](/en/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_price({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get liquidity pools for a token on Raydium?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/pools" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Pools](/en/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-pools-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Dex { ProgramAddress }
+      Base { Address PostAmount }
+      Quote { Address PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_pools({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get pool details by address?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/dexpools/sol/POOL_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [DexPool - Get](/en/api-reference/endpoint/data/dexpool/v2/dexpools-chain-pooladdress-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 1}
+    poolAddress: {is: "POOL_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Base { Address PostAmount }
+      Quote { Address PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+dexpool_get({ chain: "solana", poolAddress: "POOL_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get OHLCV (K-line) data for a Raydium token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/candles?resolution=1m&limit=60" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 60}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_candles({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", resolution: "1m" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get token holders on Raydium?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/topHolders" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_top_holders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get top traders for a Raydium token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol/top-traders?tokenAddress=TOKEN_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get_top_traders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get pool liquidity snapshots?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/dexpools/sol/POOL_ADDRESS/snapshots" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [DexPool - Snapshots](/en/api-reference/endpoint/data/dexpool/v2/dexpools-chain-pooladdress-snapshots-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  PoolLiquiditySnapshots(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Pool { Address ProgramAddress }
+    TokenA { Address }
+    TokenB { Address }
+    LiquidityUSDState
+    EventCountState
+    LastSeenState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+dexpool_get_snapshots({ chain: "solana", poolAddress: "POOL_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I create a token on Raydium?
+
+ChainStream supports creating tokens on Raydium launchpad directly via API.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl -X POST "https://api.chainstream.io/v2/dex/sol/create" \
+  -H "X-API-KEY: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "launchpad": "raydium",
+    "name": "My Token",
+    "symbol": "MYTKN",
+    "description": "A test token",
+    "privateKey": "YOUR_PRIVATE_KEY"
+  }'
+```
+
+See [DEX - Create](/en/api-reference/endpoint/defi/dex/v2/dex-chain-create-post) for full reference.
+  </Tab>
+</Tabs>
+
+<Note>
+Token creation is only available on Solana. The private key is used to sign the creation transaction.
+</Note>
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What is the difference between Pump.fun and Raydium pools?">
+    Pump.fun tokens trade on a bonding curve until graduation; once they graduate, liquidity is migrated to a Raydium AMM pool. Use `ranking/sol/migrated` to find recently graduated tokens.
+  </Accordion>
+  <Accordion title="How do I filter trades by DEX?">
+    In GraphQL, use the `dexProgram` selector to filter by Raydium's program address. In REST, trades are returned across all DEXes — check the `dex` field in the response to identify Raydium trades.
+  </Accordion>
+  <Accordion title="Can I track Raydium pool events in real time?">
+    Yes. Use WebSocket subscriptions for real-time pool and trade updates. See [Real-time Streaming](/en/guides/data-concepts/realtime-streaming) for setup instructions.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Pump.fun Guide" icon="rocket" href="/en/playbooks/protocols/pump-fun">
+    Complete Pump.fun token analysis including graduation tracking.
+  </Card>
+  <Card title="GraphQL Pools & Liquidity" icon="droplet" href="/en/graphql/examples/pools-liquidity">
+    GraphQL query examples for pool and liquidity data.
+  </Card>
+  <Card title="GraphQL DEX Trades" icon="arrow-right-arrow-left" href="/en/graphql/examples/dex-trades">
+    GraphQL query examples for DEX trade analysis.
+  </Card>
+  <Card title="MCP Tools Catalog" icon="robot" href="/en/guides/ai-infrastructure/mcp-server/tools-catalog">
+    Full list of 50+ MCP tools for AI agent integration.
+  </Card>
+</CardGroup>

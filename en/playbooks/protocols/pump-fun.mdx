@@ -1,0 +1,441 @@
+---
+title: "Pump.fun"
+description: "Complete guide to analyzing Pump.fun tokens on Solana — discovery, pricing, trades, holders, and token creation"
+icon: "rocket"
+---
+
+Pump.fun is the leading memecoin launchpad on Solana. ChainStream provides full data coverage for Pump.fun tokens through REST API, GraphQL, WebSocket, and MCP Tools.
+
+<Info>
+**Supported operations**: Token discovery, price tracking, trade analysis, holder analytics, token creation (via `pumpfun_create`), and graduation/migration tracking.
+</Info>
+
+---
+
+## How do I discover new Pump.fun tokens?
+
+Use the ranking endpoints to find newly created tokens on the Pump.fun launchpad.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/newTokens" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Ranking - New Tokens](/en/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get) for full parameter reference.
+  </Tab>
+  <Tab title="GraphQL">
+
+Query `TokenSupplyUpdates` on Solana and filter by Pump.fun tokens:
+
+```graphql
+query {
+  TokenSupplyUpdates(
+    network: sol
+    limit: {count: 20}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    TokenSupplyUpdate {
+      Currency {
+        MintAddress
+        Decimals
+      }
+      PostBalance
+      MarketCapInUSD
+      PriceInUSD
+      TotalSupply
+    }
+  }
+}
+```
+
+<Tip>
+[Open in GraphQL IDE](https://ide.chainstream.io) to run this query interactively.
+</Tip>
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_new_tokens({ chain: "solana" })
+```
+
+See [MCP Tools Catalog](/en/guides/ai-infrastructure/mcp-server/tools-catalog) for full tool reference.
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get the price of a Pump.fun token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/price" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Price](/en/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_price({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+<Note>
+Replace `TOKEN_ADDRESS` with the actual Pump.fun token mint address.
+</Note>
+
+---
+
+## How do I get trades for a Pump.fun token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol?tokenAddress=TOKEN_ADDRESS&limit=20" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Trade - List](/en/api-reference/endpoint/data/trade/v2/trade-chain-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+        Account { Owner }
+      }
+      Dex { ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", limit: 20 })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get top holders of a Pump.fun token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/topHolders" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Top Holders](/en/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-topholders-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_top_holders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get OHLCV (K-line) data for a Pump.fun token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/candles?resolution=1m&limit=60" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Candles](/en/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 60}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_candles({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", resolution: "1m" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I track Pump.fun tokens about to graduate?
+
+Tokens in the "final stretch" are close to meeting the bonding curve graduation threshold and migrating to Raydium.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/finalStretch" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Ranking - Final Stretch](/en/api-reference/endpoint/data/ranking/v2/ranking-chain-finalstretch-get) for full reference.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_final_stretch({ chain: "solana" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I find tokens that graduated from Pump.fun?
+
+Graduated tokens have completed the bonding curve and migrated to a Raydium liquidity pool.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/migrated" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Ranking - Migrated](/en/api-reference/endpoint/data/ranking/v2/ranking-chain-migrated-get) for full reference.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_migrated({ chain: "solana" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I get the top traders for a Pump.fun token?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol/top-traders?tokenAddress=TOKEN_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Trade - Top Traders](/en/api-reference/endpoint/data/trade/v2/trade-chain-top-traders-get) for full reference.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get_top_traders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I check a Pump.fun token's security?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/security" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Security](/en/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-security-get) for full reference.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_security({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## How do I create a token on Pump.fun?
+
+ChainStream supports creating tokens on Pump.fun directly via API.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl -X POST "https://api.chainstream.io/v2/dex/sol/create" \
+  -H "X-API-KEY: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "launchpad": "pumpfun",
+    "name": "My Token",
+    "symbol": "MYTKN",
+    "description": "A test token",
+    "privateKey": "YOUR_PRIVATE_KEY"
+  }'
+```
+
+See [DEX - Create](/en/api-reference/endpoint/defi/dex/v2/dex-chain-create-post) for full reference.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+pumpfun_create({
+  name: "My Token",
+  symbol: "MYTKN",
+  description: "A test token"
+})
+```
+  </Tab>
+</Tabs>
+
+<Note>
+Token creation requires a funded Solana wallet. The private key is used to sign the creation transaction.
+</Note>
+
+---
+
+## How do I get the developer's other tokens?
+
+Find all tokens created by a specific developer address on Solana.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/dev/DEV_ADDRESS/tokens" \
+  -H "X-API-KEY: your_api_key"
+```
+
+See [Token - Dev Tokens](/en/api-reference/endpoint/data/token/v2/token-chain-dev-devaddress-tokens-get) for full reference.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_dev_get_tokens({ chain: "solana", devAddress: "DEV_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What is Pump.fun graduation?">
+    When a Pump.fun token's bonding curve reaches 100%, it "graduates" — the liquidity is migrated to a Raydium pool and the token begins trading on the open market. Use the `ranking/sol/finalStretch` endpoint to track tokens approaching graduation, and `ranking/sol/migrated` for tokens that have already graduated.
+  </Accordion>
+  <Accordion title="How do I filter out bot/MEV trades?">
+    The GraphQL `DEXTrades` Cube has a default filter `IsSuspect = false` that automatically excludes suspected bot and MEV trades. For REST API, check the trade response for the `isSuspect` field.
+  </Accordion>
+  <Accordion title="Can I track Pump.fun tokens in real time?">
+    Yes. Use WebSocket subscriptions for real-time price updates and trade streams. See [Real-time Streaming](/en/guides/data-concepts/realtime-streaming) for setup instructions.
+  </Accordion>
+  <Accordion title="Which chains support Pump.fun?">
+    Pump.fun is a Solana-only launchpad. Use `chain: sol` (REST) or `network: sol` (GraphQL) for all Pump.fun queries.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="GraphQL DEX Trades" icon="arrow-right-arrow-left" href="/en/graphql/examples/dex-trades">
+    More GraphQL query examples for DEX trade analysis.
+  </Card>
+  <Card title="Token Analysis Framework" icon="magnifying-glass-chart" href="/en/playbooks/frameworks/token-analysis-framework">
+    Comprehensive token evaluation methodology.
+  </Card>
+  <Card title="MCP Tools Catalog" icon="robot" href="/en/guides/ai-infrastructure/mcp-server/tools-catalog">
+    Full list of 50+ MCP tools for AI agent integration.
+  </Card>
+  <Card title="Raydium Guide" icon="droplet" href="/en/playbooks/protocols/raydium">
+    Raydium DEX trading and liquidity analysis.
+  </Card>
+</CardGroup>

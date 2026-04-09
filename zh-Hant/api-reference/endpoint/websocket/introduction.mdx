@@ -1,0 +1,45 @@
+---
+title: '介紹'
+description: '透過 WebSocket API 進行實時資料流傳輸'
+---
+
+## 概述
+
+ChainStream 提供 WebSocket 端點用於實時資料流傳輸，作為 HTTP 請求的替代方案。根據網路不同，WebSocket URL 如下：
+
+* 主網：`wss://realtime-dex.chainstream.io/connection/websocket`
+
+## 認證
+
+WebSocket 連線需要在 URL 中透過 `token` 查詢引數進行認證，格式為：
+
+```
+wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN
+```
+
+<Note>
+如果你使用的是我們的 **Go SDK** 或 **JavaScript SDK**，SDK 已內建認證支援，無需手動處理。只有在使用原生 WebSocket 庫或其他第三方庫時才需要手動拼接 token 引數。
+</Note>
+
+## 連線
+
+要連線到 WebSocket API，你需要根據所需的網路建立與相應 URL 的 WebSocket 連線，並在 URL 中攜帶 token 引數。連線成功後，你就可以傳送訂閱訊息來接收實時資料更新。
+
+### 命令列示例
+
+使用 `wscat` 測試連線：
+
+```bash
+$ wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
+Connected (press CTRL+C to quit)
+> { "method": "subscribe", "subscription": { "type": "trades", "coin": "SOL" } }
+< {"channel":"subscriptionResponse","data":{"method":"subscribe","subscription":{"type":"trades","coin":"SOL"}}}
+```
+
+<Warning>
+未提供有效的 `token` 引數將導致連線被拒絕或無法接收資料。
+</Warning>
+
+<Note>
+本文件使用 TypeScript 定義訊息型別。對於 Python 使用者，你可以在我們的 Python SDK 中找到對應的型別定義。
+</Note> 

@@ -8,7 +8,7 @@ import * as readline from 'readline';
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 // 需要扫描的目录
-const SCAN_DIRS = ['en', 'cn'];
+const SCAN_DIRS = ['en', 'cn', 'jp', 'ko', 'zh-Hant'];
 
 // 需要排除的目录（这些目录下的文件不会被检查）
 const EXCLUDED_DIRS = [

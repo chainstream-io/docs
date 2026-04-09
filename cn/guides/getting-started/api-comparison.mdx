@@ -1,0 +1,99 @@
+---
+title: "选择 API"
+description: "对比 REST、GraphQL、WebSocket、MCP 和 CLI — 为你的场景选择合适的接入方式"
+icon: "code-compare"
+---
+
+ChainStream 提供五种访问链上数据的方式。各有不同优势 — 请根据你的使用场景选择。
+
+---
+
+## 快速对比
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| | **REST API** | **GraphQL API** | **WebSocket** | **MCP Tools** | **CLI** |
+|:--|:--|:--|:--|:--|:--|
+| **最适合** | 简单查询、系统集成 | 灵活分析、自定义聚合 | 实时价格与交易推送 | AI Agent 集成 | 脚本、CI/CD、终端工作流 |
+| **端点** | 56 个 `/v2/*` 路径 | 单一端点 | `wss://realtime-dex.chainstream.io/...` | 通过 MCP 协议 | `npx @chainstream-io/cli` |
+| **认证** | `X-API-KEY` Header | `X-API-KEY` Header | URL `?token=` 参数 | Bearer Token | `cli login` / API Key |
+| **响应** | 固定 JSON Schema | 客户端自选字段 | 实时推送 | 结构化工具结果 | JSON / 表格输出 |
+| **聚合** | 预定义端点 | `count` / `sum` / `avg` / `min` / `max` / `uniq` | 无 | 取决于底层 API | 无 |
+| **链** | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc |
+| **SDK** | TS / Python / Go / Rust | 任意 GraphQL 客户端 | TS SDK 内置 | MCP 客户端 | N/A |
+
+</div>
+
+---
+
+## 何时使用
+
+<CardGroup cols={2}>
+  <Card title="REST API" icon="bolt">
+    **适用场景**：需要快速获取特定数据 — 代币价格、钱包余额、交易列表 — 并希望响应 Schema 可预测。
+
+    **示例**：在 dApp 中展示代币信息、查看钱包 PnL、获取排行榜。
+
+    [REST API 参考](/cn/api-reference/authentication/authenticate)
+  </Card>
+  <Card title="GraphQL API" icon="diagram-project">
+    **适用场景**：需要灵活的分析查询 — 聚合交易、按多维度过滤、仅选所需字段。
+
+    **示例**：按成交量排名的头部交易者、OHLC K 线数据、代币持有者分布分析。
+
+    [GraphQL 概览](/cn/graphql/getting-started/overview)
+  </Card>
+  <Card title="WebSocket" icon="tower-broadcast">
+    **适用场景**：需要实时推送数据到应用 — 价格跳动、新交易、钱包活动变化。
+
+    **示例**：实时价格推送、交易活动流、新代币创建提醒。
+
+    [实时数据流](/cn/guides/data-concepts/realtime-streaming)
+  </Card>
+  <Card title="MCP Tools" icon="robot">
+    **适用场景**：构建 AI Agent，通过自然语言或结构化工具调用查询链上数据。
+
+    **示例**：Claude / GPT 分析代币安全、AI 助手追踪聪明钱、自动化研究工作流。
+
+    [MCP Server 介绍](/cn/guides/ai-infrastructure/mcp-server/introduction)
+  </Card>
+</CardGroup>
+
+---
+
+## 各接口数据覆盖
+
+所有接口共享同一底层数据管道，支持全部 3 条链（Solana、Ethereum、BSC）。
+
+| 数据类型 | REST | GraphQL | WebSocket | MCP |
+|:----------|:-----|:--------|:----------|:----|
+| 代币元数据与价格 | Yes | Yes (DEXTrades, TokenSearch) | Yes (Token series) | Yes (`token_get_price`) |
+| 交易历史 | Yes | Yes (DEXTrades) | Yes (Trade series) | Yes (`trade_get`) |
+| 钱包余额与 PnL | Yes | Yes (BalanceUpdates, WalletTokenPnL) | Yes (Wallet series) | Yes (`wallet_get_balance`) |
+| OHLCV / K 线 | Yes | Yes (OHLC) | Yes (Candle series) | Yes (`token_get_candles`) |
+| 代币持有者 | Yes | Yes (TokenHolders) | No | Yes (`token_get_holders`) |
+| DEX 池流动性 | Yes | Yes (DEXPools, PoolLiquiditySnapshots) | Yes (DexPool series) | Yes (`dexpool_get`) |
+| 排行榜（热门、新币） | Yes | No | Yes (Ranking series) | Yes (`ranking_get_hot_tokens`) |
+| DeFi swap / create | Yes | No | No | Yes (`dex_swap`, `pumpfun_create`) |
+| KYT / 合规 | Yes | No | No | No |
+| Webhook 管理 | Yes | No | No | Yes (`webhook_*`) |
+
+<Tip>
+**GraphQL** 擅长灵活的聚合分析查询。**REST** 覆盖最广泛的功能集，包括 DeFi 操作与合规。**WebSocket** 是获取实时推送的唯一方式。**MCP** 为 AI Agent 封装了 REST 能力。
+</Tip>
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="快速开始" icon="rocket" href="/cn/guides/getting-started/quickstart">
+    5 分钟完成你的首次 API 调用。
+  </Card>
+  <Card title="GraphQL 第一个查询" icon="play" href="/cn/graphql/getting-started/first-query">
+    运行你的第一个 GraphQL 查询。
+  </Card>
+  <Card title="支持的链" icon="link-simple" href="/cn/guides/getting-started/supported-chains">
+    查看所有支持的链与 DEX。
+  </Card>
+</CardGroup>

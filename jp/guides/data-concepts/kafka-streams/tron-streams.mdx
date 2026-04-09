@@ -1,0 +1,357 @@
+---
+title: "TRON Streams"
+description: "TRON ネットワーク向け Protobuf データストリーム"
+icon: "circle-t"
+---
+
+TRON は約 3 秒ごとにブロックを生成し、高スループットのトランザクションとスマートコントラクト実行をサポートします。TRON はユニークなリソースモデル（Energy と Bandwidth）と Witness（スーパー代表者）コンセンサスメカニズムを使用しています。
+
+**スキーマリポジトリ**: [github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron)
+
+---
+
+## メッセージタイプ一覧
+
+TRON Streams は以下のメッセージタイプを提供します：
+
+| メッセージタイプ | 説明 | Topic |
+|:---|:---|:---|
+| TradeEvents | DEX 取引イベント | `tron.dex.trades` |
+| TokenEvents | トークンイベント | `tron.tokens` |
+| BalanceEvents | 残高変更イベント | `tron.balances` |
+| DexPoolEvents | 流動性プールイベント | `tron.dex.pools` |
+| TransfersMessage | 送金メッセージ | `tron.v1.transfers.proto` |
+| CandlestickEvents | ローソク足データ | `tron.candlesticks` |
+
+---
+
+## ブロックレベルデータ
+
+### BlockHeader コアフィールド
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `Number` | uint64 | ブロック番号 |
+| `Hash` | bytes | ブロックハッシュ |
+| `ParentHash` | bytes | 親ブロックハッシュ |
+| `Timestamp` | Timestamp | ブロック時刻 |
+| `TxTrieRoot` | bytes | トランザクション Trie ルート |
+| `Version` | uint32 | ブロックバージョン |
+
+### Witness（スーパー代表者）情報
+
+| フィールド | 説明 |
+|:---|:---|
+| `Address` | Witness アドレス |
+| `Id` | Witness ID |
+| `Signature` | ブロック署名 |
+
+<Note>
+TRON は DPoS コンセンサスメカニズムを使用し、27 のスーパー代表者（Witness）が交代でブロックを生成します。
+</Note>
+
+---
+
+## トランザクションレベルデータ
+
+### TransactionHeader
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `Hash` | bytes | トランザクションハッシュ |
+| `Fee` | uint64 | トランザクション手数料 |
+| `Index` | uint32 | ブロック内インデックス |
+| `Expiration` | Timestamp | 有効期限 |
+| `FeeLimit` | uint64 | 手数料制限 |
+| `Signatures` | []bytes | 署名リスト |
+| `FeePayer` | bytes | 手数料支払者 |
+
+### Result — 実行結果
+
+| フィールド | 説明 |
+|:---|:---|
+| `Status` | 実行ステータス |
+| `Success` | 成功かどうか |
+| `Message` | 失敗時のエラーメッセージ |
+
+### Receipt — リソース消費
+
+| フィールド | 説明 |
+|:---|:---|
+| `EnergyUsageTotal` | Energy 総消費量 |
+| `EnergyFee` | Energy 手数料 |
+| `NetUsage` | Bandwidth 消費量 |
+| `NetFee` | Bandwidth 手数料 |
+
+### Contract
+
+コントラクト実行の詳細：
+
+| フィールド | 説明 |
+|:---|:---|
+| `Address` | コントラクトアドレス |
+| `Type` | コントラクトタイプ（TransferContract、TriggerSmartContract 等） |
+| `Parameters` | 呼び出しパラメータ |
+| `InternalTransactions` | 内部トランザクション |
+| `Logs` | イベントログ |
+| `ExecutionTrace` | 実行トレース |
+| `WithdrawInfo` | 報酬引き出し情報 |
+
+---
+
+## 送金データ
+
+`TransfersMessage` は TRON チェーンの送金情報を提供します（Topic: `tron.v1.transfers.proto`）。
+
+### TransfersMessage 構造
+
+```protobuf
+message TransfersMessage {
+  Chain Chain = 1;
+  BlockHeader Header = 2;
+  repeated Transfer Transfers = 3;
+}
+```
+
+### Transfer 構造
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `CallIndex` | uint64 | コールインデックス |
+| `LogIndex` | uint64 | ログインデックス |
+| `Sender` | string | 送信者アドレス |
+| `Receiver` | string | 受信者アドレス |
+| `Amount` | string | 送金量 |
+| `Id` | string | トークン ID (NFT) |
+| `URI` | string | トークン URI |
+| `Currency` | TokenInfo | トークン情報 |
+| `Success` | bool | 成功ステータス |
+| `Index` | uint32 | 送金インデックス |
+| `TransactionHeader` | TransactionHeader | トランザクションヘッダー |
+
+### TokenInfo 構造
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `SmartContract` | string | コントラクトアドレス |
+| `Delegated` | bool | 委任されているか |
+| `DelegatedTo` | string | 委任先アドレス |
+| `ProtocolName` | string | プロトコル名 |
+| `Name` | string | トークン名 |
+| `Symbol` | string | トークンシンボル |
+| `Decimals` | int32 | 小数桁数 |
+| `HasURI` | bool | URI があるか |
+| `Fungible` | bool | 代替性があるか |
+| `AssetId` | string | アセット ID (TRC-10) |
+
+### TRON トークン規格
+
+| 規格 | 説明 |
+|:---|:---|
+| TRC-10 | TRON ネイティブトークン、スマートコントラクト不要 |
+| TRC-20 | スマートコントラクトトークン（ERC-20 に類似） |
+| TRC-721 | NFT トークン（ERC-721 に類似） |
+
+<Note>
+TRC-10 は TRON 独自のネイティブトークン規格で、作成と送金のコストが安いですが、TRC-20 ほどの柔軟性はありません。
+</Note>
+
+---
+
+## DEX データ
+
+`TradeEvents` は DEX 取引データを提供します（Topic: `tron.dex.trades`）。共通の TradeEvent 構造を使用します。
+
+### Trade コアフィールド
+
+| フィールド | 説明 |
+|:---|:---|
+| `token_a_address` / `token_b_address` | 取引ペアのトークンアドレス |
+| `user_a_amount` / `user_b_amount` | ユーザー取引量 |
+| `pool_address` | プールアドレス |
+| `vault_a` / `vault_b` | プールのボールトアドレス |
+| `vault_a_amount` / `vault_b_amount` | ボールト量 |
+
+### DApp 情報
+
+| フィールド | 説明 |
+|:---|:---|
+| `program_address` | DEX コントラクトアドレス（例: SunSwap） |
+| `inner_program_address` | 内部プログラムアドレス |
+| `chain` | チェーン識別子 (CHAIN_TRON) |
+
+### DexPoolEvent - 流動性プール
+
+| フィールド | 説明 |
+|:---|:---|
+| `type` | イベントタイプ (INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP) |
+| `address` | プールアドレス |
+| `token_a_address` / `token_b_address` | トークンアドレス |
+| `token_a_amount` / `token_b_amount` | トークン量 |
+| `lp_wallet` | LP ウォレットアドレス |
+
+---
+
+## TRON チェーンの特徴
+
+### Energy と Bandwidth リソースモデル
+
+EVM の Gas モデルとは異なり、TRON は 2 つのリソースを使用します：
+
+| リソース | 説明 | 取得方法 |
+|:---|:---|:---|
+| **Energy** | スマートコントラクト実行の消費量を測定 | TRX のステーキングまたは支払い |
+| **Bandwidth (Net)** | トランザクションデータサイズの消費量を測定 | TRX のステーキングまたは支払い |
+
+Receipt には両方のリソースの使用量と手数料が表示されます：
+
+```
+Receipt {
+  EnergyUsageTotal: 50000    // スマートコントラクト消費
+  EnergyFee: 0               // ステーキング済みの場合は 0
+  NetUsage: 265              // トランザクションデータサイズ
+  NetFee: 0                  // ステーキング済みの場合は 0
+}
+```
+
+### Witness システム
+
+| 特徴 | 説明 |
+|:---|:---|
+| 名称 | Witness（スーパー代表者） |
+| 数 | 27 のアクティブなスーパー代表者 |
+| 選出 | トークン保有者による投票 |
+| ブロック生成 | 交代制、約 3 秒/ブロック |
+
+`BlockMessage` には Witness のアドレス、ID、署名が含まれます。
+
+### 定義済みコントラクトタイプ
+
+TRON は一般的な操作のためにコントラクトタイプを事前定義しています：
+
+| タイプ | 説明 |
+|:---|:---|
+| `TransferContract` | TRX 送金 |
+| `TransferAssetContract` | TRC-10 送金 |
+| `TriggerSmartContract` | スマートコントラクト呼び出し |
+| `CreateSmartContract` | スマートコントラクト作成 |
+| `FreezeBalanceV2Contract` | TRX のステーキング |
+| `UnfreezeBalanceV2Contract` | アンステーキング |
+| `DelegateResourceContract` | リソース委任 |
+| `WithdrawBalanceContract` | 報酬の引き出し |
+
+Contract の `Type` フィールドで識別されます。
+
+### リソース委任
+
+ユーザーは Energy と Bandwidth を他のアカウントに委任できます。TRON エコシステムでは以下の用途で一般的に使用されます：
+- ユーザーのトランザクションコストの削減
+- DApp がユーザーの代わりにリソースを支払う
+
+---
+
+## Topic → メッセージタイプマッピング
+
+| Topic | Proto ファイル | メッセージタイプ | 説明 |
+|:---|:---|:---|:---|
+| `tron.dex.trades` | trade_event.proto | TradeEvents | DEX 取引イベント |
+| `tron.dex.trades.processed` | trade_event.proto | TradeEvents | USD 価格、不審フラグ付き |
+| `tron.tokens` | token_event.proto | TokenEvents | トークンイベント |
+| `tron.tokens.processed` | token_event.proto | TokenEvents | 説明、画像、SNS リンク付き |
+| `tron.balances` | balance_event.proto | BalanceEvents | 残高変更イベント |
+| `tron.v1.transfers.proto` | tron/transfers_message.proto | TransfersMessage | TRON 送金メッセージ |
+| `tron.v1.transfers.processed.proto` | tron/transfers_message.proto | TransfersMessage | 処理済み送金メッセージ |
+| `tron.dex.pools` | dex_pool_event.proto | DexPoolEvents | 流動性プールイベント |
+| `tron.candlesticks` | candlestick.proto | CandlestickEvents | ローソク足データ |
+
+---
+
+## コード例
+
+### Python 例：TRON DEX 取引の消費
+
+```python
+from kafka import KafkaConsumer
+from common import trade_event_pb2  # streaming_protobuf リポジトリから取得
+
+# コンシューマーを作成
+consumer = KafkaConsumer(
+    'tron.dex.trades',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    enable_auto_commit=False,
+    group_id='my-tron-consumer'
+)
+
+# メッセージを消費・パース
+for message in consumer:
+    trade_events = trade_event_pb2.TradeEvents()
+    trade_events.ParseFromString(message.value)
+    
+    for event in trade_events.events:
+        print(f"Pool: {event.trade.pool_address}")
+        print(f"Token A: {event.trade.token_a_address}")
+        print(f"Token B: {event.trade.token_b_address}")
+        print(f"Amount A: {event.trade.user_a_amount}")
+        print(f"Amount B: {event.trade.user_b_amount}")
+        print(f"Block: {event.block.height}")
+        print(f"DEX: {event.d_app.program_address}")
+        print("---")
+```
+
+### TRC-20 トークンイベントの監視
+
+```python
+from kafka import KafkaConsumer
+from common import token_event_pb2
+
+consumer = KafkaConsumer(
+    'tron.tokens',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    group_id='my-tron-token-consumer'
+)
+
+# TRON 上の USDT
+USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+
+for message in consumer:
+    token_events = token_event_pb2.TokenEvents()
+    token_events.ParseFromString(message.value)
+    
+    for event in token_events.events:
+        # USDT イベントをフィルタリング
+        if event.token.address == USDT_ADDRESS:
+            print(f"Event Type: {event.type}")  # CREATED or UPDATED
+            print(f"Token: {event.token.symbol}")
+            print(f"Name: {event.token.name}")
+            print(f"Decimals: {event.token.decimals}")
+            print("---")
+```
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="コンセプトと統合ガイド" icon="book-open" href="/jp/guides/data-concepts/kafka-streams/overview">
+    Kafka Streams 統合の基礎
+  </Card>
+  <Card title="EVM Streams" icon="ethereum" href="/jp/guides/data-concepts/kafka-streams/evm-streams">
+    EVM チェーンデータストリーム
+  </Card>
+  <Card title="Solana Streams" icon="bolt" href="/jp/guides/data-concepts/kafka-streams/solana-streams">
+    Solana 高スループットデータストリーム
+  </Card>
+  <Card title="WebSocket リアルタイムデータ" icon="bolt" href="/jp/guides/data-concepts/realtime-streaming">
+    WebSocket 統合
+  </Card>
+</CardGroup>

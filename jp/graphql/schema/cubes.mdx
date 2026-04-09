@@ -1,0 +1,755 @@
+---
+title: "データキューブ"
+description: "全25のGraphQL Cube — チェーングループごとに整理されたフィールド構造、セレクター、デフォルト、ユースケース"
+icon: "cubes"
+---
+
+## Cubeとは
+
+**Cube**は、1つ以上のOLAPデータベーステーブルにマッピングされる分析データモデルです。各Cubeは以下を定義します：
+
+- **ディメンション** — ネストされた階層で整理されたクエリ可能なフィールド（例：`Block.Time`、`Trade.Buy.Currency.MintAddress`）
+- **セレクター** — トップレベルのショートカットフィルタ引数（例：`tokenAddress`）で、一般的なフィルタパターンを簡素化
+- **メトリクス** — Recordタイプで利用可能な集計関数（`count`、`sum`など）
+- **デフォルト** — 自動的に適用されるデフォルトフィルタとページネーション制限
+
+Cubeにクエリを実行すると、activecube-rsはGraphQLクエリをCubeのバッキングテーブルに対する最適化されたSQLにコンパイルします。テーブルは`{chain}_{table_name}`（例：`sol_dex_trades`、`eth_transfers`）の命名パターンに従います。
+
+---
+
+## Cube一覧
+
+25のCubeが3つのチェーングループに整理されています。各Cubeはデータウェアハウスレイヤーに属します：
+
+- **DWD**（Detail） — イベント単位の生データ、最高粒度
+- **DWM**（Aggregated） — 事前計算されたロールアップ（例：分単位）
+- **DWS**（Summary） — 高度に集計されたスナップショット
+- **DIM**（Dimension） — 参照/ルックアップテーブル
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | チェーングループ | レイヤー | 目的 |
+|:-----|:------------|:------|:--------|
+| **DEXTrades** | EVM、Solana | DWD | トレード単位のDEXスワップイベント |
+| **DEXTradeByTokens** | EVM、Solana | DWD | トークンでインデックス化されたDEXトレード（売/買側） |
+| **Transfers** | EVM、Solana | DWD | トークントランスファーイベント |
+| **BalanceUpdates** | EVM、Solana | DWD | ウォレット残高変更イベント |
+| **DEXPoolEvents** | EVM、Solana | DWD | 流動性追加/削除イベント |
+| **TokenSupplyUpdates** | EVM、Solana | DWD | トークンミント/バーンイベント |
+| **Blocks** | EVM、Solana | DWD | ブロックレベルデータ |
+| **Transactions** | EVM、Solana | DWD | トランザクションレベルデータ |
+| **TransactionBalances** | EVM、Solana | DWD | トランザクション単位の残高変更 |
+| **Instructions** | Solana | DWD | Solanaインストラクションデータ |
+| **InstructionBalanceUpdates** | Solana | DWD | インストラクションレベルの残高変更 |
+| **Rewards** | Solana | DWD | バリデータ/ステーキングリワード |
+| **DEXOrders** | Solana | DWD | DEXオーダーイベント（リミットオーダー） |
+| **Events** | EVM | DWD | スマートコントラクトイベントログ |
+| **Calls** | EVM | DWD | 内部コールトレース |
+| **MinerRewards** | EVM | DWD | マイナー/バリデータリワード |
+| **DEXPoolSlippages** | EVM | DWD | プールスリッページデータ |
+| **Uncles** | EVM | DWD | アンクルブロックデータ |
+| **Pairs** | Trading | DWM | OHLCローソク足データ（クロスチェーン） |
+| **Tokens** | Trading | DWM | トークン単位のトレード統計（クロスチェーン） |
+| **DEXPools** | EVM、Solana | DWS | 現在のリザーブ付きプールスナップショット |
+| **TokenHolders** | EVM、Solana | DWS | トークンホルダー残高 |
+| **WalletTokenPnL** | EVM、Solana | DWS | ウォレット-トークン単位のPnL |
+| **PredictionTrades** | EVM (Polygon) | DWD | 予測市場トレード |
+| **PredictionManagements** | EVM (Polygon) | DWD | 予測市場管理イベント |
+| **PredictionSettlements** | EVM (Polygon) | DWD | 予測市場決済 |
+
+</div>
+
+---
+
+## EVM + Solana共有Cube
+
+これらのCubeは**EVM**と**Solana**の両方のチェーングループで利用可能です。
+
+<AccordionGroup>
+  <Accordion title="DEXTrades" icon="arrow-right-arrow-left">
+    **テーブル**: `{chain}_dex_trades`
+    **デフォルトリミット**: 25（最大10,000）
+    **デフォルトフィルタ**: `IsSuspect = false`（ボット/MEVトレードはデフォルトで除外）
+    **セレクター**: `tokenAddress`、`walletAddress`、`poolAddress`、`dexProgram`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    DEXTradesRecord {
+      Block { Time, Slot, Height }
+      Transaction { Hash, FeeInNative }
+      Trade {
+        Buy { Currency { MintAddress }, Amount, PriceInUSD, Account { Owner } }
+        Sell { Currency { MintAddress }, Amount, Account { Owner } }
+        Dex { ProgramAddress, ProtocolName }
+      }
+      Pool { Address }
+      IsSuspect
+    }
+    ```
+
+    **ユースケース**: トレード履歴、ウォレットトレード分析、DEX出来高内訳、大口トレード検出。
+  </Accordion>
+
+  <Accordion title="DEXTradeByTokens" icon="coins">
+    **テーブル**: `{chain}_dex_trades_enriched`（UNIONサブクエリ — トレード側ごとに1行）
+    **セレクター**: `tokenAddress`、`sideType`、`poolAddress`、`dexProgram`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    DEXTradeByTokensRecord {
+      Block { Time, Slot, Height }
+      Transaction { Signature, Fee, FeeInUSD }
+      Trade {
+        Currency { MintAddress, Symbol, Name }
+        Amount, AmountInUSD, PriceInUSD, PriceInNative
+        Side { Type, Currency { MintAddress }, Amount }
+        Account { Owner }
+        Dex { ProgramAddress, ProtocolName }
+        Market { PoolAddress }
+      }
+    }
+    ```
+
+    **ユースケース**: トークン単位のトレードクエリ（買い・売り両方）、トークン出来高分析、効率的な単一トークンフィルタリング。
+  </Accordion>
+
+  <Accordion title="Transfers" icon="paper-plane">
+    **テーブル**: `{chain}_transfers`
+    **セレクター**: `tokenAddress`、`senderAddress`、`receiverAddress`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    TransfersRecord {
+      Block { Time, Slot }
+      Transaction { Hash, Signer }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address, TokenAccount }
+        Receiver { Address, TokenAccount }
+        Amount, AmountInUSD, PriceInUSD
+      }
+    }
+    ```
+
+    **ユースケース**: ウォレットトランスファー履歴、クジラモニタリング、取引所入出金追跡。
+  </Accordion>
+
+  <Accordion title="BalanceUpdates" icon="scale-balanced">
+    **テーブル**: `{chain}_balance_updates`
+    **セレクター**: `ownerAddress`、`tokenAddress`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    BalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Hash }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        PreBalance, PostBalance
+        PreBalanceInUSD, PostBalanceInUSD
+      }
+    }
+    ```
+
+    **ユースケース**: 残高変更追跡、ポジションモニタリング、蓄積/分配検出。
+  </Accordion>
+
+  <Accordion title="DEXPoolEvents" icon="water">
+    **テーブル**: `{chain}_dex_pool_events_enriched`
+    **セレクター**: `poolAddress`、`tokenAddress`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    DEXPoolEventsRecord {
+      Block { Time }
+      Transaction { Signature }
+      Pool {
+        Market { Address, BaseCurrency { ... }, QuoteCurrency { ... } }
+        Dex { ProgramAddress, ProtocolName }
+        Base { PostAmount, ChangeAmount, PriceInUSD }
+        Quote { PostAmount, ChangeAmount }
+        LiquidityInUSD
+      }
+    }
+    ```
+
+    **ユースケース**: 流動性追加/削除モニタリング、プールTVL追跡、新規プール検出。
+  </Accordion>
+
+  <Accordion title="TokenSupplyUpdates" icon="coins">
+    **テーブル**: `{chain}_token_supplies`
+    **セレクター**: `tokenAddress`
+
+    **主要フィールド：**
+    ```graphql
+    TokenSupplyUpdatesRecord {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency { MintAddress, Decimals }
+        PostBalance, MarketCapInUSD, PriceInUSD, FDVInUSD, TotalSupply
+      }
+    }
+    ```
+
+    **ユースケース**: ミント/バーンイベント追跡、サプライ変更アラート、時価総額履歴。
+  </Accordion>
+
+  <Accordion title="Blocks" icon="cube">
+    **テーブル**: `{chain}_blocks`
+    **セレクター**: `date`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    BlocksRecord {
+      Block {
+        Time, Date, Height, Hash, ParentHash, TxCount
+        # Solana固有
+        Slot, ParentSlot, RewardsCount
+        # EVM固有
+        Number, Coinbase, GasLimit, GasUsed, BaseFee, Difficulty
+      }
+    }
+    ```
+
+    **ユースケース**: ブロック生成モニタリング、ガス分析（EVM）、スロット追跡（Solana）。
+  </Accordion>
+
+  <Accordion title="Transactions" icon="receipt">
+    **テーブル**: `{chain}_transactions`
+    **セレクター**: `date`、`txHash`/`txSignature`、`fromAddress`、`toAddress`、`feePayer`、`signer`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    TransactionsRecord {
+      Block { Time, Slot, Height }
+      Transaction {
+        # Solana: Signature, Fee, FeePayer, Signer, Result { Success }
+        # EVM: Hash, From, To, Value, Gas, GasPrice, Nonce, Type
+      }
+      Fee { ... }     # EVM EIP-1559手数料内訳
+      Receipt { ... } # EVMレシートフィールド
+    }
+    ```
+
+    **ユースケース**: トランザクション検索、ガス/手数料分析、アクティビティモニタリング。
+  </Accordion>
+
+  <Accordion title="TransactionBalances" icon="scale-unbalanced">
+    **テーブル**: `{chain}_transaction_balances`
+    **セレクター**: `date`、`address`、`currency`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    TransactionBalancesRecord {
+      Block { Time }
+      Transaction { Hash, Index }
+      TokenBalance {
+        Address, TokenAccount
+        Currency { SmartContract, Symbol, Name, Decimals }
+        PreBalance, PostBalance, Change
+        PreBalanceInUSD, PostBalanceInUSD, ChangeInUSD
+        UpdateType
+      }
+    }
+    ```
+
+    **ユースケース**: トランザクション単位の残高影響分析、トークンフロー追跡。
+
+    <Note>
+    このCubeは`dataset`切り替えをサポートしていません（`_realtime` / `_archive`テーブルバリアントなし）。
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Solana専用Cube
+
+これらのCubeは**Solana**チェーングループでのみ利用可能です。
+
+<AccordionGroup>
+  <Accordion title="Instructions" icon="terminal">
+    **テーブル**: `sol_instructions_enriched`
+    **セレクター**: `date`、`programId`、`txSignature`
+    **メトリクス**: `count`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    InstructionsRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction {
+        Index, Depth, InternalSeqNumber
+        Program { Address, Name, Method }
+        Accounts
+        Data
+        CallPath, Logs
+      }
+    }
+    ```
+
+    **ユースケース**: プログラムインタラクション分析、インストラクションレベルのデバッグ、プロトコル使用量追跡。
+  </Accordion>
+
+  <Accordion title="InstructionBalanceUpdates" icon="scale-balanced">
+    **テーブル**: `sol_balance_updates_enriched`
+    **セレクター**: `date`、`tokenAddress`、`ownerAddress`、`programId`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    InstructionBalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction { Index, Program { Address } }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        Amount, AmountInUSD
+        PreBalance, PostBalance
+      }
+    }
+    ```
+
+    **ユースケース**: インストラクションレベルの残高影響分析、プログラム手数料追跡。
+
+    <Note>
+    このCubeは`dataset`切り替えをサポートしていません。
+    </Note>
+  </Accordion>
+
+  <Accordion title="Rewards" icon="trophy">
+    **テーブル**: `sol_rewards`
+    **セレクター**: `date`、`address`
+    **メトリクス**: `count`、`sum`、`avg`
+
+    **主要フィールド：**
+    ```graphql
+    RewardsRecord {
+      Block { Time, Slot }
+      Reward {
+        Address
+        Amount
+        AmountInUSD
+        PostBalance
+        RewardType
+        Commission
+      }
+    }
+    ```
+
+    **ユースケース**: ステーキングリワード追跡、バリデータパフォーマンス、リワード履歴。
+  </Accordion>
+
+  <Accordion title="DEXOrders" icon="list-check">
+    **テーブル**: `sol_dex_orders`
+    **セレクター**: `date`、`marketAddress`、`orderType`、`ownerAddress`
+    **メトリクス**: `count`、`sum`、`avg`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    DEXOrdersRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      OrderEvent {
+        Type
+        Market { Address }
+        Order { Id, BuySide, LimitPrice, Mint, Owner }
+        Dex { ProgramAddress, ProtocolName }
+      }
+    }
+    ```
+
+    **ユースケース**: オーダーブック分析、リミットオーダー追跡、市場マイクロ構造研究。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## EVM専用Cube
+
+これらのCubeは**EVM**チェーングループ（`eth`、`bsc`、`polygon`）でのみ利用可能です。
+
+<AccordionGroup>
+  <Accordion title="Events" icon="bell">
+    **テーブル**: `{chain}_logs_enriched`
+    **セレクター**: `date`、`contractAddress`、`txHash`、`topic0`
+    **メトリクス**: `count`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    EventsRecord {
+      Block { Time, Number }
+      Transaction { Hash, From, To }
+      Log {
+        SmartContract
+        Index
+        Signature { Name, Signature }
+        Topics
+        Data
+      }
+    }
+    ```
+
+    **ユースケース**: スマートコントラクトイベントモニタリング、プロトコルアクティビティ追跡、カスタムイベントフィルタリング。
+  </Accordion>
+
+  <Accordion title="Calls" icon="code-branch">
+    **テーブル**: `{chain}_traces_enriched`
+    **セレクター**: `date`、`txHash`、`toAddress`
+    **メトリクス**: `count`、`sum`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    CallsRecord {
+      Block { Time, Number }
+      Transaction { Hash }
+      Call {
+        Index, Depth
+        From, To
+        Opcode
+        Gas, GasUsed
+        Input, Output
+        Value
+        Signature { Name, Signature }
+      }
+    }
+    ```
+
+    **ユースケース**: 内部トランザクショントレース、コントラクトインタラクション分析、MEV検出。
+  </Accordion>
+
+  <Accordion title="MinerRewards" icon="gem">
+    **テーブル**: `{chain}_miner_rewards`
+    **セレクター**: `date`、`miner`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    MinerRewardsRecord {
+      Block { Time, Number, Hash }
+      Reward {
+        Miner
+        TotalReward, TotalRewardInUSD
+        BurntFees, DynamicReward, StaticReward
+        TxFees, UncleReward
+      }
+    }
+    ```
+
+    **ユースケース**: バリデータ/マイナーリワード分析、ブロックリワードトレンド、MEV収益追跡。
+  </Accordion>
+
+  <Accordion title="DEXPoolSlippages" icon="chart-line">
+    **テーブル**: `{chain}_dex_pool_slippages`
+    **セレクター**: `date`、`poolAddress`
+    **メトリクス**: `count`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    DEXPoolSlippagesRecord {
+      Block { Time }
+      Price {
+        Pool { SmartContract, CurrencyA { ... }, CurrencyB { ... } }
+        AtoB, BtoA
+        AtoBMin, AtoBMax
+        SlippageBasisPoints
+        Dex { ProtocolName }
+      }
+    }
+    ```
+
+    **ユースケース**: スリッページモニタリング、プール深度分析、約定品質評価。
+  </Accordion>
+
+  <Accordion title="Uncles" icon="diagram-subtask">
+    **テーブル**: `{chain}_uncles`
+    **セレクター**: `date`、`miner`
+    **メトリクス**: `count`
+
+    **主要フィールド：**
+    ```graphql
+    UnclesRecord {
+      Block { Time, Number }
+      Uncle {
+        Index, Hash, ParentHash
+        Miner, Difficulty, Number
+        GasLimit, GasUsed, Timestamp
+      }
+    }
+    ```
+
+    **ユースケース**: アンクルブロック分析、ネットワーク健全性モニタリング（主にEthereum PoWの履歴データ）。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Trading Cube（クロスチェーン）
+
+これらのCubeは**Trading**チェーングループにあります。すべての対応チェーン（`sol`、`eth`、`bsc`）からのデータを集計し、フィルタリング用の`chain`ディメンションを含みます。
+
+<AccordionGroup>
+  <Accordion title="Pairs (OHLC)" icon="chart-candlestick">
+    **テーブル**: チェーン間のマテリアライズドビュー（`{chain}_ohlc_mv`）
+    **セレクター**: `tokenAddress`、`chain`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    PairsRecord {
+      Token { Address }
+      Market { Network }
+      Block { Time }
+      Interval { Time }
+      Price {
+        Ohlc { Open, High, Low, Close }
+      }
+      Volume { Usd, Native }
+      Stats { TradeCount, BuyCount, SellCount }
+    }
+    ```
+
+    **ユースケース**: ローソク足チャート、価格履歴、出来高分析、クロスチェーン価格比較。
+  </Accordion>
+
+  <Accordion title="Tokens（トレード統計）" icon="chart-bar">
+    **テーブル**: チェーン間のマテリアライズドビュー（`{chain}_token_trade_stats_mv`）
+    **セレクター**: `tokenAddress`、`chain`、`date`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`
+
+    **主要フィールド：**
+    ```graphql
+    TokensRecord {
+      Token { Address }
+      Market { Network }
+      Block { Time }
+      Interval { Time }
+      Volume { Usd, BuyVolumeUSD, SellVolumeUSD, Base }
+      Stats {
+        TradeCount, BuyCount, SellCount
+        UniqueBuyers, UniqueSellers
+      }
+    }
+    ```
+
+    **ユースケース**: 売買圧力分析、ユニークトレーダー数、出来高トレンド、クロスチェーントークン比較。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## サマリーCube（DWS）
+
+サマリーCubeは**高度に集計されたスナップショット形式**のデータを提供し、素早い検索に最適です。
+
+<AccordionGroup>
+  <Accordion title="DEXPools（スナップショット）" icon="water">
+    **テーブル**: `{chain}_dex_pools`（DWSレイヤー）
+    **セレクター**: `poolAddress`、`tokenA`、`tokenB`
+    **メトリクス**: `count`
+
+    **主要フィールド：**
+    ```graphql
+    DEXPoolsRecord {
+      Pool {
+        Address
+        TokenAAddress, TokenBAddress
+        ProgramAddress
+        LiquidityUSD
+        PriceAtoB, PriceBtoA
+        LastUpdated
+      }
+    }
+    ```
+
+    **ユースケース**: プール発見、現在の流動性ランキング、プールメタデータ検索。
+
+    <Note>
+    このCubeは`dataset`切り替えや時間ベースのフィルタリングをサポートしていません。プール状態の最新スナップショットを表します。
+    </Note>
+  </Accordion>
+
+  <Accordion title="TokenHolders" icon="users">
+    **テーブル**: `{chain}_token_holders`
+    **セレクター**: `tokenAddress`
+
+    **主要フィールド：**
+    ```graphql
+    TokenHoldersRecord {
+      Token { Address }
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
+    ```
+
+    **ユースケース**: トップホルダーリスト、ホルダー分布、クジラ追跡。
+
+    <Note>
+    このCubeは`dataset`切り替えをサポートしていません。
+    </Note>
+  </Accordion>
+
+  <Accordion title="WalletTokenPnL" icon="chart-line">
+    **テーブル**: `{chain}_wallet_token_pnl`
+    **セレクター**: `walletAddress`
+
+    **主要フィールド：**
+    ```graphql
+    WalletTokenPnLRecord {
+      Wallet { Address }
+      Token { Address }
+      BuyVolumeUSDState, SellVolumeUSDState
+      BuyCountState, SellCountState
+      FirstTradeState, LastTradeState
+    }
+    ```
+
+    **ユースケース**: トークン単位のウォレットPnL、トレーディングパフォーマンスリーダーボード、ポートフォリオ分析。
+
+    <Note>
+    このCubeは`dataset`切り替えをサポートしていません。
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 予測市場Cube
+
+これらのCubeは**EVM**チェーングループで利用可能で、主にPolygonの予測市場プロトコルで使用されます。
+
+<AccordionGroup>
+  <Accordion title="PredictionTrades" icon="chart-mixed">
+    **テーブル**: `{chain}_prediction_trades`
+    **セレクター**: `date`、`conditionId`、`questionId`、`marketplace`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    PredictionTradesRecord {
+      Block { Time }
+      Transaction { Hash }
+      Trade { Buyer, Seller, Amount, Price, Fee }
+      Prediction {
+        Condition { Id, Outcomes }
+        Question { Id }
+        Outcome, OutcomeToken
+        Marketplace { ProtocolName }
+        CollateralToken { SmartContract }
+      }
+    }
+    ```
+
+    **ユースケース**: 予測市場トレード履歴、結果価格設定、マーケットプレイス出来高。
+
+    <Note>
+    予測市場Cubeは`dataset`切り替えをサポートしていません。
+    </Note>
+  </Accordion>
+
+  <Accordion title="PredictionManagements" icon="gear">
+    **テーブル**: `{chain}_prediction_managements`
+    **セレクター**: `date`、`eventType`、`conditionId`、`questionId`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    PredictionManagementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType, Description, Group
+        Prediction { Condition { ... }, Question { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **ユースケース**: マーケット作成/解決追跡、条件管理イベント。
+  </Accordion>
+
+  <Accordion title="PredictionSettlements" icon="flag-checkered">
+    **テーブル**: `{chain}_prediction_settlements`
+    **セレクター**: `date`、`eventType`、`conditionId`、`holder`
+    **メトリクス**: `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **主要フィールド：**
+    ```graphql
+    PredictionSettlementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType, Holder
+        OutcomeTokenIds, Amounts
+        Prediction { Condition { ... }, CollateralToken { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **ユースケース**: 決済追跡、支払い分析、ポジション償還モニタリング。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 適切なCubeの選び方
+
+<Tip>
+クエリを満たす最も集計されたCubeを選びましょう。DWM/DWS Cubeは時系列やサマリーデータにおいてDWD Cubeよりも桁違いに高速です。
+</Tip>
+
+| ニーズ | 推奨Cube | レイヤー |
+|:-----|:-----------------|:------|
+| 個別のトレードイベント | DEXTrades | DWD |
+| トークン単位のトレードクエリ | DEXTradeByTokens | DWD |
+| トークントランスファー履歴 | Transfers | DWD |
+| ローソク足/価格チャート | Pairs | DWM |
+| 経時的なトレード出来高 | Tokens | DWM |
+| 現在のトップホルダー | TokenHolders | DWS |
+| ウォレットPnL内訳 | WalletTokenPnL | DWS |
+| プールの現在状態 | DEXPools | DWS |
+| 流動性イベント | DEXPoolEvents | DWD |
+| スマートコントラクトイベント（EVM） | Events | DWD |
+| 内部トレース（EVM） | Calls | DWD |
+| Solanaインストラクション | Instructions | DWD |
+| 予測市場トレード | PredictionTrades | DWD |
+
+---
+
+## Datasetの互換性
+
+すべてのCubeが`dataset`パラメータ（realtime/archive/combined）をサポートしているわけではありません。以下のCubeは`dataset`値に関係なく常にフルテーブルをクエリします：
+
+- `TokenHolders`、`WalletTokenPnL`、`DEXPools`（DWSレイヤー — 常に最新スナップショット）
+- `TransactionBalances`
+- `PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
+
+詳細は[データセットとアグリゲート](/jp/graphql/schema/dataset-aggregates)をご覧ください。
+
+---
+
+## 次のステップ
+
+<CardGroup cols={3}>
+  <Card title="チェーングループ" icon="layer-group" href="/jp/graphql/schema/chain-groups">
+    EVM、Solana、Tradingチェーングループを理解。
+  </Card>
+  <Card title="フィルタリング" icon="filter" href="/jp/graphql/schema/filtering">
+    `where`とセレクターショートカットでフィルタリングを学習。
+  </Card>
+  <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
+    count、sum、avg、min、max、uniqでデータを集計。
+  </Card>
+</CardGroup>

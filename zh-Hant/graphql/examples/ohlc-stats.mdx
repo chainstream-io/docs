@@ -1,0 +1,330 @@
+---
+title: "OHLC 與統計"
+description: "K 線（Pairs）、代幣成交統計（Tokens）、供應與估值（TokenSupplyUpdates）的查詢示例，以及代幣後設資料的獲取方式"
+icon: "chart-candlestick"
+---
+
+本頁介紹聚合交易與供應類資料。**Cube 名稱**為 **Trading** 鏈組下的 **Pairs**（跨鏈 OHLC）與 **Tokens**（跨鏈成交統計）。市值與價格隨時間變化請用 **Solana** 或 **EVM** 下的 **TokenSupplyUpdates**。
+
+- **Pairs**（Trading，DWM）— 每分鐘 K 線（OHLC、成交量、成交筆數）
+- **Tokens**（Trading，DWM）— 每分鐘成交統計（買賣拆分、獨立買賣方數量）
+- **TokenSupplyUpdates**（Solana / EVM，DWD）— 鑄幣/銷燬等事件，含供應量、價格、市值、FDV 等欄位
+- **代幣後設資料** — 已無獨立 **TokenSearch** Cube；可在 **Pairs** / **Tokens** 上透過 **Token** 等維度檢視與交易相關的上下文，或用 **DEXPools**、**TokenHolders**、**DEXTradeByTokens** 等 Cube 做發現與篩選
+
+<Note>
+**Trading** 鏈組 **沒有** `network` 引數。請用 `where: { Market: { Network: { is: "sol" } } }`（或 `eth`、`bsc`、`polygon`）限定鏈。**Solana** 與 **EVM** 仍使用原有包裝：`Solana { ... }`、`EVM(network: eth) { ... }`。
+</Note>
+
+---
+
+## 如何獲取 K 線（OHLC）資料？
+
+按分鐘獲取 open / high / low / close、USD 成交量與成交筆數。在 **Trading** 下使用 **Pairs** Cube。
+
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Token { Address }
+      Market { Network }
+      Price {
+        Ohlc {
+          Open
+          High
+          Low
+          Close
+        }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
+    }
+  }
+}
+```
+
+<Tip>
+[在 GraphQL IDE 中開啟](https://ide.chainstream.io) — 將上方查詢貼上到 IDE 中即可互動式執行，享受自動補全與 Schema 探索。
+</Tip>
+
+<Tip>
+將 `TOKEN_ADDRESS` 替換為代幣 mint 或合約地址。每一行對應一個分鐘桶 — `limit: { count: 60 }` 約 1 小時，`count: 1440` 約 24 小時。去掉 `Market` 過濾可在單次查詢中跨鏈返回資料。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="關鍵欄位">
+    | Field | Description |
+    |:------|:------------|
+    | `Interval.Time.Start` | 分鐘桶起始時間（與 K 線時間一致） |
+    | `Token.Address` | 代幣地址 |
+    | `Market.Network` | 鏈標識（`sol`、`eth`、`bsc` 等） |
+    | `Price.Ohlc.Open` | 區間開盤價 |
+    | `Price.Ohlc.High` | 區間最高價 |
+    | `Price.Ohlc.Low` | 區間最低價 |
+    | `Price.Ohlc.Close` | 區間收盤價 |
+    | `Volume.Usd` | 該區間 USD 成交總額 |
+    | `Stats.TradeCount` | 該區間成交筆數 |
+  </Accordion>
+  <Accordion title="自定義技巧">
+    - **更長週期**：增大 `limit` 或在客戶端聚合；K 線以分鐘粒度物化儲存
+    - **成交量過濾**：例如 `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }` 跳過低量區間
+    - **時間範圍**：例如 `where: { Block: { Time: { since: "2026-03-27T00:00:00Z" } }, Market: { Network: { is: "sol" } } }`
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**Pairs** 屬於 **DWM**（聚合）模型 — 資料按分鐘預計算，做圖表遠比掃原始成交高效。
+</Info>
+
+---
+
+## 如何獲取代幣成交統計？
+
+按分鐘獲取買賣筆數、獨立買賣方數量與成交量。在 **Trading** 下使用 **Tokens** Cube。
+
+```graphql
+query {
+  Trading {
+    Tokens(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Token { Address }
+      Market { Network }
+      Stats {
+        TradeCount
+        BuyCount
+        SellCount
+        UniqueBuyers
+        UniqueSellers
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="關鍵欄位">
+    | Field | Description |
+    |:------|:------------|
+    | `Interval.Time.Start` | 分鐘桶起始時間（與 K 線時間一致） |
+    | `Stats.TradeCount` | 該區間總成交筆數 |
+    | `Stats.BuyCount` | 買入側成交筆數 |
+    | `Stats.SellCount` | 賣出側成交筆數 |
+    | `Volume.Usd` | USD 成交總額 |
+    | `Stats.UniqueBuyers` | 獨立買方錢包數 |
+    | `Stats.UniqueSellers` | 獨立賣方錢包數 |
+  </Accordion>
+  <Accordion title="自定義技巧">
+    - **買賣壓力**：對比 `Stats.BuyCount` 與 `Stats.SellCount`
+    - **獨立交易者**：`Stats.UniqueBuyers` 與 `Stats.UniqueSellers` 反映量是分散還是集中
+    - **活動熱力圖**：拉滿一天（`count: 1440`）並按 `Interval.Time.Start`（或 `Block.Time`）作圖
+    - **買賣成交額拆分**：**Tokens** 記錄還提供 `Volume.BuyVolumeUSD`、`Volume.SellVolumeUSD` 等欄位
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+對同一代幣、同一鏈、同一時間視窗同時查 **Pairs** 與 **Tokens**，可搭建看板 — K 線與資金流向、參與者指標並用。
+</Tip>
+
+---
+
+## 如何獲取市值、價格與供應量（時間序列）？
+
+舊版 **TokenMarketCap** 摘要 Cube 已不在當前 Schema 中。請使用 **TokenSupplyUpdates**（**Solana** 或 **EVM**）：每一行對應一次影響供應的事件，**TokenSupplyUpdate** 中含價格、市值、FDV、總供應等。
+
+### Solana
+
+```graphql
+query {
+  Solana {
+    TokenSupplyUpdates(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress
+          Decimals
+          Symbol
+          Name
+        }
+        PriceInUSD
+        MarketCapInUSD
+        TotalSupply
+        FDVInUSD
+        PostBalance
+      }
+      Transaction { Signature }
+    }
+  }
+}
+```
+
+### EVM（以 Ethereum 為例）
+
+```graphql
+query {
+  EVM(network: eth) {
+    TokenSupplyUpdates(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress
+          Decimals
+          Symbol
+          Name
+        }
+        PriceInUSD
+        MarketCapInUSD
+        TotalSupply
+        FDVInUSD
+        PostBalance
+      }
+      Transaction { Hash }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="關鍵欄位">
+    | Field | Description |
+    |:------|:------------|
+    | `Block.Time` | 事件發生時間 |
+    | `TokenSupplyUpdate.Currency.*` | 代幣標識（mint/合約、小數位、符號、名稱） |
+    | `TokenSupplyUpdate.PriceInUSD` | 該次更新時的 USD 價格 |
+    | `TokenSupplyUpdate.MarketCapInUSD` | 市值 |
+    | `TokenSupplyUpdate.TotalSupply` | 總供應量 |
+    | `TokenSupplyUpdate.FDVInUSD` | 完全稀釋估值 |
+    | `TokenSupplyUpdate.PostBalance` | 事件後的供應相關餘額 |
+  </Accordion>
+  <Accordion title="自定義技巧">
+    - **最新快照**：`limit: { count: 1 }` 且 `orderBy: { descending: Block_Time }`
+    - **跨鏈對比**：在 `Solana` 與 `EVM(network: bsc)`（或其他受支援網路）下使用相同查詢結構
+    - **更多上下文**：另見 [Pools & Liquidity](/zh-Hant/graphql/examples/pools-liquidity#how-do-i-get-token-supply-and-market-cap) 中的供應與池子相關示例
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**TokenSupplyUpdates** 屬於 **DWD**（事件明細）。適合與鑄幣/銷燬相關的歷史估值與供應變化，而不是單一的靜態「市值」摘要行。
+</Info>
+
+---
+
+## 代幣搜尋 / 後設資料在哪裡？
+
+當前 API **不包含** **TokenSearch** Cube。獲取代幣上下文可以：
+
+- 在已知地址的前提下，透過 **Pairs**、**Tokens** 上的 **Token** 維度（例如 **Token.Address**）與聚合交易資料一起查詢。
+- 需要更豐富的後設資料、持有者、池子或發現能力時，在 **Solana** 或 **EVM** 下使用 **DEXPools**、**TokenHolders**、**DEXTradeByTokens** 等 Cube。
+
+---
+
+## 多鏈示例
+
+<Tabs>
+  <Tab title="Solana（Trading）">
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum（Trading）">
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "eth" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC（Trading）">
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "bsc" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
+    查詢 DEX 交易資料 — 代幣交易、錢包活動與頭部交易者。
+  </Card>
+  <Card title="Transfers" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
+    追蹤錢包間的鏈上代幣轉賬。
+  </Card>
+  <Card title="Balances & Holders" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
+    查詢錢包餘額、餘額歷史與頭部持有者。
+  </Card>
+  <Card title="Pools & Liquidity" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
+    探索 DEX 池與流動性資料。
+  </Card>
+</CardGroup>

@@ -456,6 +456,57 @@ const tokenInfo = await safeApiCall(() =>
 
 ---
 
+## GraphQL API Errors
+
+GraphQL queries return errors in the standard `errors` array. Credit consumption is reported in `extensions.credits`:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTradesRecord'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ],
+  "extensions": {
+    "credits": {
+      "total": 0,
+      "cubes": []
+    }
+  }
+}
+```
+
+| Scenario | Behavior |
+|:---------|:---------|
+| Invalid query (syntax/validation error) | `errors` array populated, `data` is null, no credits charged |
+| Successful query | `data` populated, `extensions.credits.total` shows CU consumed |
+| Credit limit exceeded | Query may be rejected depending on billing plan — check `extensions.credits` |
+
+See [GraphQL Billing & Credits](/en/graphql/billing/graphql-billing) for the full credit calculation formula.
+
+---
+
+## WebSocket Errors
+
+WebSocket connections use the endpoint `wss://realtime-dex.chainstream.io/connection/websocket` with `?token=` authentication.
+
+| Scenario | Behavior |
+|:---------|:---------|
+| Invalid token | Connection rejected on handshake |
+| Token expired | Connection dropped; reconnect with a fresh token |
+| Network interruption | Client should implement automatic reconnect with exponential backoff |
+| Subscription to invalid channel | Error message returned on the WebSocket frame |
+
+<Tip>
+The TypeScript SDK (`@chainstream-io/sdk`) handles WebSocket reconnection automatically. If using a raw WebSocket client, implement exponential backoff (1s, 2s, 4s, 8s...) on disconnection.
+</Tip>
+
+See [WebSocket API Reference](/en/api-reference/endpoint/websocket/api) and [Timeouts & Heartbeats](/en/api-reference/endpoint/websocket/timeouts-and-heartbeats) for connection management details.
+
+---
+
 ## Getting Help
 
 If you encounter unresolvable errors:

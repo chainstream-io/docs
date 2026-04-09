@@ -63,17 +63,23 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 
 ## 各 Cube 基础成本
 
-| Cube | Base Cost (CU) |
-|:-----|:---------------|
-| **DEXTrades** | 50 |
-| **DEXPools** | 30 |
-| **WalletTokenPnL** | 25 |
-| **Transfers** | 15 |
-| **BalanceUpdates** | 10 |
-| 其余所有 Cube | 20（默认） |
+| Cube | Base Cost (CU) | 说明 |
+|:-----|:---------------|:-----|
+| **DEXTrades** | 50 | 维度最多、体量最大的表 |
+| **DEXTradeByTokens** | 50 | 与 DEXTrades 同源数据 |
+| **DEXPoolEvents** | 30 | 流动性事件 |
+| **Pairs** | 30 | OHLC K 线数据（Trading 组） |
+| **Tokens** | 30 | 代币成交统计（Trading 组） |
+| **WalletTokenPnL** | 25 | DWS 汇总 |
+| **Transfers** | 15 | |
+| **BalanceUpdates** | 10 | |
+| **Events**、**Calls** | 20 | EVM 专属事件/调用追踪 |
+| **Instructions** | 20 | Solana 专属 |
+| **PredictionTrades** | 20 | 预测市场数据 |
+| 其余所有 Cube | 20 | 默认基础成本 |
 
 <Note>
-基础成本反映查询复杂度与各 Cube 底层数据规模。**DEXTrades** 最贵，因为会扫描维度最多、体量最大的表。
+基础成本反映查询复杂度与各 Cube 底层数据规模。`extensions.credits` 中返回的实际 Cube 名称由服务端决定 — 请以响应值为计费依据。
 </Note>
 
 ---
@@ -120,7 +126,7 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 
 [GraphQL IDE](https://ide.chainstream.io) 状态栏会在每次查询后显示 Credits 消耗：
 
-- **CU 指示**：以 `total / 100` 显示，保留 **2 位小数**（例如 50 CU 显示为 `0.50 CU`）
+- **CU 指示**：显示消耗的 CU 总数（例如 `50 CU`）
 - **Latency**：请求耗时（毫秒）
 - **Response size**：响应体大小
 
@@ -136,7 +142,7 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
     在业务允许范围内尽量压低 `limit.count`。Credits 随 `ceil(limit / 100)` 缩放。
   </Card>
   <Card title="优先预聚合 Cube" icon="layer-group">
-    需要汇总数据时，优先使用 DWM/DWS Cube（如 OHLC、TokenTradeStats、TokenMarketCap），而不是在 DWD Cube（如 DEXTrades）上堆 metrics。
+    需要汇总数据时，优先使用 DWM/DWS Cube（如 Pairs、Tokens、TokenHolders），而不是在 DWD Cube（如 DEXTrades）上堆 metrics。
   </Card>
 </CardGroup>
 

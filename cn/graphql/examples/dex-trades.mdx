@@ -7,12 +7,12 @@ icon: "arrow-right-arrow-left"
 **DEXTrades** Cube 包含逐笔 DEX 兑换事件，是粒度最细的交易数据。可用它查询单笔交易、分析钱包活动、追踪代币价格并找出头部交易者。
 
 <Note>
-以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth` 或 `bsc`。
+以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth`、`bsc` 或 `polygon`。
 </Note>
 
 ---
 
-## 最新交易
+## How do I get the latest DEX trades?
 
 获取 Solana 上最近 10 笔 DEX 交易，包含区块信息、交易哈希、买卖明细及 DEX 协议。
 
@@ -44,6 +44,10 @@ query {
 }
 ```
 
+<Tip>
+[在 GraphQL IDE 中打开](https://ide.chainstream.io) — 将上方查询粘贴到 IDE 中即可交互式运行，享受自动补全和 Schema 探索。
+</Tip>
+
 <AccordionGroup>
   <Accordion title="关键字段">
     | Field | Description |
@@ -58,7 +62,7 @@ query {
     | `Pool.Address` | 成交所在流动性池地址 |
   </Accordion>
   <Accordion title="自定义技巧">
-    - **切换链**：将 `network: sol` 改为 `network: eth` 或 `network: bsc`
+    - **切换链**：将 `network: sol` 改为 `network: eth`、`network: bsc` 或 `network: polygon`
     - **增加条数**：将 `count: 10` 提高到最多 `10000`
     - **时间过滤**：增加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定时间范围
     - **按 DEX 过滤**：增加 `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` 限定协议
@@ -67,7 +71,7 @@ query {
 
 ---
 
-## 代币交易
+## How do I get trades for a specific token?
 
 通过 `tokenAddress` 选择器传入地址，获取某一代币的交易。
 
@@ -91,7 +95,7 @@ query {
 ```
 
 <Tip>
-将 `TOKEN_ADDRESS` 替换为实际代币 mint 地址（例如 Solana 上 USDC 为 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）。可按名称查地址时使用 [TokenSearch](/cn/graphql/examples/ohlc-stats#token-lookup) 查询。
+将 `TOKEN_ADDRESS` 替换为实际代币 mint 地址（例如 Solana 上 USDC 为 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）。可按名称查地址时参见 [代币元数据](/cn/graphql/examples/ohlc-stats#how-do-i-look-up-token-information)。
 </Tip>
 
 <AccordionGroup>
@@ -113,7 +117,7 @@ query {
 
 ---
 
-## 钱包交易
+## How do I get all trades by a wallet?
 
 获取某钱包地址的全部交易。
 
@@ -157,7 +161,7 @@ query {
 
 ---
 
-## 代币价格
+## How do I get a token's current price?
 
 从最近一笔非可疑交易获取代币最新价格。
 
@@ -193,12 +197,12 @@ query {
 </AccordionGroup>
 
 <Tip>
-若需要可靠的代币价格时间序列，可考虑改用 [OHLC](/cn/graphql/examples/ohlc-stats#k-line-ohlc-data) Cube — 提供预计算的 K 线数据，含每分钟 open/high/low/close。
+若需要可靠的代币价格时间序列，可考虑改用 [Pairs](/cn/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cube — 提供预计算的 K 线数据，含每分钟 open/high/low/close。
 </Tip>
 
 ---
 
-## 头部交易者
+## How do I find the top traders for a token?
 
 通过聚合找出某代币的头部交易者。本查询按买方钱包分组，返回总买入笔数与成交量。
 

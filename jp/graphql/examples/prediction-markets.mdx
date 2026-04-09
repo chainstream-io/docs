@@ -1,0 +1,203 @@
+---
+title: "予測市場"
+description: "PredictionTrades、PredictionManagements、PredictionSettlements Cube のクエリ例"
+icon: "chart-mixed"
+---
+
+## 概要
+
+ChainStream GraphQL は予測市場データ用に 3 つの Cube を提供しており、主に Polygon で利用できます。作成・取引・決済まで、予測市場のライフサイクル全体をカバーします。
+
+<Note>
+予測市場の Cube は **EVM** チェーングループで利用できます。主に `network: polygon` と組み合わせて使います。
+</Note>
+
+---
+
+## PredictionTrades
+
+### 直近の予測市場トレード
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buyer
+        Seller
+        Amount
+        Price
+        Fee
+      }
+      Prediction {
+        Condition { Id Outcomes }
+        Question { Id }
+        Outcome
+        Marketplace { ProtocolName }
+      }
+    }
+  }
+}
+```
+
+### 特定の条件（Condition）のトレード
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      conditionId: {is: "CONDITION_ID"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Buyer Seller Amount Price }
+      Prediction { Outcome OutcomeToken { SmartContract } }
+    }
+  }
+}
+```
+
+### マーケットプレイス別のトレード量
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      marketplace: {is: "Polymarket"}
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Amount Price }
+      Prediction {
+        Question { Id }
+        Marketplace { ProtocolName }
+      }
+      count
+      sum(of: Trade_Amount)
+    }
+  }
+}
+```
+
+---
+
+## PredictionManagements
+
+### 市場の作成・解決などのイベント
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionManagements(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType
+        Description
+        Group
+        Prediction {
+          Condition { Id }
+          Question { Id }
+          Marketplace { ProtocolName }
+        }
+      }
+    }
+  }
+}
+```
+
+### イベントタイプで絞り込む
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionManagements(
+      eventType: {is: "ConditionResolution"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Management {
+        EventType
+        Description
+        Prediction { Condition { Id Outcomes } }
+      }
+    }
+  }
+}
+```
+
+---
+
+## PredictionSettlements
+
+### 直近の決済
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionSettlements(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType
+        Holder
+        OutcomeTokenIds
+        Amounts
+        Prediction {
+          Condition { Id }
+          CollateralToken { SmartContract Symbol }
+          Marketplace { ProtocolName }
+        }
+      }
+    }
+  }
+}
+```
+
+### 特定ホルダーの決済
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionSettlements(
+      holder: {is: "0xHOLDER_ADDRESS"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Settlement {
+        EventType
+        Amounts
+        Prediction { Condition { Id } }
+      }
+    }
+  }
+}
+```
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="データ Cube" icon="cubes" href="/jp/graphql/schema/cubes">
+    予測市場 Cube のフィールド構造の詳細。
+  </Card>
+  <Card title="チェーングループ" icon="layer-group" href="/jp/graphql/schema/chain-groups">
+    予測市場の Cube は EVM のみで、主に Polygon。
+  </Card>
+</CardGroup>

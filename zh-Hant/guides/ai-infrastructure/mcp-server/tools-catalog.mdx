@@ -1,0 +1,637 @@
+---
+title: '工具目錄'
+description: 'ChainStream MCP Server 完整工具參考'
+icon: 'wrench'
+---
+
+ChainStream MCP Server 支援所有 API Reference 中定義的介面，AI 可以直接呼叫這些工具獲取鏈上資料。
+
+<Note>
+MCP 工具的引數和返回值與 REST API 完全一致，詳細欄位說明請參考 [API Reference](/zh-Hant/api-reference/authentication/authenticate)。
+</Note>
+
+---
+
+## 工具總覽
+
+<Tabs>
+  <Tab title="資料查詢">
+    | 工具分類 | 功能 |
+    |----------|------|
+    | Token | 代幣搜尋、資訊、價格、K線、持有者、安全檢查 |
+    | Wallet | 錢包餘額、PnL、統計、餘額變動 |
+    | Trade | 交易記錄、交易活動、頂級交易者 |
+    | DexPool | 流動池資訊、快照 |
+    | Ranking | 熱門代幣、新代幣、即將畢業、已畢業 |
+    | Blockchain | 鏈資訊、最新區塊 |
+  </Tab>
+  <Tab title="交易執行">
+    | 工具分類 | 功能 |
+    |----------|------|
+    | Dex | 報價、路由、Swap 執行 |
+    | DeFi | Pumpfun/Moonshot 建立代幣 |
+    | Transaction | 傳送交易、Gas 估算 |
+    | RedPacket | 建立紅包、領取紅包 |
+  </Tab>
+  <Tab title="基礎設施">
+    | 工具分類 | 功能 |
+    |----------|------|
+    | Webhook | 端點管理、事件訂閱 |
+    | Blockchain | 支援的鏈、最新區塊 |
+  </Tab>
+  <Tab title="實時訂閱">
+    | 訂閱型別 | 功能 |
+    |----------|------|
+    | K線 | 實時價格走勢 |
+    | 代幣統計 | 實時交易統計 |
+    | 新代幣 | 新代幣建立通知 |
+    | 錢包餘額 | 餘額變動通知 |
+    | 交易活動 | 實時交易流 |
+    | 流動池 | 池子狀態變化 |
+  </Tab>
+</Tabs>
+
+---
+
+## Token 工具
+
+### token_search
+
+搜尋代幣。
+
+```
+搜索 PEPE 相关的代币
+```
+
+### token_get
+
+獲取代幣詳細資訊。
+
+```
+查看代币 So11111111111111111111111111111111111111112 的详细信息
+```
+
+### token_get_metadata
+
+獲取代幣後設資料（名稱、符號、Logo 等）。
+
+```
+获取这个代币的 Logo 和社交媒体链接
+```
+
+### token_get_stats
+
+獲取代幣統計資料（交易量、買賣次數等）。
+
+```
+查看这个代币过去 24 小时的交易统计
+```
+
+### token_get_price
+
+獲取代幣當前價格。
+
+```
+BONK 现在的价格是多少？
+```
+
+### token_get_prices
+
+獲取代幣歷史價格。
+
+```
+查看 ETH 过去一周的价格走势
+```
+
+### token_get_candles
+
+獲取代幣 K 線資料。
+
+```
+获取 SOL 最近 100 根 1 小时 K 线
+```
+
+### token_get_holders
+
+獲取代幣持有者資訊。
+
+```
+这个代币有多少持有者？
+```
+
+### token_get_top_holders
+
+獲取代幣 Top 持有者列表。
+
+```
+查看这个代币的前 10 大持有者
+```
+
+### token_get_pools
+
+獲取代幣相關的流動池。
+
+```
+这个代币在哪些 DEX 有流动池？
+```
+
+### token_get_security
+
+獲取代幣安全檢查結果。
+
+```
+帮我检查这个代币是否安全
+```
+
+### token_get_creation
+
+獲取代幣建立資訊。
+
+```
+这个代币是什么时候创建的？创建者是谁？
+```
+
+### token_get_mint_and_burn
+
+獲取代幣鑄造和銷燬記錄。
+
+```
+查看这个代币的铸造和销毁历史
+```
+
+### token_list
+
+獲取代幣列表（支援分頁和篩選）。
+
+```
+列出 Solana 上最近创建的代币
+```
+
+### token_get_traders_tag
+
+獲取代幣交易者標籤分佈。
+
+```
+分析这个代币的交易者都是什么类型的
+```
+
+### token_get_liquidity_snapshots
+
+獲取代幣流動性快照。
+
+```
+查看这个代币过去一周的流动性变化
+```
+
+### token_dev_get_tokens
+
+獲取開發者建立的所有代幣。
+
+```
+查看这个开发者还创建过哪些代币
+```
+
+---
+
+## Wallet 工具
+
+### wallet_get_balance
+
+獲取錢包餘額。
+
+```
+查询地址 0x1234...abcd 的所有代币余额
+```
+
+### wallet_get_balance_updates
+
+獲取錢包餘額變動歷史。
+
+```
+这个钱包最近的资金变动记录
+```
+
+### wallet_get_pnl
+
+獲取錢包盈虧資料。
+
+```
+计算这个地址的总收益和胜率
+```
+
+### wallet_calculate_pnl
+
+計算指定條件的錢包盈虧。
+
+```
+计算这个地址在过去 30 天的收益
+```
+
+### wallet_get_stats
+
+獲取錢包統計資料。
+
+```
+分析这个钱包的交易风格和活跃度
+```
+
+---
+
+## Trade 工具
+
+### trade_get
+
+獲取交易記錄。
+
+```
+查看 0x... 最近 20 笔交易
+```
+
+### trade_get_activities
+
+獲取交易活動流。
+
+```
+这个代币最近的交易活动
+```
+
+### trade_get_top_traders
+
+獲取頂級交易者。
+
+```
+查看这个代币收益最高的交易者
+```
+
+---
+
+## DexPool 工具
+
+### dexpool_get
+
+獲取流動池資訊。
+
+```
+查看这个池子的详细信息
+```
+
+### dexpool_get_snapshots
+
+獲取流動池快照歷史。
+
+```
+这个池子过去 24 小时的流动性变化
+```
+
+---
+
+## Ranking 工具
+
+### ranking_get_hot_tokens
+
+獲取熱門代幣排行。
+
+```
+今天最热门的 10 个代币
+```
+
+### ranking_get_new_tokens
+
+獲取新代幣列表。
+
+```
+最近 1 小时新创建的代币
+```
+
+### ranking_get_stocks
+
+獲取庫存代幣（未畢業）。
+
+```
+Pump.fun 上还有哪些代币在 bonding curve
+```
+
+### ranking_get_final_stretch
+
+獲取即將畢業的代幣。
+
+```
+哪些代币快要从 Pump.fun 毕业了
+```
+
+### ranking_get_migrated
+
+獲取已畢業代幣列表。
+
+```
+最近毕业到 Raydium 的代币
+```
+
+---
+
+## Blockchain 工具
+
+### blockchain_list
+
+獲取支援的區塊鏈列表。
+
+```
+ChainStream 支持哪些区块链？
+```
+
+### blockchain_get_latest_block
+
+獲取最新區塊資訊。
+
+```
+以太坊最新的区块号是多少？
+```
+
+---
+
+## Dex 工具
+
+### dex_list
+
+獲取支援的 DEX 列表。
+
+```
+Solana 上支持哪些 DEX？
+```
+
+### dex_get_quote
+
+獲取交易報價。
+
+```
+用 1 SOL 换 USDC 能得到多少？
+```
+
+### dex_get_route
+
+獲取最優交易路由。
+
+```
+找到最优的 ETH 到 ARB 的交易路径
+```
+
+### dex_swap
+
+執行代幣兌換。
+
+```
+帮我把 0.5 SOL 换成 BONK
+```
+
+### dex_create
+
+建立交易（需要簽名）。
+
+```
+创建一笔从 USDC 到 ETH 的交易
+```
+
+---
+
+## DeFi 工具
+
+### pumpfun_create
+
+在 Pump.fun 建立代幣。
+
+```
+在 Pump.fun 创建一个新代币
+```
+
+### moonshot_create
+
+在 Moonshot 建立代幣。
+
+```
+在 Moonshot 创建代币
+```
+
+### moonshot_submit_create_token
+
+提交 Moonshot 建立代幣交易。
+
+```
+提交 Moonshot 代币创建交易
+```
+
+---
+
+## Transaction 工具
+
+### transaction_send
+
+傳送已簽名交易。
+
+```
+发送这笔交易
+```
+
+### transaction_get_gas_price
+
+獲取當前 Gas 價格。
+
+```
+以太坊现在的 Gas 费多少？
+```
+
+### transaction_estimate_gas_limit
+
+估算交易 Gas 限制。
+
+```
+估算这笔交易需要多少 Gas
+```
+
+---
+
+## RedPacket 工具
+
+### redpacket_create
+
+建立紅包。
+
+```
+创建一个包含 10 SOL 的红包，分成 100 份
+```
+
+### redpacket_claim
+
+領取紅包。
+
+```
+领取这个红包
+```
+
+### redpacket_get
+
+獲取紅包資訊。
+
+```
+查看这个红包的详情
+```
+
+### redpacket_get_claims
+
+獲取紅包領取記錄。
+
+```
+谁领取了这个红包？
+```
+
+---
+
+## Webhook 工具
+
+### webhook_list_endpoints
+
+獲取已配置的 Webhook 端點列表。
+
+```
+查看我配置的所有 Webhook
+```
+
+### webhook_create_endpoint
+
+建立新的 Webhook 端點。
+
+```
+创建一个新的 Webhook 接收代币创建事件
+```
+
+### webhook_update_endpoint
+
+更新 Webhook 端點配置。
+
+```
+修改这个 Webhook 的回调地址
+```
+
+### webhook_delete_endpoint
+
+刪除 Webhook 端點。
+
+```
+删除这个 Webhook
+```
+
+### webhook_get_secret
+
+獲取 Webhook 簽名金鑰。
+
+```
+获取这个 Webhook 的签名密钥
+```
+
+### webhook_rotate_secret
+
+輪換 Webhook 簽名金鑰。
+
+```
+重新生成这个 Webhook 的密钥
+```
+
+---
+
+## WebSocket 訂閱
+
+MCP 服務也支援 WebSocket 實時訂閱，可以獲取以下實時資料：
+
+### 訂閱型別
+
+| 型別 | 說明 | 示例提問 |
+|------|------|----------|
+| K線 | 實時價格 K 線 | "訂閱這個代幣的 1 分鐘 K 線" |
+| 代幣統計 | 實時交易統計 | "實時監控這個代幣的交易資料" |
+| 新代幣 | 新代幣建立通知 | "通知我 Solana 上的新代幣" |
+| 代幣後設資料 | 新代幣後設資料 | "獲取新代幣的詳細資訊" |
+| 錢包餘額 | 餘額變動 | "監控這個錢包的餘額變化" |
+| 錢包交易 | 交易通知 | "這個錢包有新交易時通知我" |
+| 交易活動 | 實時交易流 | "顯示這個代幣的實時交易" |
+| 流動池 | 池子狀態 | "監控這個池子的流動性變化" |
+| 排行榜 | 熱門代幣更新 | "實時更新熱門代幣排行" |
+
+<Note>
+WebSocket 訂閱的詳細引數和返回格式請參考 [WebSocket API 文件](/zh-Hant/api-reference/endpoint/websocket/api)。
+</Note>
+
+---
+
+## 支援的區塊鏈
+
+| 鏈 | 標識 | 型別 |
+|----|------|------|
+| Solana | `sol` | L1 |
+| Ethereum | `eth` | L1 (EVM) |
+| BSC | `bsc` | L1 (EVM) |
+
+---
+
+## 提示詞最佳實踐
+
+### 明確指定鏈
+
+```
+✅ 好：查询 0x... 在以太坊上的余额
+❌ 差：查询 0x... 的余额
+```
+
+### 提供完整地址
+
+```
+✅ 好：分析 0x1234567890abcdef1234567890abcdef12345678
+❌ 差：分析 0x1234...5678
+```
+
+### 指定時間範圍
+
+```
+✅ 好：查看最近 7 天的交易记录
+❌ 差：查看最近的交易
+```
+
+### 分步驟提問
+
+複雜任務拆分為多個簡單問題：
+
+```
+✅ 好：
+1. 首先查询这个地址的持仓
+2. 然后分析它的交易历史
+3. 最后判断它的投资风格
+
+❌ 差：
+告诉我这个地址的一切信息
+```
+
+### 利用上下文追問
+
+```
+用户：查询 0x... 的持仓
+AI：[返回持仓列表]
+用户：这些代币中哪个涨幅最大？
+用户：分析持有 PEPE 的原因
+```
+
+---
+
+## 相關文件
+
+<CardGroup cols={2}>
+  <Card title="MCP 介紹" icon="plug" href="/zh-Hant/guides/ai-infrastructure/mcp-server/introduction">
+    瞭解 MCP 協議和能力
+  </Card>
+  <Card title="配置指南" icon="gear" href="/zh-Hant/guides/ai-infrastructure/mcp-server/setup-guide">
+    配置 MCP Server
+  </Card>
+  <Card title="API Reference" icon="code" href="/zh-Hant/api-reference/authentication/authenticate">
+    完整 REST API 文件
+  </Card>
+  <Card title="WebSocket API" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/api">
+    實時資料訂閱
+  </Card>
+</CardGroup>

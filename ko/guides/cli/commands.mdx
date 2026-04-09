@@ -1,0 +1,349 @@
+---
+title: '명령어 레퍼런스'
+description: 'ChainStream CLI 전체 명령어 레퍼런스'
+icon: "book"
+---
+
+## 전역 옵션
+
+| 옵션 | 설명 |
+|--------|-------------|
+| `--raw` | 단일 행 JSON으로 출력 (`jq` 등 다른 도구로 파이핑할 때 사용). 데이터 조회 명령어에서 사용 가능. |
+| `--help` | 명령어 도움말 표시 |
+| `--version` | CLI 버전 표시 |
+
+```bash
+chainstream token info --chain sol --address <addr> --raw | jq '.marketData.priceInUsd'
+```
+
+## 토큰 명령어
+
+메타데이터, 보안, 홀더, 가격 이력 등 토큰 데이터를 조회합니다.
+
+### `token search`
+
+키워드로 토큰을 검색합니다.
+
+```bash
+chainstream token search --keyword PUMP --chain sol --limit 20
+```
+
+| 옵션 | 필수 | 기본값 | 설명 |
+|--------|----------|---------|-------------|
+| `--keyword` | 예 | — | 검색 키워드 |
+| `--chain` | 예 | — | 체인 ID (`sol`, `bsc`, `eth`) |
+| `--limit` | 아니오 | 20 | 최대 결과 수 |
+
+### `token info`
+
+메타데이터, 시장 데이터, 통계를 포함한 토큰 상세 정보를 조회합니다.
+
+```bash
+chainstream token info --chain sol --address <token_address>
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 토큰 컨트랙트 주소 |
+
+### `token security`
+
+토큰 보안을 점검합니다: 허니팟 감지, 민트 권한, 동결 권한, 홀더 집중도.
+
+```bash
+chainstream token security --chain sol --address <token_address>
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 토큰 컨트랙트 주소 |
+
+### `token holders`
+
+토큰 상위 홀더와 잔액을 조회합니다.
+
+```bash
+chainstream token holders --chain sol --address <token_address> --limit 20
+```
+
+| 옵션 | 필수 | 기본값 | 설명 |
+|--------|----------|---------|-------------|
+| `--chain` | 예 | — | 체인 ID |
+| `--address` | 예 | — | 토큰 컨트랙트 주소 |
+| `--limit` | 아니오 | 20 | 최대 결과 수 |
+
+### `token candles`
+
+OHLCV 캔들스틱 데이터를 조회합니다.
+
+```bash
+chainstream token candles --chain sol --address <token_address> --resolution 1h
+```
+
+| 옵션 | 필수 | 기본값 | 설명 |
+|--------|----------|---------|-------------|
+| `--chain` | 예 | — | 체인 ID |
+| `--address` | 예 | — | 토큰 컨트랙트 주소 |
+| `--resolution` | 예 | — | 캔들 간격: `1m`, `5m`, `15m`, `1h`, `4h`, `1d` |
+| `--from` | 아니오 | — | 시작 타임스탬프 |
+| `--to` | 아니오 | — | 종료 타임스탬프 |
+| `--limit` | 아니오 | 100 | 최대 캔들 수 |
+
+### `token pools`
+
+토큰의 유동성 풀을 조회합니다.
+
+```bash
+chainstream token pools --chain sol --address <token_address>
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 토큰 컨트랙트 주소 |
+
+## 시장 명령어
+
+시장 동향, 신규 상장, 최근 거래를 추적합니다.
+
+### `market trending`
+
+활동 기준으로 정렬된 인기/트렌딩 토큰을 조회합니다.
+
+```bash
+chainstream market trending --chain sol --duration 1h --limit 20
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--duration` | 예 | 시간 범위: `1h`, `6h`, `24h` |
+| `--limit` | 아니오 | 최대 결과 수 |
+
+### `market new`
+
+새로 생성된 토큰을 조회합니다.
+
+```bash
+chainstream market new --chain sol --limit 20
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--limit` | 아니오 | 최대 결과 수 |
+
+### `market trades`
+
+체인의 최근 거래를 조회하며, 선택적으로 토큰별 필터링이 가능합니다.
+
+```bash
+chainstream market trades --chain sol --token <token_address> --limit 20
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--token` | 아니오 | 토큰 주소로 필터링 |
+| `--limit` | 아니오 | 최대 결과 수 |
+
+## 지갑 명령어
+
+지갑의 보유 자산, PnL, 활동을 분석합니다. CLI 지갑도 관리할 수 있습니다.
+
+### `wallet profile`
+
+지갑 개요를 조회합니다: PnL, 순자산, 상위 보유 자산.
+
+```bash
+chainstream wallet profile --chain sol --address <wallet_address>
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 분석할 지갑 주소 |
+
+### `wallet pnl`
+
+상세 PnL 내역을 조회합니다.
+
+```bash
+chainstream wallet pnl --chain sol --address <wallet_address>
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 지갑 주소 |
+
+### `wallet holdings`
+
+지갑의 토큰 잔액을 조회합니다.
+
+```bash
+chainstream wallet holdings --chain sol --address <wallet_address> --limit 50
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 지갑 주소 |
+| `--limit` | 아니오 | 최대 결과 수 |
+
+### `wallet activity`
+
+지갑의 전송 이력을 조회합니다.
+
+```bash
+chainstream wallet activity --chain sol --address <wallet_address> --limit 20
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--address` | 예 | 지갑 주소 |
+| `--limit` | 아니오 | 최대 결과 수 |
+
+### `wallet address`
+
+CLI 지갑 주소를 표시합니다.
+
+```bash
+chainstream wallet address
+```
+
+### `wallet balance`
+
+특정 체인에서 CLI 지갑 잔액을 확인합니다.
+
+```bash
+chainstream wallet balance --chain sol
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+
+### `wallet set-raw`
+
+개발/테스트용 원시 개인키를 가져옵니다.
+
+```bash
+chainstream wallet set-raw --chain base
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | `base` 또는 `sol` |
+
+### `wallet pricing`
+
+x402 구독 요금제를 조회합니다.
+
+```bash
+chainstream wallet pricing
+```
+
+## DeFi 명령어
+
+온체인 DeFi 작업을 실행합니다. 지갑이 필요합니다 ([인증](/ko/guides/cli/authentication) 참조).
+
+<Warning>
+DeFi 작업은 **비가역적**입니다. 스왑을 확인하기 전에 반드시 시세를 확인하세요.
+</Warning>
+
+### `dex quote`
+
+스왑 시세를 조회합니다 (읽기 전용, 지갑 불필요).
+
+```bash
+chainstream dex quote --chain sol --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| 옵션 | 필수 | 설명 |
+|--------|----------|-------------|
+| `--chain` | 예 | 체인 ID |
+| `--input-token` | 예 | 입력 토큰 주소 또는 심볼 |
+| `--output-token` | 예 | 출력 토큰 주소 또는 심볼 |
+| `--amount` | 예 | 최소 단위 수량 (lamports, wei 등) |
+
+### `dex swap`
+
+토큰 스왑을 실행합니다.
+
+```bash
+chainstream dex swap --chain sol --from <wallet> --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| 옵션 | 필수 | 기본값 | 설명 |
+|--------|----------|---------|-------------|
+| `--chain` | 예 | — | 체인 ID |
+| `--from` | 예 | — | 보내는 지갑 주소 |
+| `--input-token` | 예 | — | 입력 토큰 |
+| `--output-token` | 예 | — | 출력 토큰 |
+| `--amount` | 예 | — | 최소 단위 수량 |
+| `--slippage` | 아니오 | 0.01 | 슬리피지 허용 범위 (0.01 = 1%) |
+| `--yes` | 아니오 | false | 확인 프롬프트 건너뛰기 |
+
+스왑 흐름: **시세 조회** → **확인** → **서명** → **전송** → **작업 폴링**.
+
+### `dex create`
+
+런치패드에서 토큰을 생성합니다 (예: PumpFun, Raydium).
+
+```bash
+chainstream dex create --chain sol --name "My Token" --symbol MTK --uri <metadata_uri>
+```
+
+| 옵션 | 필수 | 기본값 | 설명 |
+|--------|----------|---------|-------------|
+| `--chain` | 예 | — | 체인 ID |
+| `--name` | 예 | — | 토큰 이름 |
+| `--symbol` | 예 | — | 토큰 심볼 |
+| `--uri` | 예 | — | 메타데이터 URI |
+| `--platform` | 아니오 | — | `pumpfun` 또는 `raydium` |
+
+## 작업 명령어
+
+비동기 DeFi 작업의 상태를 추적합니다.
+
+### `job status`
+
+작업 상태를 확인합니다.
+
+```bash
+chainstream job status --id <job_id> --wait --timeout 60000
+```
+
+| 옵션 | 필수 | 기본값 | 설명 |
+|--------|----------|---------|-------------|
+| `--id` | 예 | — | 작업 ID |
+| `--wait` | 아니오 | false | 완료될 때까지 폴링 |
+| `--timeout` | 아니오 | 60000 | 최대 대기 시간 (ms) |
+
+## 인증 명령어
+
+인증을 관리합니다. 자세한 내용은 [CLI 인증](/ko/guides/cli/authentication)을 참조하세요.
+
+| 명령어 | 설명 |
+|---------|-------------|
+| `login [email]` | 로그인 (기본: P-256 키, 또는 이메일 OTP) |
+| `login --key` | 기존 디바이스 키로 재로그인 |
+| `login --email` | 이메일 OTP 로그인을 명시적으로 사용 |
+| `verify` | 이메일 OTP 인증 완료 |
+| `logout` | 세션 제거 |
+| `bind-email [email]` | 계정 복구용 이메일 연동 |
+| `bind-email-verify` | 이메일 연동 완료 (비대화형) |
+
+## 설정 명령어
+
+CLI 설정을 관리합니다. 자세한 내용은 [CLI 인증](/ko/guides/cli/authentication)을 참조하세요.
+
+| 명령어 | 설명 |
+|---------|-------------|
+| `config set --key <key> --value <val>` | 설정 값 지정 (`apiKey`, `baseUrl`, `walletChain`) |
+| `config get [--key <key>]` | 설정 보기 (또는 특정 키) |
+| `config auth` | 인증 상태 보기 |

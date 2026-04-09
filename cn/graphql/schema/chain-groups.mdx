@@ -1,0 +1,201 @@
+---
+title: "Chain Groups"
+description: "Cube 如何按 EVM、Solana、Trading 三个 Chain Group 组织"
+icon: "layer-group"
+---
+
+## 概述
+
+ChainStream GraphQL 将 25 个 Cube 组织为三个 **Chain Group**。每个 Group 代表一个区块链生态，决定了可用的 Cube、`network` 参数的工作方式，以及链特有的字段。
+
+```graphql
+type ChainStream {
+  EVM(network: Network!, dataset: Dataset, aggregates: Aggregates) { ... }
+  Solana(dataset: Dataset, aggregates: Aggregates) { ... }
+  Trading(dataset: Dataset, aggregates: Aggregates) { ... }
+}
+```
+
+---
+
+## EVM
+
+**EVM** 组包含所有 EVM 兼容链的 Cube。它**必须**传入 `network` 参数以指定查询哪条链。
+
+### 可用网络
+
+| Network ID | 区块链 |
+|:-----------|:-------|
+| `eth` | Ethereum |
+| `bsc` | BNB Chain (BSC) |
+| `polygon` | Polygon |
+
+### Cube 列表
+
+**与 Solana 共享：**
+`DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
+
+**EVM 专属：**
+- `Events` — 智能合约事件日志（解码的 topics 与 data）
+- `Calls` — 内部调用追踪（CALL、DELEGATECALL、CREATE 等）
+- `MinerRewards` — 区块奖励拆分（静态、动态、叔块、销毁费用）
+- `DEXPoolSlippages` — 池子价格滑点分析
+- `Uncles` — 叔块数据（主要为 Ethereum PoW 历史数据）
+- `PredictionTrades` — 预测市场交易 *（主要 Polygon）*
+- `PredictionManagements` — 预测市场管理事件 *（主要 Polygon）*
+- `PredictionSettlements` — 预测市场结算 *（主要 Polygon）*
+
+### 示例查询
+
+```graphql
+query {
+  EVM(network: eth, dataset: combined) {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { SmartContract Symbol } Amount PriceInUSD }
+        Sell { Currency { SmartContract Symbol } Amount }
+        Dex { ProtocolName }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Solana
+
+**Solana** 组包含 Solana 区块链的 Cube。网络为隐式（`sol`）— 无需 `network` 参数。
+
+### Cube 列表
+
+**与 EVM 共享：**
+`DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
+
+**Solana 专属：**
+- `Instructions` — 程序指令数据（程序地址、方法、账户、日志）
+- `InstructionBalanceUpdates` — 指令级余额变动
+- `Rewards` — 验证者和质押奖励
+- `DEXOrders` — DEX 订单事件（限价单、取消、成交）
+
+### 示例查询
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress Symbol } Amount PriceInUSD }
+        Sell { Currency { MintAddress Symbol } Amount }
+        Dex { ProgramAddress ProtocolName }
+      }
+    }
+  }
+}
+```
+
+### Solana 专有字段
+
+Solana Cube 中部分维度的字段名与 EVM 不同：
+
+| 概念 | Solana | EVM |
+|:-----|:-------|:----|
+| 代币地址 | `MintAddress` | `SmartContract` |
+| 交易 ID | `Signature` / `Hash` | `Hash` |
+| 区块标识 | `Slot` | `Number` |
+| 程序/合约 | `ProgramAddress` | `SmartContract` |
+| 手续费支付者 | `FeePayer` | `From` |
+
+---
+
+## Trading
+
+**Trading** 组提供**跨链预聚合**交易分析。它将所有支持链的数据合并到统一的物化视图中，并包含 `chain` 维度用于过滤。
+
+### Cube 列表
+
+- `Pairs` — OHLC K 线数据（开盘/最高/最低/收盘、成交量、交易笔数）
+- `Tokens` — 按代币的成交统计（成交量、买卖拆分、独立交易者数）
+
+### 与 EVM/Solana 组的关键差异
+
+1. **无 `network` 参数** — Trading 组合并跨链数据。使用数据中的 `chain` 维度按网络过滤。
+2. **跨链数据** — 单条查询可同时返回 `sol`、`eth`、`bsc` 的数据。
+3. **预聚合** — 数据来自 DWM 层的分钟级物化视图。
+
+### 示例：跨链 OHLC
+
+```graphql
+query {
+  Trading(aggregates: yes) {
+    Pairs(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Token { Address }
+      Market { Network }
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd Native }
+      Stats { TradeCount BuyCount SellCount }
+    }
+  }
+}
+```
+
+### 示例：按链查询代币成交统计
+
+```graphql
+query {
+  Trading {
+    Tokens(
+      where: {
+        Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } }
+        Market: { Network: { is: "eth" } }
+      }
+      limit: {count: 30}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+---
+
+## Chain Group 对比
+
+| 特性 | EVM | Solana | Trading |
+|:-----|:----|:-------|:--------|
+| **`network` 参数** | 必填（`eth`、`bsc`、`polygon`） | 不需要（隐式 `sol`） | 不需要（跨链） |
+| **专属 Cube** | Events、Calls、MinerRewards、Uncles、DEXPoolSlippages、Prediction* | Instructions、InstructionBalanceUpdates、Rewards、DEXOrders | Pairs、Tokens |
+| **数据粒度** | 逐事件（DWD）+ 聚合（DWM/DWS） | 逐事件 + 指令级 | 预聚合（DWM） |
+| **`dataset` 支持** | 是（多数 Cube） | 是（多数 Cube） | 是 |
+| **`aggregates` 支持** | 是 | 是 | 是 |
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
+    全部 25 个 Cube 的详细字段结构与使用场景。
+  </Card>
+  <Card title="Dataset 与 Aggregates" icon="database" href="/cn/graphql/schema/dataset-aggregates">
+    控制数据源范围与预聚合行为。
+  </Card>
+</CardGroup>

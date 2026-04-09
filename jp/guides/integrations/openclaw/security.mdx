@@ -1,0 +1,176 @@
+---
+title: "セキュリティに関する考慮事項"
+description: "OpenClawエージェントでChainStreamを使用する際のセキュリティレビュー、リスクフラグ、ベストプラクティス。"
+---
+
+## ClawHubセキュリティレビュー
+
+ClawHubに公開されているChainStreamスキル（`chainstream/chainstream-data`）は、ClawHubの自動セキュリティスキャナーにより**中程度の確信度**で**疑わしい**とフラグ付けされています。
+
+<Warning>
+  このフラグはスキルが悪意あるものであることを意味しません。本番利用前に慎重なレビューが必要な特定のパターンがスキルの動作に含まれていることを示しています。
+</Warning>
+
+### フラグの対象となった動作
+
+スキャナーは警告をトリガーした3つの動作を特定しました：
+
+| 動作 | リスクレベル | 説明 |
+|----------|------------|-------------|
+| 秘密鍵保存を伴うウォレット作成 | 高 | スキルにはウォレット作成と秘密鍵の保存に関する手順が含まれており、機密性の高い暗号資料が漏洩する可能性があります |
+| x402自動支払い | 中 | x402支払いプロトコルは自動的に支出を承認でき、送出取引の可視性が低下します |
+| リモートnpm実行 | 低 | スキルは`npx`を使用してnpmからパッケージを取得し、ランタイムで実行します |
+
+### これが意味すること
+
+- **ウォレット作成**: 一部のChainStreamツール（`dex_swap`、`dex_create_token`、`transaction_send`）はウォレットアクセスを必要とします。スキルドキュメントには秘密鍵の取り扱いを含むウォレットセットアップの手順が記載されています。
+- **x402自動支払い**: x402プロトコルはマシン間のマイクロペイメントを可能にします。有効にすると、エージェントは取引ごとの明示的な承認なしに少額の支払いを承認できます。
+- **リモートnpm実行**: `npx @chainstream-io/mcp`を使用すると、npmレジストリからパッケージをダウンロードして実行します。これは標準的なプラクティスですが、サプライチェーンの依存関係が発生します。
+
+## ベストプラクティス
+
+本番環境でOpenClawエージェントとともにChainStreamを安全に使用するために、以下のガイドラインに従ってください。
+
+### 1. ウォレット作成よりもダッシュボードAPIキーを優先
+
+認証には[ChainStreamダッシュボード](https://app.chainstream.io)で生成したAPIキーを使用してください。APIキーはウォレット作成や秘密鍵管理を必要とせずに、オンチェーンデータへの読み取りアクセスを提供します。
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-dashboard-key  # No wallet needed
+```
+
+<Tip>
+  APIキーは、トークン検索、分析、ウォレットプロファイリング、マーケットデータ、取引履歴など、すべての読み取り専用ツールに十分です。ウォレットアクセスが必要なのは実行ツール（`dex_swap`、`dex_create_token`、`transaction_send`）のみです。
+</Tip>
+
+### 2. 本番用秘密鍵を絶対にインポートしない
+
+ユースケースで実行ツールが必要な場合、多額の資金を保持するウォレットの**秘密鍵を絶対にインポートしないでください**。
+
+- 最小限の資金でテスト専用ウォレットを作成
+- 特定の操作に必要な金額のみを入金
+- AIエージェントに接続されたウォレットはリスクの高いホットウォレットとして扱う
+
+```
+DO:    Create a fresh wallet with 0.1 SOL for testing swaps
+DON'T: Import your main wallet with 100 SOL into an agent config
+```
+
+### 3. 実行前にnpmパッケージを確認
+
+`npx @chainstream-io/mcp`を実行する前に、パッケージを確認してください：
+
+```bash
+# Check package details on npm
+npm view @chainstream-io/mcp
+
+# Check the publisher
+npm view @chainstream-io/mcp maintainers
+
+# Pin a specific version instead of using latest
+npx @chainstream-io/mcp@0.0.3
+```
+
+本番デプロイメントでは、`npx`を使用する代わりにピン留めされたバージョンをグローバルにインストールしてください：
+
+```bash
+npm install -g @chainstream-io/mcp@0.0.3
+```
+
+### 4. 隔離された環境で実行
+
+MCPサーバーとOpenClawエージェントを隔離された環境で実行し、影響範囲を限定してください：
+
+- ネットワークアクセスを制限した**Dockerコンテナ**
+- **専用VM**またはクラウドインスタンス
+- ファイルシステムアクセスを制限した**サンドボックス化されたエージェントランタイム**
+
+```dockerfile
+FROM node:20-slim
+
+# Non-root user
+RUN useradd -m agent
+USER agent
+
+RUN npm install -g @chainstream-io/mcp@0.0.3
+
+CMD ["chainstream-mcp"]
+```
+
+### 5. 支払いフローに明示的な承認を要求
+
+資金を移動するツールに対して、OpenClawエージェントにヒューマン・イン・ザ・ループの確認を要求するよう設定してください：
+
+- `dex_swap` -- トークンスワップを実行
+- `dex_create_token` -- トークンを作成（SOLが必要な場合あり）
+- `transaction_send` -- 署名済みトランザクションをブロードキャスト
+
+OpenClawエージェント設定で：
+
+```yaml
+agent:
+  confirmation_required:
+    - dex_swap
+    - dex_create_token
+    - transaction_send
+```
+
+x402自動支払いを使用する場合、明示的な支出制限を設定してください：
+
+```yaml
+agent:
+  x402:
+    max_per_transaction: 0.01  # USD
+    max_daily: 1.00            # USD
+    require_approval_above: 0.10  # USD
+```
+
+### 6. ウォレット取引を監視
+
+エージェントにウォレットを接続する場合、アクティビティを積極的に監視してください：
+
+- `webhooks_manage`を使用して送出取引のWebhookアラートを設定
+- `wallets_activity`を使用してウォレットアクティビティを定期的にレビュー
+- ブロックエクスプローラーを使用してエージェントが開始した取引を独立して検証
+
+```bash
+# Example: Set up a webhook for wallet activity
+# (via the agent or direct API call)
+webhooks_manage action=create url=https://your-server.com/alerts events=["wallet_transfer"]
+```
+
+## セキュリティチェックリスト
+
+本番環境でChainStreamとOpenClawをデプロイする前に、このチェックリストを使用してください：
+
+- [ ] APIキーはコードや設定ファイルではなく環境変数に保存
+- [ ] 本番用秘密鍵をエージェント設定にインポートしていない
+- [ ] npmパッケージのバージョンをピン留め（`latest`を使用しない）
+- [ ] エージェントは隔離された環境（Docker、VM、サンドボックス）で実行
+- [ ] 実行ツール（`dex_swap`、`dex_create_token`、`transaction_send`）は人間の承認を要求
+- [ ] x402自動支払いを無効化、または支出制限を設定
+- [ ] ウォレットの監視とアラートを設定
+- [ ] エージェントの取引ログを定期的にレビュー
+
+## 問題の報告
+
+ChainStream MCPサーバーまたはClawHubスキルにセキュリティ脆弱性を発見した場合：
+
+- **ChainStream**: [security@chainstream.io](mailto:security@chainstream.io)にメール
+- **ClawHub**: [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)のClawHubスキルページから報告
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="インストール方法" icon="download" href="/jp/guides/integrations/openclaw/skills-install">
+    セキュリティ要件に合ったインストール方法を選択。
+  </Card>
+  <Card title="セルフホスト型セットアップ" icon="server" href="/jp/guides/ai-infrastructure/mcp-server/installation">
+    最大限の制御のためにMCPサーバーを自前で運用。
+  </Card>
+</CardGroup>

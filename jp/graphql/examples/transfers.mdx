@@ -1,0 +1,270 @@
+---
+title: "トランスファー"
+description: "オンチェーントランスファーデータのクエリ例"
+icon: "paper-plane"
+---
+
+**Transfers** Cubeはオンチェーントークントランスファーイベントを含みます — トークンがあるウォレットから別のウォレットに移動するたびに記録されます。ウォレットアクティビティの追跡、クジラの動きの監視、トークンフローの分析、取引所の入出金の検出に使用できます。
+
+<Note>
+以下のすべての例は`network: sol`（Solana）を使用しています。他の対応チェーンの場合は`eth`、`bsc`、`polygon`に置き換えてください。
+</Note>
+
+---
+
+## 最新のトランスファーを取得するには？
+
+Solana上の最新10件のトークントランスファーを、送信者、受信者、金額、USD値を含めて取得します。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDEで開く](https://ide.chainstream.io) — 上記のクエリを貼り付けて、自動補完とスキーマ探索を使ってインタラクティブに実行できます。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Block.Time` | ブロックタイムスタンプ（ISO 8601） |
+    | `Transaction.Hash` | オンチェーントランザクションハッシュ |
+    | `Transfer.Currency.MintAddress` | トランスファーされたトークンのアドレス |
+    | `Transfer.Sender.Address` | トークンを送信したウォレット |
+    | `Transfer.Receiver.Address` | トークンを受信したウォレット |
+    | `Transfer.Amount` | トランスファーされたトークン数 |
+    | `Transfer.AmountInUSD` | 発生時のトランスファーのUSD値 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **トークンでフィルタ**: `tokenAddress: {is: "TOKEN_ADDRESS"}`を追加して特定のトークンのトランスファーのみ表示
+    - **大口トランスファーのみ**: `where: {Transfer: {AmountInUSD: {gt: 10000}}}`を追加してクジラの動きを検出
+    - **時間範囲**: `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}`を追加して期間を限定
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## ウォレットの送信トランスファーを取得するには？
+
+`senderAddress`セレクターを使用して特定のウォレットからの送信トランスファーを取得します。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    senderAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+`WALLET_ADDRESS`を調査したい実際のウォレットアドレスに置き換えてください。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Transfer.Currency.MintAddress` | 送信されたトークン |
+    | `Transfer.Receiver.Address` | トークンを受信した相手 |
+    | `Transfer.Amount` | 送信されたトークン数 |
+    | `Transfer.AmountInUSD` | トランスファー時のUSD値 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **特定のトークンのみ**: `tokenAddress: {is: "TOKEN_ADDRESS"}`を追加して1つのトークンに絞り込み
+    - **結果を増やす**: `count: 20`を最大`10000`に変更してより深い履歴を取得
+    - **受信者フィルタを追加**: `where: {Transfer: {Receiver: {Address: {is: "RECEIVER_ADDRESS"}}}}`を使用して2つの特定ウォレット間のトランスファーを追跡
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## ウォレットの受信トランスファーを取得するには？
+
+`receiverAddress`セレクターを使用してウォレットへの受信トランスファーを検索します。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    receiverAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+Transfers Cubeは`senderAddress`と`receiverAddress`の両方のセレクターをサポートしています。追加のフィルタリング（時間範囲や最小金額など）のために`where`と組み合わせてください。
+</Tip>
+
+---
+
+## 特定のトークンのすべてのトランスファーを取得するには？
+
+ネットワーク全体で特定のトークンのすべてのトランスファーを追跡します。
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="カスタマイズのヒント">
+    - **クジラアラート**: `where: {Transfer: {AmountInUSD: {gt: 100000}}}`を追加して大口トランスファー（>$100K）のみ表示
+    - **ダスト除外**: `where: {Transfer: {Amount: {gt: 0.01}}}`を追加して微小金額を除外
+    - **時間限定**: `where: {Block: {Time: {since: "2025-03-27T00:00:00Z"}}}`と組み合わせて今日のトランスファーを表示
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## マルチチェーンの例
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  Transfers(
+    network: eth
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  Transfers(
+    network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  Transfers(
+    network: polygon
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="DEXトレード" icon="arrow-right-arrow-left" href="/jp/graphql/examples/dex-trades">
+    DEXトレーディングデータのクエリ — トークントレード、ウォレットアクティビティ、トップトレーダー。
+  </Card>
+  <Card title="残高とホルダー" icon="wallet" href="/jp/graphql/examples/balance-holders">
+    ウォレット残高、残高履歴、トップトークンホルダーの検索。
+  </Card>
+  <Card title="プールと流動性" icon="droplet" href="/jp/graphql/examples/pools-liquidity">
+    DEXプールと流動性データの探索。
+  </Card>
+  <Card title="OHLCと統計" icon="chart-candlestick" href="/jp/graphql/examples/ohlc-stats">
+    ローソク足データ、トレード統計、時価総額、トークンメタデータの取得。
+  </Card>
+</CardGroup>

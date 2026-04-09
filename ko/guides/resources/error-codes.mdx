@@ -1,0 +1,525 @@
+---
+title: '오류 코드 레퍼런스'
+description: 'ChainStream API 오류 코드 전체 목록'
+icon: "triangle-exclamation"
+---
+
+## 오류 응답 형식
+
+모든 API 오류는 통일된 응답 형식을 따릅니다:
+
+```json
+{
+  "code": 40001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Human readable error message",
+  "details": {
+    // Optional additional information
+  }
+}
+```
+
+## HTTP 상태 코드
+
+| 상태 | 설명 | 오류 코드 범위 |
+|------|------|---------------|
+| 400 | Bad Request | 400, 40001-40040 |
+| 401 | Unauthorized | 401 |
+| 403 | Forbidden | 403, 40301 |
+| 404 | Not Found | 404, 40401-40406 |
+| 429 | Too Many Requests | 429, 42901-42902 |
+| 500 | Internal Server Error | 500, 50001-50036 |
+| 510 | Red Packet Error | 51000-51004 |
+| 520 | Webhook Error | 52000-52001 |
+
+---
+
+## 클라이언트 오류 (400)
+
+### 파라미터 유효성 검증 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 400 | `BAD_REQUEST` | 잘못된 요청 | 요청 형식을 확인하세요 |
+| 40001 | `VALIDATION_ERROR` | 요청 파라미터가 비정상이거나 올바르지 않음 | 파라미터 형식과 값을 확인하세요 |
+| 40002 | `INVALID_PARAMETER` | 유효하지 않은 파라미터 | 파라미터 값이 요구사항을 충족하는지 확인하세요 |
+| 40003 | `INVALID_TOKEN` | 유효하지 않은 액세스 토큰 | 토큰 형식을 확인하세요 |
+| 40004 | `MISSING_PARAMETER` | 필수 파라미터 누락 | 누락된 필수 파라미터를 추가하세요 |
+| 40005 | `INVALID_ADDRESS` | 유효하지 않은 지갑 주소 형식 | 주소 형식을 확인하세요 |
+| 40027 | `INVALID_CURSOR` | 유효하지 않은 커서 | 유효한 페이지네이션 커서를 사용하세요 |
+| 40031 | `INVALID_TIMESTAMP` | 유효하지 않은 타임스탬프 형식 | ISO 8601 형식을 사용하세요 |
+| 40032 | `INVALID_RESOLUTION` | 유효하지 않은 해상도 파라미터 | 지원되는 K-line 주기를 사용하세요 |
+| 40033 | `INVALID_NUMBER_FORMAT` | 유효하지 않은 숫자 형식 | 올바른 숫자 형식을 사용하세요 |
+
+```json
+{
+  "code": 40002,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Invalid parameter",
+  "details": {
+    "parameter": "resolution",
+    "value": "2h",
+    "allowed_values": ["1s", "1m", "5m", "15m", "1h", "4h", "1d"]
+  }
+}
+```
+
+### 토큰 관련 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 40009 | `INVALID_TOKEN_ADDRESS` | 유효하지 않은 토큰 주소 | 토큰 컨트랙트 주소를 확인하세요 |
+| 40028 | `TOKEN_ADDRESSES_LIMIT_EXCEEDED` | 토큰 주소 제한 초과 | 최대 100개 주소 |
+| 40034 | `TOKEN_ALREADY_CREATED` | 토큰이 이미 생성됨 | 중복 생성을 확인하세요 |
+
+### 지갑 관련 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 40029 | `WALLET_ADDRESSES_LIMIT_EXCEEDED` | 지갑 주소 제한 초과 | 최대 100개 주소 |
+
+### 트랜잭션 관련 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 40010 | `TRANSACTION_FAILED` | 트랜잭션 실행 실패 | 파라미터와 잔액을 확인하세요 |
+| 40011 | `TRANSACTION_REJECTED` | 트랜잭션 거부됨 | 서명과 권한을 확인하세요 |
+| 40012 | `INVALID_TRANSACTION` | 유효하지 않은 트랜잭션 | 트랜잭션 구조를 확인하세요 |
+| 40025 | `TRANSACTION_NOT_SIGNED` | 트랜잭션이 서명되지 않음 | 직렬화 전에 서명하세요 |
+| 40026 | `TRANSACTION_SIGNATURE_MISSING` | 트랜잭션 서명 누락 | 트랜잭션 서명을 추가하세요 |
+| 40039 | `TRANSACTION_SIZE_EXCEEDED` | 트랜잭션 크기 초과 | 트랜잭션 복잡도를 줄이세요 |
+
+### DEX 거래 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 40006 | `LIQUIDITY_INSUFFICIENT` | 유동성 부족 | 거래 금액을 줄이세요 |
+| 40007 | `PRICE_IMPACT_TOO_HIGH` | 가격 영향이 너무 큼 | 금액을 줄이거나 슬리피지를 높이세요 |
+| 40008 | `SLIPPAGE_TOO_HIGH` | 슬리피지가 너무 높음 | 슬리피지 설정을 조정하세요 |
+| 40014 | `INVALID_AMOUNT` | 유효하지 않은 금액 | 유효한 숫자를 사용하세요 |
+| 40015 | `AMOUNT_TOO_SMALL` | 금액이 너무 작음 | 거래 금액을 늘리세요 |
+| 40016 | `AMOUNT_TOO_LARGE` | 금액이 너무 큼 | 금액이 안전 범위를 초과합니다 |
+| 40017 | `SAME_TOKEN_SWAP` | 동일 토큰 스왑 | 입력과 출력 토큰이 동일할 수 없습니다 |
+| 40018 | `INVALID_SLIPPAGE` | 유효하지 않은 슬리피지 값 | 유효한 슬리피지 값을 사용하세요 |
+| 40019 | `SLIPPAGE_TOO_LOW` | 슬리피지가 너무 낮음 | 슬리피지는 0보다 커야 합니다 |
+| 40020 | `POOL_NOT_SUPPORTED` | 지원되지 않는 풀 | 지원되는 풀을 사용하세요 |
+| 40021 | `UNSUPPORTED_SWAP_MODE` | 지원되지 않는 스왑 모드 | 지원되는 스왑 모드를 사용하세요 |
+| 40022 | `FEE_PARAMETER_ERROR` | 유효하지 않은 수수료 파라미터 | 수수료 설정을 확인하세요 |
+| 40023 | `ANTI_MEV_REJECTED` | Anti-MEV 검증 실패 | Anti-MEV 설정을 확인하세요 |
+| 40030 | `POOL_INPUT_MISMATCH` | 풀 입력 불일치 | 입력 토큰이 풀과 일치하지 않습니다 |
+
+```json
+{
+  "code": 40006,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient liquidity",
+  "details": {
+    "requested_amount": "1000000000",
+    "available_liquidity": "500000000"
+  }
+}
+```
+
+### 주문 관련 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 40035 | `INVALID_MARKET_PRICES` | 유효하지 않은 시장 가격 | 가격 파라미터를 확인하세요 |
+| 40036 | `INVALID_ORDER_PARAMETERS` | 유효하지 않은 주문 파라미터 | 주문 설정을 확인하세요 |
+
+### 기타 클라이언트 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 40013 | `PARAMETER_ERROR` | 파라미터 오류 | total 또는 fixed 금액을 설정해야 합니다 |
+| 40024 | `NOT_IMPLEMENTED` | 메서드가 구현되지 않음 | 구현된 메서드를 사용하세요 |
+| 40037 | `UNSUPPORTED_VALUE_TYPE` | 지원되지 않는 값 타입 | 지원되는 값 타입을 사용하세요 |
+| 40038 | `PARSE_ERROR` | 파싱 실패 | 데이터 형식을 확인하세요 |
+| 40040 | `INVALID_MIGRATE_TYPE` | 유효하지 않은 마이그레이션 타입 | 유효한 마이그레이션 타입을 사용하세요 |
+
+---
+
+## 인증 오류 (401)
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 401 | `UNAUTHORIZED` | 인증되지 않음. 토큰이 누락되었거나 유효하지 않음 | Authorization 헤더를 확인하세요 |
+
+```json
+{
+  "code": 401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Unauthorized. Token is missing or invalid"
+}
+```
+
+**처리 예시**:
+
+```javascript
+if (error.code === 401) {
+  // Refresh token
+  const newToken = await getAccessToken();
+  // Retry request with new token
+}
+```
+
+---
+
+## 권한 오류 (403)
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 403 | `FORBIDDEN` | 금지됨 | 아래 세부사항 참조 |
+| 40301 | `INSUFFICIENT_PERMISSIONS` | 권한 부족 | 필요한 권한을 획득하세요 |
+
+403 오류는 다음에 의해 트리거될 수 있습니다:
+
+- **쿼터 소진**: 월간 API 호출 쿼터가 소진됨, 플랜을 업그레이드하거나 다음 달 리셋을 기다리세요
+- **블랙리스트**: IP 또는 계정이 블랙리스트에 등록됨
+- **화이트리스트 미등록**: 요청 출처가 허용 화이트리스트에 없음
+
+<Note>
+API 쿼터가 소진되면 게이트웨이가 직접 403을 반환합니다. 이는 429(속도 제한)와 다릅니다:
+- **429**: 단기 속도 제한 (초/분당 요청 수 초과)
+- **403**: 계정 쿼터 제한 (월간 사용량 소진) 또는 권한 문제
+</Note>
+
+```json
+{
+  "code": 403,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Forbidden"
+}
+```
+
+```json
+{
+  "code": 40301,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient permissions",
+  "details": {
+    "required_scope": "kyt.write",
+    "current_scopes": ["kyt.read"]
+  }
+}
+```
+
+---
+
+## 리소스 찾을 수 없음 오류 (404)
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 404 | `NOT_FOUND` | 리소스를 찾을 수 없음 | 리소스가 존재하는지 확인하세요 |
+| 40401 | `POOL_NOT_FOUND` | 유동성 풀을 찾을 수 없음 | 풀 주소와 체인을 확인하세요 |
+| 40402 | `MARKET_INFO_NOT_FOUND` | 시장 정보를 찾을 수 없음 | 시장이 존재하는지 확인하세요 |
+| 40403 | `OPEN_ORDER_NOT_FOUND` | 미체결 주문 계정을 찾을 수 없음 | 주문 계정을 확인하세요 |
+| 40404 | `ORDER_NOT_FOUND` | 주문을 찾을 수 없음 | 주문 ID를 확인하세요 |
+| 40405 | `CHAIN_NOT_FOUND` | 체인을 찾을 수 없음 | 지원되는 체인 식별자를 사용하세요 |
+| 40406 | `DEX_NOT_FOUND` | DEX를 찾을 수 없음 | 지원되는 DEX를 사용하세요 |
+
+```json
+{
+  "code": 40401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Liquidity pool not found",
+  "details": {
+    "chain": "sol",
+    "pool_address": "INVALID_ADDRESS"
+  }
+}
+```
+
+---
+
+## 속도 제한 오류 (429)
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 429 | `RATE_LIMIT` | 요청이 너무 많음. 속도 제한 도달 | 잠시 후 재시도하세요 |
+| 42901 | `API_USAGE_LIMIT_EXCEEDED` | API 사용 한도 초과 | 플랜을 업그레이드하거나 리셋을 기다리세요 |
+| 42902 | `KYT_USAGE_LIMIT_EXCEEDED` | KYT API 사용 한도 초과 | KYT 플랜을 업그레이드하세요 |
+
+```json
+{
+  "code": 429,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Too Many Requests. Rate limit reached",
+  "details": {
+    "limit": 100,
+    "remaining": 0,
+    "reset_at": 1706745600
+  }
+}
+```
+
+**처리 예시**:
+
+```javascript
+if (response.status === 429) {
+  const retryAfter = response.headers.get('Retry-After') || 1;
+  await sleep(retryAfter * 1000);
+  // Retry request
+}
+```
+
+---
+
+## 서버 오류 (500)
+
+### 일반 서버 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 500 | `INTERNAL_SERVER_ERROR` | 내부 서버 오류 | 나중에 재시도하세요 |
+| 50001 | `UNKNOWN_ERROR` | 알 수 없는 오류 | 지원팀에 문의하세요 |
+| 50005 | `DATABASE_ERROR` | 데이터 작업 실패 | 나중에 재시도하세요 |
+| 50007 | `EXTERNAL_SERVICE_ERROR` | 외부 서비스 호출 실패 | 나중에 재시도하세요 |
+| 50029 | `EXTERNAL_API_ERROR` | 외부 API 요청 실패 | 나중에 재시도하세요 |
+
+### 블록체인 관련 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 50002 | `CHAIN_CONNECTION_ERROR` | 블록체인 연결 오류 | 네트워크 상태를 확인하세요 |
+| 50003 | `CHAIN_SYNC_ERROR` | 블록체인 동기화 오류 | 동기화 완료를 기다리세요 |
+| 50004 | `TRANSACTION_TIMEOUT` | 트랜잭션 타임아웃 | 재시도하거나 타임아웃을 늘리세요 |
+| 50006 | `TRANSACTION_ERROR` | 트랜잭션 오류 | 트랜잭션 파라미터를 확인하세요 |
+| 50008 | `CHAIN_NOT_SUPPORTED` | 지원되지 않는 체인 | 지원되는 체인을 사용하세요 |
+| 50017 | `INSUFFICIENT_BALANCE` | 잔액 부족 | 계정 잔액을 확인하세요 |
+| 50026 | `TRANSACTION_SEND_FAILED` | 트랜잭션 전송 실패 | 네트워크와 파라미터를 확인하세요 |
+| 50027 | `TRANSACTION_CONFIRMATION_FAILED` | 트랜잭션 확인 실패 | 트랜잭션 상태를 확인하세요 |
+| 50028 | `TRANSACTION_SIGNATURE_EMPTY` | 트랜잭션 서명이 비어있음 | 서명을 추가하세요 |
+
+### DEX 관련 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 50009 | `DEX_NOT_SUPPORTED` | 지원되지 않는 DEX | 지원되는 DEX를 사용하세요 |
+| 50010 | `DEX_ROUTE_BUILD_FAILED` | DEX 라우트 구축 실패 | 토큰 쌍의 유동성을 확인하세요 |
+| 50011 | `DEX_SWAP_BUILD_FAILED` | DEX 스왑 구축 실패 | 거래 파라미터를 확인하세요 |
+| 50012 | `DEX_SWAP_SIMULATED_FAILED` | DEX 스왑 시뮬레이션 실패 | 거래 파라미터를 조정하세요 |
+| 50019 | `DEX_AGGREGATOR_NOT_FOUND` | DEX 어그리게이터를 찾을 수 없음 | 지원팀에 문의하세요 |
+| 50020 | `DEX_BUILDER_NOT_FOUND` | DEX 빌더를 찾을 수 없음 | 지원팀에 문의하세요 |
+| 50033 | `CURVE_CALCULATION_ERROR` | 커브 계산 오류 | 파라미터를 확인하세요 |
+| 50034 | `LOOKUP_TABLE_ERROR` | 주소 룩업 테이블 오류 | 나중에 재시도하세요 |
+| 50035 | `SWAP_ROUTE_ERROR` | 스왑 라우트 계산 오류 | 토큰 쌍을 확인하세요 |
+
+### Jupiter API 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 50013 | `JUPITER_API_UNAUTHORIZED` | Jupiter API 인증 실패 | API 키를 확인하세요 |
+| 50014 | `JUPITER_API_RATE_LIMIT` | Jupiter API 속도 제한 | 나중에 재시도하세요 |
+| 50015 | `JUPITER_API_BAD_REQUEST` | Jupiter API 잘못된 요청 | 파라미터를 확인하세요 |
+| 50016 | `JUPITER_API_ERROR` | Jupiter API 오류 | 나중에 재시도하세요 |
+
+### 설정 및 초기화 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 50018 | `PROVIDER_NOT_INITIALIZED` | 프로바이더가 초기화되지 않음 | rpcUrl을 구성하세요 |
+| 50021 | `ORDER_BUILDER_NOT_FOUND` | 주문 빌더를 찾을 수 없음 | 지원팀에 문의하세요 |
+| 50022 | `MARKET_EXPIRED` | 시장이 만료됨 | 유효한 시장을 사용하세요 |
+| 50023 | `CONFIG_NOT_FOUND` | 설정을 찾을 수 없음 | 설정을 확인하세요 |
+| 50030 | `FEE_CONFIGURATION_REQUIRED` | 수수료 설정 필요 | 수수료를 구성하세요 |
+| 50036 | `METAFIELD_NOT_FOUND` | 메타필드를 찾을 수 없음 | 메타데이터를 확인하세요 |
+
+### 파일 업로드 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 50024 | `IPFS_UPLOAD_FAILED` | IPFS 업로드 실패 | 나중에 재시도하세요 |
+| 50025 | `SIGNED_URL_FAILED` | 서명된 URL 생성 실패 | 나중에 재시도하세요 |
+
+### 번들 처리 오류
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 50031 | `BUNDLE_PROCESSING_FAILED` | 번들 처리 실패 | 번들 설정을 확인하세요 |
+| 50032 | `TIP_ACCOUNTS_NOT_AVAILABLE` | 팁 계정 사용 불가 | 나중에 재시도하세요 |
+
+```json
+{
+  "code": 50010,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "DEX route build failed",
+  "details": {
+    "input_token": "So11111111111111111111111111111111111111112",
+    "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "reason": "No valid route found"
+  }
+}
+```
+
+---
+
+## 레드 패킷 오류 (510)
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 51000 | `RED_PACKET_INVALID_PARAMETER_ERROR` | 레드 패킷 파라미터 오류 | 레드 패킷 ID 또는 공유 ID를 입력하세요 |
+| 51001 | `RED_PACKET_NOT_FOUND_ERROR` | 레드 패킷을 찾을 수 없음 | 레드 패킷 ID를 확인하세요 |
+| 51002 | `RED_PACKET_WITHDRAWN_ERROR` | 레드 패킷이 회수됨 | 레드 패킷을 더 이상 사용할 수 없습니다 |
+| 51003 | `RED_PACKET_ALREADY_CLAIMED_ERROR` | 이미 수령한 레드 패킷 | 각 사용자는 한 번만 수령 가능합니다 |
+| 51004 | `RED_PACKET_TRANSACTION_ERROR` | 레드 패킷 트랜잭션 오류 | 나중에 재시도하세요 |
+
+```json
+{
+  "code": 51003,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "You have already claimed this red packet"
+}
+```
+
+---
+
+## Webhook 오류 (520)
+
+| 코드 | 이름 | 설명 | 해결 방법 |
+|------|------|------|-----------|
+| 52000 | `WEBHOOKS_APPLICATION_NOT_FOUND` | Webhook 애플리케이션을 찾을 수 없음 | Webhook ID를 확인하세요 |
+| 52001 | `WEBHOOKS_ENDPOINT_LIMIT_REACHED` | Webhook 엔드포인트 한도 도달 | 미사용 엔드포인트를 삭제하세요 |
+
+```json
+{
+  "code": 52001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Webhooks endpoint limit reached",
+  "details": {
+    "current_count": 10,
+    "max_allowed": 10
+  }
+}
+```
+
+---
+
+## 오류 처리 모범 사례
+
+```javascript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient(process.env.CHAINSTREAM_ACCESS_TOKEN);
+
+async function safeApiCall(apiFunction) {
+  try {
+    return await apiFunction();
+  } catch (error) {
+    const { code, message, details } = error;
+    
+    // Handle errors by category
+    if (code === 401) {
+      // Authentication error: refresh token
+      await refreshToken();
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code === 429 || code === 42901 || code === 42902) {
+      // Rate limit: wait and retry
+      const retryAfter = details?.reset_at 
+        ? (details.reset_at * 1000 - Date.now()) 
+        : 1000;
+      await sleep(retryAfter);
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code >= 40000 && code < 41000) {
+      // Client parameter error: log and throw
+      console.error(`Parameter error: ${message}`, details);
+      throw new ValidationError(message, details);
+    }
+    
+    if (code >= 40400 && code < 40500) {
+      // Resource not found
+      console.warn(`Resource not found: ${message}`);
+      return null;
+    }
+    
+    if (code >= 50000) {
+      // Server error: log and retry
+      console.error(`Server error: ${message}`, details);
+      await sleep(1000);
+      return safeApiCall(apiFunction);
+    }
+    
+    // Unknown error
+    throw error;
+  }
+}
+
+// Usage example
+const tokenInfo = await safeApiCall(() => 
+  client.token.getToken('sol', 'TOKEN_ADDRESS')
+);
+```
+
+---
+
+## GraphQL API 오류
+
+GraphQL 쿼리는 표준 `errors` 배열에 오류를 반환합니다. 크레딧 소비는 `extensions.credits`에 보고됩니다:
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTradesRecord'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ],
+  "extensions": {
+    "credits": {
+      "total": 0,
+      "cubes": []
+    }
+  }
+}
+```
+
+| 시나리오 | 동작 |
+|:---------|:-----|
+| 유효하지 않은 쿼리 (구문/유효성 검증 오류) | `errors` 배열 채워짐, `data`는 null, 크레딧 미차감 |
+| 성공적인 쿼리 | `data` 채워짐, `extensions.credits.total`에 소비된 CU 표시 |
+| 크레딧 한도 초과 | 결제 플랜에 따라 쿼리가 거부될 수 있음 — `extensions.credits` 확인 |
+
+전체 크레딧 계산 공식은 [GraphQL 과금 및 크레딧](/ko/graphql/billing/graphql-billing)을 참조하세요.
+
+---
+
+## WebSocket 오류
+
+WebSocket 연결은 `wss://realtime-dex.chainstream.io/connection/websocket` 엔드포인트에 `?token=` 인증을 사용합니다.
+
+| 시나리오 | 동작 |
+|:---------|:-----|
+| 유효하지 않은 토큰 | 핸드셰이크에서 연결 거부 |
+| 토큰 만료 | 연결 끊김; 새 토큰으로 재연결 |
+| 네트워크 중단 | 클라이언트에서 지수 백오프로 자동 재연결 구현 필요 |
+| 유효하지 않은 채널 구독 | WebSocket 프레임에 오류 메시지 반환 |
+
+<Tip>
+TypeScript SDK(`@chainstream-io/sdk`)는 WebSocket 재연결을 자동으로 처리합니다. 원시 WebSocket 클라이언트를 사용하는 경우, 연결 끊김 시 지수 백오프(1초, 2초, 4초, 8초...)를 구현하세요.
+</Tip>
+
+연결 관리에 대한 자세한 내용은 [WebSocket API 레퍼런스](/ko/api-reference/endpoint/websocket/api) 및 [타임아웃 및 하트비트](/ko/api-reference/endpoint/websocket/timeouts-and-heartbeats)를 참조하세요.
+
+---
+
+## 도움 받기
+
+해결할 수 없는 오류가 발생하면:
+
+<CardGroup cols={2}>
+  <Card title="기술 지원" icon="envelope" href="mailto:support@chainstream.io">
+    오류 코드와 타임스탬프를 포함하여 이메일을 보내주세요
+  </Card>
+  <Card title="Discord 커뮤니티" icon="discord" href="https://discord.gg/quhPXEkJ">
+    커뮤니티에 참여하여 도움을 받으세요
+  </Card>
+</CardGroup>
+
+<Note>
+이슈를 보고할 때, 문제를 빠르게 파악할 수 있도록 전체 오류 응답(`code`, `timestamp`, `message`, `details` 포함)을 제공해 주세요.
+</Note>

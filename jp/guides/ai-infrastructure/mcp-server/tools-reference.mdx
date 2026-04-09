@@ -1,0 +1,398 @@
+---
+title: "MCPツールリファレンス"
+description: "ChainStream MCPサーバーの全17個のMCPツールの完全なリファレンス"
+icon: "wrench"
+---
+
+ChainStream MCPサーバーは、トークン分析、ウォレットプロファイリング、DEX取引、市場トレンド、ブロックチェーン操作のための**17個のツール**を公開しています。**クラウドエンドポイント**（`https://mcp.chainstream.io/mcp`）でも**npmパッケージ**（`@chainstream-io/mcp`）でも、同じ17個のツールが利用可能です。
+
+---
+
+## ツール（17個）
+
+### Tokenツール（5個）
+
+#### `tokens_search`
+
+サポートされている全チェーンでトークンを名前、シンボル、またはコントラクトアドレスで検索します。名前、シンボル、チェーン、価格、24時間変動率、時価総額を含むトップマッチを返します。ユーザーがトークン名を指定した場合、最初のステップとしてこのツールを使用してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `query` | string | はい | — | 検索クエリ：トークン名、シンボル、またはコントラクトアドレス |
+| `chain` | string | いいえ | — | チェーンでフィルター（省略すると全チェーンを検索） |
+| `limit` | number | いいえ | `10` | 最大結果数（1〜50） |
+
+#### `tokens_analyze`
+
+価格、取引量、保有者分布、セキュリティ評価、流動性の深さを組み合わせた包括的なトークン分析。これはトークンを評価するための主要ツールです — 「トークンXについて教えて」や「このトークンは安全？」と聞かれた場合に使用します。価格チャートには代わりに `tokens_price_history` を使用してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `address` | string | はい | — | トークンコントラクトアドレス |
+| `sections` | array | いいえ | `["overview","metrics","holders","security"]` | 含めるデータセクション。値：`overview`、`metrics`、`holders`、`security`、`liquidity` |
+
+<Info>
+  このツールは複数のREST API呼び出し（トークン詳細、統計、マーケットデータ、トップ保有者、セキュリティ）を単一のレスポンスに集約します。
+</Info>
+
+#### `tokens_price_history`
+
+チャートとテクニカル分析のためのOHLCVローソク足データを取得します。最大100本のローソク足（始値、高値、安値、終値、取引量）を返します。日中分析には `1h` または `4h` の解像度を、長期トレンドには `1d` を使用してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `address` | string | はい | — | トークンコントラクトアドレス |
+| `resolution` | enum | いいえ | `"1h"` | ローソク足の解像度：`1m`、`5m`、`15m`、`1h`、`4h`、`1d` |
+| `limit` | number | いいえ | `50` | ローソク足の数（1〜100） |
+
+#### `tokens_discover`
+
+オンチェーンメトリクスでトークンを発見します。「Solanaで取引量の多いトークン」や「最も価格上昇したトークン」など、特定の条件に合うトークンを見つけるために使用します。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `sort_by` | enum | いいえ | `"volume"` | ソートメトリク：`volume`、`price_change`、`trades`、`market_cap` |
+| `time_frame` | enum | いいえ | `"24h"` | 時間枠：`1h`、`4h`、`24h` |
+| `min_volume_usd` | number | いいえ | — | 最小取引量（USD） |
+| `limit` | number | いいえ | `20` | 最大結果数（1〜50） |
+
+#### `tokens_compare`
+
+最大5つのトークンを並べて比較します。各トークンの標準化されたメトリクス（価格、取引量、時価総額、保有者数、24時間変動率）を返します。「どのトークンが良い？」や選択肢を比較する必要がある場合に使用します。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `tokens` | array | はい | — | `{ chain, address }` オブジェクトの配列（2〜5個） |
+
+---
+
+### Walletツール（2個）
+
+#### `wallets_profile`
+
+ウォレットの完全なプロフィール：現在のトークン保有と評価額、実現/未実現PnL、総資産額。「このウォレットは何を保有している？」や「このウォレットの収益性は？」と聞かれた場合に使用します。最近のトランザクションには代わりに `wallets_activity` を使用してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `address` | string | はい | — | ウォレットアドレス |
+| `include` | array | いいえ | `["holdings","pnl"]` | データセクション：`holdings`（トークン残高）、`pnl`（損益）、`net_worth`（総資産額） |
+
+<Info>
+  ホスティングされたエンドポイントの `wallet_get_balance` + `wallet_get_pnl` + `wallet_get_net_worth` に相当します。
+</Info>
+
+#### `wallets_activity`
+
+最近のウォレットアクティビティ：トークン送金とトランザクション履歴。「このウォレットは最近何をしていた？」を調査する場合や、不審なアクティビティをチェックする場合に使用します。ポートフォリオとPnLデータには代わりに `wallets_profile` を使用してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `address` | string | はい | — | ウォレットアドレス |
+| `limit` | number | いいえ | `20` | 送金件数（1〜50） |
+
+---
+
+### Marketツール（1個）
+
+#### `market_trending`
+
+カテゴリ別のトレンドトークンを取得します。`hot` = 最もアクティブに取引されているもの、`new` = 最近作成されたトークン、`migrated` = ローンチパッドからDEXに移行したトークン、`graduating` = 移行閾値に近づいているトークン、`stocks` = 株式関連ミームトークン。デフォルトチェーンはsolanaです。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | いいえ | `"solana"` | クエリするチェーン |
+| `category` | enum | いいえ | `"hot"` | トレンドカテゴリ：`hot`、`new`、`migrated`、`graduating`、`stocks` |
+| `limit` | number | いいえ | `20` | 最大結果数（1〜50） |
+
+---
+
+### DEXツール（3個）
+
+#### `dex_quote`
+
+期待される出力量、価格インパクト、手数料を示すスワップクオートを取得します。読み取り専用 — 資金は移動しません。ユーザーに受け取り金額を示して確認するため、`dex_swap` の前に必ずこのツールを呼び出してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `dex` | string | はい | — | DEXプロトコル（jupiter、raydium、pumpfunなど） |
+| `inputMint` | string | はい | — | 入力トークンアドレス |
+| `outputMint` | string | はい | — | 出力トークンアドレス |
+| `amount` | string | はい | — | 最小単位での入力量 |
+| `slippage` | number | はい | — | スリッページ許容度（パーセント、0〜100） |
+
+#### `dex_swap`
+
+DEXでトークンスワップを実行します。**高リスク** — 資金を移動する実際のトランザクションを作成します。必ず先に `dex_quote` を呼び出し、ユーザーにクオートを提示してください。このツールを呼び出す前に、ユーザーが明示的に確認する必要があります。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `dex` | string | はい | — | DEXプロトコル |
+| `userAddress` | string | はい | — | ユーザーウォレットアドレス |
+| `inputMint` | string | はい | — | 入力トークンアドレス |
+| `outputMint` | string | はい | — | 出力トークンアドレス |
+| `amount` | string | はい | — | 最小単位での入力量 |
+| `slippage` | number | はい | — | スリッページ許容度（パーセント、0〜100） |
+| `swapMode` | enum | いいえ | `"ExactIn"` | スワップモード：`ExactIn`、`ExactOut` |
+| `poolAddress` | string | いいえ | — | 特定のプールアドレス |
+| `priorityFee` | string | いいえ | — | Solanaのプライオリティフィー |
+
+<Warning>
+  実際のオンチェーントランザクションを実行します。MCPクライアントはユーザーの明示的な確認を要求する必要があります。
+</Warning>
+
+#### `dex_create_token`
+
+ローンチパッドDEX（PumpFun、Raydium、Moonshotなど）で新しいトークンを作成します。**高リスク** — 実際のトークンコントラクトをデプロイします。ユーザーの確認が必要です。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `dex` | enum | はい | — | ローンチパッドDEX：`raydium`、`pumpfun`、`moonshot`、`candy`、`launchpad` |
+| `userAddress` | string | はい | — | 作成者のウォレットアドレス |
+| `name` | string | はい | — | トークン名（最大32文字） |
+| `symbol` | string | はい | — | トークンシンボル（最大10文字） |
+| `uri` | string | いいえ | — | トークンメタデータURI |
+| `image` | string | いいえ | — | トークン画像URL |
+| `priorityFee` | string | いいえ | — | Solanaのプライオリティフィー |
+
+<Warning>
+  実際のオンチェーントークンを作成します。ユーザーの明示的な確認が必要です。
+</Warning>
+
+---
+
+### Tradingツール（2個）
+
+#### `trading_backtest`
+
+過去のデータに対してトレーディング戦略をバックテストします。PnL曲線、シャープレシオ、最大ドローダウン、取引詳細を返します。現在開発中 — 利用可能になった場合、結果は進捗通知で配信されます。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `token` | string | はい | — | トークンアドレス |
+| `strategy` | string | はい | — | 戦略の説明またはコード |
+| `startTime` | number | はい | — | 開始タイムスタンプ（unix秒） |
+| `endTime` | number | はい | — | 終了タイムスタンプ（unix秒） |
+| `initialCapital` | number | いいえ | `10000` | 開始資金（USD） |
+
+<Note>
+  このツールは開発中であり、送信されたパラメータを含むプレースホルダーレスポンスを返します。
+</Note>
+
+#### `trading_execute`
+
+トレーディングシグナルに基づいてDEXで取引を実行します。**高リスク** — 実際の資金を移動します。ユーザーの明示的な確認が必要です。スワップパラメータをより細かく制御するには、`dex_swap` を直接使用することを検討してください。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `action` | enum | はい | — | 取引アクション：`buy`、`sell` |
+| `token` | string | はい | — | トークンアドレス |
+| `amount` | string | はい | — | 取引量 |
+| `maxSlippage` | number | いいえ | `3.0` | 最大スリッページ（パーセント） |
+| `userAddress` | string | はい | — | ユーザーウォレットアドレス |
+
+<Warning>
+  実際のオンチェーントランザクションを実行します。MCPクライアントはユーザーの明示的な確認を要求する必要があります。
+</Warning>
+
+<Note>
+  このツールは開発中であり、プレースホルダーレスポンスを返します。
+</Note>
+
+---
+
+### Tradeツール（1個）
+
+#### `trades_recent`
+
+トークンまたはウォレットでフィルター可能な最近のオンチェーン取引を取得します。価格、数量、買い手/売り手、タイムスタンプを含む取引詳細を返します。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `tokenAddress` | string | いいえ | — | 特定トークンの取引をフィルター |
+| `walletAddress` | string | いいえ | — | 特定ウォレットの取引をフィルター |
+| `limit` | number | いいえ | `20` | 取引件数（1〜50） |
+
+---
+
+### インフラストラクチャツール（3個）
+
+#### `webhooks_manage`
+
+リアルタイムイベント通知のためのWebhookエンドポイントを管理します。`list` で既存のWebhookを確認、`create` で新しいイベントサブスクリプションを設定、`delete` でエンドポイントを削除します。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `action` | enum | はい | — | アクション：`list`、`create`、`delete` |
+| `endpoint_id` | string | いいえ | — | `delete` アクションに必須 |
+| `url` | string | いいえ | — | Webhook URL（`create` に必須） |
+| `events` | array | いいえ | — | サブスクライブするイベントタイプ（`create` に必須） |
+
+#### `blockchain_info`
+
+サポートされているブロックチェーンと利用可能なDEXプロトコルに関する情報を取得します。エージェントが利用可能なチェーンやDEXを知る必要がある場合に使用します。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | いいえ | — | 特定のチェーンをクエリ（省略すると全チェーン） |
+
+#### `transaction_send`
+
+署名済みトランザクションをブロックチェーンにブロードキャストします。**高リスク** — 取り消し不可能な実際のトランザクションを送信します。トランザクションはユーザーのウォレットで署名済みである必要があります。
+
+| パラメータ | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `chain` | string | はい | — | ブロックチェーン識別子 |
+| `signedTransaction` | string | はい | — | 署名済みトランザクションデータ（base64またはhex） |
+
+<Warning>
+  取り消し不可能なオンチェーントランザクション。適切な署名とレビューを確認してください。
+</Warning>
+
+---
+
+## REST APIカバレッジ
+
+17個のMCPツールは、複数のREST APIエンドポイントをより高レベルな操作に集約しています。以下は参考としての基盤REST APIへのマッピングです。
+
+### Token API（27エンドポイント）
+
+| ツール | 説明 |
+|---|---|
+| `token_search` | 名前/シンボル/アドレスでトークンを検索 |
+| `token_get` | トークンの詳細情報 |
+| `token_get_metadata` | トークンメタデータ（名前、シンボル、ロゴ） |
+| `token_get_stats` | 取引統計 |
+| `token_get_price` | 現在価格 |
+| `token_get_prices` | 過去の価格データ |
+| `token_get_candles` | ローソク足チャートデータ |
+| `token_get_holders` | 保有者数 |
+| `token_get_top_holders` | トップ保有者リスト |
+| `token_get_pools` | 流動性プール |
+| `token_get_security` | セキュリティ/監査チェック |
+| `token_get_creation` | 作成詳細（デプロイヤー、tx、時間） |
+| `token_get_mint_and_burn` | Mint/Burn履歴 |
+| `token_list` | フィルター付きページネーションされたトークンリスト |
+| `token_get_traders_tag` | トレーダータイプ分布 |
+| `token_get_liquidity_snapshots` | 過去の流動性 |
+| `token_dev_get_tokens` | 開発者による全トークン |
+
+### Wallet（5ツール）
+
+| ツール | 説明 |
+|---|---|
+| `wallet_get_balance` | トークン残高 |
+| `wallet_get_balance_updates` | 残高変動履歴 |
+| `wallet_get_pnl` | 損益メトリクス |
+| `wallet_calculate_pnl` | 特定期間のPnL |
+| `wallet_get_stats` | 取引パターンとアクティビティ |
+
+### Trade（3ツール）
+
+| ツール | 説明 |
+|---|---|
+| `trade_get` | 取引記録 |
+| `trade_get_activities` | 取引アクティビティストリーム |
+| `trade_get_top_traders` | トップパフォーマー |
+
+### DexPool（2ツール）
+
+| ツール | 説明 |
+|---|---|
+| `dexpool_get` | プール情報 |
+| `dexpool_get_snapshots` | 過去のプール状態 |
+
+### Ranking（5ツール）
+
+| ツール | 説明 |
+|---|---|
+| `ranking_get_hot_tokens` | トレンドトークン |
+| `ranking_get_new_tokens` | 新規作成トークン |
+| `ranking_get_stocks` | Bonding Curveトークン |
+| `ranking_get_final_stretch` | 卒業間近のトークン |
+| `ranking_get_migrated` | 最近卒業したトークン |
+
+### Blockchain（2ツール）
+
+| ツール | 説明 |
+|---|---|
+| `blockchain_list` | サポートされているブロックチェーン |
+| `blockchain_get_latest_block` | 現在のブロック情報 |
+
+### DEX（5ツール）
+
+| ツール | 説明 |
+|---|---|
+| `dex_list` | サポートされているDEX |
+| `dex_get_quote` | スワップクオート |
+| `dex_get_route` | 最適ルート |
+| `dex_swap` | スワップ実行 |
+| `dex_create` | 未署名スワップtxの作成 |
+
+### DeFi / トークン作成（3ツール）
+
+| ツール | 説明 |
+|---|---|
+| `pumpfun_create` | Pump.funでトークンを作成 |
+| `moonshot_create` | Moonshotでトークンを作成 |
+| `moonshot_submit_create_token` | Moonshot作成txの送信 |
+
+### Transaction（3ツール）
+
+| ツール | 説明 |
+|---|---|
+| `transaction_send` | 署名済みトランザクションの送信 |
+| `transaction_get_gas_price` | 現在のガス価格 |
+| `transaction_estimate_gas_limit` | ガス見積もり |
+
+### RedPacket（4ツール）
+
+| ツール | 説明 |
+|---|---|
+| `redpacket_create` | レッドパケットの作成 |
+| `redpacket_claim` | 報酬の受取 |
+| `redpacket_get` | レッドパケットの詳細 |
+| `redpacket_get_claims` | 受取記録 |
+
+### KYTコンプライアンス（7ツール）
+
+| ツール | 説明 |
+|---|---|
+| `kyt_register_transfer` | リスク評価のためのtx登録 |
+| `kyt_get_transfer_summary` | トランザクションリスクサマリー |
+| `kyt_get_transfer_exposures` | トランザクション内のリスクエンティティ |
+| `kyt_get_transfer_alerts` | リスクアラート |
+| `kyt_register_withdrawal` | スクリーニング用の出金登録 |
+| `kyt_register_address` | モニタリング用のアドレス登録 |
+| `kyt_get_address_risk` | アドレスリスク評価 |
+
+### Webhook（6ツール）
+
+| ツール | 説明 |
+|---|---|
+| `webhook_list_endpoints` | エンドポイント一覧 |
+| `webhook_create_endpoint` | サブスクリプション作成 |
+| `webhook_update_endpoint` | 設定の変更 |
+| `webhook_delete_endpoint` | エンドポイントの削除 |
+| `webhook_get_secret` | 署名シークレットの取得 |
+| `webhook_rotate_secret` | シークレットの再生成 |
+
+---
+
+## 接続オプション
+
+| モード | エンドポイント | 説明 |
+|--------|-------------|------|
+| **Cloud** | `https://mcp.chainstream.io/mcp` | セットアップ不要、同じ17個のツール |
+| **npm stdio** | `npx @chainstream-io/mcp` | IDE統合用のローカルプロセス |
+| **npm HTTP** | `chainstream-mcp --transport http` | チームサーバー、クラウドデプロイメント |

@@ -5,6 +5,10 @@ icon: "magnifying-glass-dollar"
 tag: "Coming Soon"
 ---
 
+<Info>
+ChainStream 目前支持 **Solana**（`sol`）、**Ethereum**（`eth`）和 **BSC**（`bsc`）。支持的 DEX 包括 Jupiter、Raydium、PumpFun、Moonshot、Candy（Solana）以及 KyberSwap（Ethereum/BSC）。以下部分代码示例引用了其他 DEX 用于概念说明，请查看[支持的链](/cn/guides/getting-started/supported-chains)了解当前覆盖范围。
+</Info>
+
 <Warning>
 **Coming Soon** — 此功能正在开发中，尚未上线。
 </Warning>
@@ -24,8 +28,8 @@ tag: "Coming Soon"
 
 ```mermaid
 flowchart TD
-    A[Uniswap 价格数据] --> C[套利扫描器]
-    B[SushiSwap 价格数据] --> C
+    A[Jupiter 价格数据] --> C[套利扫描器]
+    B[Raydium 价格数据] --> C
     C --> D[机会评估 & 通知]
 ```
 
@@ -44,15 +48,15 @@ flowchart TD
 同一代币在不同 DEX 上可能存在价格差异：
 
 ```
-例：ETH/USDC 交易对
+例：Solana 上 SOL/USDC
 
-Uniswap:   1 ETH = $2,000
-SushiSwap: 1 ETH = $2,010
+Jupiter:  1 SOL = $140.00
+Raydium:  1 SOL = $140.70
 
-价差 = ($2,010 - $2,000) / $2,000 = 0.5%
+价差 = ($140.70 - $140.00) / $140.00 = 0.5%
 
 套利路径：
-Uniswap 买入 ETH → SushiSwap 卖出 ETH → 赚取差价
+Jupiter 买入 SOL → Raydium 卖出 SOL → 赚取差价
 ```
 
 ### 利润公式
@@ -85,14 +89,13 @@ import 'dotenv/config';
 
 export const CHAINSTREAM_ACCESS_TOKEN = process.env.CHAINSTREAM_ACCESS_TOKEN;
 
-// 监控的 DEX
-export const DEXES = ['uniswap_v3', 'sushiswap', 'curve'];
+// 监控的 DEX（Solana：Jupiter、Raydium、PumpFun、Moonshot、Candy；EVM：eth/bsc 上 KyberSwap）
+export const DEXES = ['jupiter', 'raydium', 'pumpfun', 'moonshot', 'candy'];
 
-// 监控的交易对
+// 监控的交易对（当前覆盖下，多 DEX 价差对比在 Solana 上最典型）
 export const TRADING_PAIRS = [
-  { base: 'ETH', quote: 'USDC', chain: 'ethereum' },
-  { base: 'ETH', quote: 'USDT', chain: 'ethereum' },
-  { base: 'WBTC', quote: 'ETH', chain: 'ethereum' },
+  { base: 'SOL', quote: 'USDC', chain: 'sol' },
+  { base: 'SOL', quote: 'USDT', chain: 'sol' },
 ];
 
 // 套利阈值
@@ -279,7 +282,7 @@ main();
     使用闪电贷实现无本金套利
   </Card>
   <Card title="多链扫描" icon="layer-group">
-    扩展到 Arbitrum、Base 等 L2
+    在 Solana 多 DEX 之外，增加 **eth** / **bsc** 的 KyberSwap 报价
   </Card>
   <Card title="自动执行" icon="robot">
     集成钱包实现自动交易（需谨慎）

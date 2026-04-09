@@ -1,0 +1,140 @@
+---
+title: "プロンプトとリソース"
+description: "ChainStream MCPサーバーが公開する組み込みMCPプロンプト、リソース、サポートチェーン、DEXプロトコル（mcp-appソースに準拠）"
+icon: "book-open"
+---
+
+## MCPプロンプト
+
+ChainStream MCPサーバーは `registerAllPrompts` で**4つのプロンプト**を登録しています。パラメータ名とオプション性は、`server.prompt` に渡されるZod引数スキーマに一致します。
+
+### `token_analysis`
+
+**説明（コードより）:** 複数の観点からトークンを評価するための詳細分析テンプレート
+
+| パラメータ | 型 | 必須 | Zodの説明 |
+|-----------|------|------|----------|
+| `chain` | string | はい | ブロックチェーン（solana、ethereum、bsc） |
+| `token` | string | はい | トークンアドレスまたはシンボル |
+
+---
+
+### `wallet_profiling`
+
+**説明（コードより）:** 取引パターンとパフォーマンスを分析するためのウォレットプロファイリングテンプレート
+
+| パラメータ | 型 | 必須 | Zodの説明 |
+|-----------|------|------|----------|
+| `chain` | string | はい | ブロックチェーン |
+| `address` | string | はい | ウォレットアドレス |
+
+---
+
+### `trading_strategy`
+
+**説明（コードより）:** 自然言語の説明からトレーディング戦略を生成・バックテストする
+
+| パラメータ | 型 | 必須 | Zodの説明 |
+|-----------|------|------|----------|
+| `description` | string | はい | 自然言語での戦略の説明 |
+| `chain` | string | いいえ | ターゲットブロックチェーン |
+| `token` | string | いいえ | ターゲットトークン |
+
+---
+
+### `risk_assessment`
+
+**説明（コードより）:** トークンまたはトレーディングポジションの包括的なリスク評価
+
+| パラメータ | 型 | 必須 | Zodの説明 |
+|-----------|------|------|----------|
+| `chain` | string | はい | ブロックチェーン |
+| `token` | string | はい | トークンアドレス |
+
+## MCPリソース
+
+サーバーは `registerAllResources` で**4つのリソース**を登録しています：3つの固定URIと1つの `ResourceTemplate`。
+
+### `chainstream://chains`
+
+**リソース名（コード）:** `chains`  
+**MIMEタイプ:** `application/json`
+
+ハンドラーはコードの `CHAINS_DATA` を返します — 正確なJSONペイロードは以下の通りです：
+
+```json
+{ "chains": [{ "id": "solana", "name": "Solana", "status": "active", "avgBlockTime": "400ms" }, { "id": "ethereum", "name": "Ethereum", "status": "active", "avgBlockTime": "12s" }, { "id": "bsc", "name": "BNB Smart Chain", "status": "active", "avgBlockTime": "3s" }] }
+```
+
+読みやすい形式：
+
+```json
+{
+  "chains": [
+    { "id": "solana", "name": "Solana", "status": "active", "avgBlockTime": "400ms" },
+    { "id": "ethereum", "name": "Ethereum", "status": "active", "avgBlockTime": "12s" },
+    { "id": "bsc", "name": "BNB Smart Chain", "status": "active", "avgBlockTime": "3s" }
+  ]
+}
+```
+
+---
+
+### `chainstream://docs/api_reference`
+
+**リソース名（コード）:** `api-reference`  
+**MIMEタイプ:** `text/markdown`
+
+`API_REFERENCE` 定数（ベースURL、Data APIおよびDeFi APIエンドポイントリスト）から構築されたMarkdownボディ。
+
+---
+
+### `chainstream://docs/query_examples`
+
+**リソース名（コード）:** `query-examples`  
+**MIMEタイプ:** `text/markdown`
+
+`QUERY_EXAMPLES` 定数（エージェント向けの一般的なクエリパターン）から構築されたMarkdownボディ。
+
+---
+
+### `chainstream://chains/{chain}/dexes`
+
+**リソース名（コード）:** `chain-dexes`  
+**タイプ:** `ResourceTemplate('chainstream://chains/{chain}/dexes', { list: undefined })`  
+**MIMEタイプ:** `application/json`
+
+ハンドラーは `variables.chain` を解決し、JSON `{ "chain": "<resolved>", "dexes": string[] }` で応答します。`dexes` は `DEXES_BY_CHAIN[chain]` で、チェーンが不明な場合は `[]` です。
+
+URIの例: `chainstream://chains/solana/dexes`
+
+## サポートされているチェーン
+
+コードの `CHAINS_DATA` / `DEXES_BY_CHAIN` 設定は**3つの**チェーンをカバーしています：
+
+| 識別子 | 表示名（`chains` リソースより） |
+|--------|-------------------------------|
+| `solana` | Solana |
+| `ethereum` | Ethereum |
+| `bsc` | BNB Smart Chain |
+
+## チェーン別DEX
+
+値は `resources/index.ts` の `DEXES_BY_CHAIN` に一致します（コード内の小文字プロトコルID）：
+
+| チェーン | `dexes` 配列 |
+|---------|-------------|
+| `solana` | `jupiter`, `raydium`, `pumpfun`, `moonshot`, `candy` |
+| `ethereum` | `kyberswap` |
+| `bsc` | `kyberswap` |
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="ツールリファレンス" icon="wrench" href="/jp/guides/ai-infrastructure/mcp-server/tools-reference">
+    全MCPツールの詳細なパラメータドキュメント
+  </Card>
+  <Card title="Agent Skills" icon="robot" href="/jp/guides/ai-infrastructure/agent-skills/introduction">
+    ChainStreamをAIコーディングエージェントに接続
+  </Card>
+</CardGroup>

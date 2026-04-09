@@ -1,0 +1,170 @@
+---
+title: "GraphQL IDE"
+description: "ChainStream GraphQLクエリの記述、テスト、共有のためのブラウザベースのインタラクティブIDE"
+icon: "code"
+---
+
+<Info>
+ChainStream GraphQL IDEは、Solana、Ethereum、BSC、Polygon全体でGraphQL分析クエリの記述、テスト、共有のために構築されたブラウザベースの開発環境です。インストール不要 — URLを開いてすぐにクエリを開始できます。
+</Info>
+
+<Card title="GraphQL IDEを開く" icon="arrow-up-right-from-square" href="https://ide.chainstream.io">
+  https://ide.chainstream.io
+</Card>
+
+---
+
+## 主な機能
+
+<CardGroup cols={3}>
+  <Card title="Monacoエディタ" icon="pen-to-square">
+    GraphQLシンタックスハイライト、スキーマ駆動の自動補完、リアルタイムエラー検出を備えたフル機能コードエディタ。
+  </Card>
+  <Card title="クエリビルダー" icon="diagram-project">
+    サイドバーのビジュアルスキーマブラウザ — イントロスペクションクエリを書かずにチェーングループ、Cube、フィールド、フィルタを探索できます。
+  </Card>
+  <Card title="クエリテンプレート" icon="book-open">
+    チェーンとCubeごとに整理された組み込みテンプレート — ロード、カスタマイズ、数秒で実行。
+  </Card>
+  <Card title="保存とマルチタブ" icon="bookmark">
+    タイトル付きでクエリをローカルに保存。タブ編集で複数のクエリを並行して作業できます。
+  </Card>
+  <Card title="コードエクスポート" icon="file-export">
+    クエリを7言語（cURL、Python、JavaScript、Go、Rust、Ruby、PHP）のすぐに使えるコードスニペットとしてエクスポート。
+  </Card>
+  <Card title="AIアシスタント" icon="wand-magic-sparkles">
+    自然言語の説明からGraphQLクエリを生成し、クエリ結果を解説できる組み込みAIアシスタント。サインインが必要です。
+  </Card>
+  <Card title="クエリの共有" icon="share-nodes">
+    任意のクエリの共有URLを生成。受信者はIDEでクエリがプリロードされた状態で開くことができます。
+  </Card>
+  <Card title="ステータスバー" icon="chart-simple">
+    リクエスト状態、レイテンシ（ms）、レスポンスサイズ、クエリごとのクレジットユニット消費量のリアルタイムフィードバック。
+  </Card>
+  <Card title="ダークテーマ" icon="moon">
+    ChainStreamブランディングに合わせたダークテーマのインターフェース。長時間のクエリセッションに最適化されています。
+  </Card>
+</CardGroup>
+
+---
+
+## IDEレイアウト
+
+IDEは以下の領域で構成されています：
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Toolbar  [▶ Execute] [Prettify] [Save] [Export] [Share] │
+│           [Endpoint URL input]                           │
+├──────┬─────────────────────────────────────┬─────────────┤
+│      │  Tab Bar [Query 1] [Query 2] [+]   │             │
+│      │─────────────────────────────────────│             │
+│      │                                     │     AI      │
+│ Side │         Query Editor                │  Assistant  │
+│ bar  │                                     │    Panel    │
+│      │─────────────────────────────────────│             │
+│ ┌──┐ │  Variables  │  Headers              │             │
+│ │Q │ │─────────────────────────────────────│             │
+│ │S │ │                                     │             │
+│ └──┘ │         Results Panel               │             │
+│      │                                     │             │
+├──────┴─────────────────────────────────────┴─────────────┤
+│  Status: Ready  │  120ms  │  2.4 KB  │  8 CU             │
+└──────────────────────────────────────────────────────────┘
+```
+
+| 領域 | 説明 |
+|:--|:--|
+| **ツールバー** | 実行、整形、保存/フォーク、コードエクスポート、共有、エンドポイントURL入力 |
+| **サイドバー** | **クエリビルダー** — ビジュアルスキーマツリー（チェーングループ → Cube → フィールド）、**クエリ** — チェーンごとの組み込みテンプレート、**保存済み** — ローカルに保存されたクエリ |
+| **タブバー** | マルチタブクエリ編集 — 各タブが独自のクエリ、変数、ヘッダーを保持 |
+| **クエリエディタ** | Monaco搭載のGraphQLエディタ（自動補完とエラーマーカー付き） |
+| **変数/ヘッダー** | JSON変数とHTTPヘッダーの下部パネル（デフォルトで`X-API-KEY`のヘッダーが表示） |
+| **結果パネル** | GraphQLエンドポイントからのシンタックスハイライト付きJSONレスポンス |
+| **AIアシスタント** | 自然言語によるクエリ生成と結果説明のための右側パネル（サインインが必要） |
+| **ステータスバー** | リクエスト状態、レイテンシ、レスポンスサイズ、消費クレジットユニット（CU） |
+
+---
+
+## クイックスタート
+
+<Steps>
+  <Step title="IDEを開く">
+    ブラウザで[ide.chainstream.io](https://ide.chainstream.io)に移動します。
+  </Step>
+  <Step title="APIキーを設定">
+    APIキーの設定方法は2つあります：
+
+    **方法A — 手動入力**: エディタ下部の**Headers**パネルをクリックして入力：
+    ```json
+    {
+      "X-API-KEY": "your_api_key"
+    }
+    ```
+
+    **方法B — サインイン**: トップバーの**Sign In**をクリックしてChainStreamアカウントでログイン。APIキーが自動的にロードされ、キードロップダウンから選択できます。
+
+    <Tip>
+    キーをお持ちでない場合は、[ChainStream Dashboard](https://www.chainstream.io/dashboard) → **Applications** → **Create New App** で作成してください。
+    </Tip>
+  </Step>
+  <Step title="テンプレートをロード">
+    サイドバーを開き（**Ctrl/Cmd+B**）、チェーン（例：**Solana**）を展開し、**DEXTrades → Latest Trades**などのテンプレートをクリックします。プレースホルダー値付きのクエリがエディタにロードされます。
+  </Step>
+  <Step title="プレースホルダーを置き換え">
+    `TOKEN_ADDRESS`、`WALLET_ADDRESS`、`POOL_ADDRESS`などのプレースホルダーを実際のオンチェーンアドレスに置き換えます。
+  </Step>
+  <Step title="実行">
+    **Ctrl/Cmd+Enter**を押すか、**Execute**（▶）ボタンをクリックします。結果が右パネルに表示され、ステータスバーにレイテンシとCUコストが表示されます。
+  </Step>
+</Steps>
+
+---
+
+## クエリビルダー（スキーマブラウザ）
+
+サイドバーには、標準的なGraphiQLドキュメントパネルに代わるビジュアル**クエリビルダー**が含まれています。完全なスキーマをインタラクティブなツリーとして表示します：
+
+- **チェーングループ**（EVM、Solana、Trading）がトップレベル
+- 各グループ内の**Cube**
+- 各Cubeの**フィールド**、**フィルタ**、**ソートオプション**
+
+任意のフィールドをクリックしてクエリに挿入できます。これはバックエンドの`/ide/builder-schema`エンドポイントにより、スキーマ全体の構造化された表現を提供しています。
+
+---
+
+## AIアシスタント
+
+AIアシスタントパネル（右側）は以下をサポートします：
+
+- 自然言語の説明からの**クエリ生成**（例：「今日のSolana DEXトレードのトップ10を出来高順に取得」）
+- **結果の説明** — レスポンスを貼り付けると、平易な言葉でサマリーを取得できます
+
+<Note>
+AIアシスタントの使用にはChainStreamアカウントでのサインインが必要です。現在のIDEセッションと同じAPIキーを使用します。
+</Note>
+
+---
+
+## クエリの共有
+
+ツールバーの**Share**ボタンをクリックして、任意のクエリの共有URLを生成できます。URLは`#q=`フラグメントを使用してクエリ、変数、ネットワーク選択をエンコードします。受信者はリンクを開くと、IDEにクエリがプリロードされた状態で表示されます。
+
+---
+
+## 詳細
+
+<CardGroup cols={2}>
+  <Card title="クエリエディタ" icon="pen-to-square" href="/jp/graphql/ide/query-editor">
+    Monacoエディタ、パネル、ツールバー、キーボードショートカット、ステータスバーを探索。
+  </Card>
+  <Card title="クエリテンプレート" icon="book-open" href="/jp/graphql/ide/query-templates">
+    すべてのCubeにわたる組み込みテンプレートの完全なカタログを閲覧。
+  </Card>
+  <Card title="保存済みクエリ" icon="bookmark" href="/jp/graphql/ide/saved-queries">
+    よく使うクエリの保存、整理、管理。
+  </Card>
+  <Card title="コードエクスポート" icon="file-export" href="/jp/graphql/ide/code-export">
+    7つのプログラミング言語でのすぐに使えるコードスニペットの生成。
+  </Card>
+</CardGroup>

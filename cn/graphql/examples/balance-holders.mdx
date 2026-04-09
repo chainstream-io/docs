@@ -11,12 +11,12 @@ icon: "wallet"
 - **WalletTokenPnL** (DWS) — 钱包按代币的盈亏
 
 <Note>
-以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth` 或 `bsc`。
+以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth`、`bsc` 或 `polygon`。
 </Note>
 
 ---
 
-## 钱包余额
+## How do I get a wallet's token balances?
 
 获取钱包当前代币余额。本查询返回该钱包持有的每种代币的最新一条余额更新事件。
 
@@ -37,6 +37,10 @@ query {
   }
 }
 ```
+
+<Tip>
+[在 GraphQL IDE 中打开](https://ide.chainstream.io) — 将上方查询粘贴到 IDE 中即可交互式运行，享受自动补全和 Schema 探索。
+</Tip>
 
 <Tip>
 将 `WALLET_ADDRESS` 替换为要查看的钱包。`ownerAddress` 选择器按钱包所有者过滤余额更新事件。
@@ -60,7 +64,7 @@ query {
 
 ---
 
-## 余额历史
+## How do I get balance change history?
 
 追踪某钱包对特定代币的余额如何随时间变化。
 
@@ -107,7 +111,7 @@ query {
 
 ---
 
-## 头部持有者
+## How do I get a token's top holders?
 
 按余额排序获取某代币的头部持有者。
 
@@ -152,7 +156,7 @@ query {
 
 ---
 
-## 钱包 PnL
+## How do I get wallet profit and loss?
 
 获取钱包按代币的盈亏数据，包含买卖成交额与成交笔数。
 
@@ -255,6 +259,23 @@ query {
 }
 ```
   </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  BalanceUpdates(
+    network: polygon
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
 </Tabs>
 
 ---
@@ -272,6 +293,6 @@ query {
     探索 DEX 池与流动性数据。
   </Card>
   <Card title="OHLC & Statistics" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
-    获取 K 线、成交统计、市值与代币元数据。
+    获取 K 线、成交统计、TokenSupplyUpdates 与代币元数据。
   </Card>
 </CardGroup>

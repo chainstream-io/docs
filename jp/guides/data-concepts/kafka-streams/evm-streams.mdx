@@ -1,0 +1,381 @@
+---
+title: "EVM Streams"
+description: "Ethereum、BSC、Base、Polygon、Optimism およびその他の EVM チェーン向け Protobuf データストリーム"
+icon: "ethereum"
+---
+
+EVM チェーンはネットワークごとに異なるブロック間隔を持ちます（Ethereum メインネットは約 12 秒/ブロック）。Ethereum、BSC、Base、Polygon (Matic)、Optimism およびその他のネットワークをサポートし、統一された Protobuf スキーマを共有しています。
+
+**スキーマリポジトリ**: [github.com/chainstream-io/streaming_protobuf/evm](https://github.com/chainstream-io/streaming_protobuf/tree/main/evm)
+
+---
+
+## メッセージタイプ一覧
+
+EVM Streams は以下のメッセージタイプを提供します：
+
+| メッセージタイプ | 説明 | Topic |
+|:---|:---|:---|
+| TradeEvents | DEX 取引イベント | `{chain}.dex.trades` |
+| TokenEvents | トークンイベント | `{chain}.tokens` |
+| BalanceEvents | 残高変更イベント | `{chain}.balances` |
+| DexPoolEvents | 流動性プールイベント | `{chain}.dex.pools` |
+| TransfersMessage | 送金メッセージ | `{chain}.v1.transfers.proto` |
+| CandlestickEvents | ローソク足データ | `{chain}.candlesticks` |
+
+---
+
+## ブロックレベルデータ
+
+各ブロックにはコアフィールドを含む `BlockHeader` があります：
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `Number` | uint64 | ブロック番号 |
+| `Hash` | bytes | ブロックハッシュ |
+| `ParentHash` | bytes | 親ブロックハッシュ |
+| `Timestamp` | Timestamp | ブロック時刻 |
+| `BaseFeePerGas` | uint64 | EIP-1559 ベースフィー |
+| `GasUsed` | uint64 | ブロックのガス消費量 |
+| `GasLimit` | uint64 | ブロックのガスリミット |
+
+`BlockMessage` には以下も含まれます：
+
+| フィールド | 説明 |
+|:---|:---|
+| `Transactions` | ブロック内の全トランザクション |
+| `Withdrawals` | バリデーターの引き出し（Shanghai アップグレード後） |
+| `BlobGasUsed` | Blob ガス消費量 (EIP-4844) |
+
+---
+
+## トランザクションレベルデータ
+
+### TransactionHeader — コアトランザクションメタデータ
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `Hash` | bytes | トランザクションハッシュ |
+| `Index` | uint32 | ブロック内インデックス |
+| `From` | bytes | 送信者アドレス |
+| `To` | bytes | 受信者アドレス |
+| `Value` | BigInt | 送金量 (wei) |
+| `Nonce` | uint64 | 送信者ナンス |
+| `Type` | uint32 | トランザクションタイプ (0/1/2) |
+
+### ReceiptHeader — 実行結果
+
+| フィールド | 説明 |
+|:---|:---|
+| `Status` | 実行ステータス (1=成功, 0=失敗) |
+| `GasUsed` | 実際のガス消費量 |
+| `CumulativeGasUsed` | 累積ガス消費量 |
+| `ContractAddress` | 作成されたコントラクトアドレス（ある場合） |
+
+### TransactionFee — 手数料詳細
+
+| フィールド | 説明 |
+|:---|:---|
+| `SenderFee` | 送信者が支払った合計手数料 |
+| `MinerReward` | マイナー/バリデーター報酬 |
+| `Burnt` | EIP-1559 バーン分 |
+| `Savings` | 節約されたガス手数料 |
+
+### Calls — 内部コールトレース
+
+ネストされたすべてのコントラクトコールを含み、各コールには以下が含まれます：
+
+- `From`、`To`: 呼び出し元と呼び出し先
+- `Input`、`Output`: 入出力データ
+- `GasUsed`: ガス消費量
+- `Opcode`: オペレーションコード (CALL/DELEGATECALL/STATICCALL)
+- `Signature`: 関数シグネチャ
+- `Logs`: イベントログ
+- `StateChanges`: 状態変更
+- `ReturnValues`: 戻り値
+
+### 残高更新
+
+<Tabs>
+  <Tab title="トークン残高更新">
+    ERC-20/721/1155 トークンの残高変更：
+
+    | フィールド | 説明 |
+    |:---|:---|
+    | `Token` | トークン情報（アドレス、代替性、小数桁数、総供給量） |
+    | `Wallet` | ウォレットアドレス |
+    | `PostBalance` | トランザクション後の残高 |
+  </Tab>
+  <Tab title="ネイティブ残高更新">
+    ネイティブ通貨（例: ETH）の残高変更：
+
+    | フィールド | 説明 |
+    |:---|:---|
+    | `Address` | アドレス |
+    | `PreBalance` | トランザクション前の残高 |
+    | `PostBalance` | トランザクション後の残高 |
+    | `ReasonCode` | 変更理由コード |
+  </Tab>
+</Tabs>
+
+---
+
+## 送金データ
+
+`TransfersMessage` は EVM チェーンの送金情報を提供します（Topic: `{chain}.v1.transfers.proto`）。
+
+### TransfersMessage 構造
+
+```protobuf
+message TransfersMessage {
+  Chain Chain = 1;
+  BlockHeader Header = 2;
+  repeated Transfer Transfers = 5;
+  optional BlockHeader L1Header = 6;  // L2 チェーンの場合に含まれる
+}
+```
+
+### Transfer 構造
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `CallIndex` | uint64 | コールインデックス |
+| `LogIndex` | uint64 | ログインデックス |
+| `Sender` | string | 送信者アドレス |
+| `Receiver` | string | 受信者アドレス |
+| `Amount` | string | 送金量 |
+| `Id` | string | トークン ID (NFT) |
+| `URI` | string | トークン URI |
+| `Currency` | TokenInfo | トークン情報 |
+| `Success` | bool | 成功ステータス |
+| `Index` | uint32 | 送金インデックス |
+| `TransactionHeader` | TransactionHeader | トランザクションヘッダー |
+
+### TokenInfo 構造
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `SmartContract` | string | コントラクトアドレス |
+| `Delegated` | bool | 委任されているか |
+| `DelegatedTo` | string | 委任先アドレス |
+| `ProtocolName` | string | プロトコル名 |
+| `Name` | string | トークン名 |
+| `Symbol` | string | トークンシンボル |
+| `Decimals` | int32 | 小数桁数 |
+| `HasURI` | bool | URI があるか |
+| `Fungible` | bool | 代替性があるか |
+| `AssetId` | string | アセット ID |
+
+### 対応トークン規格
+
+| 規格 | 説明 |
+|:---|:---|
+| ERC-20 | 代替性トークン |
+| ERC-721 | 非代替性トークン (NFT) |
+| ERC-1155 | マルチアセットトークン |
+
+---
+
+## DEX データ
+
+`TradeEvents` は DEX 取引データを提供します（Topic: `{chain}.dex.trades`）。
+
+### TradeEvent 構造
+
+```protobuf
+message TradeEvent {
+  Instruction instruction = 1;
+  Block block = 2;
+  Transaction transaction = 3;
+  DApp d_app = 4;
+  Trade trade = 100;
+  BondingCurve bonding_curve = 110;
+  TradeProcessed trade_processed = 200;  // processed topic に含まれる
+}
+```
+
+### Trade コアフィールド
+
+| フィールド | 説明 |
+|:---|:---|
+| `token_a_address` / `token_b_address` | 取引ペアのトークンアドレス |
+| `token_a_decimals` / `token_b_decimals` | トークンの小数桁数 |
+| `user_a_amount` / `user_b_amount` | ユーザー取引量 |
+| `user_a_pre_amount` / `user_a_post_amount` | ユーザーの変更前/後の残高 |
+| `pool_address` | プールアドレス |
+| `vault_a` / `vault_b` | プールのボールトアドレス |
+| `vault_a_amount` / `vault_b_amount` | ボールト量 |
+| `vault_a_pre_amount` / `vault_a_post_amount` | ボールトの変更前/後の残高 |
+| `was_original_direction` | 元の方向かどうか |
+| `pool_config_address` | プール設定アドレス |
+
+### TradeProcessed 拡張フィールド
+
+`.processed` topic には追加フィールドが含まれます：
+
+| フィールド | 説明 |
+|:---|:---|
+| `token_a_price_in_usd` / `token_b_price_in_usd` | USD 価格 |
+| `token_a_price_in_native` / `token_b_price_in_native` | ネイティブ通貨価格 |
+| `is_token_a_price_in_usd_suspect` | 価格が不審かどうか |
+| `is_token_a_price_in_usd_suspect_reason` | 不審な理由（例：価格変動、少額） |
+
+### DexPoolEvent - 流動性プール
+
+`DexPoolEvents` は流動性プールイベントを提供します（Topic: `{chain}.dex.pools`）。
+
+| フィールド | 説明 |
+|:---|:---|
+| `type` | イベントタイプ (INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP) |
+| `address` | プールアドレス |
+| `token_a_address` / `token_b_address` | トークンアドレス |
+| `token_a_vault_address` / `token_b_vault_address` | ボールトアドレス |
+| `token_a_amount` / `token_b_amount` | トークン量 |
+| `lp_wallet` | LP ウォレットアドレス |
+
+---
+
+## EVM チェーンの特徴
+
+### Gas と EIP-1559 手数料モデル
+
+EVM は計算リソースを測定するために Gas メカニズムを使用します。EIP-1559 は動的な BaseFee 調整と手数料バーンを導入し、トランザクション手数料は以下に分割されます：
+- **バリデーター報酬**: `MinerReward`
+- **バーン分**: `Burnt`
+
+### Layer 2 サポート
+
+EVM Streams は L2 チェーン向けの専用フィールドを提供します：
+
+| フィールド | 説明 | 対象チェーン |
+|:---|:---|:---|
+| `L1Header` | 対応する L1 ブロック情報 | すべての L2 |
+| `SequenceNumber` | シーケンス番号 | Optimism |
+| `BatcherAddr` | Batcher アドレス | Optimism |
+| `L1FeeOverhead` | L1 手数料オーバーヘッド | Optimism |
+| `GasL1` | L1 データコスト | Arbitrum |
+
+---
+
+## Topic → メッセージタイプマッピング
+
+| Topic | Proto ファイル | メッセージタイプ | 説明 |
+|:---|:---|:---|:---|
+| `{chain}.dex.trades` | trade_event.proto | TradeEvents | DEX 取引イベント |
+| `{chain}.dex.trades.processed` | trade_event.proto | TradeEvents | USD 価格、不審フラグ付き |
+| `{chain}.tokens` | token_event.proto | TokenEvents | トークンイベント |
+| `{chain}.tokens.processed` | token_event.proto | TokenEvents | 説明、画像、SNS リンク付き |
+| `{chain}.balances` | balance_event.proto | BalanceEvents | 残高変更イベント |
+| `{chain}.balances.processed` | balance_event.proto | BalanceEvents | USD 価値付き |
+| `{chain}.dex.pools` | dex_pool_event.proto | DexPoolEvents | 流動性プールイベント |
+| `{chain}.v1.transfers.proto` | transfers_message.proto | TransfersMessage | EVM 送金メッセージ |
+| `{chain}.candlesticks` | candlestick.proto | CandlestickEvents | ローソク足データ |
+
+<Note>
+`{chain}` を `eth` または `bsc` に置き換えてください。例: `eth.dex.trades`、`bsc.tokens.processed`。
+</Note>
+
+---
+
+## コード例
+
+### Python 例：DEX 取引データの消費
+
+```python
+from kafka import KafkaConsumer
+from common import trade_event_pb2  # streaming_protobuf リポジトリから取得
+
+# コンシューマーを作成
+consumer = KafkaConsumer(
+    'eth.dex.trades',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    enable_auto_commit=False,
+    group_id='my-dex-consumer'
+)
+
+# メッセージを消費・パース
+for message in consumer:
+    # protobuf メッセージをパース
+    trade_events = trade_event_pb2.TradeEvents()
+    trade_events.ParseFromString(message.value)
+    
+    # DEX 取引を反復処理
+    for event in trade_events.events:
+        print(f"Pool: {event.trade.pool_address}")
+        print(f"Token A: {event.trade.token_a_address}")
+        print(f"Token B: {event.trade.token_b_address}")
+        print(f"Amount A: {event.trade.user_a_amount}")
+        print(f"Amount B: {event.trade.user_b_amount}")
+        print(f"Block: {event.block.height}, Tx: {event.transaction.signature}")
+        print("---")
+```
+
+### JavaScript 例
+
+```javascript
+const { Kafka } = require('kafkajs');
+const protobuf = require('protobufjs');
+
+const kafka = new Kafka({
+  clientId: 'my-app',
+  brokers: ['<your_broker_address>'],
+  ssl: true,
+  sasl: {
+    mechanism: 'scram-sha-512',
+    username: 'your_username',
+    password: 'your_password'
+  }
+});
+
+const consumer = kafka.consumer({ groupId: 'my-dex-consumer' });
+
+async function run() {
+  // protobuf 定義を読み込み
+  const root = await protobuf.load('common/trade_event.proto');
+  const TradeEvents = root.lookupType('io.chainstream.v1.dex.trade.TradeEvents');
+
+  await consumer.connect();
+  await consumer.subscribe({ topic: 'eth.dex.trades', fromBeginning: false });
+
+  await consumer.run({
+    eachMessage: async ({ message }) => {
+      const tradeEvents = TradeEvents.decode(message.value);
+      
+      tradeEvents.events.forEach(event => {
+        console.log(`Pool: ${event.trade.poolAddress}`);
+        console.log(`Token A: ${event.trade.tokenAAddress}`);
+        console.log(`Token B: ${event.trade.tokenBAddress}`);
+        console.log(`Amount A: ${event.trade.userAAmount}`);
+        console.log(`Amount B: ${event.trade.userBAmount}`);
+        console.log(`Block: ${event.block.height}`);
+      });
+    }
+  });
+}
+
+run().catch(console.error);
+```
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="コンセプトと統合ガイド" icon="book-open" href="/jp/guides/data-concepts/kafka-streams/overview">
+    Kafka Streams 統合の基礎
+  </Card>
+  <Card title="Solana Streams" icon="circle-s" href="/jp/guides/data-concepts/kafka-streams/solana-streams">
+    Solana 高スループットデータストリーム
+  </Card>
+  <Card title="TRON Streams" icon="circle-t" href="/jp/guides/data-concepts/kafka-streams/tron-streams">
+    TRON ネットワークデータストリーム
+  </Card>
+  <Card title="WebSocket リアルタイムデータ" icon="bolt" href="/jp/guides/data-concepts/realtime-streaming">
+    WebSocket 統合
+  </Card>
+</CardGroup>

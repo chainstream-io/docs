@@ -1,0 +1,152 @@
+---
+title: "설치 방법"
+description: "OpenClaw 에이전트용 ChainStream 스킬 설치: Vercel Skills CLI, ClawHub, 직접 MCP 구성의 세 가지 방법."
+---
+
+## 개요
+
+OpenClaw 에이전트에 ChainStream을 연결하는 세 가지 방법이 있습니다. 워크플로에 가장 적합한 방법을 선택하세요.
+
+| 방법 | 적합한 경우 | 설정 시간 |
+|------|------------|-----------|
+| [Vercel Skills CLI](#method-1-vercel-skills-cli) | 크로스 에이전트 호환성, 40개 이상의 에이전트 지원 | ~30초 |
+| [ClawHub](#method-2-clawhub) | OpenClaw 네이티브, 커뮤니티 생태계 | ~1분 |
+| [직접 MCP 구성](#method-3-direct-mcp-config) | 완전한 제어, 커스텀 배포 | ~2분 |
+
+## Method 1: Vercel Skills CLI
+
+Vercel Skills CLI는 단일 명령어로 지원되는 모든 AI 에이전트에 ChainStream 스킬을 설치하는 크로스 에이전트 패키지 매니저입니다.
+
+### 빠른 설치
+
+```bash
+npx skills add chainstream-io/skills
+```
+
+이 명령어는 에이전트 환경을 자동으로 감지하고 ChainStream MCP 도구를 적절히 구성합니다.
+
+### 특정 에이전트 지정 설치
+
+특정 에이전트를 대상으로 설치하려면:
+
+```bash
+npx skills add chainstream-io/skills -a openclaw
+```
+
+### 지원 에이전트
+
+Vercel Skills CLI는 **40개 이상의 에이전트**를 지원합니다:
+
+| 에이전트 | 설치 명령어 |
+|----------|------------|
+| OpenClaw | `npx skills add chainstream-io/skills -a openclaw` |
+| Claude Code | `npx skills add chainstream-io/skills -a claude-code` |
+| Cursor | `npx skills add chainstream-io/skills -a cursor` |
+| Cline | `npx skills add chainstream-io/skills -a cline` |
+| GitHub Copilot | `npx skills add chainstream-io/skills -a copilot` |
+| Codex | `npx skills add chainstream-io/skills -a codex` |
+
+전체 호환성 테이블 및 설정 파일 위치는 [크로스 에이전트 호환성](/ko/guides/integrations/openclaw/cross-agent-compatibility)을 참조하세요.
+
+<Tip>
+  설치 후, API 키를 환경 변수로 설정하세요:
+
+  ```bash
+  export CHAINSTREAM_API_KEY=your-key
+  ```
+</Tip>
+
+## Method 2: ClawHub
+
+[ClawHub](https://clawhub.ai)는 OpenClaw의 네이티브 스킬 마켓플레이스입니다. ChainStream 스킬은 커뮤니티 패키지로 게시되어 있습니다.
+
+### 스킬 상세 정보
+
+| 항목 | 값 |
+|------|-----|
+| URL | [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data) |
+| 버전 | 3.1.1 |
+| MCP 도구 | 17 |
+| 라이선스 | MIT-0 |
+
+### CLI를 통한 설치
+
+```bash
+openclaw skills install chainstream-data
+```
+
+### ClawHub UI를 통한 설치
+
+1. [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)에 접속합니다
+2. **Install**을 클릭합니다
+3. 화면의 안내에 따라 API 키를 구성합니다
+
+### API 키 구성
+
+ClawHub에서 설치한 후, OpenClaw 에이전트 설정에서 API 키를 설정합니다:
+
+```yaml
+skills:
+  chainstream-data:
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+<Note>
+  ClawHub 스킬은 17개의 MCP 도구(핵심 15개 도구 + ClawHub 전용 유틸리티 2개)를 제공합니다. 핵심 도구 세트에 대한 자세한 내용은 [도구 레퍼런스](/ko/guides/ai-infrastructure/mcp-server/overview)를 참조하세요.
+</Note>
+
+## Method 3: 직접 MCP 구성
+
+OpenClaw 에이전트의 설정 파일에서 ChainStream MCP 서버를 직접 구성합니다. ChainStream은 두 가지 연결 모드를 제공합니다:
+
+### 클라우드 엔드포인트 (권장)
+
+호스팅된 MCP 엔드포인트에 연결 — 설치 불필요, 항상 최신 상태:
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+### 로컬 npm 패키지
+
+`@chainstream-io/mcp` npm 패키지를 통해 MCP 서버를 로컬에서 실행합니다. 이 패키지는 사용자를 대신하여 ChainStream API에 연결합니다 — 에이전트 프레임워크가 로컬 stdio 프로세스를 요구하는 경우에 유용합니다:
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    command: npx
+    args:
+      - "@chainstream-io/mcp"
+    env:
+      CHAINSTREAM_API_KEY: your-key
+```
+
+Claude Desktop, Cursor 및 기타 클라이언트에 대한 자세한 구성은 [MCP 서버 설정](/ko/guides/ai-infrastructure/mcp-server/setup-guide)을 참조하세요.
+
+## 설치 확인
+
+어떤 방법으로 설치하든, OpenClaw 에이전트에게 다음과 같이 물어보면 도구가 사용 가능한지 확인할 수 있습니다:
+
+```
+What ChainStream tools do you have access to?
+```
+
+에이전트는 `tokens_search`, `tokens_analyze`, `wallets_profile` 등 사용 가능한 도구 목록을 나열합니다.
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="크로스 에이전트 호환성" icon="arrows-rotate" href="/ko/guides/integrations/openclaw/cross-agent-compatibility">
+    모든 지원 에이전트에 대한 전체 호환성 테이블 및 설정 파일 위치.
+  </Card>
+  <Card title="보안" icon="shield" href="/ko/guides/integrations/openclaw/security">
+    프로덕션 배포를 위한 중요한 보안 고려사항.
+  </Card>
+</CardGroup>

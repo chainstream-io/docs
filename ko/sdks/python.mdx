@@ -1,0 +1,203 @@
+---
+title: 'Python'
+description: 'ChainStream Python SDK'
+icon: 'python'
+---
+
+## 설치
+
+```bash
+pip install chainstream-sdk
+```
+
+## 빠른 시작
+
+```python
+from chainstream import ChainStreamClient
+
+client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
+```
+
+## REST API 예시
+
+토큰 메타데이터 조회:
+
+```python
+import asyncio
+from chainstream.openapi_client import ApiClient, Configuration
+from chainstream.openapi_client.api.token_api import TokenApi
+from chainstream.openapi_client.models.chain_symbol import ChainSymbol
+
+ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
+BASE_URL = 'https://api.chainstream.io'
+
+async def main():
+    # API 클라이언트 설정
+    config = Configuration(
+        host=BASE_URL,
+        access_token=ACCESS_TOKEN,
+    )
+    
+    async with ApiClient(config) as api_client:
+        # 토큰 API 인스턴스 생성
+        token_api = TokenApi(api_client)
+        
+        chain = ChainSymbol.SOL
+        token_address = 'So11111111111111111111111111111111111111112'  # SOL
+        
+        print(f'토큰 조회: {chain.value}/{token_address}')
+        
+        # 토큰 메타데이터 조회
+        result = await token_api.get_metadata(
+            chain=chain,
+            token_address=token_address,
+        )
+        
+        print('토큰 메타데이터:')
+        print(f'  이름: {result.name}')
+        print(f'  심볼: {result.symbol}')
+        print(f'  소수점 자릿수: {result.decimals}')
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## WebSocket 예시
+
+실시간 토큰 캔들 데이터 구독:
+
+```python
+import asyncio
+import signal
+from chainstream import ChainStreamClient
+from chainstream.stream import Resolution, TokenCandle
+
+ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
+
+async def main():
+    client = ChainStreamClient(ACCESS_TOKEN)
+
+    chain = 'sol'
+    token_address = 'So11111111111111111111111111111111111111112'  # SOL
+    resolution = Resolution.S1
+
+    print(f'토큰 캔들 구독: {chain}/{token_address}')
+    print('리스닝 중... (Ctrl+C로 중지)\n')
+
+    message_count = 0
+
+    def on_candle(candle: TokenCandle) -> None:
+        nonlocal message_count
+        message_count += 1
+        print(
+            f'[{message_count}] open={candle.open}, close={candle.close}, '
+            f'high={candle.high}, low={candle.low}, volume={candle.volume}'
+        )
+
+    unsub = await client.stream.subscribe_token_candles(
+        chain=chain,
+        token_address=token_address,
+        resolution=resolution,
+        callback=on_candle,
+    )
+
+    # Ctrl+C를 기다리는 이벤트 생성
+    stop_event = asyncio.Event()
+
+    def signal_handler(sig, frame):
+        print(f'\n{message_count}개 메시지 수신')
+        print('연결 종료 중...')
+        stop_event.set()
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    await stop_event.wait()
+
+    # 정리
+    unsub.unsubscribe()
+    await client.close()
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## 추가 예시
+
+### 토큰 검색
+
+```python
+results = await token_api.search_token(keyword='bonk')
+for t in results:
+    print(f'{t.symbol}: {t.address}')
+```
+
+### 지갑 PnL 조회
+
+```python
+from chainstream.openapi_client.api.wallet_api import WalletApi
+
+async with ApiClient(config) as api_client:
+    wallet_api = WalletApi(api_client)
+    pnl = await wallet_api.get_pnl(
+        chain=ChainSymbol.SOL,
+        wallet_address='WALLET_ADDRESS',
+    )
+    print(f'총 PnL: {pnl.total_pnl_usd}')
+```
+
+### 거래 목록 조회
+
+```python
+from chainstream.openapi_client.api.trade_api import TradeApi
+
+async with ApiClient(config) as api_client:
+    trade_api = TradeApi(api_client)
+    trades = await trade_api.get_trades(
+        chain=ChainSymbol.SOL,
+        token_address='TOKEN_ADDRESS',
+        limit=20,
+    )
+    for trade in trades:
+        print(f'{trade.timestamp}: {trade.side} {trade.amount}')
+```
+
+---
+
+## Pandas 통합
+
+```python
+import pandas as pd
+
+candles = await client.token.get_candles('sol', 'TOKEN_ADDRESS', resolution='1h', limit=100)
+df = pd.DataFrame(candles)
+df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+```
+
+---
+
+## 에러 핸들링
+
+```python
+from chainstream.openapi_client.exceptions import ApiException
+
+try:
+    result = await token_api.get_token(chain=ChainSymbol.SOL, token_address='INVALID')
+except ApiException as e:
+    print(f'API 에러 {e.status}: {e.reason}')
+    if e.status == 429:
+        import asyncio
+        await asyncio.sleep(2)
+```
+
+---
+
+## 리소스
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/python">
+    소스 코드 보기
+  </Card>
+  <Card title="PyPI" icon="python" href="https://pypi.org/project/chainstream-sdk">
+    패키지 레지스트리
+  </Card>
+</CardGroup>

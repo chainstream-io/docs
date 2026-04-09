@@ -1,0 +1,156 @@
+---
+title: 'CLI 認證'
+description: '為 ChainStream CLI 設定 API Key、錢包登入和支付方式'
+icon: "key"
+---
+
+## 認證方式
+
+ChainStream CLI 支援多種認證方式。請根據你的使用場景選擇：
+
+| 方式 | 命令 | 使用場景 | 支援 DeFi |
+|------|------|----------|-----------|
+| API Key | `config set --key apiKey --value <key>` | 只讀資料查詢 | 否 |
+| 錢包登入 | `login` | 完整訪問許可權（含 DeFi） | 是 |
+| 郵箱 OTP | `login user@example.com` | 賬戶恢復、新裝置登入 | 是 |
+| 原始私鑰 | `wallet set-raw --chain base` | 僅限開發/測試 | 是 |
+
+<Warning>
+DeFi 操作（swap、建立代幣）需要錢包。僅使用 API Key 無法簽署交易。
+</Warning>
+
+## API Key（推薦用於資料查詢）
+
+最簡單的認證方式 — 適用於任何 Agent 錢包配置：
+
+```bash
+chainstream config set --key apiKey --value <your_api_key>
+```
+
+獲取 API Key 的方式：
+- [ChainStream Dashboard](https://app.chainstream.io) — 建立一個 App 並複製 Key
+- **x402 自動購買** — CLI 自動購買訂閱並儲存 Key（參見 [x402 支付](/zh-Hant/guides/cli/x402-payment)）
+
+驗證你的配置：
+
+```bash
+chainstream config get
+# → apiKey: cs_live_****...
+# → walletMode: none
+```
+
+## 錢包登入（推薦用於 DeFi）
+
+建立一個非託管錢包，透過 TEE（可信執行環境）進行遠端簽名。P-256 裝置金鑰對儲存在本地用於會話認證；錢包的簽名金鑰保留在 TEE 中。
+
+### 首次登入
+
+```bash
+chainstream login
+```
+
+此命令會生成一個 P-256 裝置金鑰對，儲存在 `~/.config/chainstream/keys/` 中，並在 ChainStream 認證服務中註冊。錢包會自動建立 — 無需郵箱。
+
+### 已有賬戶
+
+```bash
+chainstream login --key
+```
+
+使用現有的裝置金鑰重新認證，無需 OTP。
+
+### 使用郵箱（可選）
+
+```bash
+# 使用邮箱 OTP 登录
+chainstream login user@example.com
+
+# 完成验证
+chainstream verify --otp-id <id> --code <code> --email user@example.com
+```
+
+### 繫結郵箱用於賬戶恢復
+
+```bash
+chainstream bind-email user@example.com
+chainstream bind-email-verify --otp-id <id> --code <code> --email user@example.com
+```
+
+### 登出
+
+```bash
+chainstream logout
+```
+
+清除配置中的會話資訊，但保留 `~/.config/chainstream/keys/` 中的裝置金鑰。
+
+## 原始私鑰（僅限開發）
+
+<Warning>
+此方式會將你的私鑰以明文形式儲存在配置檔案中。僅用於開發和測試。
+</Warning>
+
+```bash
+# 导入 EVM 私钥（Base）
+chainstream wallet set-raw --chain base
+
+# 导入 Solana 私钥
+chainstream wallet set-raw --chain sol
+```
+
+系統會以互動方式提示你輸入私鑰。
+
+## 配置
+
+所有 CLI 配置儲存在 `~/.config/chainstream/config.json` 中：
+
+| 設定項 | 命令 | 描述 |
+|--------|------|------|
+| API Key | `config set --key apiKey --value <key>` | ChainStream API Key |
+| 基礎 URL | `config set --key baseUrl --value <url>` | API 端點（預設：`https://api.chainstream.io`） |
+| 錢包鏈 | `config set --key walletChain --value <chain>` | 錢包操作的預設鏈 |
+
+### 檢視配置
+
+```bash
+# 显示所有设置（API Key 已脱敏）
+chainstream config get
+
+# 显示特定设置
+chainstream config get --key apiKey
+
+# 显示认证状态
+chainstream config auth
+# → Auth: TEE Wallet (org: ...)
+# → or: Auth: Raw Key (sol)
+# → or: Auth: API Key (cs_live_...)
+# → or: Auth: Not configured
+```
+
+## 認證優先順序
+
+當配置了多個憑證時，CLI 按以下優先順序使用：
+
+1. **API Key** — 如果配置中設定了 `apiKey`，直接使用
+2. **錢包** — 如果配置了 TEE 錢包或原始金鑰，用於簽名
+
+## 環境變數
+
+| 變數 | 預設值 | 描述 |
+|------|--------|------|
+| `CHAINSTREAM_API_URL` | `https://api.chainstream.io` | API 基礎 URL |
+| `CHAINSTREAM_AUTH_URL` | `https://api.chainstream.io` | 認證服務 URL |
+| `SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC 端點 |
+| `BASE_RPC_URL` | `https://mainnet.base.org` | Base RPC 端點 |
+| `CHAINSTREAM_DEBUG` | （未設定） | 出錯時啟用除錯輸出 |
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="命令參考" icon="book" href="/zh-Hant/guides/cli/commands">
+    檢視所有可用命令
+  </Card>
+  <Card title="x402 支付" icon="credit-card" href="/zh-Hant/guides/cli/x402-payment">
+    使用 USDC 自動購買訂閱
+  </Card>
+</CardGroup>

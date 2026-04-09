@@ -1,0 +1,300 @@
+---
+title: "スキーマ概要"
+description: "ChainStream GraphQLスキーマの構造 — チェーングループ、Cubeフィールド、生成される型、イントロスペクション"
+icon: "sitemap"
+---
+
+## 動的スキーマ生成
+
+ChainStream GraphQLスキーマは、**activecube-rs**（Rustライブラリ）によって起動時に**動的に生成**されます。このライブラリは**Cube**定義を完全に型付けされた[async-graphql](https://github.com/async-graphql/async-graphql)スキーマにコンパイルします。各CubeはOLAPテーブルに裏付けられた分析データモデルにマッピングされ、activecube-rsは以下を自動生成します：
+
+- Cubeの**トップレベルQueryフィールド**（チェーングループの下にネスト）
+- 選択可能なディメンションを表す**Recordタイプ**（`{Cube}Record`）
+- ディメンション階層に一致する**Filterインプット**（`{Cube}Filter`）
+- すべてのディメンションパスに対するASC/DESCバリアントを持つ**OrderBy enum**（`{Cube}OrderBy`）
+
+これにより、スキーマは常に基盤となるデータモデルと同期しています — 手書きのSDLファイルを維持する必要はありません。
+
+<Info>
+スキーマはCube定義から生成されるため、Rustで追加された新しいデータモデルはデプロイ後に自動的にGraphQLエンドポイントに反映されます。
+</Info>
+
+---
+
+## ルートクエリ構造
+
+ルートクエリタイプは`ChainStream`です。Cubeは3つの**チェーングループ**に整理され、それぞれがトップレベルフィールドとして公開されます：
+
+```graphql
+type ChainStream {
+  EVM(network: Network!, dataset: Dataset, aggregates: Aggregates) {
+    DEXTrades(...): [DEXTradesRecord!]!
+    Transfers(...): [TransfersRecord!]!
+    BalanceUpdates(...): [BalanceUpdatesRecord!]!
+    Blocks(...): [BlocksRecord!]!
+    Transactions(...): [TransactionsRecord!]!
+    Events(...): [EventsRecord!]!
+    Calls(...): [CallsRecord!]!
+    # ... more EVM Cubes
+  }
+
+  Solana(dataset: Dataset, aggregates: Aggregates) {
+    DEXTrades(...): [DEXTradesRecord!]!
+    Instructions(...): [InstructionsRecord!]!
+    DEXOrders(...): [DEXOrdersRecord!]!
+    # ... more Solana Cubes
+  }
+
+  Trading(dataset: Dataset, aggregates: Aggregates) {
+    Pairs(...): [PairsRecord!]!
+    Tokens(...): [TokensRecord!]!
+  }
+}
+```
+
+`Mutation`や`Subscription`タイプはありません — GraphQL APIは読み取り専用の分析クエリです。
+
+---
+
+## チェーングループ
+
+Cubeは対象とするブロックチェーンエコシステムに基づいて3つのグループに整理されています：
+
+| チェーングループ | `network`引数 | 利用可能なネットワーク | 説明 |
+|:--|:--|:--|:--|
+| **EVM** | 必須 | `eth`、`bsc`、`polygon` | すべてのEVM互換チェーンの共有Cube |
+| **Solana** | 不要 | `sol`（暗黙的） | チェーン固有のCube（Instructions、DEXOrders）を含むSolana用Cube |
+| **Trading** | 不要 | クロスチェーン（`sol`、`eth`、`bsc`） | `chain`ディメンション付きの事前集計トレーディング分析（OHLCローソク足、トークン統計） |
+
+<Note>
+**EVM**グループはクエリするチェーンを選択するために`network`引数が必要です。**Solana**と**Trading**は`network`引数不要です — Solanaは暗黙的で、Tradingはデータ内に`chain`ディメンションを含みます。
+</Note>
+
+各グループに属するCubeの完全な内訳は[チェーングループ](/jp/graphql/schema/chain-groups)をご覧ください。
+
+---
+
+## チェーングループパラメータ
+
+すべてのチェーングループは、データソースの動作を制御する2つのオプションパラメータを受け付けます：
+
+### Dataset
+
+`dataset`パラメータはクエリされるデータの時間スコープを制御します：
+
+| 値 | 説明 |
+|:------|:------------|
+| `combined` | 全範囲 — 最新データと履歴データの両方をクエリ **（デフォルト）** |
+| `realtime` | 最新データのみ（約24時間以内） |
+| `archive` | 保持TTLまでの履歴データ |
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block { Time }
+      Trade { Buy { Amount } }
+    }
+  }
+}
+```
+
+### Aggregates
+
+`aggregates`パラメータは事前集計（DWM/DWS）テーブルを使用するかどうかを制御します：
+
+| 値 | 説明 |
+|:------|:------------|
+| `yes` | 利用可能な場合、事前集計テーブルを優先 **（対象Cubeのデフォルト）** |
+| `no` | 生の詳細テーブルのみを使用 |
+| `only` | 事前集計テーブルのみを使用（高速だがフィールドが限定） |
+
+```graphql
+query {
+  Trading(aggregates: only) {
+    Pairs(
+      where: { Token: { Address: { is: "0x..." } } }
+      limit: {count: 100}
+    ) {
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+<Tip>
+詳細な使用方法、対応テーブル、パフォーマンスガイダンスについては[データセットとアグリゲート](/jp/graphql/schema/dataset-aggregates)をご覧ください。
+</Tip>
+
+---
+
+## 共通引数パターン
+
+チェーングループ内で、すべてのCubeフィールドは同じ標準引数セットに加え、オプションのCube固有**セレクター**を受け付けます：
+
+| 引数 | 型 | 必須 | 説明 |
+|:---------|:-----|:---------|:------------|
+| `where` | `{Cube}Filter` | いいえ | ディメンション階層に一致するネストされたフィルタオブジェクト |
+| `limit` | `LimitInput` | いいえ | ページネーション：`{count: Int, offset: Int}` |
+| `orderBy` | `{Cube}OrderBy` | いいえ | ソート順enum（`{Path}_ASC` / `{Path}_DESC`） |
+| *セレクター* | フィルタインプット | いいえ | ショートカットフィルタ（例：`tokenAddress: {is: "..."}`） |
+
+```graphql
+query {
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      where: { Block: { Time: { after: "2026-01-01T00:00:00Z" } } }
+      limit: { count: 50, offset: 0 }
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
+  }
+}
+```
+
+### LimitInput
+
+```graphql
+input LimitInput {
+  count: Int   # 返す行数
+  offset: Int  # スキップする行数（ページネーション用）
+}
+```
+
+デフォルトの`count`はCubeにより異なります（通常25）。最大値はほとんどのCubeで10,000です。
+
+---
+
+## Cubeごとに生成される型
+
+各Cubeに対して、activecube-rsは3つのコンパニオン型を生成します：
+
+<CardGroup cols={3}>
+  <Card title="Recordタイプ" icon="table">
+    `{Cube}Record` — すべての選択可能なディメンションとメトリクスを含む戻り値の型。フィールド構造はCubeのディメンション階層を反映します。
+  </Card>
+  <Card title="Filterインプット" icon="filter">
+    `{Cube}Filter` — 各ディメンションがフィルタプリミティブ（`StringFilter`、`IntFilter`、`DateTimeFilter`など）にマッピングされたネストされたインプットオブジェクト。
+  </Card>
+  <Card title="OrderBy Enum" icon="arrow-down-a-z">
+    `{Cube}OrderBy` — すべてのディメンションパスに対するASCとDESCの両方向のEnumバリアント（例：`Block_Time_ASC`、`Trade_Buy_Amount_DESC`）。
+  </Card>
+</CardGroup>
+
+**DEXTradesの例：**
+
+```graphql
+# Record type (return shape)
+type DEXTradesRecord {
+  Block: DEXTradesBlockRecord
+  Transaction: DEXTradesTransactionRecord
+  Trade: DEXTradesTradeRecord
+  Pool: DEXTradesPoolRecord
+  IsSuspect: Boolean
+  count: Int
+  sum(of: DEXTradesSumOf!): Float
+}
+
+# Filter input
+input DEXTradesFilter {
+  Block: DEXTradesBlockFilter
+  Transaction: DEXTradesTransactionFilter
+  Trade: DEXTradesTradeFilter
+  Pool: DEXTradesPoolFilter
+  IsSuspect: BoolFilter
+  any: [DEXTradesFilter!]  # OR logic
+}
+
+# OrderBy enum (partial)
+enum DEXTradesOrderBy {
+  Block_Time_ASC
+  Block_Time_DESC
+  Trade_Buy_Amount_ASC
+  Trade_Buy_Amount_DESC
+  # ...
+}
+```
+
+---
+
+## イントロスペクション
+
+スキーマは標準的なGraphQLイントロスペクションをサポートしています。`__schema`と`__type`クエリを使用して型、フィールド、引数を探索できます：
+
+<Tabs>
+  <Tab title="すべてのCubeを一覧">
+```graphql
+query {
+  __schema {
+    queryType {
+      fields {
+        name
+        description
+        args { name type { name } }
+      }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Cubeタイプを検査">
+```graphql
+query {
+  __type(name: "DEXTradesRecord") {
+    name
+    fields {
+      name
+      type { name kind ofType { name } }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="フィルタオペレータを一覧">
+```graphql
+query {
+  __type(name: "StringFilter") {
+    name
+    inputFields {
+      name
+      type { name kind }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+[GraphQL IDE](https://ide.chainstream.io)はイントロスペクションスキーマを自動取得して自動補完とインラインドキュメントを提供します。手動でイントロスペクションクエリを書かなくてもスキーマ全体をインタラクティブに探索できます。
+</Tip>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="データキューブ" icon="cubes" href="/jp/graphql/schema/cubes">
+    25のCubeすべてのフィールド、セレクター、データウェアハウスレイヤーを探索。
+  </Card>
+  <Card title="チェーングループ" icon="layer-group" href="/jp/graphql/schema/chain-groups">
+    EVM、Solana、Tradingチェーングループとその利用可能なCubeを理解。
+  </Card>
+  <Card title="データセットとアグリゲート" icon="database" href="/jp/graphql/schema/dataset-aggregates">
+    `dataset`と`aggregates`でデータソーススコープと事前集計動作を制御。
+  </Card>
+  <Card title="フィルタリング" icon="filter" href="/jp/graphql/schema/filtering">
+    `where`フィルタとセレクターショートカットでクエリを絞り込む方法を学習。
+  </Card>
+  <Card title="ソートとページネーション" icon="arrow-down-1-9" href="/jp/graphql/schema/ordering-pagination">
+    `orderBy`と`limit`で結果をソートし、大きなデータセットをページネーション。
+  </Card>
+  <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
+    `count`、`sum`、`avg`、`min`、`max`、`uniq`でクエリ内のデータを集計。
+  </Card>
+</CardGroup>

@@ -1,0 +1,755 @@
+---
+title: "데이터 큐브"
+description: "25개 GraphQL Cube — 체인 그룹별로 정리된 필드 구조, 셀렉터, 기본값, 사용 사례"
+icon: "cubes"
+---
+
+## Cube란?
+
+**Cube**는 하나 이상의 OLAP 데이터베이스 테이블에 매핑되는 분석 데이터 모델입니다. 각 Cube는 다음을 정의합니다:
+
+- **디멘션** — 중첩 계층으로 구성된 쿼리 가능한 필드 (예: `Block.Time`, `Trade.Buy.Currency.MintAddress`)
+- **셀렉터** — 일반적인 필터 패턴을 단순화하는 최상위 단축 필터 인자 (예: `tokenAddress`)
+- **메트릭** — Record 타입에서 사용 가능한 집계 함수 (`count`, `sum` 등)
+- **기본값** — 자동으로 적용되는 기본 필터 및 페이지네이션 제한
+
+Cube를 쿼리하면 activecube-rs가 GraphQL 쿼리를 Cube의 백킹 테이블에 대한 최적화된 SQL로 컴파일합니다. 테이블은 `{chain}_{table_name}` 명명 패턴을 따릅니다 (예: `sol_dex_trades`, `eth_transfers`).
+
+---
+
+## Cube 개요
+
+25개 Cube는 세 개의 체인 그룹으로 구성됩니다. 각 Cube는 데이터 웨어하우스 레이어에 속합니다:
+
+- **DWD** (Detail) — 이벤트별 원시 데이터, 최고 세분화
+- **DWM** (Aggregated) — 사전 계산된 롤업 (예: 분별)
+- **DWS** (Summary) — 고도로 집계된 스냅샷
+- **DIM** (Dimension) — 참조/조회 테이블
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | 체인 그룹 | 레이어 | 용도 |
+|:-----|:------------|:------|:--------|
+| **DEXTrades** | EVM, Solana | DWD | 트레이드별 DEX 스왑 이벤트 |
+| **DEXTradeByTokens** | EVM, Solana | DWD | 토큰별 인덱싱된 DEX 트레이드 (매수/매도 측) |
+| **Transfers** | EVM, Solana | DWD | 토큰 전송 이벤트 |
+| **BalanceUpdates** | EVM, Solana | DWD | 월렛 잔액 변동 이벤트 |
+| **DEXPoolEvents** | EVM, Solana | DWD | 유동성 추가/제거 이벤트 |
+| **TokenSupplyUpdates** | EVM, Solana | DWD | 토큰 민트/번 이벤트 |
+| **Blocks** | EVM, Solana | DWD | 블록 레벨 데이터 |
+| **Transactions** | EVM, Solana | DWD | 트랜잭션 레벨 데이터 |
+| **TransactionBalances** | EVM, Solana | DWD | 트랜잭션별 잔액 변동 |
+| **Instructions** | Solana | DWD | Solana 인스트럭션 데이터 |
+| **InstructionBalanceUpdates** | Solana | DWD | 인스트럭션 레벨 잔액 변동 |
+| **Rewards** | Solana | DWD | 밸리데이터/스테이킹 보상 |
+| **DEXOrders** | Solana | DWD | DEX 주문 이벤트 (지정가 주문) |
+| **Events** | EVM | DWD | 스마트 컨트랙트 이벤트 로그 |
+| **Calls** | EVM | DWD | 내부 호출 트레이스 |
+| **MinerRewards** | EVM | DWD | 마이너/밸리데이터 보상 |
+| **DEXPoolSlippages** | EVM | DWD | 풀 슬리피지 데이터 |
+| **Uncles** | EVM | DWD | 엉클 블록 데이터 |
+| **Pairs** | Trading | DWM | OHLC 캔들스틱 데이터 (크로스체인) |
+| **Tokens** | Trading | DWM | 토큰별 트레이드 통계 (크로스체인) |
+| **DEXPools** | EVM, Solana | DWS | 현재 보유량이 포함된 풀 스냅샷 |
+| **TokenHolders** | EVM, Solana | DWS | 토큰 홀더 잔액 |
+| **WalletTokenPnL** | EVM, Solana | DWS | 월렛-토큰별 PnL |
+| **PredictionTrades** | EVM (Polygon) | DWD | 예측 시장 트레이드 |
+| **PredictionManagements** | EVM (Polygon) | DWD | 예측 시장 관리 이벤트 |
+| **PredictionSettlements** | EVM (Polygon) | DWD | 예측 시장 정산 |
+
+</div>
+
+---
+
+## EVM + Solana 공유 Cube
+
+이 Cube들은 **EVM**과 **Solana** 체인 그룹 모두에서 사용할 수 있습니다.
+
+<AccordionGroup>
+  <Accordion title="DEXTrades" icon="arrow-right-arrow-left">
+    **테이블**: `{chain}_dex_trades`
+    **기본 limit**: 25 (최대 10,000)
+    **기본 필터**: `IsSuspect = false` (봇/MEV 트레이드 기본 제외)
+    **셀렉터**: `tokenAddress`, `walletAddress`, `poolAddress`, `dexProgram`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    DEXTradesRecord {
+      Block { Time, Slot, Height }
+      Transaction { Hash, FeeInNative }
+      Trade {
+        Buy { Currency { MintAddress }, Amount, PriceInUSD, Account { Owner } }
+        Sell { Currency { MintAddress }, Amount, Account { Owner } }
+        Dex { ProgramAddress, ProtocolName }
+      }
+      Pool { Address }
+      IsSuspect
+    }
+    ```
+
+    **사용 사례**: 트레이드 히스토리, 월렛 트레이드 분석, DEX 거래량 분류, 대규모 트레이드 탐지.
+  </Accordion>
+
+  <Accordion title="DEXTradeByTokens" icon="coins">
+    **테이블**: `{chain}_dex_trades_enriched` (UNION 서브쿼리 — 트레이드 측면당 한 행)
+    **셀렉터**: `tokenAddress`, `sideType`, `poolAddress`, `dexProgram`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    DEXTradeByTokensRecord {
+      Block { Time, Slot, Height }
+      Transaction { Signature, Fee, FeeInUSD }
+      Trade {
+        Currency { MintAddress, Symbol, Name }
+        Amount, AmountInUSD, PriceInUSD, PriceInNative
+        Side { Type, Currency { MintAddress }, Amount }
+        Account { Owner }
+        Dex { ProgramAddress, ProtocolName }
+        Market { PoolAddress }
+      }
+    }
+    ```
+
+    **사용 사례**: 토큰별 트레이드 쿼리 (매수 및 매도 측 모두), 토큰 거래량 분석, 효율적인 단일 토큰 필터링.
+  </Accordion>
+
+  <Accordion title="Transfers" icon="paper-plane">
+    **테이블**: `{chain}_transfers`
+    **셀렉터**: `tokenAddress`, `senderAddress`, `receiverAddress`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    TransfersRecord {
+      Block { Time, Slot }
+      Transaction { Hash, Signer }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address, TokenAccount }
+        Receiver { Address, TokenAccount }
+        Amount, AmountInUSD, PriceInUSD
+      }
+    }
+    ```
+
+    **사용 사례**: 월렛 전송 히스토리, 고래 모니터링, 거래소 입출금 추적.
+  </Accordion>
+
+  <Accordion title="BalanceUpdates" icon="scale-balanced">
+    **테이블**: `{chain}_balance_updates`
+    **셀렉터**: `ownerAddress`, `tokenAddress`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    BalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Hash }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        PreBalance, PostBalance
+        PreBalanceInUSD, PostBalanceInUSD
+      }
+    }
+    ```
+
+    **사용 사례**: 잔액 변동 추적, 포지션 모니터링, 매집/분배 탐지.
+  </Accordion>
+
+  <Accordion title="DEXPoolEvents" icon="water">
+    **테이블**: `{chain}_dex_pool_events_enriched`
+    **셀렉터**: `poolAddress`, `tokenAddress`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `max`
+
+    **주요 필드:**
+    ```graphql
+    DEXPoolEventsRecord {
+      Block { Time }
+      Transaction { Signature }
+      Pool {
+        Market { Address, BaseCurrency { ... }, QuoteCurrency { ... } }
+        Dex { ProgramAddress, ProtocolName }
+        Base { PostAmount, ChangeAmount, PriceInUSD }
+        Quote { PostAmount, ChangeAmount }
+        LiquidityInUSD
+      }
+    }
+    ```
+
+    **사용 사례**: 유동성 추가/제거 모니터링, 풀 TVL 추적, 새 풀 탐지.
+  </Accordion>
+
+  <Accordion title="TokenSupplyUpdates" icon="coins">
+    **테이블**: `{chain}_token_supplies`
+    **셀렉터**: `tokenAddress`
+
+    **주요 필드:**
+    ```graphql
+    TokenSupplyUpdatesRecord {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency { MintAddress, Decimals }
+        PostBalance, MarketCapInUSD, PriceInUSD, FDVInUSD, TotalSupply
+      }
+    }
+    ```
+
+    **사용 사례**: 민트/번 이벤트 추적, 공급 변동 알림, 시가총액 히스토리.
+  </Accordion>
+
+  <Accordion title="Blocks" icon="cube">
+    **테이블**: `{chain}_blocks`
+    **셀렉터**: `date`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    BlocksRecord {
+      Block {
+        Time, Date, Height, Hash, ParentHash, TxCount
+        # Solana 전용
+        Slot, ParentSlot, RewardsCount
+        # EVM 전용
+        Number, Coinbase, GasLimit, GasUsed, BaseFee, Difficulty
+      }
+    }
+    ```
+
+    **사용 사례**: 블록 생성 모니터링, 가스 분석 (EVM), 슬롯 추적 (Solana).
+  </Accordion>
+
+  <Accordion title="Transactions" icon="receipt">
+    **테이블**: `{chain}_transactions`
+    **셀렉터**: `date`, `txHash`/`txSignature`, `fromAddress`, `toAddress`, `feePayer`, `signer`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    TransactionsRecord {
+      Block { Time, Slot, Height }
+      Transaction {
+        # Solana: Signature, Fee, FeePayer, Signer, Result { Success }
+        # EVM: Hash, From, To, Value, Gas, GasPrice, Nonce, Type
+      }
+      Fee { ... }     # EVM EIP-1559 수수료 분류
+      Receipt { ... } # EVM 영수증 필드
+    }
+    ```
+
+    **사용 사례**: 트랜잭션 조회, 가스/수수료 분석, 활동 모니터링.
+  </Accordion>
+
+  <Accordion title="TransactionBalances" icon="scale-unbalanced">
+    **테이블**: `{chain}_transaction_balances`
+    **셀렉터**: `date`, `address`, `currency`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    TransactionBalancesRecord {
+      Block { Time }
+      Transaction { Hash, Index }
+      TokenBalance {
+        Address, TokenAccount
+        Currency { SmartContract, Symbol, Name, Decimals }
+        PreBalance, PostBalance, Change
+        PreBalanceInUSD, PostBalanceInUSD, ChangeInUSD
+        UpdateType
+      }
+    }
+    ```
+
+    **사용 사례**: 트랜잭션별 잔액 영향 분석, 토큰 흐름 추적.
+
+    <Note>
+    이 Cube는 `dataset` 전환을 지원하지 않습니다 (`_realtime` / `_archive` 테이블 변형 없음).
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Solana 전용 Cube
+
+이 Cube들은 **Solana** 체인 그룹에서만 사용할 수 있습니다.
+
+<AccordionGroup>
+  <Accordion title="Instructions" icon="terminal">
+    **테이블**: `sol_instructions_enriched`
+    **셀렉터**: `date`, `programId`, `txSignature`
+    **메트릭**: `count`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    InstructionsRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction {
+        Index, Depth, InternalSeqNumber
+        Program { Address, Name, Method }
+        Accounts
+        Data
+        CallPath, Logs
+      }
+    }
+    ```
+
+    **사용 사례**: 프로그램 상호작용 분석, 인스트럭션 레벨 디버깅, 프로토콜 사용 추적.
+  </Accordion>
+
+  <Accordion title="InstructionBalanceUpdates" icon="scale-balanced">
+    **테이블**: `sol_balance_updates_enriched`
+    **셀렉터**: `date`, `tokenAddress`, `ownerAddress`, `programId`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    InstructionBalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction { Index, Program { Address } }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        Amount, AmountInUSD
+        PreBalance, PostBalance
+      }
+    }
+    ```
+
+    **사용 사례**: 인스트럭션 레벨 잔액 영향 분석, 프로그램 수수료 추적.
+
+    <Note>
+    이 Cube는 `dataset` 전환을 지원하지 않습니다.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Rewards" icon="trophy">
+    **테이블**: `sol_rewards`
+    **셀렉터**: `date`, `address`
+    **메트릭**: `count`, `sum`, `avg`
+
+    **주요 필드:**
+    ```graphql
+    RewardsRecord {
+      Block { Time, Slot }
+      Reward {
+        Address
+        Amount
+        AmountInUSD
+        PostBalance
+        RewardType
+        Commission
+      }
+    }
+    ```
+
+    **사용 사례**: 스테이킹 보상 추적, 밸리데이터 성능, 보상 히스토리.
+  </Accordion>
+
+  <Accordion title="DEXOrders" icon="list-check">
+    **테이블**: `sol_dex_orders`
+    **셀렉터**: `date`, `marketAddress`, `orderType`, `ownerAddress`
+    **메트릭**: `count`, `sum`, `avg`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    DEXOrdersRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      OrderEvent {
+        Type
+        Market { Address }
+        Order { Id, BuySide, LimitPrice, Mint, Owner }
+        Dex { ProgramAddress, ProtocolName }
+      }
+    }
+    ```
+
+    **사용 사례**: 주문장 분석, 지정가 주문 추적, 시장 미시구조 연구.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## EVM 전용 Cube
+
+이 Cube들은 **EVM** 체인 그룹(`eth`, `bsc`, `polygon`)에서만 사용할 수 있습니다.
+
+<AccordionGroup>
+  <Accordion title="Events" icon="bell">
+    **테이블**: `{chain}_logs_enriched`
+    **셀렉터**: `date`, `contractAddress`, `txHash`, `topic0`
+    **메트릭**: `count`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    EventsRecord {
+      Block { Time, Number }
+      Transaction { Hash, From, To }
+      Log {
+        SmartContract
+        Index
+        Signature { Name, Signature }
+        Topics
+        Data
+      }
+    }
+    ```
+
+    **사용 사례**: 스마트 컨트랙트 이벤트 모니터링, 프로토콜 활동 추적, 커스텀 이벤트 필터링.
+  </Accordion>
+
+  <Accordion title="Calls" icon="code-branch">
+    **테이블**: `{chain}_traces_enriched`
+    **셀렉터**: `date`, `txHash`, `toAddress`
+    **메트릭**: `count`, `sum`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    CallsRecord {
+      Block { Time, Number }
+      Transaction { Hash }
+      Call {
+        Index, Depth
+        From, To
+        Opcode
+        Gas, GasUsed
+        Input, Output
+        Value
+        Signature { Name, Signature }
+      }
+    }
+    ```
+
+    **사용 사례**: 내부 트랜잭션 추적, 컨트랙트 상호작용 분석, MEV 탐지.
+  </Accordion>
+
+  <Accordion title="MinerRewards" icon="gem">
+    **테이블**: `{chain}_miner_rewards`
+    **셀렉터**: `date`, `miner`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    MinerRewardsRecord {
+      Block { Time, Number, Hash }
+      Reward {
+        Miner
+        TotalReward, TotalRewardInUSD
+        BurntFees, DynamicReward, StaticReward
+        TxFees, UncleReward
+      }
+    }
+    ```
+
+    **사용 사례**: 밸리데이터/마이너 보상 분석, 블록 보상 추세, MEV 수익 추적.
+  </Accordion>
+
+  <Accordion title="DEXPoolSlippages" icon="chart-line">
+    **테이블**: `{chain}_dex_pool_slippages`
+    **셀렉터**: `date`, `poolAddress`
+    **메트릭**: `count`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    DEXPoolSlippagesRecord {
+      Block { Time }
+      Price {
+        Pool { SmartContract, CurrencyA { ... }, CurrencyB { ... } }
+        AtoB, BtoA
+        AtoBMin, AtoBMax
+        SlippageBasisPoints
+        Dex { ProtocolName }
+      }
+    }
+    ```
+
+    **사용 사례**: 슬리피지 모니터링, 풀 깊이 분석, 실행 품질 평가.
+  </Accordion>
+
+  <Accordion title="Uncles" icon="diagram-subtask">
+    **테이블**: `{chain}_uncles`
+    **셀렉터**: `date`, `miner`
+    **메트릭**: `count`
+
+    **주요 필드:**
+    ```graphql
+    UnclesRecord {
+      Block { Time, Number }
+      Uncle {
+        Index, Hash, ParentHash
+        Miner, Difficulty, Number
+        GasLimit, GasUsed, Timestamp
+      }
+    }
+    ```
+
+    **사용 사례**: 엉클 블록 분석, 네트워크 건강 모니터링 (주로 Ethereum PoW 과거 데이터).
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Trading Cube (크로스체인)
+
+이 Cube들은 **Trading** 체인 그룹에 있습니다. 모든 지원 체인(`sol`, `eth`, `bsc`)의 데이터를 집계하며 필터링을 위한 `chain` 디멘션을 포함합니다.
+
+<AccordionGroup>
+  <Accordion title="Pairs (OHLC)" icon="chart-candlestick">
+    **테이블**: 체인 간 매터리얼라이즈드 뷰 (`{chain}_ohlc_mv`)
+    **셀렉터**: `tokenAddress`, `chain`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    PairsRecord {
+      Token { Address }
+      Market { Network }
+      Block { Time }
+      Interval { Time }
+      Price {
+        Ohlc { Open, High, Low, Close }
+      }
+      Volume { Usd, Native }
+      Stats { TradeCount, BuyCount, SellCount }
+    }
+    ```
+
+    **사용 사례**: 캔들스틱 차트, 가격 히스토리, 거래량 분석, 크로스체인 가격 비교.
+  </Accordion>
+
+  <Accordion title="Tokens (트레이드 통계)" icon="chart-bar">
+    **테이블**: 체인 간 매터리얼라이즈드 뷰 (`{chain}_token_trade_stats_mv`)
+    **셀렉터**: `tokenAddress`, `chain`, `date`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`
+
+    **주요 필드:**
+    ```graphql
+    TokensRecord {
+      Token { Address }
+      Market { Network }
+      Block { Time }
+      Interval { Time }
+      Volume { Usd, BuyVolumeUSD, SellVolumeUSD, Base }
+      Stats {
+        TradeCount, BuyCount, SellCount
+        UniqueBuyers, UniqueSellers
+      }
+    }
+    ```
+
+    **사용 사례**: 매수/매도 압력 분석, 고유 트레이더 수, 거래량 추세, 크로스체인 토큰 비교.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Summary Cube (DWS)
+
+Summary Cube는 빠른 조회를 위한 **고도로 집계된 스냅샷 스타일** 데이터를 제공합니다.
+
+<AccordionGroup>
+  <Accordion title="DEXPools (스냅샷)" icon="water">
+    **테이블**: `{chain}_dex_pools` (DWS 레이어)
+    **셀렉터**: `poolAddress`, `tokenA`, `tokenB`
+    **메트릭**: `count`
+
+    **주요 필드:**
+    ```graphql
+    DEXPoolsRecord {
+      Pool {
+        Address
+        TokenAAddress, TokenBAddress
+        ProgramAddress
+        LiquidityUSD
+        PriceAtoB, PriceBtoA
+        LastUpdated
+      }
+    }
+    ```
+
+    **사용 사례**: 풀 발견, 현재 유동성 순위, 풀 메타데이터 조회.
+
+    <Note>
+    이 Cube는 `dataset` 전환이나 시간 기반 필터링을 지원하지 않습니다. 최신 풀 상태 스냅샷을 나타냅니다.
+    </Note>
+  </Accordion>
+
+  <Accordion title="TokenHolders" icon="users">
+    **테이블**: `{chain}_token_holders`
+    **셀렉터**: `tokenAddress`
+
+    **주요 필드:**
+    ```graphql
+    TokenHoldersRecord {
+      Token { Address }
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
+    ```
+
+    **사용 사례**: 상위 홀더 목록, 홀더 분포, 고래 추적.
+
+    <Note>
+    이 Cube는 `dataset` 전환을 지원하지 않습니다.
+    </Note>
+  </Accordion>
+
+  <Accordion title="WalletTokenPnL" icon="chart-line">
+    **테이블**: `{chain}_wallet_token_pnl`
+    **셀렉터**: `walletAddress`
+
+    **주요 필드:**
+    ```graphql
+    WalletTokenPnLRecord {
+      Wallet { Address }
+      Token { Address }
+      BuyVolumeUSDState, SellVolumeUSDState
+      BuyCountState, SellCountState
+      FirstTradeState, LastTradeState
+    }
+    ```
+
+    **사용 사례**: 토큰별 월렛 PnL, 트레이딩 성과 리더보드, 포트폴리오 분석.
+
+    <Note>
+    이 Cube는 `dataset` 전환을 지원하지 않습니다.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 예측 시장 Cube
+
+이 Cube들은 **EVM** 체인 그룹에서 사용 가능하며, 주로 Polygon에서 예측 시장 프로토콜에 사용됩니다.
+
+<AccordionGroup>
+  <Accordion title="PredictionTrades" icon="chart-mixed">
+    **테이블**: `{chain}_prediction_trades`
+    **셀렉터**: `date`, `conditionId`, `questionId`, `marketplace`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    PredictionTradesRecord {
+      Block { Time }
+      Transaction { Hash }
+      Trade { Buyer, Seller, Amount, Price, Fee }
+      Prediction {
+        Condition { Id, Outcomes }
+        Question { Id }
+        Outcome, OutcomeToken
+        Marketplace { ProtocolName }
+        CollateralToken { SmartContract }
+      }
+    }
+    ```
+
+    **사용 사례**: 예측 시장 트레이드 히스토리, 결과 가격 책정, 마켓플레이스 거래량.
+
+    <Note>
+    예측 시장 Cube는 `dataset` 전환을 지원하지 않습니다.
+    </Note>
+  </Accordion>
+
+  <Accordion title="PredictionManagements" icon="gear">
+    **테이블**: `{chain}_prediction_managements`
+    **셀렉터**: `date`, `eventType`, `conditionId`, `questionId`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    PredictionManagementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType, Description, Group
+        Prediction { Condition { ... }, Question { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **사용 사례**: 시장 생성/해결 추적, 조건 관리 이벤트.
+  </Accordion>
+
+  <Accordion title="PredictionSettlements" icon="flag-checkered">
+    **테이블**: `{chain}_prediction_settlements`
+    **셀렉터**: `date`, `eventType`, `conditionId`, `holder`
+    **메트릭**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **주요 필드:**
+    ```graphql
+    PredictionSettlementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType, Holder
+        OutcomeTokenIds, Amounts
+        Prediction { Condition { ... }, CollateralToken { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **사용 사례**: 정산 추적, 지급 분석, 포지션 상환 모니터링.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 적합한 Cube 선택
+
+<Tip>
+쿼리를 충족하는 가장 집계된 Cube를 선택하세요. DWM/DWS Cube는 시계열 및 요약 데이터에 대해 DWD Cube보다 수 배 더 빠릅니다.
+</Tip>
+
+| 필요 | 권장 Cube | 레이어 |
+|:-----|:-----------------|:------|
+| 개별 트레이드 이벤트 | DEXTrades | DWD |
+| 토큰별 트레이드 쿼리 | DEXTradeByTokens | DWD |
+| 토큰 전송 히스토리 | Transfers | DWD |
+| 캔들스틱 / 가격 차트 | Pairs | DWM |
+| 시간별 거래량 | Tokens | DWM |
+| 현재 상위 홀더 | TokenHolders | DWS |
+| 월렛 PnL 분류 | WalletTokenPnL | DWS |
+| 풀 현재 상태 | DEXPools | DWS |
+| 유동성 이벤트 | DEXPoolEvents | DWD |
+| 스마트 컨트랙트 이벤트 (EVM) | Events | DWD |
+| 내부 트레이스 (EVM) | Calls | DWD |
+| Solana 인스트럭션 | Instructions | DWD |
+| 예측 시장 트레이드 | PredictionTrades | DWD |
+
+---
+
+## Dataset 호환성
+
+모든 Cube가 `dataset` 파라미터(realtime/archive/combined)를 지원하는 것은 아닙니다. 다음 Cube는 `dataset` 값에 관계없이 항상 전체 테이블을 쿼리합니다:
+
+- `TokenHolders`, `WalletTokenPnL`, `DEXPools` (DWS 레이어 — 항상 최신 스냅샷)
+- `TransactionBalances`
+- `PredictionTrades`, `PredictionManagements`, `PredictionSettlements`
+
+자세한 내용은 [데이터셋 & 어그리게이트](/ko/graphql/schema/dataset-aggregates)를 참조하세요.
+
+---
+
+## 다음 단계
+
+<CardGroup cols={3}>
+  <Card title="체인 그룹" icon="layer-group" href="/ko/graphql/schema/chain-groups">
+    EVM, Solana, Trading 체인 그룹을 이해하세요.
+  </Card>
+  <Card title="필터링" icon="filter" href="/ko/graphql/schema/filtering">
+    `where`와 셀렉터 단축키로 필터링하는 방법을 알아보세요.
+  </Card>
+  <Card title="메트릭 & 집계" icon="chart-simple" href="/ko/graphql/schema/metrics-aggregation">
+    count, sum, avg, min, max, uniq로 데이터를 집계하세요.
+  </Card>
+</CardGroup>

@@ -1,0 +1,201 @@
+---
+title: "チェーングループ"
+description: "CubeがEVM、Solana、Tradingチェーングループにどのように整理されているか"
+icon: "layer-group"
+---
+
+## 概要
+
+ChainStream GraphQLは25のCubeを3つの**チェーングループ**に整理しています。各グループはブロックチェーンエコシステムを表し、利用可能なCube、`network`パラメータの動作、チェーン固有のフィールドの存在を決定します。
+
+```graphql
+type ChainStream {
+  EVM(network: Network!, dataset: Dataset, aggregates: Aggregates) { ... }
+  Solana(dataset: Dataset, aggregates: Aggregates) { ... }
+  Trading(dataset: Dataset, aggregates: Aggregates) { ... }
+}
+```
+
+---
+
+## EVM
+
+**EVM**グループは、すべてのEVM互換ブロックチェーンのCubeを含みます。クエリするチェーンを指定するために`network`引数が**必須**です。
+
+### 利用可能なネットワーク
+
+| Network ID | ブロックチェーン |
+|:-----------|:-----------|
+| `eth` | Ethereum |
+| `bsc` | BNB Chain (BSC) |
+| `polygon` | Polygon |
+
+### Cube
+
+**Solanaと共有：**
+`DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
+
+**EVM専用：**
+- `Events` — スマートコントラクトイベントログ（デコードされたトピックとデータ）
+- `Calls` — 内部コールトレース（CALL、DELEGATECALL、CREATEなど）
+- `MinerRewards` — ブロックリワードの内訳（静的、動的、アンクル、バーンされた手数料）
+- `DEXPoolSlippages` — プール価格スリッページ分析
+- `Uncles` — アンクルブロックデータ（主にEthereum PoWの履歴データ）
+- `PredictionTrades` — 予測市場トレード *(主にPolygon)*
+- `PredictionManagements` — 予測市場管理イベント *(主にPolygon)*
+- `PredictionSettlements` — 予測市場決済 *(主にPolygon)*
+
+### クエリ例
+
+```graphql
+query {
+  EVM(network: eth, dataset: combined) {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { SmartContract Symbol } Amount PriceInUSD }
+        Sell { Currency { SmartContract Symbol } Amount }
+        Dex { ProtocolName }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Solana
+
+**Solana**グループはSolanaブロックチェーンのCubeを含みます。ネットワークは暗黙的（`sol`） — `network`引数は不要です。
+
+### Cube
+
+**EVMと共有：**
+`DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
+
+**Solana専用：**
+- `Instructions` — プログラムインストラクションデータ（プログラムアドレス、メソッド、アカウント、ログ）
+- `InstructionBalanceUpdates` — インストラクションレベルの残高変更
+- `Rewards` — バリデータおよびステーキングリワード
+- `DEXOrders` — DEXオーダーブックイベント（リミットオーダー、キャンセル、約定）
+
+### クエリ例
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress Symbol } Amount PriceInUSD }
+        Sell { Currency { MintAddress Symbol } Amount }
+        Dex { ProgramAddress ProtocolName }
+      }
+    }
+  }
+}
+```
+
+### Solana固有のフィールド
+
+SolanaのCubeは、EVMと比較して一部のディメンションで異なるフィールド名を使用します：
+
+| 概念 | Solana | EVM |
+|:--------|:-------|:----|
+| トークンアドレス | `MintAddress` | `SmartContract` |
+| トランザクションID | `Signature` / `Hash` | `Hash` |
+| ブロック識別子 | `Slot` | `Number` |
+| プログラム/コントラクト | `ProgramAddress` | `SmartContract` |
+| 手数料支払者 | `FeePayer` | `From` |
+
+---
+
+## Trading
+
+**Trading**グループは**クロスチェーンの事前集計**トレーディング分析を提供します。すべての対応チェーンからのデータを統合マテリアライズドビューに結合し、フィルタリング用の`chain`ディメンションを提供します。
+
+### Cube
+
+- `Pairs` — OHLCローソク足データ（始値/高値/安値/終値、出来高、トレード数）
+- `Tokens` — トークンごとのトレード統計（出来高、売買の内訳、ユニークトレーダー）
+
+### EVM/Solanaグループとの主な違い
+
+1. **`network`引数なし** — Tradingグループはチェーン間のデータを統合します。ネットワークでフィルタリングするにはデータ内の`chain`ディメンションを使用します。
+2. **クロスチェーンデータ** — 単一のクエリで`sol`、`eth`、`bsc`のデータを一緒に返すことができます。
+3. **事前集計** — データはDWMレイヤーから分単位の粒度でマテリアライズされています。
+
+### 例：クロスチェーンOHLC
+
+```graphql
+query {
+  Trading(aggregates: yes) {
+    Pairs(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Token { Address }
+      Market { Network }
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd Native }
+      Stats { TradeCount BuyCount SellCount }
+    }
+  }
+}
+```
+
+### 例：チェーン別トークントレード統計
+
+```graphql
+query {
+  Trading {
+    Tokens(
+      where: {
+        Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } }
+        Market: { Network: { is: "eth" } }
+      }
+      limit: {count: 30}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+---
+
+## チェーングループ比較
+
+| 機能 | EVM | Solana | Trading |
+|:--------|:----|:-------|:--------|
+| **`network`引数** | 必須（`eth`、`bsc`、`polygon`） | 不要（暗黙的`sol`） | 不要（クロスチェーン） |
+| **固有のCube** | Events、Calls、MinerRewards、Uncles、DEXPoolSlippages、Prediction* | Instructions、InstructionBalanceUpdates、Rewards、DEXOrders | Pairs、Tokens |
+| **データ粒度** | イベント単位（DWD） + 集計（DWM/DWS） | イベント単位 + インストラクションレベル | 事前集計（DWM） |
+| **`dataset`サポート** | あり（ほとんどのCube） | あり（ほとんどのCube） | あり |
+| **`aggregates`サポート** | あり | あり | あり |
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="データキューブ" icon="cubes" href="/jp/graphql/schema/cubes">
+    25のCubeすべての詳細なフィールド構造とユースケース。
+  </Card>
+  <Card title="データセットとアグリゲート" icon="database" href="/jp/graphql/schema/dataset-aggregates">
+    データソーススコープと事前集計動作の制御。
+  </Card>
+</CardGroup>

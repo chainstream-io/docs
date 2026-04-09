@@ -7,12 +7,12 @@ icon: "paper-plane"
 The **Transfers** Cube contains on-chain token transfer events — every time tokens move from one wallet to another. Use it to track wallet activity, monitor whale movements, analyze token flows, and detect exchange deposits/withdrawals.
 
 <Note>
-All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+All examples below use `network: sol` (Solana). Replace with `eth`, `bsc`, or `polygon` for other supported chains.
 </Note>
 
 ---
 
-## Latest Transfers
+## How do I get the latest transfers?
 
 Fetch the 10 most recent token transfers on Solana, including sender, receiver, amount, and USD value.
 
@@ -36,6 +36,10 @@ query {
 }
 ```
 
+<Tip>
+[Open in GraphQL IDE](https://ide.chainstream.io) — paste the query above to run it interactively with auto-complete and schema exploration.
+</Tip>
+
 <AccordionGroup>
   <Accordion title="Key fields">
     | Field | Description |
@@ -57,7 +61,7 @@ query {
 
 ---
 
-## Wallet Transfers (Outgoing)
+## How do I get outgoing transfers from a wallet?
 
 Get outgoing transfers from a specific wallet using the `senderAddress` selector.
 
@@ -102,7 +106,7 @@ Replace `WALLET_ADDRESS` with the actual wallet address you want to investigate.
 
 ---
 
-## Wallet Transfers (Incoming)
+## How do I get incoming transfers to a wallet?
 
 Find incoming transfers to a wallet using the `receiverAddress` selector.
 
@@ -131,7 +135,7 @@ The Transfers Cube supports both `senderAddress` and `receiverAddress` selectors
 
 ---
 
-## Token Transfers
+## How do I get all transfers of a specific token?
 
 Track all transfers of a specific token across the network.
 
@@ -211,6 +215,25 @@ query {
 query {
   Transfers(
     network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  Transfers(
+    network: polygon
     limit: {count: 5}
     orderBy: Block_Time_DESC
   ) {

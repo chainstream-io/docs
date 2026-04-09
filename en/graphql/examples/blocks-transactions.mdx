@@ -1,0 +1,274 @@
+---
+title: "Blocks & Transactions"
+description: "Query examples for Blocks, Transactions, Events, Calls, and other infrastructure Cubes"
+icon: "cube"
+---
+
+## Overview
+
+This page covers query examples for blockchain infrastructure Cubes — the foundational data about blocks, transactions, smart contract events, and internal traces.
+
+---
+
+## Blocks
+
+### Latest Blocks (Solana)
+
+```graphql
+query {
+  Solana {
+    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block {
+        Time
+        Slot
+        Height
+        Hash
+        ParentSlot
+        TxCount
+      }
+    }
+  }
+}
+```
+
+### Latest Blocks (Ethereum)
+
+```graphql
+query {
+  EVM(network: eth) {
+    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block {
+        Time
+        Number
+        Hash
+        GasUsed
+        GasLimit
+        BaseFee
+        TxCount
+        Coinbase
+      }
+    }
+  }
+}
+```
+
+---
+
+## Transactions
+
+### Recent Transactions by Address (Solana)
+
+```graphql
+query {
+  Solana {
+    Transactions(
+      signer: {is: "WALLET_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction {
+        Signature
+        Fee
+        FeePayer
+        Result { Success }
+      }
+    }
+  }
+}
+```
+
+### Recent Transactions by Address (EVM)
+
+```graphql
+query {
+  EVM(network: eth) {
+    Transactions(
+      fromAddress: {is: "0xWALLET_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction {
+        Hash
+        From
+        To
+        Value
+        Gas
+        GasPrice
+      }
+    }
+  }
+}
+```
+
+---
+
+## Events (EVM Only)
+
+### Filter Events by Contract and Topic
+
+```graphql
+query {
+  EVM(network: eth) {
+    Events(
+      contractAddress: {is: "0xCONTRACT_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Log {
+        SmartContract
+        Index
+        Signature { Name Signature }
+        Data
+      }
+    }
+  }
+}
+```
+
+### Filter by Event Signature (Topic0)
+
+```graphql
+query {
+  EVM(network: eth) {
+    Events(
+      topic0: {is: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Log { SmartContract Index Data }
+    }
+  }
+}
+```
+
+---
+
+## Calls / Traces (EVM Only)
+
+### Internal Calls to a Contract
+
+```graphql
+query {
+  EVM(network: eth) {
+    Calls(
+      toAddress: {is: "0xCONTRACT_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Call {
+        From
+        To
+        Opcode
+        Value
+        Gas
+        GasUsed
+        Signature { Name }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Instructions (Solana Only)
+
+### Recent Instructions for a Program
+
+```graphql
+query {
+  Solana {
+    Instructions(
+      programId: {is: "PROGRAM_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction { Signature }
+      Instruction {
+        Index
+        Depth
+        Program { Address Name Method }
+        Accounts
+      }
+    }
+  }
+}
+```
+
+---
+
+## Rewards (Solana Only)
+
+### Staking Rewards for a Validator
+
+```graphql
+query {
+  Solana {
+    Rewards(
+      address: {is: "VALIDATOR_ADDRESS"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Reward {
+        Address
+        Amount
+        AmountInUSD
+        PostBalance
+        RewardType
+        Commission
+      }
+    }
+  }
+}
+```
+
+---
+
+## Miner Rewards (EVM Only)
+
+### Block Reward Breakdown
+
+```graphql
+query {
+  EVM(network: eth) {
+    MinerRewards(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Reward {
+        Miner
+        TotalReward
+        TotalRewardInUSD
+        StaticReward
+        DynamicReward
+        TxFees
+        BurntFees
+      }
+    }
+  }
+}
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
+    Detailed field structures for all Cubes including Blocks, Transactions, Events, and Calls.
+  </Card>
+  <Card title="Chain Groups" icon="layer-group" href="/en/graphql/schema/chain-groups">
+    Understand which Cubes are available for EVM vs Solana.
+  </Card>
+</CardGroup>

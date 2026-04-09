@@ -1,0 +1,218 @@
+---
+title: "快速開始"
+description: "5 分鐘完成你的第一次 API 呼叫"
+icon: "rocket"
+---
+
+## 你將學到
+
+完成本教程後，你將能夠：
+
+- 使用 API Key 或 OAuth Token 認證 ChainStream
+- 呼叫 API 獲取代幣後設資料
+- 使用 CLI 和 SDK 完成相同的查詢
+- 理解 API 響應結構
+
+<Note>
+**預計耗時**：5 分鐘
+</Note>
+
+---
+
+## 前提條件
+
+- 已註冊 ChainStream 賬號（[點此註冊](https://www.chainstream.io/dashboard)）
+
+---
+
+## 第一步：獲取 API Key
+
+1. 登入 [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+2. 進入 **Applications**
+3. 點選 **Create New App**
+4. 複製你的 **API Key**（以 `cs_live_...` 開頭）
+
+<Tip>
+API Key 是最快的認證方式。如需 OAuth 2.0 JWT 流程，參見[認證](/zh-Hant/guides/getting-started/authentication)。
+</Tip>
+
+---
+
+## 第二步：發起第一個請求
+
+查詢 Solana 上的 SOL 代幣後設資料。選擇你偏好的方式：
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="CLI">
+```bash
+# 使用 npx 一行命令（无需安装）
+npx @chainstream-io/cli token info --chain sol \
+  --address So11111111111111111111111111111111111111112
+```
+
+CLI 首次執行會提示認證。或者提前設定 key：
+
+```bash
+npx @chainstream-io/cli config set --key apiKey --value your_api_key
+```
+  </Tab>
+  <Tab title="SDK (TypeScript)">
+```typescript
+import { ChainStreamClient } from "@chainstream-io/sdk";
+
+const cs = new ChainStreamClient({ apiKey: "your_api_key" });
+
+const token = await cs.token.getToken(
+  "So11111111111111111111111111111111111111112",
+  "solana"
+);
+console.log(token.name, token.symbol, token.decimals);
+```
+  </Tab>
+  <Tab title="MCP (AI Agent)">
+將你的 AI Agent 連線到 ChainStream 資料 — 無需編碼：
+
+```bash
+CHAINSTREAM_API_KEY=your_api_key npx @chainstream-io/mcp
+```
+
+然後向你的 AI 提問：*"Solana 上的 SOL 代幣是什麼？"*
+
+參見 [MCP Server 設定](/zh-Hant/guides/ai-infrastructure/mcp-server/setup-guide) 瞭解 Claude/Cursor 配置。
+  </Tab>
+  <Tab title="OAuth 2.0 (JWT)">
+適用於使用 OAuth 2.0 Client Credentials 流程的應用：
+
+```bash
+# 第一步：获取 access token
+curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "audience": "https://api.dex.chainstream.io",
+    "grant_type": "client_credentials"
+  }'
+
+# 第二步：使用 token
+curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+將 `YOUR_ACCESS_TOKEN` 替換為你生成的 token。
+</Tip>
+
+### 響應示例
+
+```json
+{
+  "chain": "sol",
+  "decimals": 9,
+  "name": "Wrapped SOL",
+  "symbol": "SOL",
+  "address": "So11111111111111111111111111111111111111112",
+  "imageUrl": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  "tokenCreatedAt": 1710417600000
+}
+```
+
+---
+
+## 第三步：理解響應
+
+| 欄位 | 型別 | 說明 |
+|:--|:--|:--|
+| `chain` | string | 區塊鏈網路標識 |
+| `decimals` | integer | 代幣小數位數 |
+| `name` | string | 代幣名稱 |
+| `symbol` | string | 代幣符號 |
+| `address` | string | 代幣合約地址 |
+| `imageUrl` | string | 代幣 Logo URL |
+| `tokenCreatedAt` | integer | 代幣建立時間戳（毫秒） |
+
+<Note>
+完整欄位說明參見 [Token Metadata API 參考](/zh-Hant/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-metadata-get)。
+</Note>
+
+---
+
+## 第四步：嘗試更多 API
+
+成功完成第一次呼叫後，試試這些 API：
+
+<CardGroup cols={2}>
+  <Card title="獲取代幣價格" icon="chart-line" href="/zh-Hant/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get">
+    獲取實時代幣價格
+    
+    `GET /v2/token/{chain}/{tokenAddress}/price`
+  </Card>
+  <Card title="獲取錢包餘額" icon="wallet" href="/zh-Hant/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-tokens-balance-get">
+    查詢錢包代幣持倉
+    
+    `GET /v2/wallet/{chain}/{walletAddress}/tokens-balance`
+  </Card>
+</CardGroup>
+
+---
+
+## 常見問題
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized 錯誤">
+    請檢查：
+    - Access Token 是否正確且未過期？
+    - Header 格式是否為 `Authorization: Bearer YOUR_ACCESS_TOKEN` 或 `X-API-KEY: your_key`？
+    - 嘗試使用 Client ID 和 Client Secret 重新生成 token
+  </Accordion>
+  <Accordion title="429 Too Many Requests 錯誤">
+    你已達到請求速率限制。免費版限制為每秒 10 次請求。你可以升級套餐以提高限制。
+    
+    詳見 [API 安全](/zh-Hant/guides/data-concepts/api-security)。
+  </Accordion>
+  <Accordion title="如何查詢其他鏈上的代幣？">
+    修改 URL 中的 chain 引數，例如：
+    
+    `GET /v2/token/ethereum/{address}` 查詢以太坊
+    
+    `GET /v2/token/bsc/{address}` 查詢 BSC
+    
+    參見[支援的鏈](/zh-Hant/guides/getting-started/supported-chains)獲取完整列表。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 下一步
+
+根據你的使用場景選擇學習路徑：
+
+<CardGroup cols={2}>
+  <Card title="資料開發者" icon="database" href="/zh-Hant/guides/data-concepts/realtime-streaming">
+    前往資料概念瞭解資料模型
+  </Card>
+  <Card title="GraphQL API" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    探索 OLAP 分析型 GraphQL API，靈活查詢鏈上資料
+  </Card>
+  <Card title="合規使用者" icon="shield" href="/zh-Hant/guides/security-compliance/overview">
+    前往安全合規瞭解 KYT/KYA
+  </Card>
+  <Card title="AI 開發者" icon="robot" href="/zh-Hant/guides/ai-infrastructure/overview">
+    前往 AI 基礎設施瞭解 MCP 和 Agent Skills
+  </Card>
+  <Card title="CLI" icon="terminal" href="/zh-Hant/guides/cli/overview">
+    使用 CLI 進行指令碼、CI/CD 和 AI Agent 工作流
+  </Card>
+</CardGroup>
+
+<Info>
+遇到問題？檢視[常見問題](/zh-Hant/guides/getting-started/faq)或聯絡技術支援。
+</Info>

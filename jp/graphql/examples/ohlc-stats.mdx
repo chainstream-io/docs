@@ -1,0 +1,330 @@
+---
+title: "OHLCと統計"
+description: "K線データ（Pairs）、トークン単位のトレード統計（Tokens）、サプライとバリュエーション（TokenSupplyUpdates）のクエリ例、トークンメタデータの場所"
+icon: "chart-candlestick"
+---
+
+このページでは集計されたトレーディングとサプライデータを扱います。**Cube名**は**Trading**チェーングループ内の**Pairs**と**Tokens**（クロスチェーンOHLCとトレード統計）です。時価総額と価格のスナップショットは**Solana**または**EVM**配下の**TokenSupplyUpdates**から取得します。
+
+- **Pairs**（Trading、DWM） — 分単位のローソク足/K線データ（OHLC、出来高、トレード数）
+- **Tokens**（Trading、DWM） — 分単位のトレード統計（売買の内訳とユニークトレーダー数）
+- **TokenSupplyUpdates**（Solana / EVM、DWD） — ミント/バーンイベント（サプライ、価格、時価総額、FDVフィールド付き）
+- **トークンメタデータ** — 独立した**TokenSearch** Cubeはありません。**Pairs** / **Tokens**の**Token**（および関連）ディメンション、または**DEXPools**、**TokenHolders**、**DEXTradeByTokens**などの他のCubeを使用して発見とスクリーニングを行ってください
+
+<Note>
+**Trading**には`network`引数は**ありません**。チェーンでフィルタするには`where: { Market: { Network: { is: "sol" } } }`（または`eth`、`bsc`、`polygon`）を使用します。**Solana**と**EVM**グループは通常のラッパー（`Solana { ... }`、`EVM(network: eth) { ... }`）を使用します。
+</Note>
+
+---
+
+## K線（OHLC）ローソク足データを取得するには？
+
+トークンのローソク足データを取得 — 分単位の始値、高値、安値、終値、USD出来高、トレード数。**Trading**内の**Pairs** Cubeを使用します。
+
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Token { Address }
+      Market { Network }
+      Price {
+        Ohlc {
+          Open
+          High
+          Low
+          Close
+        }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
+    }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDEで開く](https://ide.chainstream.io) — 上記のクエリを貼り付けて、自動補完とスキーマ探索を使ってインタラクティブに実行できます。
+</Tip>
+
+<Tip>
+`TOKEN_ADDRESS`をトークンミントまたはコントラクトアドレスに置き換えてください。各行は1分バケットです — 約1時間には`limit: { count: 60 }`、約24時間には`count: 1440`を使用します。すべてのチェーンを1つの結果セットでクエリするには`Market`フィルタを省略します。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Interval.Time.Start` | 分バケットの開始（ローソク足の時刻と同じ） |
+    | `Token.Address` | トークンアドレス |
+    | `Market.Network` | チェーン識別子（`sol`、`eth`、`bsc`、…） |
+    | `Price.Ohlc.Open` | インターバルの始値 |
+    | `Price.Ohlc.High` | インターバル中の最高値 |
+    | `Price.Ohlc.Low` | インターバル中の最安値 |
+    | `Price.Ohlc.Close` | インターバルの終値 |
+    | `Volume.Usd` | このインターバルのUSD合計出来高 |
+    | `Stats.TradeCount` | このインターバルのトレード数 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **より長い時間枠**: `limit`でより多くの行をリクエスト、またはクライアント側で集計。ローソク足は分単位の粒度で保存されています
+    - **出来高フィルタ**: 例 `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }` で低出来高インターバルをスキップ
+    - **時間範囲**: 例 `where: { Block: { Time: { since: "2026-03-27T00:00:00Z" } }, Market: { Network: { is: "sol" } } }`
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**Pairs** Cubeは**DWM**（集計）モデルです — データは分単位で事前計算されています。チャートデータのために生のトレードをスキャンするよりもはるかに高速です。
+</Info>
+
+---
+
+## トークンのトレード統計を取得するには？
+
+分単位の売買カウント、ユニーク買い手/売り手カウント、出来高を含むトレード統計を取得します。**Trading**内の**Tokens** Cubeを使用します。
+
+```graphql
+query {
+  Trading {
+    Tokens(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Token { Address }
+      Market { Network }
+      Stats {
+        TradeCount
+        BuyCount
+        SellCount
+        UniqueBuyers
+        UniqueSellers
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Interval.Time.Start` | 分バケットの開始（ローソク足の時刻と同じ） |
+    | `Stats.TradeCount` | このインターバルの総トレード数 |
+    | `Stats.BuyCount` | 買い側トレード数 |
+    | `Stats.SellCount` | 売り側トレード数 |
+    | `Volume.Usd` | USD合計出来高 |
+    | `Stats.UniqueBuyers` | ユニークな買い手ウォレット数 |
+    | `Stats.UniqueSellers` | ユニークな売り手ウォレット数 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **売買圧力**: `Stats.BuyCount`と`Stats.SellCount`を比較
+    - **ユニークトレーダー**: `Stats.UniqueBuyers`と`Stats.UniqueSellers`は出来高が広く分散しているか集中しているかを示す
+    - **アクティビティヒートマップ**: 1日分（`count: 1440`）をクエリして`Interval.Time.Start`（または`Block.Time`）でチャート化
+    - **売買出来高**: **Tokens**レコードはUSD分割が必要な場合`Volume.BuyVolumeUSD`と`Volume.SellVolumeUSD`も公開
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+同じトークン、チェーン、時間窓で**Pairs**と**Tokens**を組み合わせてダッシュボードを構築 — フローと参加者メトリクスと並べてOHLCを表示。
+</Tip>
+
+---
+
+## 時価総額、価格、サプライの推移を取得するには？
+
+レガシーの**TokenMarketCap**サマリーCubeは現在のスキーマでは使用されていません。**TokenSupplyUpdates**（SolanaまたはEVM）を使用してください：各行はサプライに影響するイベントを反映し、価格、時価総額、FDV、総サプライを含む**TokenSupplyUpdate**メトリクスを持ちます。
+
+### Solana
+
+```graphql
+query {
+  Solana {
+    TokenSupplyUpdates(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress
+          Decimals
+          Symbol
+          Name
+        }
+        PriceInUSD
+        MarketCapInUSD
+        TotalSupply
+        FDVInUSD
+        PostBalance
+      }
+      Transaction { Signature }
+    }
+  }
+}
+```
+
+### EVM（Ethereumの例）
+
+```graphql
+query {
+  EVM(network: eth) {
+    TokenSupplyUpdates(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress
+          Decimals
+          Symbol
+          Name
+        }
+        PriceInUSD
+        MarketCapInUSD
+        TotalSupply
+        FDVInUSD
+        PostBalance
+      }
+      Transaction { Hash }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Block.Time` | イベント時刻 |
+    | `TokenSupplyUpdate.Currency.*` | トークン識別情報（ミント/コントラクト、デシマル、シンボル、名前） |
+    | `TokenSupplyUpdate.PriceInUSD` | この更新時点のUSD価格 |
+    | `TokenSupplyUpdate.MarketCapInUSD` | 時価総額 |
+    | `TokenSupplyUpdate.TotalSupply` | 総サプライ |
+    | `TokenSupplyUpdate.FDVInUSD` | 完全希薄化後バリュエーション |
+    | `TokenSupplyUpdate.PostBalance` | イベント後のサプライ関連残高 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **最新スナップショット**: `limit: { count: 1 }`と`orderBy: { descending: Block_Time }`
+    - **チェーン比較**: `Solana`と`EVM(network: bsc)`（または他の対応ネットワーク）で同じ形状を実行
+    - **さらなるコンテキスト**: サプライとプール関連の例については[プールと流動性](/jp/graphql/examples/pools-liquidity#how-do-i-get-token-supply-and-market-cap)も参照
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**TokenSupplyUpdates**は**DWD**（イベントレベル）です。単一の静的な「時価総額」サマリー行ではなく、ミント/バーンアクティビティに紐づいた履歴のバリュエーションとサプライ変更に適しています。
+</Info>
+
+---
+
+## トークン検索/メタデータはどこにある？
+
+**TokenSearch** Cubeは現在のAPIの一部では**ありません**。トークンコンテキストには：
+
+- **Pairs**と**Tokens**は**Token**ディメンション（例：**Token.Address**）をOHLCと統計と並べて公開しています — アドレスが分かっていて集計トレーディングデータが欲しい場合に使用します。
+- より豊富なメタデータ、ホルダー数、プール、発見には、チェーンに応じて**Solana**または**EVM**配下の**DEXPools**、**TokenHolders**、**DEXTradeByTokens**などのCubeを使用します。
+
+---
+
+## マルチチェーンの例
+
+<Tabs>
+  <Tab title="Solana (Trading)">
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum (Trading)">
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "eth" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC (Trading)">
+```graphql
+query {
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "bsc" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="DEXトレード" icon="arrow-right-arrow-left" href="/jp/graphql/examples/dex-trades">
+    DEXトレーディングデータのクエリ — トークントレード、ウォレットアクティビティ、トップトレーダー。
+  </Card>
+  <Card title="トランスファー" icon="paper-plane" href="/jp/graphql/examples/transfers">
+    ウォレット間のオンチェーントークントランスファーの追跡。
+  </Card>
+  <Card title="残高とホルダー" icon="wallet" href="/jp/graphql/examples/balance-holders">
+    ウォレット残高、残高履歴、トップホルダーの検索。
+  </Card>
+  <Card title="プールと流動性" icon="droplet" href="/jp/graphql/examples/pools-liquidity">
+    DEXプールと流動性データの探索。
+  </Card>
+</CardGroup>

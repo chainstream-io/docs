@@ -1,0 +1,371 @@
+---
+title: "Solana Streams"
+description: "Solana 高スループットブロックチェーン向け Protobuf データストリーム"
+icon: "bolt"
+---
+
+Solana は 400ms のブロック時間を目標とし、実際のスループットは約 4,000 TPS、理論上のピークは 65,000 TPS です。極めて高いメッセージ量により、コンシューマーの処理能力に高い要件が求められます。
+
+**スキーマリポジトリ**: [github.com/chainstream-io/streaming_protobuf/solana](https://github.com/chainstream-io/streaming_protobuf/tree/main/solana)
+
+---
+
+## メッセージタイプ一覧
+
+Solana Streams は以下のメッセージタイプを提供します：
+
+| メッセージタイプ | 説明 | Topic |
+|:---|:---|:---|
+| TradeEvents | DEX 取引イベント | `sol.dex.trades` |
+| TokenEvents | トークンイベント | `sol.tokens` |
+| BalanceEvents | 残高変更イベント | `sol.balances` |
+| DexPoolEvents | 流動性プールイベント | `sol.dex.pools` |
+| TransferEvents | 送金イベント | `sol.transfers` |
+| CandlestickEvents | ローソク足データ | `sol.candlesticks` |
+
+---
+
+## ブロックレベルデータ
+
+Solana は従来のブロック番号ではなく Slot をタイムライン識別子として使用します。
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `Slot` | uint64 | スロット番号（主要識別子） |
+| `BlockHeight` | uint64 | ブロック高さ |
+| `BlockHash` | bytes | ブロックハッシュ |
+| `ParentSlot` | uint64 | 親スロット |
+| `Timestamp` | Timestamp | ブロック時刻 |
+
+<Warning>
+Solana の shred ストリームでは Block Header が不完全な場合があり、**Slot** フィールドのみが正確であることが保証されます。
+</Warning>
+
+---
+
+## トランザクションレベルデータ
+
+### コアトランザクションフィールド
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `Signature` | bytes | トランザクション署名（ユニーク識別子） |
+| `Status` | Status | 実行ステータス |
+| `Header` | TransactionHeader | メタデータ（手数料や署名者を含む） |
+| `Index` | uint32 | ブロック内の位置 |
+
+### Instructions
+
+トランザクションは複数の Instructions を含みます。これが Solana の実行モデルのコアです：
+
+| フィールド | 説明 |
+|:---|:---|
+| `ProgramAccountIndex` | 呼び出されるプログラム |
+| `Data` | エンコードされたインストラクションデータ |
+| `AccountIndexes` | 参照アカウント |
+| `BalanceUpdates` | このインストラクションによる SOL 残高変更 |
+
+<Note>
+Solana のトランザクションは複数の Instructions を含むことができ、それぞれ異なるプログラムを呼び出します。
+</Note>
+
+---
+
+## 送金データ
+
+`TransferEvents` は Solana の送金情報を提供します（Topic: `sol.transfers`）。
+
+### TransferEvent 構造
+
+```protobuf
+message TransferEvent {
+  Instruction instruction = 1;
+  Block block = 2;
+  Transaction transaction = 3;
+  DApp d_app = 4;
+  Transfer transfer = 100;
+  TransferProcessed transfer_processed = 200;  // processed topic に含まれる
+}
+```
+
+### Transfer コアフィールド
+
+| フィールド | 型 | 説明 |
+|:---|:---|:---|
+| `sender_token_account_address` | string | 送信者トークンアカウントアドレス |
+| `sender_account_owner_address` | string | 送信者アカウントオーナーアドレス |
+| `receiver_token_account_address` | string | 受信者トークンアカウントアドレス |
+| `receiver_account_owner_address` | string | 受信者アカウントオーナーアドレス |
+| `token_address` | string | トークンアドレス (Mint) |
+| `token_amount` | string | 送金量 |
+
+### トークンメタデータ (TokenEvent)
+
+トークンイベントは共通の `TokenEvents` を使用します（Topic: `sol.tokens`）：
+
+| フィールド | 説明 |
+|:---|:---|
+| `address` | トークンアドレス |
+| `name` / `symbol` | 名前とシンボル |
+| `decimals` | 小数桁数 |
+| `uri` | メタデータ URI |
+| `metadata_address` | メタデータアドレス |
+| `creators` | 作成者リスト（アドレス、検証ステータス、シェア） |
+
+### SolanaExtra 固有フィールド
+
+Solana トークンには追加のメタデータフィールドがあります：
+
+| フィールド | 説明 |
+|:---|:---|
+| `collection_address` | コレクションアドレス (NFT) |
+| `fungible` | 代替性があるか |
+| `is_mutable` | 変更可能か |
+| `is_native` | ネイティブ SOL か |
+| `program_address` | プログラムアドレス |
+| `seller_fee_basis_points` | クリエイターロイヤリティのベーシスポイント (NFT) |
+| `token_standard` | トークン標準 |
+| `mint_authority` / `freeze_authority` / `update_authority` | 権限アカウント |
+| `is_verified_collection` | 検証済みコレクションか |
+
+### 残高更新の階層メカニズム（Solana 固有）
+
+これは Solana ストリームデータの重要な特徴で、残高更新は 2 つのレベルで提供されます：
+
+<Tabs>
+  <Tab title="インストラクションレベルの残高更新">
+    各インストラクション実行後の即時残高変更で、単一ステップ操作の直接的な影響を反映します。
+
+    ```
+    Transaction
+    └── Instruction 1
+        └── BalanceUpdate: +100 SOL
+    └── Instruction 2
+        └── BalanceUpdate: -50 SOL
+    └── Instruction 3
+        └── BalanceUpdate: +25 SOL
+    ```
+  </Tab>
+  <Tab title="トランザクションレベルの残高更新">
+    トランザクション内のすべてのインストラクション完了後の最終残高状態。
+
+    ```
+    Transaction
+    └── FinalBalanceUpdate: +75 SOL (net change)
+    ```
+  </Tab>
+</Tabs>
+
+これにより、開発者は詳細な資金フローと最終状態の両方を追跡できます。
+
+---
+
+## DEX データ
+
+`TradeEvents` は DEX 取引データを提供します（Topic: `sol.dex.trades`）。共通の TradeEvent 構造を使用します。
+
+### Trade コアフィールド
+
+| フィールド | 説明 |
+|:---|:---|
+| `token_a_address` / `token_b_address` | 取引ペアのトークンアドレス |
+| `user_a_amount` / `user_b_amount` | ユーザー取引量 |
+| `pool_address` | プールアドレス |
+| `vault_a` / `vault_b` | プールのボールトアドレス |
+| `vault_a_amount` / `vault_b_amount` | ボールト量 |
+| `bonding_curve` | ボンディングカーブ情報（該当する場合） |
+
+### DApp 情報
+
+| フィールド | 説明 |
+|:---|:---|
+| `program_address` | DEX プログラムアドレス（例: Raydium、Orca） |
+| `inner_program_address` | 内部プログラムアドレス |
+| `chain` | チェーン識別子 (CHAIN_SOLANA) |
+
+### DexPoolEvent - 流動性プール
+
+| フィールド | 説明 |
+|:---|:---|
+| `type` | イベントタイプ (INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP) |
+| `address` | プールアドレス |
+| `token_a_address` / `token_b_address` | トークンアドレス |
+| `token_a_amount` / `token_b_amount` | トークン量 |
+| `lp_wallet` | LP ウォレットアドレス |
+
+---
+
+## Solana チェーンの特徴
+
+### スロットメカニズム
+
+Solana は従来のブロック番号ではなくスロットをタイムライン識別子として使用します：
+
+| 特徴 | 説明 |
+|:---|:---|
+| ブロック間隔 | 約 400ms |
+| メッセージ量 | EVM チェーンよりはるかに多い |
+| 主要識別子 | スロット番号 |
+
+### メッセージパッケージング
+
+トランザクションは小バッチでパッケージングされ、各 Kafka メッセージに含まれるトランザクション数は最大 250 です。
+
+### Block Header の完全性
+
+<Warning>
+Solana の shred ストリームでは Block Header が不完全な場合があり、**Slot** フィールドのみが正確であることが保証されます。他のフィールドは空または不正確な場合があります。
+</Warning>
+
+### 高スループット処理の推奨事項
+
+Solana の極めて高いスループットにより、以下を推奨します：
+
+1. **十分な処理能力**: コンシューマーに十分な CPU とメモリを確保
+2. **並列処理**: マルチスレッド/コルーチンによるメッセージの並列処理
+3. **効率的なパーシング**: Protobuf パースコードの最適化
+4. **バッチ書き込み**: 永続化が必要な場合はバッチデータベース書き込みを使用
+
+---
+
+## Topic → メッセージタイプマッピング
+
+| Topic | Proto ファイル | メッセージタイプ | 説明 |
+|:---|:---|:---|:---|
+| `sol.dex.trades` | trade_event.proto | TradeEvents | DEX 取引イベント |
+| `sol.dex.trades.processed` | trade_event.proto | TradeEvents | USD 価格、不審フラグ付き |
+| `sol.tokens` | token_event.proto | TokenEvents | トークンイベント |
+| `sol.tokens.processed` | token_event.proto | TokenEvents | 説明、画像、SNS リンク付き |
+| `sol.balances` | balance_event.proto | BalanceEvents | 残高変更イベント |
+| `sol.transfers` | solana/transfer_event.proto | TransferEvents | Solana 送金イベント |
+| `sol.transfers.processed` | solana/transfer_processed_event.proto | TransferProcessedEvents | USD 価値付き |
+| `sol.dex.pools` | dex_pool_event.proto | DexPoolEvents | 流動性プールイベント |
+| `sol.candlesticks` | candlestick.proto | CandlestickEvents | ローソク足データ |
+
+---
+
+## コード例
+
+### Python 例：Solana DEX 取引の消費
+
+```python
+from kafka import KafkaConsumer
+from common import trade_event_pb2  # streaming_protobuf リポジトリから取得
+
+# コンシューマーを作成
+consumer = KafkaConsumer(
+    'sol.dex.trades',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    enable_auto_commit=False,
+    group_id='my-solana-consumer'
+)
+
+# メッセージを消費・パース
+for message in consumer:
+    trade_events = trade_event_pb2.TradeEvents()
+    trade_events.ParseFromString(message.value)
+    
+    for event in trade_events.events:
+        print(f"Pool: {event.trade.pool_address}")
+        print(f"Token A: {event.trade.token_a_address}")
+        print(f"Token B: {event.trade.token_b_address}")
+        print(f"Amount A: {event.trade.user_a_amount}")
+        print(f"Amount B: {event.trade.user_b_amount}")
+        print(f"Slot: {event.block.slot}")
+        print(f"DEX Program: {event.d_app.program_address}")
+        print("---")
+```
+
+### Go 例：高パフォーマンス消費
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+
+    "github.com/segmentio/kafka-go"
+    "github.com/segmentio/kafka-go/sasl/scram"
+    "google.golang.org/protobuf/proto"
+    
+    common "github.com/chainstream-io/streaming_protobuf/common/messages"
+)
+
+func main() {
+    mechanism, _ := scram.Mechanism(scram.SHA512, "your_username", "your_password")
+    
+    reader := kafka.NewReader(kafka.ReaderConfig{
+        Brokers: []string{"<your_broker_address>"},
+        Topic:   "sol.dex.trades",
+        GroupID: "my-solana-consumer",
+        Dialer: &kafka.Dialer{
+            SASLMechanism: mechanism,
+            TLS:           &tls.Config{},
+        },
+    })
+    defer reader.Close()
+
+    // ワーカープールで並列処理
+    messages := make(chan kafka.Message, 100)
+    
+    // ワーカーを起動
+    for i := 0; i < 10; i++ {
+        go func() {
+            for msg := range messages {
+                var tradeEvents common.TradeEvents
+                if err := proto.Unmarshal(msg.Value, &tradeEvents); err != nil {
+                    log.Printf("Failed to parse: %v", err)
+                    continue
+                }
+                
+                // 取引を処理
+                for _, event := range tradeEvents.Events {
+                    log.Printf("Pool: %s, Token A: %s, Token B: %s",
+                        event.Trade.PoolAddress,
+                        event.Trade.TokenAAddress,
+                        event.Trade.TokenBAddress)
+                    log.Printf("Amount A: %s, Amount B: %s, Slot: %d",
+                        event.Trade.UserAAmount,
+                        event.Trade.UserBAmount,
+                        event.Block.Slot)
+                }
+            }
+        }()
+    }
+
+    // メッセージを読み取り
+    for {
+        msg, err := reader.ReadMessage(context.Background())
+        if err != nil {
+            log.Printf("Error reading: %v", err)
+            continue
+        }
+        messages <- msg
+    }
+}
+```
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="コンセプトと統合ガイド" icon="book-open" href="/jp/guides/data-concepts/kafka-streams/overview">
+    Kafka Streams 統合の基礎
+  </Card>
+  <Card title="EVM Streams" icon="ethereum" href="/jp/guides/data-concepts/kafka-streams/evm-streams">
+    EVM チェーンデータストリーム
+  </Card>
+  <Card title="TRON Streams" icon="circle-t" href="/jp/guides/data-concepts/kafka-streams/tron-streams">
+    TRON ネットワークデータストリーム
+  </Card>
+  <Card title="WebSocket リアルタイムデータ" icon="bolt" href="/jp/guides/data-concepts/realtime-streaming">
+    WebSocket 統合
+  </Card>
+</CardGroup>

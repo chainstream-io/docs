@@ -63,17 +63,23 @@ A simple query with default limit (25 rows) and no aggregation pays only the bas
 
 ## Base Cost per Cube
 
-| Cube | Base Cost (CU) |
-|:-----|:---------------|
-| **DEXTrades** | 50 |
-| **DEXPools** | 30 |
-| **WalletTokenPnL** | 25 |
-| **Transfers** | 15 |
-| **BalanceUpdates** | 10 |
-| All other Cubes | 20 (default) |
+| Cube | Base Cost (CU) | Notes |
+|:-----|:---------------|:------|
+| **DEXTrades** | 50 | Largest table with most dimensions |
+| **DEXTradeByTokens** | 50 | Same underlying data as DEXTrades |
+| **DEXPoolEvents** | 30 | Liquidity events |
+| **Pairs** | 30 | OHLC candlestick data (Trading group) |
+| **Tokens** | 30 | Token trade statistics (Trading group) |
+| **WalletTokenPnL** | 25 | DWS summary |
+| **Transfers** | 15 | |
+| **BalanceUpdates** | 10 | |
+| **Events**, **Calls** | 20 | EVM-only trace/event data |
+| **Instructions** | 20 | Solana-only |
+| **PredictionTrades** | 20 | Prediction market data |
+| All other Cubes | 20 | Default base cost |
 
 <Note>
-Base costs reflect query complexity and the underlying data volume of each Cube. DEXTrades is the most expensive because it scans the largest tables with the most dimensions.
+Base costs reflect query complexity and the underlying data volume of each Cube. The actual Cube name reported in `extensions.credits` is determined by the server — always use the response value as the authoritative billing reference.
 </Note>
 
 ---
@@ -120,7 +126,7 @@ The `extensions.credits` field is present when credits are consumed (i.e., `tota
 
 The [GraphQL IDE](https://ide.chainstream.io) status bar displays credit consumption after each query:
 
-- **CU indicator**: Shows `total / 100` formatted to 2 decimal places (e.g., 50 CU displays as `0.50 CU`)
+- **CU indicator**: Displays the total CU consumed (e.g., `50 CU`)
 - **Latency**: Request duration in milliseconds
 - **Response size**: Payload size
 
@@ -136,7 +142,7 @@ The [GraphQL IDE](https://ide.chainstream.io) status bar displays credit consump
     Keep `limit.count` as low as practical. Credits scale with `ceil(limit / 100)`.
   </Card>
   <Card title="Use Pre-aggregated Cubes" icon="layer-group">
-    For aggregated data, prefer DWM/DWS Cubes (OHLC, TokenTradeStats, TokenMarketCap) over running metrics on DWD Cubes (DEXTrades).
+    For aggregated data, prefer DWM/DWS Cubes (Pairs, Tokens, TokenHolders) over running metrics on DWD Cubes (DEXTrades).
   </Card>
 </CardGroup>
 

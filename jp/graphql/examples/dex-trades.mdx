@@ -1,0 +1,326 @@
+---
+title: "DEXトレード"
+description: "DEXトレーディングデータのクエリ例"
+icon: "arrow-right-arrow-left"
+---
+
+**DEXTrades** Cubeはトレード単位のDEXスワップイベントを含みます — 利用可能な最も細粒度のトレーディングデータです。個別のトレードのクエリ、ウォレットアクティビティの分析、トークン価格の追跡、トップトレーダーの検索に使用できます。
+
+<Note>
+以下のすべての例は`network: sol`（Solana）を使用しています。他の対応チェーンの場合は`eth`、`bsc`、`polygon`に置き換えてください。
+</Note>
+
+---
+
+## 最新のDEXトレードを取得するには？
+
+Solana上の最新10件のDEXトレードを、ブロック情報、トランザクションハッシュ、売買の詳細、DEXプロトコルを含めて取得します。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+        Account { Owner }
+      }
+      Dex { ProgramAddress, ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDEで開く](https://ide.chainstream.io) — 上記のクエリを貼り付けて、自動補完とスキーマ探索を使ってインタラクティブに実行できます。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Block.Time` | ブロックタイムスタンプ（ISO 8601） |
+    | `Block.Slot` | Solanaスロット番号（Solana固有） |
+    | `Transaction.Hash` | オンチェーントランザクションハッシュ — エクスプローラーでの検索に使用 |
+    | `Trade.Buy.Currency.MintAddress` | 購入アセットのトークンアドレス |
+    | `Trade.Buy.PriceInUSD` | トレード時の購入トークンのUSD価格 |
+    | `Trade.Buy.Account.Owner` | 買い手ウォレットアドレス |
+    | `Trade.Dex.ProtocolName` | DEX名（例：Raydium、Orca、Jupiter） |
+    | `Pool.Address` | トレードが実行された流動性プールアドレス |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **チェーンの切り替え**: `network: sol`を`network: eth`、`network: bsc`、`network: polygon`に置き換え
+    - **結果を増やす**: `count: 10`を最大`10000`に変更
+    - **時間フィルタを追加**: `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}`を追加して時間範囲を限定
+    - **DEXでフィルタ**: `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}`を追加して特定のプロトコルに限定
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 特定のトークンのトレードを取得するには？
+
+`tokenAddress`セレクターにアドレスを渡して、特定のトークンのトレードを取得します。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Trade {
+      Buy { Amount, PriceInUSD, Account { Owner } }
+      Sell { Currency { MintAddress }, Amount }
+      Dex { ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+
+<Tip>
+`TOKEN_ADDRESS`を実際のトークンミントアドレス（例：SolanaのUSDCの場合`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）に置き換えてください。名前によるアドレス検索は[トークンメタデータ](/jp/graphql/examples/ohlc-stats#how-do-i-look-up-token-information)を参照してください。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Trade.Buy.Amount` | 購入されたトークンの数量 |
+    | `Trade.Buy.PriceInUSD` | トレード時のトークン単価 |
+    | `Trade.Buy.Account.Owner` | 購入を実行したウォレット |
+    | `Trade.Sell.Currency.MintAddress` | 売却アセットのトークンアドレス（ペアのもう一方） |
+    | `Trade.Dex.ProtocolName` | DEXプロトコル名 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **最小金額でフィルタ**: `where: {Trade: {Buy: {Amount: {gt: 1000}}}}`を追加して大口トレードのみ表示
+    - **価格帯でフィルタ**: `where: {Trade: {Buy: {PriceInUSD: {gte: 0.001, lte: 1.0}}}}`を追加して価格帯を限定
+    - **疑わしいトレードの除外**: `IsSuspect = false`フィルタがデフォルトで適用されます — ボット/MEVトレードは既に除外済み
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## ウォレットのすべてのトレードを取得するには？
+
+特定のウォレットアドレスのすべてのトレードを取得します。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    walletAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Trade {
+      Buy { Currency { MintAddress }, Amount, PriceInUSD }
+      Sell { Currency { MintAddress }, Amount }
+      Dex { ProtocolName }
+    }
+    Transaction { Hash, FeeInNative }
+  }
+}
+```
+
+<Info>
+`walletAddress`セレクターは、指定されたウォレットが買い手または売り手のいずれかであるトレードにマッチします。
+</Info>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Trade.Buy.Currency.MintAddress` | 購入トークン |
+    | `Trade.Sell.Currency.MintAddress` | 売却トークン |
+    | `Transaction.FeeInNative` | ネイティブトークンでのガス手数料（Solanaの場合SOL） |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **単一トークンにフィルタ**: `tokenAddress: {is: "TOKEN_ADDRESS"}`と組み合わせて、このウォレットの特定トークンのトレードのみ表示
+    - **時間窓を追加**: `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}`を追加して最近のトレードに限定
+    - **リミットを増やす**: `count: 100`に設定してより多くの履歴を取得（最大10,000）
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## トークンの現在価格を取得するには？
+
+最新の非疑惑トレードからトークンの最新価格を取得します。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD, PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Trade.Buy.PriceInUSD` | 最新トレードからのUSD価格 |
+    | `Trade.Buy.PriceInNative` | チェーンのネイティブトークン（SOL、ETH、BNB）建ての価格 |
+    | `Block.Time` | トレードのタイムスタンプ — 価格がどれだけ最新かを示す |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **複数価格**: `count`を増やして平均化のための最近の価格系列を取得
+    - **クロスチェーン**: `network: eth`を使用してEthereumでの同じトークンの価格を取得（そのチェーンに存在する場合）
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+経時的な信頼性の高いトークン価格データには、代わりに[Pairs](/jp/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cubeの使用を検討してください — 分単位の始値/高値/安値/終値の事前計算されたローソク足データを提供します。
+</Tip>
+
+---
+
+## トークンのトップトレーダーを見つけるには？
+
+集計を使用してトークンのトップトレーダーを見つけます。このクエリはトレードを買い手ウォレットごとにグループ化し、合計購入数とボリュームを返します。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Trade.Buy.Account.Owner` | ウォレットアドレス（グループ化キー） |
+    | `count` | このウォレットのトレード数 |
+    | `sum(of: Trade_Buy_Amount)` | このウォレットが購入したトークンの合計 |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **出来高でソート**: 結果はディメンションフィールドでグループ化されます — より高レベルの集計にはディメンションを少なく選択
+    - **期間限定リーダーボード**: `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}`を追加して特定期間に限定
+    - **小口トレードを除外**: `where`句に`Trade: {Buy: {Amount: {gt: 100}}}`を追加
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+メトリクスフィールド（`count`、`sum`）をディメンションフィールドと一緒に含めると、APIは自動的に選択されたディメンションで結果をグループ化します。詳細は[メトリクスと集計](/jp/graphql/schema/metrics-aggregation)をご覧ください。
+</Info>
+
+---
+
+## マルチチェーンの例
+
+同じクエリがすべての対応チェーンで動作します — `network`パラメータを変更するだけです。
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Slot }
+    Trade {
+      Buy { Currency { MintAddress }, PriceInUSD }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  DEXTrades(
+    network: eth
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Height }
+    Trade {
+      Buy { Currency { MintAddress }, PriceInUSD }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  DEXTrades(
+    network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time, Height }
+    Trade {
+      Buy { Currency { MintAddress }, PriceInUSD }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="トランスファー" icon="paper-plane" href="/jp/graphql/examples/transfers">
+    オンチェーントークントランスファーデータのクエリ。
+  </Card>
+  <Card title="残高とホルダー" icon="wallet" href="/jp/graphql/examples/balance-holders">
+    ウォレット残高、残高履歴、トップホルダーの検索。
+  </Card>
+  <Card title="プールと流動性" icon="droplet" href="/jp/graphql/examples/pools-liquidity">
+    DEXプールと流動性データの探索。
+  </Card>
+  <Card title="OHLCと統計" icon="chart-candlestick" href="/jp/graphql/examples/ohlc-stats">
+    ローソク足データ、トレード統計、時価総額、トークンメタデータの取得。
+  </Card>
+</CardGroup>

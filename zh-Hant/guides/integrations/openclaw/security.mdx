@@ -1,0 +1,176 @@
+---
+title: "安全注意事項"
+description: "使用 ChainStream 與 OpenClaw Agent 的安全審查、風險標誌和最佳實踐。"
+---
+
+## ClawHub 安全審查
+
+釋出在 ClawHub 上的 ChainStream Skill（`chainstream/chainstream-data`）已被 ClawHub 的自動安全掃描器標記為 **可疑**，置信度為 **中等**。
+
+<Warning>
+  此標誌並不意味著該 Skill 是惡意的。它表示該 Skill 行為中的某些模式需要在生產使用前進行仔細審查。
+</Warning>
+
+### 被標記的行為
+
+掃描器識別出三種觸發警告的行為：
+
+| 行為 | 風險等級 | 描述 |
+|------|----------|------|
+| 錢包建立與私鑰儲存 | 高 | 該 Skill 包含建立錢包和儲存私鑰的指令，可能暴露敏感的加密材料 |
+| x402 自動支付 | 中 | x402 支付協議可以自動授權支出，降低了對外發交易的可見性 |
+| 遠端 npm 執行 | 低 | 該 Skill 使用 `npx` 在執行時從 npm 獲取並執行包 |
+
+### 含義說明
+
+- **錢包建立**：部分 ChainStream 工具（`dex_swap`、`dex_create_token`、`transaction_send`）需要錢包訪問許可權。Skill 文件包含涉及私鑰處理的錢包設定說明。
+- **x402 自動支付**：x402 協議支援機器對機器的微支付。啟用後，Agent 可以在無需逐筆交易明確審批的情況下授權小額支付。
+- **遠端 npm 執行**：使用 `npx @chainstream-io/mcp` 會從 npm 登錄檔下載並執行包。雖然這是標準做法，但引入了供應鏈依賴。
+
+## 最佳實踐
+
+遵循以下指南，在生產環境中安全地使用 ChainStream 與 OpenClaw Agent。
+
+### 1. 優先使用 Dashboard API Key 而非建立錢包
+
+使用從 [ChainStream Dashboard](https://app.chainstream.io) 生成的 API Key 進行認證。API Key 提供對鏈上資料的只讀訪問，無需建立錢包或管理私鑰。
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: your-dashboard-key  # No wallet needed
+```
+
+<Tip>
+  API Key 足以使用所有隻讀工具：代幣搜尋、分析、錢包畫像、市場資料和交易歷史。只有執行工具（`dex_swap`、`dex_create_token`、`transaction_send`）才需要錢包訪問許可權。
+</Tip>
+
+### 2. 永遠不要匯入生產私鑰
+
+如果你的用例需要執行工具，**永遠不要匯入** 持有大量資金的錢包的私鑰。
+
+- 建立一個專用的測試錢包，僅存入最少資金
+- 僅充入特定操作所需的金額
+- 將任何連線到 AI Agent 的錢包視為具有較高風險的熱錢包
+
+```
+DO:    Create a fresh wallet with 0.1 SOL for testing swaps
+DON'T: Import your main wallet with 100 SOL into an agent config
+```
+
+### 3. 執行前驗證 npm 包
+
+在執行 `npx @chainstream-io/mcp` 之前，驗證該包：
+
+```bash
+# Check package details on npm
+npm view @chainstream-io/mcp
+
+# Check the publisher
+npm view @chainstream-io/mcp maintainers
+
+# Pin a specific version instead of using latest
+npx @chainstream-io/mcp@0.0.3
+```
+
+對於生產部署，建議全域性安裝固定版本而非使用 `npx`：
+
+```bash
+npm install -g @chainstream-io/mcp@0.0.3
+```
+
+### 4. 在隔離環境中執行
+
+在隔離環境中執行 MCP Server 和 OpenClaw Agent，以限制影響範圍：
+
+- **Docker 容器**，限制網路訪問
+- **專用虛擬機器** 或雲例項
+- **沙箱化的 Agent 執行時**，限制檔案系統訪問
+
+```dockerfile
+FROM node:20-slim
+
+# Non-root user
+RUN useradd -m agent
+USER agent
+
+RUN npm install -g @chainstream-io/mcp@0.0.3
+
+CMD ["chainstream-mcp"]
+```
+
+### 5. 支付流程需要明確審批
+
+配置你的 OpenClaw Agent，要求對任何涉及資金轉移的工具進行人工確認：
+
+- `dex_swap` —— 執行代幣交換
+- `dex_create_token` —— 建立代幣（可能需要 SOL）
+- `transaction_send` —— 廣播已簽名的交易
+
+在 OpenClaw Agent 配置中：
+
+```yaml
+agent:
+  confirmation_required:
+    - dex_swap
+    - dex_create_token
+    - transaction_send
+```
+
+如果使用 x402 自動支付，設定明確的消費限額：
+
+```yaml
+agent:
+  x402:
+    max_per_transaction: 0.01  # USD
+    max_daily: 1.00            # USD
+    require_approval_above: 0.10  # USD
+```
+
+### 6. 監控錢包交易
+
+如果你將錢包連線到 Agent，請主動監控其活動：
+
+- 使用 `webhooks_manage` 設定外發交易的 Webhook 告警
+- 使用 `wallets_activity` 定期檢視錢包活動
+- 使用區塊瀏覽器獨立驗證 Agent 發起的交易
+
+```bash
+# Example: Set up a webhook for wallet activity
+# (via the agent or direct API call)
+webhooks_manage action=create url=https://your-server.com/alerts events=["wallet_transfer"]
+```
+
+## 安全檢查清單
+
+在生產環境中部署 ChainStream 與 OpenClaw 之前，請使用此檢查清單：
+
+- [ ] API Key 儲存在環境變數中，而非程式碼或配置檔案中
+- [ ] 未將生產私鑰匯入 Agent 配置
+- [ ] npm 包版本已固定（未使用 `latest`）
+- [ ] Agent 在隔離環境中執行（Docker、VM、沙箱）
+- [ ] 執行工具（`dex_swap`、`dex_create_token`、`transaction_send`）需要人工審批
+- [ ] x402 自動支付已禁用或設定了消費限額
+- [ ] 已配置錢包監控和告警
+- [ ] 定期審查 Agent 交易日誌
+
+## 報告問題
+
+如果你發現 ChainStream MCP Server 或 ClawHub Skill 中的安全漏洞：
+
+- **ChainStream**：傳送郵件至 [security@chainstream.io](mailto:security@chainstream.io)
+- **ClawHub**：透過 ClawHub Skill 頁面報告 [clawhub.ai/chainstream/chainstream-data](https://clawhub.ai/chainstream/chainstream-data)
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="安裝方式" icon="download" href="/zh-Hant/guides/integrations/openclaw/skills-install">
+    選擇適合你安全需求的安裝方式。
+  </Card>
+  <Card title="自託管部署" icon="server" href="/zh-Hant/guides/ai-infrastructure/mcp-server/installation">
+    執行你自己的 MCP Server 以獲得最大控制權。
+  </Card>
+</CardGroup>

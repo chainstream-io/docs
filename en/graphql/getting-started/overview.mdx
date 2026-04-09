@@ -5,7 +5,7 @@ icon: "circle-nodes"
 ---
 
 <Info>
-ChainStream GraphQL is an OLAP analytical API that exposes multi-chain on-chain data (Solana, Ethereum, BSC) through a single GraphQL endpoint. Query exactly the fields you need, aggregate data on the fly, and explore the schema interactively — all powered by a high-performance OLAP database.
+ChainStream GraphQL is an OLAP analytical API that exposes multi-chain on-chain data (Solana, Ethereum, BSC, Polygon) through a single GraphQL endpoint. Query exactly the fields you need, aggregate data on the fly, and explore the schema interactively — all powered by a high-performance OLAP database.
 </Info>
 
 ## What is ChainStream GraphQL
@@ -42,7 +42,7 @@ Use **GraphQL** when you need flexible analytical queries — aggregating trades
 
 <CardGroup cols={3}>
   <Card title="Single Endpoint" icon="bullseye">
-    One URL serves 12 data Cubes across 3 chains. No endpoint sprawl — just change your query.
+    One URL serves 25 data Cubes across 4 chains. No endpoint sprawl — just change your query.
   </Card>
   <Card title="Client-Selected Fields" icon="filter">
     Request only the columns you need. No over-fetching, no under-fetching — ideal for bandwidth-constrained clients.
@@ -56,44 +56,80 @@ Use **GraphQL** when you need flexible analytical queries — aggregating trades
 
 ## Supported Chains
 
-| Network ID | Blockchain | Coverage |
-|:--|:--|:--|
-| `sol` | Solana | Full DEX, transfers, token holders, OHLC, PnL |
-| `eth` | Ethereum | Full DEX, transfers, balance updates, token stats |
-| `bsc` | BNB Chain (BSC) | Full DEX, transfers, balance updates, token stats |
+| Network ID | Blockchain | Chain Group | Coverage |
+|:--|:--|:--|:--|
+| `eth` | Ethereum | EVM | Full DEX, transfers, balance updates, events, traces, token stats |
+| `bsc` | BNB Chain (BSC) | EVM | Full DEX, transfers, balance updates, events, traces, token stats |
+| `polygon` | Polygon | EVM | Full DEX, transfers, balance updates, prediction markets |
+| `sol` | Solana | Solana | Full DEX, transfers, instructions, token holders, OHLC, PnL |
 
 <Note>
-The `network` argument is required on every top-level Cube query. Pass it as an enum value: `sol`, `eth`, or `bsc`.
+Queries are organized into three **Chain Groups**: **EVM** (requires a `network` argument), **Solana**, and **Trading** (cross-chain OHLC and token statistics). See [Chain Groups](/en/graphql/schema/chain-groups) for details.
 </Note>
 
 ---
 
 ## Available Data Cubes
 
-12 Cubes are available, each representing a distinct analytical model:
+25 Cubes are available across three Chain Groups, each representing a distinct analytical model:
 
 <AccordionGroup>
-  <Accordion title="Trading & Markets">
+  <Accordion title="DEX Trading">
     - **DEXTrades** — Individual DEX swap events with buy/sell amounts, prices, and DEX protocol info
-    - **OHLC** — Open/High/Low/Close candlestick data at configurable time intervals
-    - **TokenTradeStats** — Aggregated trade statistics per token (volume, trade count, unique traders)
-    - **TokenMarketCap** — Token market capitalization snapshots
+    - **DEXTradeByTokens** — DEX trades indexed by token for efficient per-token queries
+    - **DEXOrders** — DEX order events including limit orders *(Solana only)*
+  </Accordion>
+  <Accordion title="Pools & Liquidity">
+    - **DEXPoolEvents** — Liquidity add/remove events on DEX pools
+    - **DEXPools** — DEX pool snapshots with current reserves and metadata
+    - **DEXPoolSlippages** — Pool slippage data *(EVM only)*
+    - **TokenSupplyUpdates** — Mint and burn events affecting token supply
   </Accordion>
   <Accordion title="Tokens & Transfers">
     - **Transfers** — Token transfer events with sender, receiver, amounts, and USD values
     - **BalanceUpdates** — Wallet balance change events per token
-    - **TokenSupplyUpdates** — Mint and burn events affecting token supply
-    - **TokenSearch** — Full-text token search by name, symbol, or address
-  </Accordion>
-  <Accordion title="Pools & Liquidity">
-    - **DEXPools** — DEX liquidity pool metadata and current reserves
-    - **PoolLiquiditySnapshots** — Historical pool liquidity snapshots over time
-  </Accordion>
-  <Accordion title="Wallets & PnL">
     - **TokenHolders** — Current holder list and distribution for a token
-    - **WalletTokenPnL** — Realized and unrealized PnL per wallet-token pair
+    - **WalletTokenPnL** — PnL per wallet-token pair
+  </Accordion>
+  <Accordion title="Trading Analytics (Cross-chain)">
+    - **Pairs** — OHLC candlestick data at configurable time intervals (formerly referenced as OHLC)
+    - **Tokens** — Aggregated trade statistics per token: volume, trade count, unique traders (formerly referenced as TokenTradeStats)
+  </Accordion>
+  <Accordion title="Blockchain Infrastructure">
+    - **Blocks** — Block-level data (timestamps, height, miners/validators)
+    - **Transactions** — Transaction-level data (hash, status, gas/fees)
+    - **TransactionBalances** — Per-transaction balance changes
+    - **Events** — Smart contract event logs *(EVM only)*
+    - **Calls** — Internal call traces *(EVM only)*
+    - **Instructions** — Instruction-level data *(Solana only)*
+    - **InstructionBalanceUpdates** — Instruction-level balance changes *(Solana only)*
+  </Accordion>
+  <Accordion title="Rewards & Network">
+    - **Rewards** — Validator/staking rewards *(Solana only)*
+    - **MinerRewards** — Miner/validator rewards *(EVM only)*
+    - **Uncles** — Uncle block data *(EVM only)*
+  </Accordion>
+  <Accordion title="Prediction Markets">
+    - **PredictionTrades** — Prediction market trade events *(EVM — Polygon)*
+    - **PredictionManagements** — Prediction market management events *(EVM — Polygon)*
+    - **PredictionSettlements** — Prediction market settlement events *(EVM — Polygon)*
   </Accordion>
 </AccordionGroup>
+
+---
+
+## Key Query Parameters
+
+Beyond standard filtering and pagination, ChainStream GraphQL supports two powerful parameters at the Chain Group level:
+
+| Parameter | Values | Description |
+|:--|:--|:--|
+| **`dataset`** | `realtime`, `archive`, `combined` (default) | Controls data source scope — recent data only, historical data, or full range |
+| **`aggregates`** | `yes`, `no`, `only` | Controls whether to use pre-aggregated tables for faster analytical queries |
+
+<Tip>
+See [Dataset & Aggregates](/en/graphql/schema/dataset-aggregates) for detailed usage and examples.
+</Tip>
 
 ---
 
@@ -106,7 +142,7 @@ graph LR
     B --> D[APISIX Gateway]
     C --> D
     D -->|Auth + Rate Limit| E[chainstream-graphql]
-    E -->|SQL| F[(OLAP Database)]
+    E -->|"activecube-rs (GraphQL to SQL)"| F[(OLAP Database)]
 ```
 
 <Info>

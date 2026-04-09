@@ -1,0 +1,349 @@
+---
+title: '命令參考'
+description: 'ChainStream CLI 所有命令的完整參考'
+icon: "book"
+---
+
+## 全域性選項
+
+| 選項 | 描述 |
+|------|------|
+| `--raw` | 輸出單行 JSON（用於管道傳輸給 `jq` 或其他工具）。適用於資料查詢命令。 |
+| `--help` | 顯示命令幫助 |
+| `--version` | 顯示 CLI 版本 |
+
+```bash
+chainstream token info --chain sol --address <addr> --raw | jq '.marketData.priceInUsd'
+```
+
+## Token 命令
+
+查詢代幣資料，包括後設資料、安全資訊、持有者和價格歷史。
+
+### `token search`
+
+按關鍵詞搜尋代幣。
+
+```bash
+chainstream token search --keyword PUMP --chain sol --limit 20
+```
+
+| 選項 | 必填 | 預設值 | 描述 |
+|------|------|--------|------|
+| `--keyword` | 是 | — | 搜尋關鍵詞 |
+| `--chain` | 是 | — | 鏈 ID（`sol`、`bsc`、`eth`） |
+| `--limit` | 否 | 20 | 最大結果數 |
+
+### `token info`
+
+獲取完整的代幣詳情，包括後設資料、市場資料和統計資訊。
+
+```bash
+chainstream token info --chain sol --address <token_address>
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 代幣合約地址 |
+
+### `token security`
+
+檢查代幣安全性：蜜罐檢測、鑄造許可權、凍結許可權、持有者集中度。
+
+```bash
+chainstream token security --chain sol --address <token_address>
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 代幣合約地址 |
+
+### `token holders`
+
+獲取代幣的主要持有者及其餘額。
+
+```bash
+chainstream token holders --chain sol --address <token_address> --limit 20
+```
+
+| 選項 | 必填 | 預設值 | 描述 |
+|------|------|--------|------|
+| `--chain` | 是 | — | 鏈 ID |
+| `--address` | 是 | — | 代幣合約地址 |
+| `--limit` | 否 | 20 | 最大結果數 |
+
+### `token candles`
+
+獲取 OHLCV K 線資料。
+
+```bash
+chainstream token candles --chain sol --address <token_address> --resolution 1h
+```
+
+| 選項 | 必填 | 預設值 | 描述 |
+|------|------|--------|------|
+| `--chain` | 是 | — | 鏈 ID |
+| `--address` | 是 | — | 代幣合約地址 |
+| `--resolution` | 是 | — | K 線週期：`1m`、`5m`、`15m`、`1h`、`4h`、`1d` |
+| `--from` | 否 | — | 起始時間戳 |
+| `--to` | 否 | — | 結束時間戳 |
+| `--limit` | 否 | 100 | 最大 K 線數 |
+
+### `token pools`
+
+獲取代幣的流動性池。
+
+```bash
+chainstream token pools --chain sol --address <token_address>
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 代幣合約地址 |
+
+## Market 命令
+
+追蹤市場趨勢、新上線代幣和最近交易。
+
+### `market trending`
+
+獲取熱門/趨勢代幣，按活躍度排序。
+
+```bash
+chainstream market trending --chain sol --duration 1h --limit 20
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--duration` | 是 | 時間視窗：`1h`、`6h`、`24h` |
+| `--limit` | 否 | 最大結果數 |
+
+### `market new`
+
+獲取新建立的代幣。
+
+```bash
+chainstream market new --chain sol --limit 20
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--limit` | 否 | 最大結果數 |
+
+### `market trades`
+
+獲取鏈上最近的交易，可按代幣篩選。
+
+```bash
+chainstream market trades --chain sol --token <token_address> --limit 20
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--token` | 否 | 按代幣地址篩選 |
+| `--limit` | 否 | 最大結果數 |
+
+## Wallet 命令
+
+分析任意錢包的持倉、盈虧和活動。同時管理你的 CLI 錢包。
+
+### `wallet profile`
+
+獲取錢包概覽：盈虧、淨值和主要持倉。
+
+```bash
+chainstream wallet profile --chain sol --address <wallet_address>
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 要分析的錢包地址 |
+
+### `wallet pnl`
+
+獲取詳細的盈虧明細。
+
+```bash
+chainstream wallet pnl --chain sol --address <wallet_address>
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 錢包地址 |
+
+### `wallet holdings`
+
+獲取錢包中的代幣餘額。
+
+```bash
+chainstream wallet holdings --chain sol --address <wallet_address> --limit 50
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 錢包地址 |
+| `--limit` | 否 | 最大結果數 |
+
+### `wallet activity`
+
+獲取錢包的轉賬歷史。
+
+```bash
+chainstream wallet activity --chain sol --address <wallet_address> --limit 20
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--address` | 是 | 錢包地址 |
+| `--limit` | 否 | 最大結果數 |
+
+### `wallet address`
+
+顯示你的 CLI 錢包地址。
+
+```bash
+chainstream wallet address
+```
+
+### `wallet balance`
+
+檢視你的 CLI 錢包在特定鏈上的餘額。
+
+```bash
+chainstream wallet balance --chain sol
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+
+### `wallet set-raw`
+
+匯入原始私鑰用於開發/測試。
+
+```bash
+chainstream wallet set-raw --chain base
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | `base` 或 `sol` |
+
+### `wallet pricing`
+
+獲取 x402 訂閱定價。
+
+```bash
+chainstream wallet pricing
+```
+
+## DeFi 命令
+
+執行鏈上 DeFi 操作。需要錢包（參見[認證](/zh-Hant/guides/cli/authentication)）。
+
+<Warning>
+DeFi 操作**不可逆**。請務必在確認 swap 之前核實報價。
+</Warning>
+
+### `dex quote`
+
+獲取 swap 報價（只讀，無需錢包）。
+
+```bash
+chainstream dex quote --chain sol --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| 選項 | 必填 | 描述 |
+|------|------|------|
+| `--chain` | 是 | 鏈 ID |
+| `--input-token` | 是 | 輸入代幣地址或符號 |
+| `--output-token` | 是 | 輸出代幣地址或符號 |
+| `--amount` | 是 | 最小單位數量（lamports、wei 等） |
+
+### `dex swap`
+
+執行代幣 swap。
+
+```bash
+chainstream dex swap --chain sol --from <wallet> --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| 選項 | 必填 | 預設值 | 描述 |
+|------|------|--------|------|
+| `--chain` | 是 | — | 鏈 ID |
+| `--from` | 是 | — | 傳送方錢包地址 |
+| `--input-token` | 是 | — | 輸入代幣 |
+| `--output-token` | 是 | — | 輸出代幣 |
+| `--amount` | 是 | — | 最小單位數量 |
+| `--slippage` | 否 | 0.01 | 滑點容差（0.01 = 1%） |
+| `--yes` | 否 | false | 跳過確認提示 |
+
+swap 流程：**報價** → **確認** → **簽名** → **傳送** → **輪詢任務**。
+
+### `dex create`
+
+在 Launchpad 上建立代幣（如 PumpFun、Raydium）。
+
+```bash
+chainstream dex create --chain sol --name "My Token" --symbol MTK --uri <metadata_uri>
+```
+
+| 選項 | 必填 | 預設值 | 描述 |
+|------|------|--------|------|
+| `--chain` | 是 | — | 鏈 ID |
+| `--name` | 是 | — | 代幣名稱 |
+| `--symbol` | 是 | — | 代幣符號 |
+| `--uri` | 是 | — | 後設資料 URI |
+| `--platform` | 否 | — | `pumpfun` 或 `raydium` |
+
+## Job 命令
+
+追蹤非同步 DeFi 操作的狀態。
+
+### `job status`
+
+檢查任務狀態。
+
+```bash
+chainstream job status --id <job_id> --wait --timeout 60000
+```
+
+| 選項 | 必填 | 預設值 | 描述 |
+|------|------|--------|------|
+| `--id` | 是 | — | 任務 ID |
+| `--wait` | 否 | false | 輪詢直到完成 |
+| `--timeout` | 否 | 60000 | 最大等待時間（毫秒） |
+
+## Auth 命令
+
+管理認證。詳見 [CLI 認證](/zh-Hant/guides/cli/authentication)。
+
+| 命令 | 描述 |
+|------|------|
+| `login [email]` | 登入（預設使用 P-256 金鑰，或郵箱 OTP） |
+| `login --key` | 使用現有裝置金鑰重新登入 |
+| `login --email` | 明確使用郵箱 OTP 登入 |
+| `verify` | 完成郵箱 OTP 驗證 |
+| `logout` | 清除會話 |
+| `bind-email [email]` | 繫結郵箱用於賬戶恢復 |
+| `bind-email-verify` | 完成郵箱繫結（非互動式） |
+
+## Config 命令
+
+管理 CLI 配置。詳見 [CLI 認證](/zh-Hant/guides/cli/authentication)。
+
+| 命令 | 描述 |
+|------|------|
+| `config set --key <key> --value <val>` | 設定配置值（`apiKey`、`baseUrl`、`walletChain`） |
+| `config get [--key <key>]` | 檢視配置（或特定鍵） |
+| `config auth` | 顯示認證狀態 |

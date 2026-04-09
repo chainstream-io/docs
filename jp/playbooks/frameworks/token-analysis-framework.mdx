@@ -1,0 +1,390 @@
+---
+title: "トークン分析フレームワーク"
+description: "ファンダメンタルズからオンチェーン指標まで、体系的なトークン分析手法"
+icon: "chart-pie"
+---
+
+本ドキュメントでは、ChainStreamを使用した包括的なトークン分析フレームワークを紹介します。基本データ、オンチェーン指標、ホルダー分析、リスク評価をカバーしています。
+
+---
+
+## フレームワーク概要
+
+<CardGroup cols={4}>
+  <Card title="基本情報" icon="circle-info">
+    名前/シンボル、小数点桁数、コントラクトアドレス、作成日時
+  </Card>
+  <Card title="市場データ" icon="chart-line">
+    価格、時価総額、流動性、出来高
+  </Card>
+  <Card title="ホルダー分析" icon="users">
+    ホルダー数、上位10/100保有比率、クリエイター保有量
+  </Card>
+  <Card title="取引統計" icon="arrow-right-arrow-left">
+    売買回数、出来高、価格変動
+  </Card>
+</CardGroup>
+
+---
+
+## 1. 基本情報
+
+### APIエンドポイント
+
+```bash
+GET /v2/token/{chain}/{tokenAddress}
+```
+
+### コアフィールド
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `chain` | string | ブロックチェーンネットワーク識別子（例：`sol`） |
+| `name` | string | トークン名 |
+| `symbol` | string | トークンシンボル |
+| `decimals` | integer | トークンの小数点桁数 |
+| `address` | string | トークンミントアドレス |
+| `imageUrl` | string | トークン画像URL |
+| `tokenCreatedAt` | integer | トークン作成タイムスタンプ（ミリ秒） |
+| `description` | string | トークン説明 |
+| `tokenCreators` | array | トークンクリエイターアドレスリスト |
+
+### レスポンス例
+
+```json
+{
+  "chain": "sol",
+  "name": "USD Coin",
+  "symbol": "USDC",
+  "decimals": 9,
+  "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "imageUrl": "https://raw.githubusercontent.com/.../logo.png",
+  "tokenCreatedAt": 1710417600000,
+  "description": "USDC is a stablecoin pegged to the US dollar",
+  "tokenCreators": [
+    {
+      "address": "...",
+      "share": 100
+    }
+  ]
+}
+```
+
+---
+
+## 2. 市場データ
+
+市場データはトークン詳細エンドポイントの`marketData`フィールドに含まれています。
+
+### 価格と時価総額
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `priceInUsd` | string | トークン価格（USD） |
+| `priceInSol` | string | トークン価格（SOL） |
+| `marketCapInUsd` | string | 流通時価総額（USD） |
+| `marketCapInSol` | string | 流通時価総額（SOL） |
+| `totalSupply` | string | 総供給量 |
+
+### 流動性指標
+
+| フィールド | 型 | 説明 | 健全性基準 |
+|-------|------|-------------|-----------------|
+| `maxPoolTvlInUsd` | string | 最大プールTVL（USD） | 深さが大きいほどスリッページが小さい |
+| `totalTvlInUsd` | string | 全プール合計TVL（USD） | &gt; 時価総額の5% |
+| `maxPoolTvlInSol` | string | 最大プールTVL（SOL） | - |
+| `totalTvlInSol` | string | 全プール合計TVL（SOL） | - |
+
+### ホルダー概要
+
+| フィールド | 型 | 説明 | 健全性基準 |
+|-------|------|-------------|-----------------|
+| `holders` | string | トークンホルダー総数 | 多いほど分散的 |
+| `top10HoldingsRatio` | string | 上位10ホルダー比率 | &lt; 0.5（50%） |
+| `top10TotalHoldings` | string | 上位10保有総量 | - |
+| `top100HoldingsRatio` | string | 上位100ホルダー比率 | &lt; 0.7（70%） |
+| `top100TotalHoldings` | string | 上位100保有総量 | - |
+
+### レスポンス例
+
+```json
+{
+  "marketData": {
+    "priceInUsd": "0.00123456",
+    "priceInSol": "0.0000089",
+    "marketCapInUsd": "1234567.89",
+    "totalSupply": "1000000000",
+    "holders": "5432",
+    "top10HoldingsRatio": "0.35",
+    "top100HoldingsRatio": "0.58",
+    "maxPoolTvlInUsd": "50000.00",
+    "totalTvlInUsd": "85000.00"
+  }
+}
+```
+
+---
+
+## 3. 取引統計
+
+取引統計はトークン詳細エンドポイントの`stats`フィールドに含まれているか、専用エンドポイントから取得できます。
+
+### APIエンドポイント
+
+```bash
+GET /v2/token/{chain}/{tokenAddress}/stats
+```
+
+### 統計フィールド（時間期間別）
+
+対応する時間期間：`1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `24h`
+
+| フィールドパターン | 説明 | フィールド例 |
+|---------------|-------------|----------------|
+| `price{period}` | 期間内価格 | `price1m`, `price5m`, `price1h` |
+| `buys{period}` | 期間内買い回数 | `buys1m`, `buys5m`, `buys1h` |
+| `sells{period}` | 期間内売り回数 | `sells1m`, `sells5m`, `sells1h` |
+| `buyVolumesInUsd{period}` | 買い出来高（USD） | `buyVolumesInUsd1m` |
+| `sellVolumesInUsd{period}` | 売り出来高（USD） | `sellVolumesInUsd1m` |
+| `volumesInUsd{period}` | 合計出来高（USD） | `volumesInUsd1m` |
+| `priceChangeRatioInUsd{period}` | 価格変動率 | `priceChangeRatioInUsd1h` |
+
+### レスポンス例
+
+```json
+{
+  "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "price1m": "1.234",
+  "buys1m": "150",
+  "sells1m": "120",
+  "buyVolumesInUsd1m": "50000.45",
+  "sellVolumesInUsd1m": "45000.32",
+  "volumesInUsd1m": "95000.77",
+  "buys1h": "2500",
+  "sells1h": "2100",
+  "volumesInUsd1h": "1500000.00",
+  "priceChangeRatioInUsd1h": "0.025"
+}
+```
+
+---
+
+## 4. ホルダー分析
+
+### APIエンドポイント
+
+```bash
+GET /v2/token/{chain}/{tokenAddress}/holders
+```
+
+### クエリパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|------|----------|-------------|
+| `cursor` | string | いいえ | ページネーションカーソル |
+| `limit` | number | いいえ | 1ページあたりの結果数（1-100、デフォルト20） |
+| `direction` | string | いいえ | ページネーション方向（`next`または`prev`） |
+
+### ホルダーフィールド
+
+| フィールド | 型 | 説明 |
+|-------|------|-------------|
+| `walletAddress` | string | ウォレットアドレス |
+| `amount` | string | 保有量 |
+| `amountInUsd` | string | 保有価値（USD） |
+| `percentage` | string | 保有割合 |
+
+### レスポンス例
+
+```json
+{
+  "hasNext": true,
+  "hasPrev": false,
+  "startCursor": "abc123",
+  "endCursor": "xyz789",
+  "data": [
+    {
+      "walletAddress": "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH",
+      "amount": "1000000000000000000",
+      "amountInUsd": "12345.67",
+      "percentage": "10.5"
+    }
+  ]
+}
+```
+
+### ホルダー分布評価
+
+<Tabs>
+  <Tab title="健全な分布">
+    **特徴**：
+    - 上位10比率 &lt; 50%
+    - 上位100比率 &lt; 70%
+    - ホルダー数が多い
+    - 均等に分散、分権的
+    
+    **リスクレベル**：🟢 低リスク
+  </Tab>
+  <Tab title="リスクのある分布">
+    **特徴**：
+    - 上位10比率 &gt; 80%
+    - 少数のアドレスが大半の供給量を支配
+    - ホルダー数が少ない
+    - 高度に集中、操作リスクあり
+    
+    **リスクレベル**：🔴 高リスク
+  </Tab>
+</Tabs>
+
+### ホルダータイプの識別
+
+| タイプ | 識別方法 | 重要性 |
+|------|----------------|--------------|
+| **チーム/プロジェクト** | コントラクトデプロイヤー、`tokenCreators`のアドレス | アンロックリスク |
+| **クジラ** | 保有量 &gt; 1% | 市場への影響力 |
+| **スマートマネー** | 高勝率トレーダー（ウォレット分析が必要） | 情報優位性 |
+| **CEX** | 取引所ホットウォレット | 流動性供給源 |
+
+---
+
+## 5. リスク評価
+
+### リスク評価の次元
+
+| 次元 | 重み | 指標 |
+|-----------|--------|---------|
+| **集中リスク** | 30% | `top10HoldingsRatio`, `top100HoldingsRatio` |
+| **流動性リスク** | 25% | `totalTvlInUsd`, TVL/時価総額比率 |
+| **新規トークンリスク** | 20% | `tokenCreatedAt`（作成日時） |
+| **取引活性度** | 15% | `holders`、出来高、売買回数 |
+| **クリエイター保有量** | 10% | クリエイターアドレスの保有比率 |
+
+### リスク指標
+
+| 指標 | レベル | トリガー条件 |
+|-----------|-------|-------------------|
+| 🔴 高リスク | 危険 | `top10HoldingsRatio` &gt; 0.8、TVL &lt; 時価総額の1%、作成から24時間未満 |
+| 🟡 中リスク | 警告 | `top10HoldingsRatio` &gt; 0.5、作成から7日未満 |
+| 🟢 低リスク | 安全 | すべての指標が健全 |
+
+---
+
+## 分析ワークフロー
+
+<Steps>
+  <Step title="基本情報の取得">
+    `GET /v2/token/{chain}/{tokenAddress}`を呼び出して完全なトークン情報を取得
+    - コントラクトアドレスの確認
+    - 作成日時`tokenCreatedAt`の確認
+  </Step>
+  <Step title="市場データの分析">
+    `marketData`フィールドを確認
+    - 現在価格`priceInUsd`
+    - 時価総額`marketCapInUsd`
+    - 流動性`totalTvlInUsd`
+  </Step>
+  <Step title="ホルダー分布の評価">
+    `marketData`内のホルダーデータを確認
+    - ホルダー数`holders`
+    - 上位10比率`top10HoldingsRatio`
+    - 上位100比率`top100HoldingsRatio`
+  </Step>
+  <Step title="取引活性度の確認">
+    `stats`フィールドを確認
+    - 出来高`volumesInUsd1h`, `volumesInUsd24h`
+    - 売買比率`buys1h` vs `sells1h`
+  </Step>
+  <Step title="総合リスク評価">
+    上記データに基づきリスクレベルを算出
+    - 高集中 + 低流動性 = 🔴 高リスク
+    - 健全な分布 + 十分な流動性 = 🟢 低リスク
+  </Step>
+</Steps>
+
+---
+
+## 実践例
+
+### 例：新規上場トークンの分析
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+
+async function analyzeToken(chain: string, tokenAddress: string) {
+  // 1. 完全なトークン情報を取得
+  const token = await client.token.getToken(chain, tokenAddress);
+  
+  // 2. 作成日時の確認
+  const ageInDays = (Date.now() - token.tokenCreatedAt) / (1000 * 60 * 60 * 24);
+  if (ageInDays < 7) {
+    console.warn('⚠️ 新規トークンリスク：作成から7日未満');
+  }
+  
+  // 3. ホルダー分布の分析
+  const top10Ratio = parseFloat(token.marketData.top10HoldingsRatio);
+  if (top10Ratio > 0.5) {
+    console.warn('⚠️ 集中リスク：上位10が50%以上を保有');
+  }
+  
+  // 4. 流動性の確認
+  const tvl = parseFloat(token.marketData.totalTvlInUsd);
+  const marketCap = parseFloat(token.marketData.marketCapInUsd);
+  if (tvl < marketCap * 0.05) {
+    console.warn('⚠️ 流動性リスク：TVLが時価総額の5%未満');
+  }
+  
+  // 5. 総合評価
+  const riskLevel = calculateRiskLevel(token);
+  console.log(`リスクレベル: ${riskLevel}`);
+  
+  return {
+    token,
+    ageInDays,
+    top10Ratio,
+    tvlRatio: tvl / marketCap,
+    riskLevel
+  };
+}
+
+function calculateRiskLevel(token: any): string {
+  const top10Ratio = parseFloat(token.marketData.top10HoldingsRatio);
+  const tvl = parseFloat(token.marketData.totalTvlInUsd);
+  const marketCap = parseFloat(token.marketData.marketCapInUsd);
+  
+  if (top10Ratio > 0.8 || tvl < marketCap * 0.01) {
+    return '🔴 高リスク';
+  } else if (top10Ratio > 0.5) {
+    return '🟡 中リスク';
+  }
+  return '🟢 低リスク';
+}
+```
+
+---
+
+## APIエンドポイント一覧
+
+| 分析ニーズ | APIエンドポイント |
+|---------------|--------------|
+| トークン詳細（市場データ・統計を含む） | `GET /v2/token/{chain}/{tokenAddress}` |
+| トークンメタデータ | `GET /v2/token/{chain}/{tokenAddress}/metadata` |
+| トークン統計 | `GET /v2/token/{chain}/{tokenAddress}/stats` |
+| ホルダーリスト | `GET /v2/token/{chain}/{tokenAddress}/holders` |
+| 上位ホルダー | `GET /v2/token/{chain}/{tokenAddress}/topholders` |
+| トークンプール | `GET /v2/token/{chain}/{tokenAddress}/pools` |
+| トークン市場データ | `GET /v2/token/{chain}/{tokenAddress}/marketdata` |
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="スマートマネー分析手法" icon="brain" href="/jp/guides/data-concepts/smart-money-methodology">
+    スマートマネー分析について学ぶ
+  </Card>
+  <Card title="MCPツールカタログ" icon="wrench" href="/jp/guides/ai-infrastructure/mcp-server/tools-catalog">
+    MCPツールの完全なリストを確認
+  </Card>
+</CardGroup>

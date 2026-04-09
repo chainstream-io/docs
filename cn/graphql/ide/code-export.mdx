@@ -1,6 +1,6 @@
 ---
 title: "代码导出"
-description: "将 GraphQL 查询导出为 8 种编程语言的即用代码片段"
+description: "将 GraphQL 查询导出为 7 种编程语言的即用代码片段"
 icon: "file-export"
 ---
 
@@ -23,7 +23,6 @@ icon: "file-export"
 | **Rust** | `reqwest` crate | 高性能服务 |
 | **Ruby** | `net/http` | Rails 应用、脚本 |
 | **PHP** | `cURL` 扩展 | PHP 后端、WordPress 插件 |
-| **WebSocket** | `graphql-ws` 协议 | 实时 subscription、流式场景 |
 
 </div>
 
@@ -209,45 +208,6 @@ query {
     }
     ```
   </Tab>
-  <Tab title="WebSocket">
-    ```javascript
-    const ws = new WebSocket("wss://graphql.chainstream.io/graphql", "graphql-ws");
-
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: "connection_init",
-        payload: { "X-API-KEY": "your_api_key" },
-      }));
-
-      ws.send(JSON.stringify({
-        id: "1",
-        type: "start",
-        payload: {
-          query: `{
-            DEXTrades(
-              network: sol
-              limit: {count: 10}
-              orderBy: Block_Time_DESC
-            ) {
-              Block { Time }
-              Transaction { Hash }
-              Trade {
-                Buy { Currency { MintAddress } Amount PriceInUSD }
-                Sell { Currency { MintAddress } Amount }
-                Dex { ProtocolName }
-              }
-            }
-          }`,
-        },
-      }));
-    };
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log(message);
-    };
-    ```
-  </Tab>
 </Tabs>
 
 ---
@@ -275,4 +235,3 @@ query {
 - **先测再导出** — 先在 IDE 中执行查询确认可用。导出代码会原样复制查询。
 - **用 variables 参数化** — 使用 GraphQL variables 替代硬编码值。导出代码会同时包含 `variables` JSON 与查询。
 - **检查依赖** — Python 片段使用 `requests`，Rust 使用 `reqwest`，Go 使用标准库。请确保项目中已安装所需包。
-- **流式用 WebSocket** — WebSocket 导出采用 `graphql-ws` 协议，适合 subscription 与长连接场景。

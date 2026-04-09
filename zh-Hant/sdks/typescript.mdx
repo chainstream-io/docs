@@ -1,0 +1,218 @@
+---
+title: 'TypeScript'
+description: 'ChainStream TypeScript/JavaScript SDK'
+icon: 'js'
+---
+
+## 安裝
+
+<CodeGroup>
+```bash npm
+npm install @chainstream-io/sdk
+```
+
+```bash yarn
+yarn add @chainstream-io/sdk
+```
+
+```bash pnpm
+pnpm add @chainstream-io/sdk
+```
+</CodeGroup>
+
+## 快速開始
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+```
+
+## REST API 示例
+
+查詢代幣資訊：
+
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
+async function main() {
+  // 初始化 SDK 客户端
+  const client = new ChainStreamClient(ACCESS_TOKEN);
+
+  const chain = 'sol';
+  const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
+
+  console.log(`查询代币: ${chain}/${tokenAddress}`);
+
+  try {
+    // 通过 SDK 调用 API
+    const result = await client.token.getToken(chain, tokenAddress);
+    
+    console.log('结果:');
+    console.log(JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error('API 调用失败:', error);
+  }
+}
+
+main();
+```
+
+## WebSocket 示例
+
+訂閱實時代幣 K 線資料：
+
+```typescript
+import { ChainStreamClient, Resolution } from '@chainstream-io/sdk';
+
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
+async function main() {
+  const client = new ChainStreamClient(ACCESS_TOKEN, {
+    autoConnectWebSocket: true,
+  });
+
+  const chain = 'sol';
+  const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
+
+  console.log(`订阅代币 K 线: ${chain}/${tokenAddress}`);
+  console.log('监听中... (按 Ctrl+C 停止)\n');
+
+  // 通过 SDK 订阅 WebSocket
+  client.stream.subscribeTokenCandles({
+    chain,
+    tokenAddress,
+    resolution: Resolution['1s'],
+    callback: data => {
+      console.log(new Date().toISOString(), JSON.stringify(data));
+    },
+  });
+
+  // 保持进程运行
+  process.on('SIGINT', () => {
+    console.log('\n关闭连接...');
+    process.exit(0);
+  });
+
+  // 持续运行
+  await new Promise(() => {});
+}
+
+main().catch(error => {
+  console.error('测试失败:', error.message);
+  process.exit(1);
+});
+```
+
+## 更多示例
+
+### 搜尋代幣
+
+```typescript
+const results = await client.token.searchToken('bonk');
+console.log(results);
+```
+
+完整引數說明見 [Token - Search](/zh-Hant/api-reference/endpoint/data/token/v2/token-search-get)。
+
+### 獲取交易列表
+
+```typescript
+const trades = await client.trade.getTrades('sol', {
+  tokenAddress: 'TOKEN_ADDRESS',
+  limit: 20,
+});
+console.log(trades);
+```
+
+完整引數說明見 [Trade - List](/zh-Hant/api-reference/endpoint/data/trade/v2/trade-chain-get)。
+
+### 獲取錢包盈虧（PnL）
+
+```typescript
+const pnl = await client.wallet.getPnl('sol', 'WALLET_ADDRESS');
+console.log(`Total PnL: ${pnl.totalPnlUsd}`);
+```
+
+完整引數說明見 [Wallet - PnL](/zh-Hant/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-pnl-get)。
+
+### 獲取代幣 K 線
+
+```typescript
+const candles = await client.token.getCandles('sol', 'TOKEN_ADDRESS', {
+  resolution: '1h',
+  limit: 24,
+});
+for (const c of candles) {
+  console.log(`${c.time}: O=${c.open} H=${c.high} L=${c.low} C=${c.close}`);
+}
+```
+
+完整引數說明見 [Token - Candles](/zh-Hant/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get)。
+
+### 獲取新幣排行
+
+```typescript
+const newTokens = await client.ranking.getNewTokens('sol');
+for (const token of newTokens) {
+  console.log(`${token.symbol}: ${token.address}`);
+}
+```
+
+完整引數說明見 [Ranking - New Tokens](/zh-Hant/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get)。
+
+---
+
+## 錯誤處理
+
+```typescript
+import { ChainStreamClient, ChainStreamError } from '@chainstream-io/sdk';
+
+try {
+  const token = await client.token.getToken('sol', 'INVALID_ADDRESS');
+} catch (error) {
+  if (error instanceof ChainStreamError) {
+    console.error(`Error code: ${error.code}`);
+    console.error(`Error message: ${error.message}`);
+  }
+}
+```
+
+### 指數退避重試
+
+遇到限流（HTTP 429）時，可實現重試邏輯：
+
+```typescript
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof ChainStreamError && error.code === 429 && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+const token = await withRetry(() => client.token.getToken('sol', 'TOKEN_ADDRESS'));
+```
+
+---
+
+## 相關資源
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/typescript">
+    檢視原始碼
+  </Card>
+  <Card title="npm" icon="npm" href="https://www.npmjs.com/package/@chainstream-io/sdk">
+    包管理器
+  </Card>
+</CardGroup>

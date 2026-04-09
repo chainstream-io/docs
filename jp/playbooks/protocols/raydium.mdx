@@ -1,0 +1,400 @@
+---
+title: "Raydium"
+description: "Solana上のRaydium DEX分析完全ガイド — 取引、流動性プール、トークンローンチ、価格データ"
+icon: "droplet"
+---
+
+RaydiumはSolana上で最大のAMMおよび流動性プロバイダーです。ChainStreamはREST API、GraphQL、WebSocket、MCP Toolsを通じてRaydiumの取引とプールの完全なデータカバレッジを提供しています。
+
+<Info>
+**サポートされる操作**：取引分析、流動性プール監視、トークン価格追跡、OHLCVデータ、ホルダー分析、Raydiumローンチパッドによるトークン作成。
+</Info>
+
+---
+
+## Raydiumの最近の取引を取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol?limit=20" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完全なパラメータリファレンスは[取引 - リスト](/jp/api-reference/endpoint/data/trade/v2/trade-chain-get)をご覧ください。
+  </Tab>
+  <Tab title="GraphQL">
+
+`DEXTrades`をクエリし、Raydiumのプロトコル名でフィルタリング：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    dexProgram: {is: "RAYDIUM_PROGRAM_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+      }
+      Dex { ProgramAddress ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get({ chain: "solana", limit: 20 })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Raydiumでのトークン価格を取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/price" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完全なリファレンスは[トークン - 価格](/jp/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get)をご覧ください。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_price({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Raydiumでのトークンの流動性プールを取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/pools" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完全なリファレンスは[トークン - プール](/jp/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-pools-get)をご覧ください。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Dex { ProgramAddress }
+      Base { Address PostAmount }
+      Quote { Address PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_pools({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## アドレスでプール詳細を取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/dexpools/sol/POOL_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完全なリファレンスは[DexPool - 取得](/jp/api-reference/endpoint/data/dexpool/v2/dexpools-chain-pooladdress-get)をご覧ください。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 1}
+    poolAddress: {is: "POOL_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Base { Address PostAmount }
+      Quote { Address PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+dexpool_get({ chain: "solana", poolAddress: "POOL_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## RaydiumトークンのOHLCV（K線）データを取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/candles?resolution=1m&limit=60" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 60}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_candles({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", resolution: "1m" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Raydiumでのトークンホルダーを取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/topHolders" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_top_holders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Raydiumトークンのトップトレーダーを取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol/top-traders?tokenAddress=TOKEN_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get_top_traders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## プールの流動性スナップショットを取得するには？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/dexpools/sol/POOL_ADDRESS/snapshots" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完全なリファレンスは[DexPool - スナップショット](/jp/api-reference/endpoint/data/dexpool/v2/dexpools-chain-pooladdress-snapshots-get)をご覧ください。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  PoolLiquiditySnapshots(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Pool { Address ProgramAddress }
+    TokenA { Address }
+    TokenB { Address }
+    LiquidityUSDState
+    EventCountState
+    LastSeenState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+dexpool_get_snapshots({ chain: "solana", poolAddress: "POOL_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Raydiumでトークンを作成するには？
+
+ChainStreamはAPI経由でRaydiumローンチパッドでのトークン作成をサポートしています。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl -X POST "https://api.chainstream.io/v2/dex/sol/create" \
+  -H "X-API-KEY: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "launchpad": "raydium",
+    "name": "My Token",
+    "symbol": "MYTKN",
+    "description": "A test token",
+    "privateKey": "YOUR_PRIVATE_KEY"
+  }'
+```
+
+完全なリファレンスは[DEX - 作成](/jp/api-reference/endpoint/defi/dex/v2/dex-chain-create-post)をご覧ください。
+  </Tab>
+</Tabs>
+
+<Note>
+トークン作成はSolanaでのみ利用可能です。秘密鍵は作成トランザクションの署名に使用されます。
+</Note>
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Pump.funプールとRaydiumプールの違いは？">
+    Pump.funトークンは卒業するまでボンディングカーブで取引されます。卒業後、流動性はRaydium AMMプールにマイグレーションされます。最近卒業したトークンを見つけるには`ranking/sol/migrated`を使用してください。
+  </Accordion>
+  <Accordion title="DEXで取引をフィルタリングするには？">
+    GraphQLでは、`dexProgram`セレクターを使用してRaydiumのプログラムアドレスでフィルタリングします。RESTでは、取引はすべてのDEXにわたって返されます — レスポンスの`dex`フィールドを確認してRaydium取引を識別してください。
+  </Accordion>
+  <Accordion title="Raydiumプールイベントをリアルタイムで追跡できますか？">
+    はい。WebSocket購読を使用してリアルタイムのプールおよび取引更新を受信できます。セットアップ手順は[リアルタイムストリーミング](/jp/guides/data-concepts/realtime-streaming)をご覧ください。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="Pump.funガイド" icon="rocket" href="/jp/playbooks/protocols/pump-fun">
+    卒業追跡を含むPump.funトークン分析の完全ガイド。
+  </Card>
+  <Card title="GraphQLプールと流動性" icon="droplet" href="/jp/graphql/examples/pools-liquidity">
+    プールと流動性データのGraphQLクエリ例。
+  </Card>
+  <Card title="GraphQL DEXトレード" icon="arrow-right-arrow-left" href="/jp/graphql/examples/dex-trades">
+    DEXトレード分析のGraphQLクエリ例。
+  </Card>
+  <Card title="MCPツールカタログ" icon="robot" href="/jp/guides/ai-infrastructure/mcp-server/tools-catalog">
+    AIエージェント統合のための50以上のMCPツール完全リスト。
+  </Card>
+</CardGroup>

@@ -1,0 +1,150 @@
+---
+title: 'Rust'
+description: 'ChainStream Rust SDK'
+icon: 'rust'
+---
+
+## インストール
+
+`Cargo.toml`に追加：
+
+```toml
+[dependencies]
+chainstream-sdk = "0.1"
+tokio = { version = "1", features = ["full"] }
+```
+
+## クイックスタート
+
+```rust
+use chainstream_sdk::ChainStreamClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = ChainStreamClient::new("YOUR_ACCESS_TOKEN", None);
+    
+    // クライアントを使用...
+    
+    Ok(())
+}
+```
+
+## REST APIの例
+
+トークンメタデータの照会：
+
+```rust
+use chainstream_sdk::{openapi, CHAINSTREAM_BASE_URL};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+
+// リクエストにBearerトークンを追加するミドルウェア
+struct BearerAuthMiddleware {
+    token: String,
+}
+
+#[async_trait::async_trait]
+impl reqwest_middleware::Middleware for BearerAuthMiddleware {
+    async fn handle(
+        &self,
+        mut req: reqwest::Request,
+        extensions: &mut http::Extensions,
+        next: reqwest_middleware::Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        req.headers_mut().insert(
+            reqwest::header::AUTHORIZATION,
+            format!("Bearer {}", self.token).parse().unwrap(),
+        );
+        next.run(req, extensions).await
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let access_token = "YOUR_ACCESS_TOKEN";
+
+    // Bearerトークンミドルウェア付きHTTPクライアントを作成
+    let http_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(BearerAuthMiddleware {
+            token: access_token.to_string(),
+        })
+        .build();
+
+    // OpenAPIクライアントを作成
+    let client = openapi::Client::new_with_client(CHAINSTREAM_BASE_URL, http_client);
+
+    // APIを呼び出し
+    let result = client.get_supported_blockchains().send().await?;
+    let blockchains = result.into_inner();
+    
+    println!("サポートされるブロックチェーン: {:#?}", blockchains);
+    
+    Ok(())
+}
+```
+
+## WebSocketの例
+
+リアルタイムのトークンキャンドルデータを購読：
+
+```rust
+use chainstream_sdk::{
+    stream::{Resolution, TokenCandle},
+    ChainStreamClient,
+};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use tokio::signal;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let access_token = "YOUR_ACCESS_TOKEN";
+    let client = ChainStreamClient::new(&access_token, None);
+
+    let chain = "sol";
+    let token_address = "So11111111111111111111111111111111111111112"; // SOL
+    let resolution = Resolution::X1s;
+
+    println!("トークンキャンドルを購読: {}/{}", chain, token_address);
+    println!("Ctrl+Cで終了...\n");
+
+    let message_count = Arc::new(AtomicUsize::new(0));
+    let message_count_clone = message_count.clone();
+
+    // トークンキャンドルを購読
+    let _unsub = client
+        .stream
+        .subscribe_token_candles(
+            chain,
+            token_address,
+            resolution,
+            move |candle: TokenCandle| {
+                let count = message_count_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                println!(
+                    "[{}] open={}, close={}, high={}, low={}, volume={}",
+                    count, candle.open, candle.close, candle.high, candle.low, candle.volume
+                );
+            },
+            None,
+        )
+        .await?;
+
+    // Ctrl+Cを待つ
+    signal::ctrl_c().await?;
+
+    println!("\n{}件のメッセージを受信", message_count.load(Ordering::SeqCst));
+    client.close().await;
+    
+    Ok(())
+}
+```
+
+## リソース
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/rust">
+    ソースコードを見る
+  </Card>
+  <Card title="crates.io" icon="rust" href="https://crates.io/crates/chainstream-sdk">
+    パッケージレジストリ
+  </Card>
+</CardGroup>

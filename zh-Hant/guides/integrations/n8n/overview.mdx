@@ -1,0 +1,305 @@
+---
+title: "n8n 整合"
+sidebarTitle: "概覽"
+description: "透過 n8n-nodes-chainstream 社群節點，將 ChainStream 連線到 n8n 工作流自動化。"
+icon: "arrows-split-up-and-left"
+---
+
+`n8n-nodes-chainstream` 是一個社群節點，可將 ChainStream 的鏈上資料直接引入 [n8n](https://n8n.io) 工作流自動化。查詢代幣後設資料、監控交易、跟蹤錢包活動——無需編寫程式碼。
+
+<Info>
+  **包名：** `n8n-nodes-chainstream` v0.0.92 | **已釋出版本：** 63 | 已在 [n8n Creator Portal](https://n8n.io) 上架
+</Info>
+
+## 安裝
+
+1. 開啟你的 n8n 例項。
+2. 前往 **Settings > Community Nodes**。
+3. 點選 **Install** 並輸入：
+
+```
+n8n-nodes-chainstream
+```
+
+4. 確認安裝，如有提示則重啟 n8n。
+
+## 認證
+
+該節點透過 ChainStream Dashboard 簽發的 API 憑證進行認證。
+
+1. 在 ChainStream Dashboard 中，導航至 **Settings > API Keys**。
+2. 建立新的金鑰對。你將獲得：
+   - **API Client ID**
+   - **API Client Secret**
+3. 在 n8n 中，前往 **Credentials > New Credential > ChainStream API**。
+4. 輸入 Client ID 和 Client Secret，然後儲存。
+
+```json
+{
+  "credentials": {
+    "chainstreamApi": {
+      "clientId": "cs_live_xxxxxxxxxxxxxxxx",
+      "clientSecret": "your_client_secret_here"
+    }
+  }
+}
+```
+
+## 支援的資源和操作
+
+| 資源 | 操作 |
+|------|------|
+| **Token** | 獲取後設資料、獲取價格、列出持有者、查詢流動性、執行安全審計、列出鑄造/銷燬事件 |
+| **Trade** | 列出交易、獲取活動、檢視排行榜 |
+| **Wallet** | 查詢餘額、獲取盈虧、列出活動 |
+
+## 節點配置
+
+以下是查詢代幣後設資料的 n8n 節點配置示例：
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getMetadata",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112"
+      },
+      "name": "ChainStream",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+獲取代幣價格資料：
+
+```json
+{
+  "parameters": {
+    "resource": "token",
+    "operation": "getPrice",
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "currency": "usd"
+  },
+  "name": "Get Token Price",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [450, 300]
+}
+```
+
+查詢錢包餘額：
+
+```json
+{
+  "parameters": {
+    "resource": "wallet",
+    "operation": "getBalances",
+    "chain": "solana",
+    "walletAddress": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+  },
+  "name": "Get Wallet Balance",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [650, 300]
+}
+```
+
+## 示例工作流
+
+### 1. 價格告警機器人
+
+監控代幣價格，當價格超過閾值時傳送 Telegram 通知。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getPrice",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112",
+        "currency": "usd"
+      },
+      "name": "Get SOL Price",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.price }}",
+              "operation": "largerEqual",
+              "value2": 200
+            }
+          ]
+        }
+      },
+      "name": "Price Threshold",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "SOL price alert: ${{ $json.price }}"
+      },
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "position": [850, 200]
+    }
+  ]
+}
+```
+
+### 2. 投資組合追蹤器
+
+按計劃執行，獲取錢包餘額並將資料追加到 Google Sheet。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getBalances",
+        "chain": "solana",
+        "walletAddress": "YOUR_WALLET_ADDRESS"
+      },
+      "name": "Fetch Balances",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_SHEET_ID",
+        "range": "Sheet1!A:D"
+      },
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 3. 巨鯨監控
+
+檢測大額錢包活動併傳送 Slack 通知。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "solana",
+        "walletAddress": "WHALE_WALLET_ADDRESS"
+      },
+      "name": "Whale Activity",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#whale-alerts",
+        "text": "Whale movement detected: {{ $json.type }} of {{ $json.amount }} {{ $json.token }}"
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 4. 合規掃描器
+
+當新的充值到達時，執行 KYT（瞭解你的交易）檢查並標記可疑活動。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "ethereum",
+        "walletAddress": "DEPOSIT_WALLET_ADDRESS",
+        "activityType": "deposit"
+      },
+      "name": "New Deposits",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "securityAudit",
+        "chain": "ethereum",
+        "tokenAddress": "={{ $json.tokenAddress }}"
+      },
+      "name": "KYT Check",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.flagged }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Flagged?",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="觸發器節點" icon="bolt" href="/zh-Hant/guides/integrations/n8n/trigger-node">
+    使用 ChainStream Webhook 設定實時事件驅動觸發器。
+  </Card>
+  <Card title="API 參考" icon="code" href="/api-reference">
+    瀏覽驅動此節點的完整 ChainStream API。
+  </Card>
+</CardGroup>

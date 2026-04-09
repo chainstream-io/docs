@@ -1,6 +1,6 @@
 ---
 title: "Code Export"
-description: "Generate ready-to-use code snippets from your GraphQL queries in 8 programming languages"
+description: "Generate ready-to-use code snippets from your GraphQL queries in 7 programming languages"
 icon: "file-export"
 ---
 
@@ -23,7 +23,6 @@ The Code Export feature converts your current GraphQL query into a ready-to-use 
 | **Rust** | `reqwest` crate | High-performance services |
 | **Ruby** | `net/http` | Rails applications, scripts |
 | **PHP** | `cURL` extension | PHP backends, WordPress plugins |
-| **WebSocket** | `graphql-ws` protocol | Real-time subscriptions, streaming |
 
 </div>
 
@@ -209,45 +208,6 @@ query {
     }
     ```
   </Tab>
-  <Tab title="WebSocket">
-    ```javascript
-    const ws = new WebSocket("wss://graphql.chainstream.io/graphql", "graphql-ws");
-
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: "connection_init",
-        payload: { "X-API-KEY": "your_api_key" },
-      }));
-
-      ws.send(JSON.stringify({
-        id: "1",
-        type: "start",
-        payload: {
-          query: `{
-            DEXTrades(
-              network: sol
-              limit: {count: 10}
-              orderBy: Block_Time_DESC
-            ) {
-              Block { Time }
-              Transaction { Hash }
-              Trade {
-                Buy { Currency { MintAddress } Amount PriceInUSD }
-                Sell { Currency { MintAddress } Amount }
-                Dex { ProtocolName }
-              }
-            }
-          }`,
-        },
-      }));
-    };
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log(message);
-    };
-    ```
-  </Tab>
 </Tabs>
 
 ---
@@ -275,4 +235,3 @@ Remember to replace `your_api_key` with your actual API key before running the e
 - **Test before exporting** — Run the query in the IDE first to confirm it works. Exported code copies the query as-is.
 - **Parameterize with variables** — Use GraphQL variables instead of hardcoded values. The exported code includes the `variables` JSON alongside the query.
 - **Check dependencies** — Python snippets use `requests`, Rust uses `reqwest`, Go uses the standard library. Make sure the required packages are installed in your project.
-- **WebSocket for streaming** — The WebSocket export uses the `graphql-ws` protocol, suitable for subscriptions and long-lived connections.

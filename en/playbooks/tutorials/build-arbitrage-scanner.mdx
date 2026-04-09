@@ -5,6 +5,10 @@ icon: "magnifying-glass-dollar"
 tag: "Coming Soon"
 ---
 
+<Info>
+ChainStream currently supports **Solana** (`sol`), **Ethereum** (`eth`), and **BSC** (`bsc`). Supported DEXes are Jupiter, Raydium, PumpFun, Moonshot, Candy (Solana), and KyberSwap (Ethereum/BSC). Some code examples below reference additional DEXes for conceptual illustration — check [Supported Chains](/en/guides/getting-started/supported-chains) for the current coverage.
+</Info>
+
 <Warning>
 **Coming Soon** — This feature is under development and not yet available.
 </Warning>
@@ -24,8 +28,8 @@ Discover cross-DEX price difference arbitrage opportunities:
 
 ```mermaid
 flowchart TD
-    A[Uniswap Price Data] --> C[Arbitrage Scanner]
-    B[SushiSwap Price Data] --> C
+    A[Jupiter Price Data] --> C[Arbitrage Scanner]
+    B[Raydium Price Data] --> C
     C --> D[Opportunity & Notify]
 ```
 
@@ -44,15 +48,15 @@ flowchart TD
 The same token may have price differences across different DEXes:
 
 ```
-Example: ETH/USDC trading pair
+Example: SOL/USDC on Solana
 
-Uniswap:   1 ETH = $2,000
-SushiSwap: 1 ETH = $2,010
+Jupiter:  1 SOL = $140.00
+Raydium:  1 SOL = $140.70
 
-Spread = ($2,010 - $2,000) / $2,000 = 0.5%
+Spread = ($140.70 - $140.00) / $140.00 = 0.5%
 
 Arbitrage path:
-Buy ETH on Uniswap → Sell ETH on SushiSwap → Profit from difference
+Buy SOL on Jupiter → Sell SOL on Raydium → Profit from difference
 ```
 
 ### Profit Formula
@@ -85,14 +89,13 @@ import 'dotenv/config';
 
 export const CHAINSTREAM_ACCESS_TOKEN = process.env.CHAINSTREAM_ACCESS_TOKEN;
 
-// DEXes to monitor
-export const DEXES = ['uniswap_v3', 'sushiswap', 'curve'];
+// DEXes to monitor (Solana: Jupiter, Raydium, PumpFun, Moonshot, Candy; EVM: KyberSwap on eth/bsc)
+export const DEXES = ['jupiter', 'raydium', 'pumpfun', 'moonshot', 'candy'];
 
-// Trading pairs to monitor
+// Trading pairs to monitor (multi-DEX spread checks are strongest on Solana in current coverage)
 export const TRADING_PAIRS = [
-  { base: 'ETH', quote: 'USDC', chain: 'ethereum' },
-  { base: 'ETH', quote: 'USDT', chain: 'ethereum' },
-  { base: 'WBTC', quote: 'ETH', chain: 'ethereum' },
+  { base: 'SOL', quote: 'USDC', chain: 'sol' },
+  { base: 'SOL', quote: 'USDT', chain: 'sol' },
 ];
 
 // Arbitrage thresholds
@@ -279,7 +282,7 @@ main();
     Use flash loans for zero-capital arbitrage
   </Card>
   <Card title="Multi-chain Scanning" icon="layer-group">
-    Extend to Arbitrum, Base, and other L2s
+    Add **eth** / **bsc** KyberSwap quotes alongside Solana venues
   </Card>
   <Card title="Auto Execution" icon="robot">
     Integrate wallet for automatic trading (use caution)

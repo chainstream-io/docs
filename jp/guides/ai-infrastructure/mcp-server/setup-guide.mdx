@@ -1,0 +1,288 @@
+---
+title: 'MCPセットアップガイド'
+description: 'ChainStream MCP Serverのセットアップを5分で完了'
+icon: 'gear'
+---
+
+このガイドでは、ChainStream MCP Serverの設定を迅速に行う方法を説明します。
+
+---
+
+## 前提条件
+
+| 要件 | 詳細 | 取得方法 |
+|------|------|---------|
+| ChainStreamアカウント | 登録済みアカウント | [サインアップ](https://www.chainstream.io/dashboard) |
+| APIキー | 認証用の `X-API-KEY` | Dashboard → Apps → Create App |
+| AIクライアント | Claude Desktop / Cursor / カスタムクライアント | インストール済み |
+
+---
+
+## MCPエンドポイント
+
+ChainStreamはホスティングされたMCP Serverを提供しています。ローカルインストールは不要です — 以下に直接接続してください：
+
+```
+https://mcp.chainstream.io/mcp
+```
+
+---
+
+## 設定手順
+
+<Steps>
+  <Step title="APIキーの取得">
+    1. [ChainStream Dashboard](https://www.chainstream.io/dashboard)にログイン
+    2. **Applications**に移動
+    3. **Create New App**をクリックしてAPIキーをコピー
+  </Step>
+  
+  <Step title="AIクライアントの設定">
+    <Tabs>
+      <Tab title="Claude Desktop">
+        **設定ファイルのパス**：
+        - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+        - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+        
+        **オプションA — クラウドエンドポイント（推奨）**：
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "X-API-KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+
+        **オプションB — ローカルnpmパッケージ（stdio）**：
+
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "command": "npx",
+              "args": ["@chainstream-io/mcp"],
+              "env": {
+                "CHAINSTREAM_API_KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+        
+        <Note>
+        ファイルが存在しない場合は手動で作成してください。他のMCP Serverの設定がある場合は、既存の `mcpServers` オブジェクトに `chainstream` の設定を追加してください。
+        </Note>
+      </Tab>
+      
+      <Tab title="Cursor IDE">
+        **設定ファイルのパス**: `.cursor/mcp.json`（プロジェクトレベル）または Cursor Settings → Features → MCP Servers
+        
+        **オプションA — クラウドエンドポイント**：
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "X-API-KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+
+        **オプションB — ローカルnpmパッケージ（stdio）**：
+
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "command": "npx",
+              "args": ["@chainstream-io/mcp"],
+              "env": {
+                "CHAINSTREAM_API_KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+      
+      <Tab title="カスタムクライアント">
+        HTTP経由でクラウドエンドポイントに接続：
+        
+        | エンドポイント | URL | メソッド |
+        |-------------|-----|---------|
+        | MCPエンドポイント | `https://mcp.chainstream.io/mcp` | POST |
+        
+        **認証**: `X-API-KEY` ヘッダーでAPIキーを渡します。
+        
+        **サンプルコード**：
+        
+        ```javascript
+        import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+        import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+        const transport = new StreamableHTTPClientTransport(
+          new URL('https://mcp.chainstream.io/mcp'),
+          {
+            requestInit: {
+              headers: {
+                'X-API-KEY': process.env.CHAINSTREAM_API_KEY
+              }
+            }
+          }
+        );
+
+        const client = new Client({
+          name: 'my-client',
+          version: '1.0.0'
+        });
+
+        await client.connect(transport);
+
+        const { tools } = await client.listTools();
+        console.log('Available tools:', tools.map(t => t.name));
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="クライアントの再起動">
+    設定後、AIクライアントを完全に終了して再起動し、変更を反映させてください。
+    
+    - **Claude Desktop**: 完全に終了（最小化ではなく）してから再度開く
+    - **Cursor**: IDEを再起動
+  </Step>
+</Steps>
+
+---
+
+## 設定の確認
+
+### テストコマンド
+
+AIクライアントで以下のテスト質問を入力してください：
+
+```
+What is the SOL token on Solana? Is it safe?
+```
+
+### 期待される結果
+
+設定が成功していれば、AIは以下を行うはずです：
+
+1. `tokens_search` を呼び出してSOLトークンを検索
+2. `tokens_analyze` を呼び出してセキュリティと保有者データを取得
+3. 自然言語でサマリーを返す
+
+<Note>
+AIがツールを呼び出さない場合やエラーが返される場合は、下記の[トラブルシューティング](#troubleshooting)を参照してください。
+</Note>
+
+---
+
+## トラブルシューティング
+
+<AccordionGroup>
+  <Accordion title="認証に失敗" icon="key">
+    **考えられる原因**：
+    
+    1. **APIキーの入力ミス**
+       - 余分なスペースがないか確認
+       - 完全にコピーされたか確認
+    
+    2. **APIキーが無効化または期限切れ**
+       - Dashboardでキーの状態を確認
+       - 必要に応じて新しいキーを作成
+    
+    3. **ヘッダー名が間違っている**
+       - クラウドエンドポイント：`X-API-KEY` ヘッダーを使用
+       - npmパッケージ：`CHAINSTREAM_API_KEY` 環境変数を使用
+    
+    **解決策**：
+    - Dashboard → Applicationsでキーを確認
+    - 直接テスト：`curl -H "X-API-KEY: your_key" https://api.chainstream.io/v2/blockchain`
+  </Accordion>
+
+  <Accordion title="接続に失敗" icon="plug-circle-xmark">
+    **考えられる原因**：
+    
+    1. **ネットワークの問題**
+       - ネットワーク接続を確認
+       - `https://mcp.chainstream.io` へのアクセスを確認
+    
+    2. **設定フォーマットのエラー**
+       - JSONフォーマットが正しいか確認
+       - URLのスペルが正しいか確認
+    
+    **解決策**：
+    
+    ```bash
+    curl -I https://mcp.chainstream.io/mcp
+    ```
+  </Accordion>
+
+  <Accordion title="設定ファイルが反映されない" icon="file-circle-xmark">
+    **考えられる原因**：
+    
+    1. **設定ファイルのパスが間違っている**
+       - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+       - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+    
+    2. **JSONフォーマットエラー**
+       - JSONバリデーターで確認
+    
+    3. **クライアントが再起動されていない**
+       - 完全に終了して再起動
+    
+    **解決策**：
+    
+    ```bash
+    cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
+    ```
+  </Accordion>
+
+  <Accordion title="ツール呼び出し失敗：クォータ超過" icon="gauge-low">
+    **考えられる原因**：
+    
+    1. プランのクォータを使い切った
+    2. リクエスト頻度が高すぎてレート制限が発動
+    
+    **解決策**：
+    - Dashboardでクォータ使用量を確認
+    - プランをアップグレードしてクォータを増やす
+  </Accordion>
+
+  <Accordion title="データ返却の遅延またはタイムアウト" icon="clock">
+    **考えられる原因**：
+    
+    1. ネットワーク遅延
+    2. クエリのデータ量が多すぎる
+    
+    **解決策**：
+    - ネットワーク接続を確認
+    - 1回のクエリあたりのデータ量を減らす
+    - 時間を置いて再試行
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="ツールカタログ" icon="wrench" href="/jp/guides/ai-infrastructure/mcp-server/tools-catalog">
+    利用可能な全ツールと使用例を確認
+  </Card>
+  <Card title="AIエージェントチュートリアル" icon="graduation-cap" href="/jp/playbooks/tutorials/ai-agent-with-mcp">
+    AIトレーディングアシスタントを構築
+  </Card>
+</CardGroup>

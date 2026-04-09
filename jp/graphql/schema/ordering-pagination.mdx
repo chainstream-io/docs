@@ -1,0 +1,252 @@
+---
+title: "ソートとページネーション"
+description: "orderBy enumによるクエリ結果のソートとlimitによるページネーション — 命名規則、デフォルト、オフセットベースのページネーション"
+icon: "arrow-down-1-9"
+---
+
+## orderBy Enum
+
+各Cubeは、すべてのソート可能なディメンションに対してASCとDESCバリアントを持つ`{Cube}OrderBy` enumを生成します。命名規則は、ディメンションパスをアンダースコアで結合します：
+
+```
+{DimensionGroup}_{DimensionField}_ASC
+{DimensionGroup}_{DimensionField}_DESC
+```
+
+ネストされたディメンションの場合、各レベルが結合されます：
+
+```
+Trade_Buy_Amount_ASC
+Trade_Buy_PriceInUSD_DESC
+Block_Time_ASC
+```
+
+### 一般的なorderBy値
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Enum値 | Cube | 説明 |
+|:-----------|:--------|:------------|
+| `Block_Time_ASC` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 古い順 |
+| `Block_Time_DESC` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 新しい順 |
+| `Interval_Time_Start_ASC` | Pairs、Tokens | 古い順（インターバル開始時刻） |
+| `Interval_Time_Start_DESC` | Pairs、Tokens | 新しい順（インターバル開始時刻） |
+| `Trade_Buy_Amount_DESC` | DEXTrades | 最大購入金額順 |
+| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | 最高USD価格順 |
+| `Transfer_AmountInUSD_DESC` | Transfers | 最大USDトランスファー順 |
+| `LatestBalanceUSD_DESC` | TokenHolders | 最大ホルダー順 |
+| `BuyVolumeUSDState_DESC` | WalletTokenPnL | 最高購入出来高順 |
+
+</div>
+
+<Tip>
+[GraphQL IDE](https://ide.chainstream.io)の自動補完を使用して、Cubeの利用可能なすべての`orderBy`値を発見できます — `orderBy:`と入力するとIDEが完全なenumを表示します。
+</Tip>
+
+### 使用方法
+
+`orderBy`引数に単一のenum値を渡します：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+<Note>
+`orderBy`は**単一の**enum値を受け付けます。複数カラムによるソートはサポートされていません — クエリは一度に1つのディメンションでソートされます。
+</Note>
+
+---
+
+## limit引数
+
+`limit`引数は返される行数を制御し、オフセットベースのページネーションをサポートします：
+
+```graphql
+input LimitInput {
+  count: Int   # 返す行数
+  offset: Int  # スキップする行数
+}
+```
+
+### デフォルトと最大リミット
+
+各Cubeには`limit`引数を省略した場合に適用される**デフォルト**リミットと、**最大**上限があります：
+
+| Cube | デフォルト`count` | 最大`count` |
+|:-----|:----------------|:----------------|
+| DEXTrades | 25 | 10,000 |
+| Transfers | 25 | 10,000 |
+| BalanceUpdates | 25 | 10,000 |
+| DEXPools | 25 | 10,000 |
+| TokenSupplyUpdates | 25 | 10,000 |
+| Pairs | 25 | 10,000 |
+| Tokens | 25 | 10,000 |
+| DEXPoolEvents | 25 | 10,000 |
+| TokenHolders | 25 | 10,000 |
+| WalletTokenPnL | 25 | 10,000 |
+
+<Info>
+最大値を超える`count`をリクエストした場合、サーバーはサイレントに最大値で制限します。
+</Info>
+
+---
+
+## オフセットベースのページネーション
+
+`offset`を使用して結果セットをページングします。パターンはシンプルです：
+
+- **ページ1**: `limit: { count: 50, offset: 0 }`
+- **ページ2**: `limit: { count: 50, offset: 50 }`
+- **ページ3**: `limit: { count: 50, offset: 100 }`
+
+### 例：ページネーション付きトークンホルダー
+
+<Tabs>
+  <Tab title="ページ1">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 0 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+  <Tab title="ページ2">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 20 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### ページネーションのヒント
+
+<AccordionGroup>
+  <Accordion title="ページネーションには必ずorderByを使用">
+    安定したソート順がないと、ページ間で行がシフトする可能性があります。決定的な順序を生成する`orderBy`を常に`limit`とペアにしてください。
+  </Accordion>
+  <Accordion title="深いオフセットを避ける">
+    大きな`offset`値（例：50,000以上）は、データベースが行をスキャンしてスキップする必要があるため、パフォーマンスが低下する可能性があります。非常に大きなデータセットの場合、深くページネーションするのではなく`where`フィルタでクエリを絞り込んでください。
+  </Accordion>
+  <Accordion title="countで結果の終了を検出">
+    ページがリクエストした`count`より少ない行を返した場合、データセットの末尾に達しています。あるいは、`count`メトリクスフィールドを使用して事前に総行数を取得することもできます。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 実践的な例
+
+### 最新の大口トレード
+
+Solanaで購入価格が$10,000を超える最新10件のDEXトレードを取得：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+### OHLCローソク足 — 直近60分
+
+トークンの1分足ローソク足を時系列順で取得：
+
+```graphql
+query {
+  Trading {
+    Pairs(
+      where: {
+        Token: { Address: { is: "So11111111111111111111111111111111111111112" } }
+        Market: { Network: { is: "sol" } }
+        Block: { Time: { after: "2025-03-27T09:00:00Z" } }
+      }
+      orderBy: Block_Time_ASC
+      limit: { count: 60 }
+    ) {
+      Block { Time }
+      Price {
+        Ohlc { Open High Low Close }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
+    }
+  }
+}
+```
+
+### トップ50トークンホルダー
+
+USD残高順でトップ50ホルダーを取得：
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 50 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="フィルタリング" icon="filter" href="/jp/graphql/schema/filtering">
+    ソートとフィルタを組み合わせて精密な分析クエリを構築。
+  </Card>
+  <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
+    ソートされたデータをcount、sum、avg、min、max、uniqで集計。
+  </Card>
+</CardGroup>

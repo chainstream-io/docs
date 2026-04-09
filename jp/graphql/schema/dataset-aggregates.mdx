@@ -1,0 +1,185 @@
+---
+title: "データセットとアグリゲート"
+description: "datasetとaggregatesパラメータでデータソーススコープと事前集計動作を制御"
+icon: "database"
+---
+
+## 概要
+
+ChainStream GraphQLのすべてのチェーングループは、**どの基盤テーブル**をクエリするかを制御する2つのオプションパラメータを受け付けます。これらのパラメータにより、ユースケースに応じてデータの鮮度、クエリ速度、データの完全性を最適化できます。
+
+---
+
+## Datasetパラメータ
+
+`dataset`パラメータはクエリされるデータの**時間スコープ**を制御します。クエリがリアルタイムテーブル、アーカイブテーブル、または両方にアクセスするかを決定します。
+
+| 値 | 説明 | 一般的なユースケース |
+|:------|:------------|:-----------------|
+| `combined` | リアルタイムデータとアーカイブデータの両方をクエリ **（デフォルト）** | 全範囲が必要な汎用クエリ |
+| `realtime` | 最新データのみ（約24時間以内） | モニタリングダッシュボード、最新トレード、リアルタイムアラート |
+| `archive` | 保持TTLまでの履歴データのみ | 過去分析、バックフィル、トレンドリサーチ |
+
+### 使用方法
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block { Time }
+      Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
+    }
+  }
+}
+```
+
+```graphql
+query {
+  EVM(network: eth, dataset: archive) {
+    Transfers(
+      where: { Block: { Time: { after: "2026-01-01T00:00:00Z", before: "2026-02-01T00:00:00Z" } } }
+      limit: {count: 100}
+    ) {
+      Block { Time }
+      Transfer { Currency { MintAddress } Amount AmountInUSD }
+    }
+  }
+}
+```
+
+### 履歴データのバックフィル
+
+データパイプラインの構築やダウンタイムからの復旧時に、`dataset: archive`と時間範囲フィルタを使用して履歴データをバックフィルできます：
+
+1. 最後に処理したタイムスタンプまたはブロック高を記録
+2. 最後のチェックポイントから現在時刻までの`where`フィルタ付きで`dataset: archive`をクエリ
+3. バックフィルされたデータを処理
+4. 継続的なモニタリングのために`dataset: realtime`に切り替え
+
+```graphql
+query BackfillTrades {
+  Solana(dataset: archive) {
+    DEXTrades(
+      where: {
+        Block: {
+          Time: {
+            after: "2026-04-01T00:00:00Z"
+            before: "2026-04-02T00:00:00Z"
+          }
+        }
+      }
+      limit: {count: 10000}
+      orderBy: Block_Time_ASC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+      }
+    }
+  }
+}
+```
+
+### Datasetをサポートしないテーブル
+
+一部のCubeは`dataset`値に関係なく常に同じテーブルをクエリします。これには以下が含まれます：
+
+- **DWS Cube**: `TokenHolders`、`WalletTokenPnL`、`DEXPools` — 現在の状態スナップショットを表す
+- **特殊テーブル**: `TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
+
+これらのCubeでは、`dataset`はサイレントに無視されます。
+
+---
+
+## Aggregatesパラメータ
+
+`aggregates`パラメータは、クエリが生の詳細テーブル（DWDレイヤー）ではなく**事前集計マテリアライズドビュー**（DWMレイヤー）を使用するかどうかを制御します。事前集計テーブルには事前計算されたロールアップ（通常は分単位）が含まれ、クエリが大幅に高速になります。
+
+| 値 | 説明 | 一般的なユースケース |
+|:------|:------------|:-----------------|
+| `yes` | 利用可能な場合、事前集計テーブルを優先 **（デフォルト動作）** | ほとんどの分析クエリ |
+| `no` | 生の詳細テーブルのみを使用 | イベント単位の粒度が必要な場合 |
+| `only` | 事前集計テーブルのみを使用 | 最大のクエリ速度、限定的なフィールドセットを許容 |
+
+### 使用方法
+
+```graphql
+query {
+  EVM(network: eth, aggregates: only) {
+    Pairs(
+      where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+### 各モードの使い分け
+
+| シナリオ | 推奨 | 理由 |
+|:---------|:------------|:----|
+| OHLCチャートの構築 | `aggregates: only` | 事前計算されたローソク足データ、最速のレスポンス |
+| 経時的な出来高トレンド | `aggregates: yes` | 事前集計された出来高統計を活用 |
+| 個別のトレード分析 | `aggregates: no` | ロールアップでは提供されないイベント単位の詳細が必要 |
+| ユニークトレーダーのカウント | `aggregates: yes` | 事前計算されたユニークカウントが利用可能 |
+
+---
+
+## 両パラメータの組み合わせ
+
+`dataset`と`aggregates`を一緒に使用できます：
+
+```graphql
+query {
+  Trading(dataset: realtime, aggregates: yes) {
+    Tokens(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+このクエリは、最大速度のために事前集計テーブルを使用してリアルタイムデータから最後の約60分間のクロスチェーントークントレード統計を取得します。
+
+---
+
+## パフォーマンスの考慮事項
+
+<CardGroup cols={2}>
+  <Card title="ダッシュボードにはrealtimeを使用" icon="gauge-high">
+    `dataset: realtime`はより小さいテーブルパーティションをクエリするため、モニタリングユースケースでより高速なレスポンスタイムが得られます。
+  </Card>
+  <Card title="分析にはaggregatesを使用" icon="chart-line">
+    `aggregates: yes`または`only`は、生のイベントテーブルをスキャンするよりも桁違いに高速な事前計算ロールアップを活用します。
+  </Card>
+</CardGroup>
+
+<Tip>
+OHLCまたは出来高クエリを可能な限り高速にするには、`dataset: realtime`と`aggregates: only`を組み合わせてください。最小かつ最も最適化されたデータスライスを対象にします。
+</Tip>
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="スキーマ概要" icon="sitemap" href="/jp/graphql/schema/schema-overview">
+    datasetとaggregatesが全体のクエリ構造にどのように組み込まれるかを確認。
+  </Card>
+  <Card title="データキューブ" icon="cubes" href="/jp/graphql/schema/cubes">
+    どのCubeがdataset切り替えをサポートしているかを確認。
+  </Card>
+</CardGroup>

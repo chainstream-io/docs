@@ -1,0 +1,467 @@
+---
+title: "FAQ"
+description: "ChainStream 常見問題解答"
+icon: "circle-question"
+---
+
+## 賬戶與認證
+
+<AccordionGroup>
+  <Accordion title="如何獲取 Access Token？">
+    1. 登入 [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+    2. 進入 **Apps** 頁面
+    3. 點選 **Create New App**
+    4. 獲取 Client ID 和 Client Secret
+    5. 使用 Client ID 和 Client Secret 向 Auth 服務請求 Access Token (JWT)
+
+    詳細步驟見 [認證文件](/zh-Hant/guides/getting-started/authentication)。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 資料相關
+
+<AccordionGroup>
+  <Accordion title="支援哪些區塊鏈？">
+    目前支援以下公鏈：
+
+    | 鏈 | 狀態 | 說明 |
+    |:--|:--|:--|
+    | Ethereum | ✅ 已支援 | 包括主網和主要 L2 |
+    | Solana | ✅ 已支援 | |
+    | BSC | ✅ 已支援 | |
+    | Polygon | ✅ 已支援 | |
+    | Arbitrum | ✅ 已支援 | |
+    | Optimism | ✅ 已支援 | |
+    | Base | ✅ 已支援 | |
+    | Tron | ✅ 已支援 | |
+
+    完整列表見 [實時資料概念](/zh-Hant/guides/data-concepts/realtime-streaming)。
+  </Accordion>
+
+  <Accordion title="資料延遲是多少？">
+    | 資料型別 | 延遲 |
+    |:--|:--|
+    | 實時價格（WebSocket） | < 2ms (P99) |
+    | REST API 查詢 | < 100ms |
+    | 歷史資料查詢 | < 500ms |
+
+    延遲可能因網路狀況和資料複雜度有所波動。
+  </Accordion>
+
+  <Accordion title="資料更新頻率是多少？">
+    | 資料型別 | 更新頻率 |
+    |:--|:--|
+    | 代幣價格 | 實時（每筆交易觸發） |
+    | 錢包持倉 | 每個區塊更新 |
+    | Smart Money 標籤 | 每日更新 |
+
+    使用 WebSocket 可獲得最實時的資料推送。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 計費相關
+
+<AccordionGroup>
+  <Accordion title="免費套餐有什麼限制？">
+    Free 套餐限制：
+
+    - **額度：** 每月 30K Units
+    - **請求頻率：** 10 請求/秒
+    - **資料延遲：** 可能有 1-2 秒延遲
+    - **SLA：** 不保證
+    - **超額：** 額度用盡後返回 403 錯誤，下月重置
+
+    適合開發測試和功能驗證，不建議用於生產環境。
+  </Accordion>
+
+  <Accordion title="如何檢視當前使用量？">
+    1. 登入 [Dashboard](https://www.chainstream.io/dashboard)
+    2. 在 **Usage** 頁面檢視當月使用量、剩餘額度、歷史趨勢
+  </Accordion>
+
+  <Accordion title="支援哪些付款方式？">
+    | 方式 | 支援的套餐 |
+    |:--|:--|
+    | 信用卡（Visa, MasterCard, AMEX） | 所有套餐 |
+    | 加密貨幣（USDT, USDC） | Starter 及以上 |
+    | 銀行轉賬 | Enterprise / Custom |
+
+    加密貨幣支付支援 ERC-20 和 TRC-20 網路。
+  </Accordion>
+
+  <Accordion title="可以隨時升級或降級套餐嗎？">
+    - **升級：** 立即生效，按比例補差價
+    - **降級：** 在下個賬單週期生效
+
+    在 Dashboard → Billing → Subscription 頁面操作。
+  </Accordion>
+
+  <Accordion title="未使用的額度可以累積嗎？">
+    不可以。每月額度在月底清零，不累積到下月。建議根據實際用量選擇合適的套餐。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 技術問題
+
+<AccordionGroup>
+  <Accordion title="收到 429 或 403 錯誤怎麼辦？">
+    - **429 錯誤**：請求頻率超限
+    - **403 錯誤**：配額用盡
+
+    **排查步驟：**
+
+    1. **429 - 檢查是否超頻**
+       - Free 套餐：10 請求/分鐘
+       - 付費套餐：見 [API 安全](/zh-Hant/guides/data-concepts/api-security)
+
+    2. **403 - 檢查額度是否用盡**
+       - 在 Dashboard → Usage 檢視剩餘額度
+       - 付費套餐可購買額外用量恢復服務
+
+    **解決方案：**
+    - 429：實現請求節流或指數退避重試
+    - 403：購買額外用量或升級套餐
+    - 使用 WebSocket 替代輪詢減少請求數
+
+```javascript
+// 错误处理示例
+async function handleApiError(error) {
+  if (error.status === 429) {
+    // 请求频率超限，等待后重试
+    await sleep(1000);
+    return retry();
+  } else if (error.status === 403) {
+    // 配额用尽，需要购买额外用量
+    console.error('配额用尽，请在 Dashboard 购买额外用量');
+  }
+}
+```
+  </Accordion>
+
+  <Accordion title="如何處理 WebSocket 斷連？">
+    建議實現自動重連機制：
+
+```javascript
+class ChainStreamWebSocket {
+  constructor(baseUrl, accessToken) {
+    this.baseUrl = baseUrl;
+    this.accessToken = accessToken;
+    this.reconnectDelay = 1000;
+    this.maxReconnectDelay = 30000;
+    this.connect();
+  }
+
+  connect() {
+    // 通过 URL 参数传递 token
+    const url = `${this.baseUrl}?token=${this.accessToken}`;
+    this.ws = new WebSocket(url);
+    this.ws.onopen = () => {
+      console.log('Connected');
+      this.reconnectDelay = 1000; // 重置延迟
+    };
+    this.ws.onclose = () => {
+      console.log('Disconnected, reconnecting...');
+      setTimeout(() => this.connect(), this.reconnectDelay);
+      // 指数退避
+      this.reconnectDelay = Math.min(
+        this.reconnectDelay * 2,
+        this.maxReconnectDelay
+      );
+    };
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+}
+```
+
+    **重連建議：**
+    - 使用指數退避策略（1s → 2s → 4s → ... → 30s）
+    - 設定最大重連延遲（如 30 秒）
+    - 重連成功後重新訂閱資料
+  </Accordion>
+
+  <Accordion title="API 響應格式是什麼？">
+    所有 API 返回 JSON 格式。
+
+    **成功響應：**
+
+```json
+{
+  "chain": "solana",
+  "address": "So11111111111111111111111111111111111111112",
+  "name": "Wrapped SOL",
+  "symbol": "SOL",
+  "decimals": 9,
+  "price": 95.42
+}
+```
+
+    **錯誤響應：**
+
+```json
+{
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Token not found"
+  }
+}
+```
+
+    常見錯誤碼見 [Error Codes](/zh-Hant/guides/resources/error-codes)。
+  </Accordion>
+
+  <Accordion title="如何除錯 API 請求？">
+    **方法 1：使用 API Playground**
+
+    在 [API Reference](/zh-Hant/api-reference) 頁面使用 "Try It" 功能，無需編寫程式碼即可測試。
+
+    **方法 2：使用 cURL**
+
+    新增 `-v` 引數檢視詳細請求資訊：
+
+```bash
+curl -v "https://api.chainstream.io/v1/token/{chain}/{address}/metadata" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## KYT/KYA 相關
+
+<AccordionGroup>
+  <Accordion title="KYT 和 KYA 有什麼區別？">
+    | 功能 | KYA (Address Verification) | KYT Report |
+    |:--|:--|:--|
+    | 用途 | 驗證地址風險和畫像分析 | 交易級別的風險報告 |
+    | 輸入 | 錢包地址 | 交易雜湊或地址 |
+    | 輸出 | 風險等級 + 地址型別 + 風險暴露詳情 | 交易相關的風險分析 |
+    | 典型場景 | 使用者註冊/充值前的地址審查 | 特定交易的合規檢查 |
+
+    詳見 [Security Compliance 文件](/zh-Hant/guides/security-compliance/overview)。
+  </Accordion>
+
+  <Accordion title="Address Verification 返回哪些資訊？">
+    地址驗證返回以下欄位：
+
+    | 欄位 | 說明 | 示例值 |
+    |:--|:--|:--|
+    | Risk | 風險等級 | Low, Medium, High, Severe |
+    | Status | 驗證狀態 | COMPLETE, PENDING |
+    | Address Type | 地址型別 | PRIVATE_WALLET, EXCHANGE, CONTRACT 等 |
+    | Risk Exposures | 風險暴露詳情 | 各類風險標籤及關聯金額 |
+  </Accordion>
+
+  <Accordion title="風險等級如何解讀？">
+    Address Verification 返回以下風險等級：
+
+    | 風險等級 | 含義 | 建議操作 |
+    |:--|:--|:--|
+    | Low | 低風險，未發現明顯可疑關聯 | 可正常處理 |
+    | Medium | 中等風險，存在一定可疑關聯 | 建議人工複核 |
+    | High | 高風險，存在較多可疑關聯 | 建議拒絕或加強審查 |
+    | Severe | 嚴重風險，直接關聯制裁/非法實體 | 強烈建議拒絕 |
+
+    **注意：** 具體處理策略應根據你的業務合規要求設定，以上僅為參考建議。
+  </Accordion>
+
+  <Accordion title="Risk Exposures 中的風險標籤有哪些？">
+    Risk Exposures 顯示地址與各類風險實體的關聯情況，常見標籤包括：
+
+    **高危標籤（Severe）：**
+
+    | 標籤 | 說明 |
+    |:--|:--|
+    | sanctioned entity | 與受制裁實體有關聯 |
+    | sanctioned jurisdiction | 與受制裁司法管轄區有關聯 |
+    | terrorist financing | 與恐怖融資有關聯 |
+
+    **中性/低危標籤：**
+
+    | 標籤 | 說明 |
+    |:--|:--|
+    | bridge | 透過跨鏈橋轉移資金 |
+    | decentralized exchange | 透過 DEX 交易 |
+    | atm | 透過加密貨幣 ATM 交易 |
+
+    **其他風險標籤：**
+
+    | 標籤 | 說明 |
+    |:--|:--|
+    | mixer | 透過混幣器 |
+    | gambling | 與賭博平臺有關聯 |
+    | darknet | 與暗網市場有關聯 |
+
+    每個標籤會顯示：
+    - **direct / indirect**：直接關聯或間接關聯
+    - **金額**：關聯的資金量
+    - **百分比**：佔該地址總交易量的比例
+  </Accordion>
+
+  <Accordion title="direct 和 indirect 有什麼區別？">
+    | 型別 | 含義 | 風險程度 |
+    |:--|:--|:--|
+    | direct | 地址直接與風險實體互動 | 較高 |
+    | indirect | 地址透過中間地址間接關聯風險實體 | 相對較低 |
+
+    **示例：**
+    - `sanctioned entity + direct`：該地址直接向受制裁地址轉賬
+    - `sanctioned entity + indirect`：該地址的關聯地址曾與受制裁地址互動
+
+    即使是 indirect 關聯，如果涉及 Severe 級別的標籤（如制裁、恐怖融資），仍建議謹慎處理。
+  </Accordion>
+
+  <Accordion title="Address Type 有哪些型別？">
+    | 地址型別 | 說明 |
+    |:--|:--|
+    | PRIVATE_WALLET | 個人錢包地址 |
+    | EXCHANGE | 中心化交易所地址 |
+    | CONTRACT | 智慧合約地址 |
+    | MINING_POOL | 礦池地址 |
+    | MERCHANT | 商戶地址 |
+    | PAYMENT_PROCESSOR | 支付處理商 |
+
+    地址型別有助於理解資金流向和業務背景。
+  </Accordion>
+
+  <Accordion title="如何透過 API 呼叫 Address Verification？">
+
+```bash
+curl -X POST "https://api.chainstream.io/v1/kya/address/verify" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "So11111111111111111111111111111111111111112",
+    "chain": "sol"
+  }'
+```
+
+    **響應示例：**
+
+```json
+{
+  "address": "So11111111111111111111111111111111111111112",
+  "risk": "Low",
+  "status": "COMPLETE",
+  "address_type": "PRIVATE_WALLET",
+  "risk_exposures": [
+    {
+      "label": "sanctioned entity",
+      "severity": "Severe",
+      "type": "indirect",
+      "amount": 372262.76,
+      "percentage": 0.6
+    },
+    {
+      "label": "bridge",
+      "severity": "Info",
+      "type": "indirect",
+      "amount": 816082.22,
+      "percentage": 1.3
+    }
+  ]
+}
+```
+  </Accordion>
+
+  <Accordion title="KYT 檢測需要多長時間？">
+    | 操作 | 響應時間 |
+    |:--|:--|
+    | 新地址首次驗證 | 通常 1-5 秒 |
+    | 已快取地址查詢 | < 500ms |
+    | 複雜地址（大量交易） | 可能需要 5-10 秒 |
+
+    狀態為 `PENDING` 時表示正在分析中，可稍後重試獲取完整結果。
+  </Accordion>
+
+  <Accordion title="KYT/KYA 如何計費？">
+    KYT/KYA API **不消耗套餐 Units**，而是從獨立的 KYT 賬戶餘額扣費（美元計價）。
+
+    | 操作 | 費用 |
+    |:--|:--|
+    | 充值風險評估 | $0.25/次 |
+    | 提現風險評估 | $0.25/次 |
+    | 註冊地址 | $1.25/次 |
+
+    請在 Dashboard → KYT Service 頁面進行充值。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## AI/MCP 相關
+
+<AccordionGroup>
+  <Accordion title="什麼是 MCP？">
+    MCP（Model Context Protocol）是 Anthropic 提出的協議，讓 AI 模型能夠呼叫外部工具。
+
+    ChainStream 提供 MCP Server，讓 Claude 等 AI 可以直接查詢鏈上資料。
+
+    詳見 [MCP Server 文件](/zh-Hant/guides/ai-infrastructure/mcp-server/introduction)。
+  </Accordion>
+
+  <Accordion title="如何在 Claude Desktop 中使用 ChainStream？">
+    1. 安裝 ChainStream MCP Server
+    2. 配置 Claude Desktop 的 MCP 設定
+    3. 重啟 Claude Desktop
+    4. 開始對話，Claude 可以自動呼叫 ChainStream 查詢資料
+
+    詳細配置步驟見 [Claude Integration 指南](/zh-Hant/guides/ai-infrastructure/mcp-server/setup-guide)。
+  </Accordion>
+
+  <Accordion title="AI 可以執行交易嗎？">
+    **目前不支援。** ChainStream MCP Server 僅提供讀取操作，包括：
+
+    - 查詢代幣價格和資訊
+    - 查詢錢包持倉和交易記錄
+    - 執行 KYT/KYA 風險評估
+
+    不支援自動執行交易、轉賬等寫入操作，這是出於安全考慮。
+  </Accordion>
+
+  <Accordion title="MCP 呼叫如何計費？">
+    MCP 呼叫與直接 API 呼叫計費相同，按照實際呼叫的 API 型別消耗對應的 Units。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 聯絡支援
+
+<AccordionGroup>
+  <Accordion title="如何獲取技術支援？">
+    | 渠道 | 適用場景 | 響應時間 |
+    |:--|:--|:--|
+    | 郵箱 support@chainstream.io | 一般問題 | 24 小時內 |
+    | Discord 社群 | 技術討論、使用問題 | 社群互助 |
+    | 專屬客戶經理 | Enterprise / Custom 客戶 | 4 小時內 |
+
+    **聯絡時請提供：**
+    - Client ID
+    - 錯誤資訊和復現步驟
+  </Accordion>
+
+  <Accordion title="文件有錯誤如何反饋？">
+    - **GitHub Issues：** 提交文件問題
+    - **郵件：** docs@chainstream.io
+
+    感謝幫助我們改進文件！
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 沒找到答案？
+
+<Card title="聯絡我們" icon="headset" href="mailto:support@chainstream.io">
+  如果以上 FAQ 沒有解答你的問題，請聯絡技術支援團隊。
+</Card>

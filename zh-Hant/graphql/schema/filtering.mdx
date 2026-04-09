@@ -1,0 +1,315 @@
+---
+title: "篩選"
+description: "使用 selector 快捷方式與 where 引數篩選查詢結果 — 運算子、巢狀 Filter、OR 邏輯與預設值"
+icon: "filter"
+---
+
+在 ChainStream GraphQL 中有兩種方式篩選資料：
+
+1. **Selector shortcuts** — 頂層引數如 `tokenAddress`，為常見 Filter 提供便捷寫法
+2. **`where` 引數** — 巢狀 Filter 物件，支援完整運算子範圍與任意維度篩選
+
+同一查詢中可以同時使用兩者。
+
+---
+
+## Selector shortcuts
+
+Selectors 是 Cube 欄位上的**便捷引數**，對映到常見的 `where` Filter 模式。它們與 `where` 欄位接受**相同的 Filter 輸入型別**（例如帶 `is`、`in`、`like` 等的 `StringFilter`），而非普通字串。
+
+| Selector | 對映關係 | 可用 Cube |
+|:---------|:---------|:----------|
+| `tokenAddress` | 各 Cube 的主 token 地址列 | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens, DEXPoolEvents, TokenHolders |
+| `walletAddress` | 錢包 / 賬戶所有者地址 | DEXTrades, WalletTokenPnL |
+| `poolAddress` | 流動性池合約地址 | DEXTrades, DEXPools |
+| `senderAddress` | 轉賬傳送方地址 | Transfers |
+| `receiverAddress` | 轉賬接收方地址 | Transfers |
+| `ownerAddress` | Token 賬戶所有者地址 | BalanceUpdates |
+| `dexProgram` | DEX 程式 / 合約地址 | DEXTrades |
+| `date` | 區塊時間戳（`DateTime` Filter） | DEXTrades, Transfers, BalanceUpdates, DEXPools |
+
+**以下兩個查詢等價：**
+
+<Tabs>
+  <Tab title="使用 Selector">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+  </Tab>
+  <Tab title="使用 where Filter">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: {
+        Buy: {
+          Currency: {
+            MintAddress: {
+              is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+            }
+          }
+        }
+      }
+    }
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+Selectors 支援全部 Filter 運算子，不僅限於精確匹配。例如 `tokenAddress: {in: ["ADDR_1", "ADDR_2"]}` 可匹配多個 token，`date: {after: "2025-01-01T00:00:00Z"}` 可按時間篩選。
+</Tip>
+
+---
+
+## `where` 引數
+
+`where` 接受巢狀輸入物件，結構映象 Cube 的維度層級。每個葉子欄位對映到帶型別運算子的 **Filter 原語**。
+
+### 結構
+
+```graphql
+where: {
+  DimensionGroup: {
+    DimensionField: {
+      operator: value
+    }
+  }
+}
+```
+
+**示例** — 篩選區塊時間在某日期之後 **且** 買入金額大於 1000 的 DEXTrades：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Block: { Time: { after: "2025-01-01T00:00:00Z" } }
+      Trade: { Buy: { Amount: { gt: 1000 } } }
+    }
+    limit: { count: 20 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+`where` 中同一層級多個欄位以 **AND** 邏輯組合。
+
+---
+
+## Filter 原語型別
+
+每個葉子維度對映到以下 Filter 輸入型別之一：
+
+### StringFilter
+
+用於地址、雜湊、協議名等文字欄位。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `is` | `String` | 精確匹配 |
+| `not` | `String` | 不等於 |
+| `in` | `[String!]` | 匹配列表中任一值 |
+| `notIn` | `[String!]` | 排除列表中所有值 |
+| `like` | `String` | SQL LIKE 模式匹配（`%` 萬用字元） |
+
+```graphql
+where: {
+  Trade: {
+    Dex: {
+      ProtocolName: { in: ["Raydium", "Orca"] }
+    }
+  }
+}
+```
+
+### IntFilter / FloatFilter
+
+用於金額、價格、計數等數值欄位。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `eq` | `Number` | 等於 |
+| `ne` | `Number` | 不等於 |
+| `gt` | `Number` | 大於 |
+| `gte` | `Number` | 大於等於 |
+| `lt` | `Number` | 小於 |
+| `lte` | `Number` | 小於等於 |
+| `in` | `[Number!]` | 匹配列表中任一值 |
+| `notIn` | `[Number!]` | 排除列表中所有值 |
+
+```graphql
+where: {
+  Trade: {
+    Buy: {
+      PriceInUSD: { gte: 0.001, lte: 1.0 }
+    }
+  }
+}
+```
+
+### DateTimeFilter
+
+用於時間戳欄位。值為 ISO 8601 字串。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `after` | `DateTime` | 晚於該時間戳（不含邊界） |
+| `before` | `DateTime` | 早於該時間戳（不含邊界） |
+| `since` | `DateTime` | 從該時間戳起（含邊界） |
+| `till` | `DateTime` | 直到該時間戳（含邊界） |
+| `between` | `[DateTime!, DateTime!]` | 兩時間戳之間（兩端含邊界） |
+
+```graphql
+where: {
+  Block: {
+    Time: { since: "2025-03-01T00:00:00Z", till: "2025-03-31T23:59:59Z" }
+  }
+}
+```
+
+<Note>
+`after`/`before` 為**不含邊界**（嚴格不等）。`since`/`till` 為**含邊界**。`between` 為二元陣列，兩端均含邊界。
+</Note>
+
+### BoolFilter
+
+用於布林欄位。
+
+| Operator | Type | Description |
+|:---------|:-----|:------------|
+| `eq` | `Boolean` | 等於 `true` 或 `false` |
+
+```graphql
+where: {
+  IsSuspect: { eq: true }
+}
+```
+
+---
+
+## 使用 `any` 表達 OR 邏輯
+
+預設 `where` 中所有條件以 AND 組合。要表達 OR，使用 `any` 陣列欄位 — 每個元素為完整 Filter 物件，匹配**任意**一條即返回。
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      any: [
+        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
+        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
+      ]
+    }
+    limit: { count: 20 }
+  ) {
+    Trade {
+      Buy { Currency { MintAddress } Amount }
+    }
+  }
+}
+```
+
+<Info>
+`any` 可與其他頂層 `where` 欄位組合：`any` 內條件先 OR，再與同層其他條件 AND。
+</Info>
+
+---
+
+## 預設 Filter
+
+部分 Cube 會自動應用預設 Filter。可在 `where` 中顯式寫出以覆蓋。
+
+| Cube | Default Filter | Effect |
+|:-----|:---------------|:-------|
+| DEXTrades | `IsSuspect = false` | 預設排除 bot/MEV 交易 |
+
+要**包含** suspect 交易，顯式設定 Filter：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { IsSuspect: { eq: true } }
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount } }
+    IsSuspect
+  }
+}
+```
+
+若不在 `where` 中指定 `IsSuspect`，預設仍為 `false`。要查詢**全部**交易（無論 suspect 狀態），使用 OR：
+
+```graphql
+where: {
+  any: [
+    { IsSuspect: { eq: true } }
+    { IsSuspect: { eq: false } }
+  ]
+}
+```
+
+---
+
+## 組合 Selectors 與 `where`
+
+Selectors 與 `where` 以 AND 組合。可用 selector 鎖定主體實體，用 `where` 進一步細化：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+    where: {
+      Block: { Time: { after: "2025-03-01T00:00:00Z" } }
+      Trade: { Buy: { Amount: { gt: 100 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 50 }
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+該查詢獲取 Solana 上 USDC 最近 50 筆買入金額大於 100 的 DEX 成交，按時間降序。
+
+---
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="排序與分頁" icon="arrow-down-1-9" href="/zh-Hant/graphql/schema/ordering-pagination">
+    使用 `orderBy` 與 `limit` 排序並分頁瀏覽資料。
+  </Card>
+  <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
+    使用 count、sum、avg、min、max、uniq 對篩選後資料聚合。
+  </Card>
+</CardGroup>

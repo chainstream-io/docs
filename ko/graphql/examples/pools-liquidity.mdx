@@ -1,0 +1,296 @@
+---
+title: "풀 & 유동성"
+description: "DEX 풀과 유동성 데이터 쿼리 예제"
+icon: "droplet"
+---
+
+이 페이지에서는 DEX 풀 및 유동성 분석을 위한 Cube를 다룹니다:
+
+- **DEXPoolEvents** (DWD) — 이벤트별 보유량과 가격이 포함된 유동성 추가/제거 이벤트
+- **DEXPools** (DWS) — 풀 **스냅샷** (현재 유동성과 가격, 주기적으로 갱신)
+- **TokenSupplyUpdates** (DWD) — 토큰 공급, 시가총액, FDV 업데이트
+
+<Note>
+예제에서는 **Solana**와 **EVM** [체인 그룹](/ko/graphql/schema/chain-groups)을 사용합니다: Solana의 경우 `Solana { ... }`, EVM 체인(Polygon 포함)의 경우 `EVM(network: eth | bsc | polygon) { ... }`.
+</Note>
+
+---
+
+## 토큰의 유동성 풀을 어떻게 조회하나요?
+
+스냅샷에서 토큰이 **토큰 A**로 등록된 DEX 풀을 찾습니다. 토큰 B로만 나타나는 풀은 `tokenB`를 사용한 두 번째 쿼리(또는 `where` 절)가 필요합니다. 전체 페어 컨텍스트가 포함된 **이벤트 레벨** 행에는 **DEXPoolEvents**를 사용하세요.
+
+```graphql
+query {
+  Solana {
+    DEXPools(
+      limit: {count: 10}
+      tokenA: {is: "TOKEN_ADDRESS"}
+    ) {
+      Pool {
+        Address
+        ProgramAddress
+        TokenAAddress
+        TokenBAddress
+        LiquidityUSD
+        PriceAtoB
+        PriceBtoA
+        LastUpdated
+      }
+    }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여넣어 자동 완성과 스키마 탐색 기능으로 인터랙티브하게 실행해 보세요.
+</Tip>
+
+<Tip>
+`TOKEN_ADDRESS`를 토큰 민트(Solana) 또는 컨트랙트 주소(EVM)로 교체하세요. 토큰이 호가 측인 풀을 포함하려면 `tokenB: {is: "TOKEN_ADDRESS"}`로 반복하세요.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="주요 필드">
+    | 필드 | 설명 |
+    |:------|:------------|
+    | `Pool.Address` | 유동성 풀 / 마켓 주소 |
+    | `Pool.ProgramAddress` | DEX 프로그램 또는 팩토리 주소 |
+    | `Pool.TokenAAddress` | 기본 측 토큰 주소 |
+    | `Pool.TokenBAddress` | 호가 측 토큰 주소 |
+    | `Pool.LiquidityUSD` | USD 기준 풀 총 유동성 (스냅샷) |
+    | `Pool.LastUpdated` | 이 스냅샷 행이 마지막으로 갱신된 시점 |
+  </Accordion>
+  <Accordion title="커스터마이즈 팁">
+    - **유동성별 필터**: `where: {Pool: {LiquidityUSD: {gt: 10000}}}`를 추가하여 USD 깊이 기준 이상의 풀만
+    - **특정 DEX**: `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`를 추가
+    - **더 많은 풀**: 토큰의 추가 풀을 발견하기 위해 `count` 증가
+    - **이벤트별 보유량**: 추가/제거 히스토리를 위해 `tokenAddress` / `poolAddress`와 `orderBy: Block_Time_DESC`로 **DEXPoolEvents** 사용
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 특정 풀의 세부 정보를 어떻게 조회하나요?
+
+주소로 하나의 풀의 **최신 스냅샷**을 읽습니다. **DEXPools**는 행별 블록 타임라인을 노출하지 않습니다 — 과거 보유량 시리즈에는 **DEXPoolEvents**를 사용하세요.
+
+```graphql
+query {
+  Solana {
+    DEXPools(
+      limit: {count: 1}
+      poolAddress: {is: "POOL_ADDRESS"}
+    ) {
+      Pool {
+        Address
+        TokenAAddress
+        TokenBAddress
+        ProgramAddress
+        LiquidityUSD
+        PriceAtoB
+        PriceBtoA
+        LastUpdated
+      }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="주요 필드">
+    | 필드 | 설명 |
+    |:------|:------------|
+    | `Pool.TokenAAddress` / `Pool.TokenBAddress` | 페어 토큰 주소 |
+    | `Pool.LiquidityUSD` | USD 기준 총 유동성 (스냅샷) |
+    | `Pool.LastUpdated` | 이 풀의 마지막 스냅샷 갱신 |
+  </Accordion>
+  <Accordion title="커스터마이즈 팁">
+    - **보유량 히스토리**: `poolAddress: {is: "POOL_ADDRESS"}`와 `orderBy: Block_Time_DESC`로 **DEXPoolEvents** 쿼리
+    - **이벤트 시간 범위**: **DEXPoolEvents**에서 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}`를 추가하여 추가/제거 범위 지정
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+`poolAddress` 셀렉터는 `Pool.Address`로 필터링합니다. **DEXPools** (스냅샷)과 **DEXPoolEvents** (이벤트) 모두에서 사용 가능합니다.
+</Info>
+
+---
+
+## 풀 순위를 어떻게 매기거나 스냅샷 유동성을 어떻게 읽나요?
+
+**DEXPools** (DWS)는 **현재 상태** 행을 저장합니다 (일반적으로 몇 분마다 갱신). 원시 이벤트를 스캔하지 않고 `LiquidityUSD`로 풀 순위를 매기고 DEX 프로그램을 비교하는 데 사용합니다.
+
+```graphql
+query {
+  Solana {
+    DEXPools(
+      limit: {count: 20}
+      tokenA: {is: "TOKEN_ADDRESS"}
+    ) {
+      Pool {
+        Address
+        ProgramAddress
+        TokenAAddress
+        TokenBAddress
+        LiquidityUSD
+        LastUpdated
+      }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="주요 필드">
+    | 필드 | 설명 |
+    |:------|:------------|
+    | `Pool.Address` | 풀 주소 |
+    | `Pool.ProgramAddress` | DEX 프로그램 / 팩토리 |
+    | `Pool.TokenAAddress` / `Pool.TokenBAddress` | 페어 토큰 |
+    | `Pool.LiquidityUSD` | 스냅샷 유동성 (USD) |
+    | `Pool.LastUpdated` | 스냅샷이 얼마나 최신인지 |
+  </Accordion>
+  <Accordion title="커스터마이즈 팁">
+    - **유동성 순위**: `LiquidityUSD`로 클라이언트 측 정렬하거나, 스키마가 풀 스냅샷 정렬을 노출하는 경우 `orderBy` 사용
+    - **활성 풀**: 최근 `LastUpdated`를 가진 풀 선호
+    - **DEX 비교**: `Pool.ProgramAddress`로 그룹화 또는 필터링
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**DEXPoolEvents** (DWD)는 보유량의 **시계열**과 모든 유동성 이벤트에 적합한 Cube입니다. **DEXPools** (DWS)는 **최신** 풀 상태와 발견에 최적화되어 있습니다.
+</Tip>
+
+---
+
+## 토큰 공급과 시가총액을 어떻게 조회하나요?
+
+공급 이벤트에 연결된 공급, 시가총액, 가격, FDV에는 **TokenSupplyUpdates**를 사용합니다.
+
+```graphql
+query {
+  Solana {
+    TokenSupplyUpdates(
+      limit: {count: 1}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      orderBy: Block_Time_DESC
+    ) {
+      TokenSupplyUpdate {
+        Currency { MintAddress, Decimals }
+        PostBalance
+        MarketCapInUSD
+        PriceInUSD
+        FDVInUSD
+        TotalSupply
+      }
+      Block { Time }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="주요 필드">
+    | 필드 | 설명 |
+    |:------|:------------|
+    | `TokenSupplyUpdate.Currency.MintAddress` | 토큰 주소 |
+    | `TokenSupplyUpdate.Currency.Decimals` | 토큰 소수점 |
+    | `TokenSupplyUpdate.PostBalance` | 이벤트 후 현재 공급 |
+    | `TokenSupplyUpdate.MarketCapInUSD` | USD 시가총액 |
+    | `TokenSupplyUpdate.PriceInUSD` | 공급 이벤트 시점의 토큰 가격 |
+    | `TokenSupplyUpdate.FDVInUSD` | 완전 희석 시가총액 |
+    | `TokenSupplyUpdate.TotalSupply` | 총 토큰 공급 |
+  </Accordion>
+  <Accordion title="커스터마이즈 팁">
+    - **공급 히스토리**: 시간에 따른 공급 변동(민트/번 이벤트)을 보려면 `count` 증가
+    - **시가총액 히스토리**: 여러 공급 업데이트를 쿼리하여 시간별 시가총액 차트 구성
+    - **가격 결합**: 시가총액 계산 검증을 위해 `PriceInUSD`와 `TotalSupply` 함께 사용
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+이 페이지에서는 공급 연결 시가총액, 가격, FDV에 **TokenSupplyUpdates**를 사용합니다. 추가 토큰 메트릭과 요약은 [OHLC & 통계](/ko/graphql/examples/ohlc-stats)를 참조하세요.
+</Info>
+
+---
+
+## 멀티체인 예제
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  Solana {
+    DEXPools(
+      limit: {count: 5}
+      tokenA: {is: "TOKEN_ADDRESS"}
+    ) {
+      Pool { Address, LiquidityUSD, LastUpdated }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  EVM(network: eth) {
+    DEXPools(
+      limit: {count: 5}
+      tokenA: {is: "TOKEN_ADDRESS"}
+    ) {
+      Pool { Address, LiquidityUSD, LastUpdated }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  EVM(network: bsc) {
+    DEXPools(
+      limit: {count: 5}
+      tokenA: {is: "TOKEN_ADDRESS"}
+    ) {
+      Pool { Address, LiquidityUSD, LastUpdated }
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  EVM(network: polygon) {
+    DEXPools(
+      limit: {count: 5}
+      tokenA: {is: "TOKEN_ADDRESS"}
+    ) {
+      Pool { Address, LiquidityUSD, LastUpdated }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="DEX 트레이드" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
+    DEX 트레이딩 데이터를 쿼리합니다 — 토큰 트레이드, 월렛 활동, 상위 트레이더.
+  </Card>
+  <Card title="전송" icon="paper-plane" href="/ko/graphql/examples/transfers">
+    월렛 간 온체인 토큰 전송을 추적합니다.
+  </Card>
+  <Card title="잔액 & 홀더" icon="wallet" href="/ko/graphql/examples/balance-holders">
+    월렛 잔액, 잔액 히스토리, 상위 홀더를 조회합니다.
+  </Card>
+  <Card title="OHLC & 통계" icon="chart-candlestick" href="/ko/graphql/examples/ohlc-stats">
+    캔들스틱 데이터, 트레이드 통계, 시가총액, 토큰 메타데이터를 가져옵니다.
+  </Card>
+</CardGroup>

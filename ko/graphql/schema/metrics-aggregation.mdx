@@ -1,0 +1,321 @@
+---
+title: "메트릭 & 집계"
+description: "count, sum, avg, min, max, uniq로 데이터 집계 — of 파라미터, HAVING을 위한 selectWhere, 메트릭과 사전 집계 Cube 비교"
+icon: "chart-simple"
+---
+
+## 메트릭이란?
+
+메트릭은 Cube Record 타입에서 필드로 사용 가능한 **집계 함수**입니다. 후처리 없이 GraphQL 쿼리에서 직접 통계를 계산할 수 있습니다. 디멘션 필드와 함께 메트릭 필드를 선택하면 쿼리가 선택된 디멘션으로 그룹화하고 각 그룹에 대해 메트릭을 계산합니다.
+
+**지원되는 메트릭:**
+
+| 메트릭 | SQL 동등 | 설명 |
+|:-------|:---------------|:------------|
+| `count` | `COUNT(*)` 또는 `COUNT(column)` | 행 수 또는 고유 값 수 |
+| `sum` | `SUM(column)` | 숫자 값의 합계 |
+| `avg` | `AVG(column)` | 숫자 값의 평균 |
+| `min` | `MIN(column)` | 최소값 |
+| `max` | `MAX(column)` | 최대값 |
+| `uniq` | `COUNT(DISTINCT column)` | 고유 값 수 |
+
+---
+
+## Record 타입의 메트릭 필드
+
+메트릭은 각 Cube의 Record 타입에서 **최상위 필드**로 나타납니다. 모든 Cube가 모든 메트릭을 지원하는 것은 아닙니다 — Cube 정의에 따라 다릅니다.
+
+```graphql
+type DEXTradesRecord {
+  # 디멘션 필드...
+  Block { ... }
+  Trade { ... }
+
+  # 메트릭 필드
+  count: Int
+  sum(of: DEXTradesSumOf!): Float
+}
+```
+
+메트릭을 사용하려면 필드 선택에 포함하면 됩니다:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+이 쿼리는 프로토콜 이름별로 DEX 트레이드를 그룹화하고 각 그룹의 카운트를 반환합니다.
+
+---
+
+## `of` 파라미터
+
+`sum`, `avg`, `min`, `max`, `uniq` 같은 메트릭은 **어떤 디멘션**을 집계할지 지정하는 `of` 파라미터가 필요합니다. `of` 값은 디멘션 경로 명명 규칙을 따르는 Cube별 생성 열거형입니다.
+
+```graphql
+sum(of: Trade_Buy_Amount)
+avg(of: Trade_Buy_PriceInUSD)
+min(of: Block_Time)
+max(of: Trade_Sell_Amount)
+uniq(of: Trade_Buy_Account_Owner)
+```
+
+### 예제: DEX별 총 매수 거래량
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+    sum(of: Trade_Buy_Amount)
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+**응답:**
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "count": 1842,
+        "sum": 2847291.45,
+        "Trade": { "Dex": { "ProtocolName": "Raydium" } }
+      },
+      {
+        "count": 923,
+        "sum": 1293847.12,
+        "Trade": { "Dex": { "ProtocolName": "Orca" } }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## count — 행 수 세기
+
+`of` 파라미터 없이 `count`는 각 그룹의 전체 행 수를 세줍니다 (`COUNT(*)`와 동등):
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+  }
+}
+```
+
+디멘션 필드와 함께 사용하면 그룹별 카운트를 반환합니다:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+---
+
+## uniq — 고유 값 수
+
+`uniq`는 SQL의 `COUNT(DISTINCT column)`에 매핑됩니다. 디멘션의 고유 값 수를 세는 데 사용합니다:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    uniq(of: Trade_Buy_Account_Owner)
+  }
+}
+```
+
+이는 오늘 Solana에서 USDC를 거래한 **고유 매수 월렛** 수를 반환합니다.
+
+---
+
+## selectWhere — HAVING 스타일 필터링
+
+`selectWhere`는 SQL의 `HAVING` 절과 유사하게 **집계 결과를 기준으로 필터링**할 수 있습니다. 그룹화 및 집계 후에 적용되어 메트릭 값에 따라 그룹을 필터링합니다.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+  ) {
+    count(selectWhere: { gt: 100 })
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+이는 오늘 **100건 이상의 트레이드**가 있는 DEX 프로토콜만 반환합니다 — 트레이드가 적은 프로토콜은 결과에서 제외됩니다.
+
+`selectWhere`는 `IntFilter`/`FloatFilter`와 동일한 숫자 연산자를 지원합니다:
+
+| 연산자 | 설명 |
+|:---------|:------------|
+| `gt` | 보다 큼 |
+| `gte` | 크거나 같음 |
+| `lt` | 보다 작음 |
+| `lte` | 작거나 같음 |
+| `eq` | 같음 |
+| `ne` | 같지 않음 |
+
+---
+
+## 실용 예제: 상위 트레이더
+
+오늘 토큰의 거래 횟수 기준 상위 10개 월렛을 찾고, 총 매수 거래량과 고유 거래 수를 표시:
+
+```graphql
+query TopTraders {
+  DEXTrades(
+    network: sol
+    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+    where: {
+      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    count
+    sum(of: Trade_Buy_Amount)
+    Trade {
+      Buy {
+        Account { Owner }
+      }
+    }
+  }
+}
+```
+
+**응답:**
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "count": 47,
+        "sum": 892341023.5,
+        "Trade": {
+          "Buy": {
+            "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+          }
+        }
+      },
+      {
+        "count": 31,
+        "sum": 451203847.2,
+        "Trade": {
+          "Buy": {
+            "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 복수 메트릭 결합
+
+단일 쿼리에서 여러 메트릭 필드를 선택할 수 있습니다:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    tokenAddress: "So11111111111111111111111111111111111111112"
+    where: {
+      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+    }
+  ) {
+    count
+    sum(of: Trade_Buy_Amount)
+    min(of: Trade_Buy_PriceInUSD)
+    max(of: Trade_Buy_PriceInUSD)
+    uniq(of: Trade_Buy_Account_Owner)
+    Trade { Dex { ProtocolName } }
+  }
+}
+```
+
+이는 DEX별 통계를 반환합니다: 거래 수, 총 거래량, 가격 범위, 고유 트레이더 — 모두 하나의 쿼리로.
+
+---
+
+## 메트릭 vs 사전 집계 Cube
+
+<Info>
+일반적인 질문: DWD Cube에서 메트릭을 사용해야 할까요, 아니면 DWM/DWS Cube를 직접 쿼리해야 할까요?
+</Info>
+
+| 접근 방식 | 사용 시점 | 성능 |
+|:---------|:------------|:------------|
+| **DWD의 메트릭** (예: `DEXTrades.count`) | 커스텀 집계, 임의 그룹화, 유연한 시간 범위 | 느림 — 쿼리 시 원시 이벤트를 집계 |
+| **DWM Cube** (예: `Pairs`, `Tokens`) | 표준 시계열 분석, OHLC 차트, 시간별 거래량 | 빠름 — 사전 계산된 분별 롤업 읽기 |
+| **DWS Cube** (예: `TokenHolders`, `WalletTokenPnL`) | 현재 스냅샷, 누적 합계, 리더보드 | 가장 빠름 — 사전 집계된 요약 데이터 읽기 |
+
+<Tip>
+**경험 법칙**: 사용 사례를 충족하는 경우 DWM/DWS Cube를 사용하세요 — 사전 집계되어 훨씬 빠릅니다. 사전 빌드된 Cube가 지원하지 않는 커스텀 그룹화나 집계 로직이 필요한 경우에 메트릭이 있는 DWD Cube를 사용하세요.
+</Tip>
+
+### 결정 가이드
+
+<AccordionGroup>
+  <Accordion title="캔들스틱 차트가 필요합니다">
+    **Pairs** (DWM)를 사용하세요. 이미 분별 사전 계산된 open/high/low/close/volume이 있습니다. DEXTrades를 직접 집계할 필요가 없습니다.
+  </Accordion>
+  <Accordion title="토큰별 매수/매도 수가 필요합니다">
+    **Tokens** (DWM)를 사용하세요. 분별 트레이드 수, 거래량, 고유 트레이더를 사전 집계합니다.
+  </Accordion>
+  <Accordion title="토큰 홀더 순위가 필요합니다">
+    **TokenHolders** (DWS)를 사용하세요. 홀더별 사전 계산된 최신 잔액 — BalanceUpdates를 집계하는 것보다 훨씬 빠릅니다.
+  </Accordion>
+  <Accordion title="DEX별 커스텀 거래량 분류가 필요합니다">
+    `count` + `sum(of: Trade_Buy_Amount)`와 `Trade.Dex.ProtocolName`으로 그룹화하여 **DEXTrades**를 사용하세요. 사전 빌드된 Cube로 제공되지 않으므로 DWD 메트릭이 적합한 선택입니다.
+  </Accordion>
+  <Accordion title="토큰별 월렛 PnL이 필요합니다">
+    **WalletTokenPnL** (DWS)을 사용하세요. 월렛-토큰 쌍별 사전 계산된 매수/매도 거래량 및 거래 수.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="데이터 큐브" icon="cubes" href="/ko/graphql/schema/cubes">
+    25개 Cube와 필드 구조를 살펴보세요.
+  </Card>
+  <Card title="쿼리 예제" icon="flask" href="/ko/graphql/examples/dex-trades">
+    메트릭과 집계가 포함된 실제 쿼리 예제를 확인하세요.
+  </Card>
+</CardGroup>

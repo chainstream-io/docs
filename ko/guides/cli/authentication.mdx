@@ -1,0 +1,156 @@
+---
+title: 'CLI 인증'
+description: 'ChainStream CLI의 API Key, 지갑 로그인, 결제 방법 설정'
+icon: "key"
+---
+
+## 인증 방법
+
+ChainStream CLI는 여러 인증 방법을 지원합니다. 사용 목적에 맞게 선택하세요:
+
+| 방법 | 명령어 | 사용 사례 | DeFi 지원 |
+|--------|---------|----------|--------------|
+| API Key | `config set --key apiKey --value <key>` | 읽기 전용 데이터 조회 | 아니오 |
+| 지갑 로그인 | `login` | DeFi 포함 전체 접근 | 예 |
+| 이메일 OTP | `login user@example.com` | 계정 복구, 새 디바이스 | 예 |
+| 원시 개인키 | `wallet set-raw --chain base` | 개발/테스트 전용 | 예 |
+
+<Warning>
+DeFi 작업(스왑, 토큰 생성)에는 지갑이 필요합니다. API Key만으로는 트랜잭션 서명에 충분하지 않습니다.
+</Warning>
+
+## API Key (데이터 조회 권장)
+
+가장 간단한 인증 방법입니다 — 모든 에이전트 지갑 설정에서 작동합니다:
+
+```bash
+chainstream config set --key apiKey --value <your_api_key>
+```
+
+API Key 발급 방법:
+- [ChainStream Dashboard](https://app.chainstream.io) — 앱을 생성하고 키를 복사
+- **x402 자동 구매** — CLI가 자동으로 구독을 구매하고 키를 저장 ([자동 결제](/ko/guides/cli/x402-payment) 참조)
+
+설정 확인:
+
+```bash
+chainstream config get
+# → apiKey: cs_live_****...
+# → walletMode: none
+```
+
+## 지갑 로그인 (DeFi 권장)
+
+TEE(Trusted Execution Environment)를 통한 원격 서명이 가능한 비수탁 지갑을 생성합니다. 세션 인증을 위해 P-256 디바이스 키 쌍이 로컬에 저장되며, 지갑의 서명 키는 TEE 내에 유지됩니다.
+
+### 최초 로그인
+
+```bash
+chainstream login
+```
+
+`~/.config/chainstream/keys/`에 P-256 디바이스 키 쌍을 생성하고 ChainStream 인증 서비스에 등록합니다. 지갑이 자동으로 생성되며 이메일은 필요하지 않습니다.
+
+### 기존 사용자
+
+```bash
+chainstream login --key
+```
+
+기존 디바이스 키를 사용하여 재인증합니다. OTP가 필요하지 않습니다.
+
+### 이메일 사용 (선택 사항)
+
+```bash
+# 이메일 OTP로 로그인
+chainstream login user@example.com
+
+# 인증 완료
+chainstream verify --otp-id <id> --code <code> --email user@example.com
+```
+
+### 복구용 이메일 연동
+
+```bash
+chainstream bind-email user@example.com
+chainstream bind-email-verify --otp-id <id> --code <code> --email user@example.com
+```
+
+### 로그아웃
+
+```bash
+chainstream logout
+```
+
+설정에서 세션을 제거하지만 `~/.config/chainstream/keys/`의 디바이스 키는 유지됩니다.
+
+## 원시 개인키 (개발 전용)
+
+<Warning>
+개인키가 설정 파일에 평문으로 저장됩니다. 개발 및 테스트 용도로만 사용하세요.
+</Warning>
+
+```bash
+# EVM 개인키 가져오기 (Base)
+chainstream wallet set-raw --chain base
+
+# Solana 개인키 가져오기
+chainstream wallet set-raw --chain sol
+```
+
+개인키를 대화형으로 입력하라는 프롬프트가 표시됩니다.
+
+## 설정
+
+모든 CLI 설정은 `~/.config/chainstream/config.json`에 저장됩니다:
+
+| 설정 | 명령어 | 설명 |
+|---------|---------|-------------|
+| API Key | `config set --key apiKey --value <key>` | ChainStream API Key |
+| Base URL | `config set --key baseUrl --value <url>` | API 엔드포인트 (기본값: `https://api.chainstream.io`) |
+| 지갑 체인 | `config set --key walletChain --value <chain>` | 지갑 작업의 기본 체인 |
+
+### 설정 확인
+
+```bash
+# 모든 설정 보기 (API Key는 마스킹됨)
+chainstream config get
+
+# 특정 설정 보기
+chainstream config get --key apiKey
+
+# 인증 상태 보기
+chainstream config auth
+# → Auth: TEE Wallet (org: ...)
+# → or: Auth: Raw Key (sol)
+# → or: Auth: API Key (cs_live_...)
+# → or: Auth: Not configured
+```
+
+## 인증 우선순위
+
+여러 인증 정보가 설정된 경우 CLI는 다음 우선순위를 따릅니다:
+
+1. **API Key** — 설정에 `apiKey`가 있으면 직접 사용
+2. **지갑** — TEE 지갑 또는 원시 키가 설정되어 있으면 서명에 사용
+
+## 환경 변수
+
+| 변수 | 기본값 | 설명 |
+|----------|---------|-------------|
+| `CHAINSTREAM_API_URL` | `https://api.chainstream.io` | API 기본 URL |
+| `CHAINSTREAM_AUTH_URL` | `https://api.chainstream.io` | 인증 서비스 URL |
+| `SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC 엔드포인트 |
+| `BASE_RPC_URL` | `https://mainnet.base.org` | Base RPC 엔드포인트 |
+| `CHAINSTREAM_DEBUG` | (미설정) | 오류 시 디버그 출력 활성화 |
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="명령어 레퍼런스" icon="book" href="/ko/guides/cli/commands">
+    사용 가능한 전체 명령어 탐색
+  </Card>
+  <Card title="자동 결제" icon="credit-card" href="/ko/guides/cli/x402-payment">
+    USDC로 구독 자동 구매
+  </Card>
+</CardGroup>

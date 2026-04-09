@@ -1,0 +1,288 @@
+---
+title: 'MCP 설정 가이드'
+description: '5분 안에 ChainStream MCP Server 설정 완료하기'
+icon: 'gear'
+---
+
+이 가이드를 통해 ChainStream MCP Server를 빠르게 설정할 수 있습니다.
+
+---
+
+## 사전 요구사항
+
+| 요구사항 | 상세 | 획득 방법 |
+|----------|------|----------|
+| ChainStream 계정 | 가입된 계정 | [가입하기](https://www.chainstream.io/dashboard) |
+| API Key | 인증용 `X-API-KEY` | Dashboard → Apps → Create App |
+| AI 클라이언트 | Claude Desktop / Cursor / 커스텀 클라이언트 | 설치 완료 |
+
+---
+
+## MCP 엔드포인트
+
+ChainStream은 호스팅된 MCP Server를 제공합니다. 로컬 설치 없이 다음 주소로 직접 연결하세요:
+
+```
+https://mcp.chainstream.io/mcp
+```
+
+---
+
+## 설정 단계
+
+<Steps>
+  <Step title="API Key 발급">
+    1. [ChainStream Dashboard](https://www.chainstream.io/dashboard)에 로그인
+    2. **Applications**로 이동
+    3. **Create New App**을 클릭하고 API Key를 복사
+  </Step>
+  
+  <Step title="AI 클라이언트 설정">
+    <Tabs>
+      <Tab title="Claude Desktop">
+        **설정 파일 경로**:
+        - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+        - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+        
+        **옵션 A — Cloud 엔드포인트 (권장)**:
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "X-API-KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+
+        **옵션 B — 로컬 npm 패키지 (stdio)**:
+
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "command": "npx",
+              "args": ["@chainstream-io/mcp"],
+              "env": {
+                "CHAINSTREAM_API_KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+        
+        <Note>
+        파일이 존재하지 않으면 수동으로 생성하세요. 다른 MCP Server 설정이 있다면, 기존 `mcpServers` 객체에 `chainstream` 설정을 추가하세요.
+        </Note>
+      </Tab>
+      
+      <Tab title="Cursor IDE">
+        **설정 파일 경로**: `.cursor/mcp.json` (프로젝트 레벨) 또는 Cursor Settings → Features → MCP Servers
+        
+        **옵션 A — Cloud 엔드포인트**:
+        
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "url": "https://mcp.chainstream.io/mcp",
+              "headers": {
+                "X-API-KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+
+        **옵션 B — 로컬 npm 패키지 (stdio)**:
+
+        ```json
+        {
+          "mcpServers": {
+            "chainstream": {
+              "command": "npx",
+              "args": ["@chainstream-io/mcp"],
+              "env": {
+                "CHAINSTREAM_API_KEY": "your_api_key"
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+      
+      <Tab title="커스텀 클라이언트">
+        HTTP를 통해 Cloud 엔드포인트에 연결합니다:
+        
+        | 엔드포인트 | URL | 메서드 |
+        |-----------|-----|--------|
+        | MCP 엔드포인트 | `https://mcp.chainstream.io/mcp` | POST |
+        
+        **인증**: `X-API-KEY` 헤더로 API Key를 전달합니다.
+        
+        **예제 코드**:
+        
+        ```javascript
+        import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+        import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+
+        const transport = new StreamableHTTPClientTransport(
+          new URL('https://mcp.chainstream.io/mcp'),
+          {
+            requestInit: {
+              headers: {
+                'X-API-KEY': process.env.CHAINSTREAM_API_KEY
+              }
+            }
+          }
+        );
+
+        const client = new Client({
+          name: 'my-client',
+          version: '1.0.0'
+        });
+
+        await client.connect(transport);
+
+        const { tools } = await client.listTools();
+        console.log('Available tools:', tools.map(t => t.name));
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  
+  <Step title="클라이언트 재시작">
+    설정 후, AI 클라이언트를 완전히 종료한 후 다시 시작해야 변경사항이 적용됩니다.
+    
+    - **Claude Desktop**: 완전히 종료(최소화가 아님) 후 다시 실행
+    - **Cursor**: IDE 재시작
+  </Step>
+</Steps>
+
+---
+
+## 설정 확인
+
+### 테스트 명령
+
+AI 클라이언트에서 다음 테스트 질문을 입력하세요:
+
+```
+Solana의 SOL 토큰이 뭐야? 안전해?
+```
+
+### 예상 결과
+
+설정이 성공적이라면, AI는 다음을 수행해야 합니다:
+
+1. `tokens_search`를 호출하여 SOL 토큰 검색
+2. `tokens_analyze`를 호출하여 보안 및 홀더 데이터 확인
+3. 자연어로 요약 반환
+
+<Note>
+AI가 도구를 호출하지 않거나 오류가 반환되면, 아래 [문제 해결](#문제-해결) 섹션을 참조하세요.
+</Note>
+
+---
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="인증 실패" icon="key">
+    **가능한 원인**:
+    
+    1. **API Key 입력 오류**
+       - 추가 공백이 없는지 확인
+       - 완전히 복사되었는지 확인
+    
+    2. **API Key 폐기 또는 만료**
+       - Dashboard에서 키 상태 확인
+       - 필요시 새 키 생성
+    
+    3. **잘못된 헤더 이름**
+       - Cloud 엔드포인트: `X-API-KEY` 헤더 사용
+       - npm 패키지: `CHAINSTREAM_API_KEY` 환경변수 사용
+    
+    **해결 방법**:
+    - Dashboard → Applications에서 키 확인
+    - 직접 테스트: `curl -H "X-API-KEY: your_key" https://api.chainstream.io/v2/blockchain`
+  </Accordion>
+
+  <Accordion title="연결 실패" icon="plug-circle-xmark">
+    **가능한 원인**:
+    
+    1. **네트워크 문제**
+       - 네트워크 연결 확인
+       - `https://mcp.chainstream.io` 접근 가능 여부 확인
+    
+    2. **설정 형식 오류**
+       - JSON 형식이 올바른지 확인
+       - URL 철자가 정확한지 확인
+    
+    **해결 방법**:
+    
+    ```bash
+    curl -I https://mcp.chainstream.io/mcp
+    ```
+  </Accordion>
+
+  <Accordion title="설정 파일이 적용되지 않음" icon="file-circle-xmark">
+    **가능한 원인**:
+    
+    1. **설정 파일 경로 오류**
+       - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+       - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+    
+    2. **JSON 형식 오류**
+       - JSON 검증기로 확인
+    
+    3. **클라이언트 미재시작**
+       - 완전히 종료 후 다시 시작
+    
+    **해결 방법**:
+    
+    ```bash
+    cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
+    ```
+  </Accordion>
+
+  <Accordion title="도구 호출 실패: 할당량 초과" icon="gauge-low">
+    **가능한 원인**:
+    
+    1. 플랜 할당량 소진
+    2. 요청 빈도가 높아 속도 제한 발동
+    
+    **해결 방법**:
+    - Dashboard에서 할당량 사용 현황 확인
+    - 더 많은 할당량을 위해 플랜 업그레이드
+  </Accordion>
+
+  <Accordion title="데이터 반환 지연 또는 타임아웃" icon="clock">
+    **가능한 원인**:
+    
+    1. 네트워크 지연
+    2. 쿼리 데이터 양이 너무 많음
+    
+    **해결 방법**:
+    - 네트워크 연결 확인
+    - 쿼리당 데이터 양 줄이기
+    - 잠시 후 다시 시도
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="도구 카탈로그" icon="wrench" href="/ko/guides/ai-infrastructure/mcp-server/tools-catalog">
+    사용 가능한 모든 도구 및 사용 예시 보기
+  </Card>
+  <Card title="AI 에이전트 튜토리얼" icon="graduation-cap" href="/ko/playbooks/tutorials/ai-agent-with-mcp">
+    AI 트레이딩 어시스턴트 만들기
+  </Card>
+</CardGroup>

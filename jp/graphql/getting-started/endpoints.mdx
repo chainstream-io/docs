@@ -1,0 +1,245 @@
+---
+title: "エンドポイントと認証"
+description: "GraphQLエンドポイントURL、認証、リクエスト形式、対応ネットワーク"
+icon: "key"
+---
+
+## GraphQLエンドポイント
+
+すべてのGraphQLクエリは単一のエンドポイントに送信されます：
+
+```
+https://graphql.chainstream.io/graphql
+```
+
+**POST**と**GET**の両方のメソッドがサポートされています。
+
+| メソッド | Content-Type | ユースケース |
+|:--|:--|:--|
+| `POST` | `application/json` | すべてのクエリに推奨 — 変数と複雑なクエリをサポート |
+| `GET` | クエリ文字列（`?query=...`） | シンプルなクエリ、ブラウザテスト、キャッシュフレンドリー |
+
+<Tip>
+本番ワークロードには**POST**を使用してください。GETリクエストはURLにクエリをエンコードするため、長さ制限があり複雑なクエリには不向きです。
+</Tip>
+
+---
+
+## 認証
+
+`X-API-KEY`ヘッダーにAPIキーを渡して認証します。REST Data APIと同じAPIキーを使用します — 別途の認証情報は不要です。
+
+```
+X-API-KEY: your_api_key
+```
+
+<Note>
+[ChainStream Dashboard](https://www.chainstream.io/dashboard) → **Applications** → **Create New App** でAPIキーを取得できます。キーは `cs_live_...` で始まります。
+</Note>
+
+### 必須ヘッダー
+
+| ヘッダー | 値 | 必須 |
+|:--|:--|:--|
+| `Content-Type` | `application/json` | はい（POST） |
+| `X-API-KEY` | `cs_live_...` | はい |
+
+---
+
+## リクエスト形式
+
+GraphQLリクエストボディは2つのフィールドを持つJSONオブジェクトです：
+
+| フィールド | 型 | 説明 |
+|:--|:--|:--|
+| `query` | `string` | GraphQLクエリまたはミューテーション文字列 |
+| `variables` | `object` | `$variable`構文でクエリ内で参照されるオプションの変数 |
+
+### POSTの例
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d '{
+    "query": "query ($network: Network!) { DEXTrades(network: $network, limit: {count: 5}) { Block { Time } Trade { Buy { Currency { MintAddress } Amount } } } }",
+    "variables": { "network": "sol" }
+  }'
+```
+  </Tab>
+  <Tab title="cURL（クエリファイル）">
+複雑なクエリの場合、クエリをファイルに保存して参照できます：
+
+```bash
+# Save query to file
+cat > query.graphql << 'EOF'
+query ($network: Network!) {
+  DEXTrades(network: $network, limit: {count: 5}) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+      }
+    }
+  }
+}
+EOF
+
+# Send with variables
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d "{\"query\": \"$(cat query.graphql | tr '\n' ' ')\", \"variables\": {\"network\": \"sol\"}}"
+```
+  </Tab>
+  <Tab title="JavaScript (fetch)">
+```javascript
+const response = await fetch("https://graphql.chainstream.io/graphql", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-KEY": "your_api_key",
+  },
+  body: JSON.stringify({
+    query: `query ($network: Network!) {
+      DEXTrades(network: $network, limit: {count: 5}) {
+        Block { Time }
+        Trade { Buy { Currency { MintAddress } Amount } }
+      }
+    }`,
+    variables: { network: "sol" },
+  }),
+});
+
+const { data, extensions } = await response.json();
+console.log(data.DEXTrades);
+```
+  </Tab>
+  <Tab title="Python (requests)">
+```python
+import requests
+
+resp = requests.post(
+    "https://graphql.chainstream.io/graphql",
+    headers={
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    },
+    json={
+        "query": """query ($network: Network!) {
+            DEXTrades(network: $network, limit: {count: 5}) {
+                Block { Time }
+                Trade { Buy { Currency { MintAddress } Amount } }
+            }
+        }""",
+        "variables": {"network": "sol"},
+    },
+)
+
+data = resp.json()
+print(data["data"]["DEXTrades"])
+```
+  </Tab>
+</Tabs>
+
+### GETの例
+
+```bash
+curl -G "https://graphql.chainstream.io/graphql" \
+  -H "X-API-KEY: your_api_key" \
+  --data-urlencode 'query={ DEXTrades(network: sol, limit: {count: 5}) { Block { Time } } }'
+```
+
+---
+
+## 対応ネットワーク
+
+すべてのトップレベルCubeクエリで`network`引数をenum値として渡します：
+
+| Network Enum | ブロックチェーン | Chain ID |
+|:--|:--|:--|
+| `sol` | Solana | — |
+| `eth` | Ethereum | 1 |
+| `bsc` | BNB Chain (BSC) | 56 |
+
+```graphql
+# Solana
+{ DEXTrades(network: sol, limit: {count: 5}) { ... } }
+
+# Ethereum
+{ DEXTrades(network: eth, limit: {count: 5}) { ... } }
+
+# BSC
+{ DEXTrades(network: bsc, limit: {count: 5}) { ... } }
+```
+
+---
+
+## レスポンス形式
+
+すべてのレスポンスは以下の構造のJSONです：
+
+```json
+{
+  "data": {
+    "DEXTrades": [
+      { "Block": { "Time": "2025-03-27T10:15:30Z" }, "..." : "..." }
+    ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        { "cube": "DEXTrades", "credits": 50, "row_count": 5 }
+      ]
+    }
+  }
+}
+```
+
+| フィールド | 説明 |
+|:--|:--|
+| `data` | クエリ結果 — クエリの形状に一致 |
+| `errors` | バリデーションまたは実行エラーがある場合のみ存在 |
+| `extensions.credits.total` | このクエリで消費された合計クレジットユニット |
+| `extensions.credits.cubes` | Cubeごとの内訳：Cube名、請求クレジット、返却行数 |
+
+<Note>
+`extensions.credits`フィールドはクレジットが消費された場合に含まれます。クレジットの計算方法の詳細は[課金とクレジット](/jp/graphql/billing/graphql-billing)をご覧ください。
+</Note>
+
+### エラーレスポンス
+
+クエリが不正な場合や失敗した場合、レスポンスには`errors`配列が含まれます：
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTrades'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ]
+}
+```
+
+<Tip>
+アプリケーションに統合する前に、[GraphQL IDE](https://ide.chainstream.io)を使用してクエリをインタラクティブに検証してください。IDEは自動補完とインラインエラーハイライトを提供します。
+</Tip>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="最初のクエリを実行" icon="play" href="/jp/graphql/getting-started/first-query">
+    IDEまたはcURLからステップバイステップのチュートリアルに従って実際のクエリを実行します。
+  </Card>
+  <Card title="スキーマを探索" icon="diagram-project" href="/jp/graphql/schema/schema-overview">
+    25のCube、フィールドタイプ、フィルタリングオペレータ、集計関数を詳しく見ます。
+  </Card>
+</CardGroup>

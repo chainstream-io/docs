@@ -1,0 +1,637 @@
+---
+title: 'ツールカタログ'
+description: 'ChainStream MCP Server 全ツールリファレンス'
+icon: 'wrench'
+---
+
+ChainStream MCP Serverは、APIリファレンスで定義されたすべてのインターフェースをサポートしています。AIはこれらのツールを直接呼び出してオンチェーンデータを取得できます。
+
+<Note>
+MCPツールのパラメータと戻り値はREST APIと同一です。詳細なフィールド説明については、[APIリファレンス](/jp/api-reference/authentication/authenticate)を参照してください。
+</Note>
+
+---
+
+## ツール概要
+
+<Tabs>
+  <Tab title="データクエリ">
+    | ツールカテゴリ | 機能 |
+    |-------------|------|
+    | Token | トークン検索、情報、価格、ローソク足、保有者、セキュリティチェック |
+    | Wallet | 残高、PnL、統計、残高更新 |
+    | Trade | 取引記録、アクティビティ、トップトレーダー |
+    | DexPool | プール情報、スナップショット |
+    | Ranking | 注目トークン、新着トークン、Final Stretch、Migrated |
+    | Blockchain | チェーン情報、最新ブロック |
+  </Tab>
+  <Tab title="取引実行">
+    | ツールカテゴリ | 機能 |
+    |-------------|------|
+    | Dex | クオート、ルート、スワップ実行 |
+    | DeFi | Pumpfun/Moonshotでのトークン作成 |
+    | Transaction | トランザクション送信、ガス見積もり |
+    | RedPacket | レッドパケットの作成/受取 |
+  </Tab>
+  <Tab title="インフラストラクチャ">
+    | ツールカテゴリ | 機能 |
+    |-------------|------|
+    | Webhook | エンドポイント管理、イベントサブスクリプション |
+    | Blockchain | サポートチェーン、最新ブロック |
+  </Tab>
+  <Tab title="リアルタイムサブスクリプション">
+    | サブスクリプションタイプ | 機能 |
+    |---------------------|------|
+    | Candles | リアルタイム価格トレンド |
+    | Token Stats | リアルタイム取引統計 |
+    | New Tokens | 新規トークン作成通知 |
+    | Wallet Balance | 残高変動通知 |
+    | Trade Activities | リアルタイム取引ストリーム |
+    | Pool | プール状態の変化 |
+  </Tab>
+</Tabs>
+
+---
+
+## Tokenツール
+
+### token_search
+
+トークンを検索します。
+
+```
+Search for PEPE-related tokens
+```
+
+### token_get
+
+トークンの詳細を取得します。
+
+```
+View details of token So11111111111111111111111111111111111111112
+```
+
+### token_get_metadata
+
+トークンのメタデータ（名前、シンボル、ロゴなど）を取得します。
+
+```
+Get this token's logo and social media links
+```
+
+### token_get_stats
+
+トークンの統計情報（取引量、売買回数など）を取得します。
+
+```
+View this token's trading statistics for the past 24 hours
+```
+
+### token_get_price
+
+トークンの現在価格を取得します。
+
+```
+What's the current price of BONK?
+```
+
+### token_get_prices
+
+トークンの価格履歴を取得します。
+
+```
+View ETH price trend over the past week
+```
+
+### token_get_candles
+
+トークンのローソク足データを取得します。
+
+```
+Get the last 100 hourly candles for SOL
+```
+
+### token_get_holders
+
+トークンの保有者情報を取得します。
+
+```
+How many holders does this token have?
+```
+
+### token_get_top_holders
+
+トークンのトップ保有者リストを取得します。
+
+```
+View the top 10 holders of this token
+```
+
+### token_get_pools
+
+トークンの流動性プールを取得します。
+
+```
+Which DEXes have liquidity pools for this token?
+```
+
+### token_get_security
+
+トークンのセキュリティチェック結果を取得します。
+
+```
+Check if this token is safe
+```
+
+### token_get_creation
+
+トークンの作成情報を取得します。
+
+```
+When was this token created? Who created it?
+```
+
+### token_get_mint_and_burn
+
+トークンのmintおよびburn履歴を取得します。
+
+```
+View mint and burn history for this token
+```
+
+### token_list
+
+トークンリストを取得します（ページネーションとフィルター付き）。
+
+```
+List recently created tokens on Solana
+```
+
+### token_get_traders_tag
+
+トークンのトレーダータグ分布を取得します。
+
+```
+Analyze what types of traders are trading this token
+```
+
+### token_get_liquidity_snapshots
+
+トークンの流動性スナップショットを取得します。
+
+```
+View this token's liquidity changes over the past week
+```
+
+### token_dev_get_tokens
+
+開発者が作成したすべてのトークンを取得します。
+
+```
+What other tokens has this developer created?
+```
+
+---
+
+## Walletツール
+
+### wallet_get_balance
+
+ウォレットの残高を取得します。
+
+```
+Query all token balances for address 0x1234...abcd
+```
+
+### wallet_get_balance_updates
+
+ウォレットの残高変動履歴を取得します。
+
+```
+Show recent fund movements for this wallet
+```
+
+### wallet_get_pnl
+
+ウォレットの損益データを取得します。
+
+```
+Calculate total returns and win rate for this address
+```
+
+### wallet_calculate_pnl
+
+特定条件でのウォレットPnLを計算します。
+
+```
+Calculate this address's returns over the past 30 days
+```
+
+### wallet_get_stats
+
+ウォレットの統計情報を取得します。
+
+```
+Analyze this wallet's trading style and activity level
+```
+
+---
+
+## Tradeツール
+
+### trade_get
+
+取引記録を取得します。
+
+```
+View the last 20 trades for 0x...
+```
+
+### trade_get_activities
+
+取引アクティビティストリームを取得します。
+
+```
+Recent trading activities for this token
+```
+
+### trade_get_top_traders
+
+トップトレーダーを取得します。
+
+```
+View the most profitable traders for this token
+```
+
+---
+
+## DexPoolツール
+
+### dexpool_get
+
+プール情報を取得します。
+
+```
+View details of this pool
+```
+
+### dexpool_get_snapshots
+
+プールのスナップショット履歴を取得します。
+
+```
+This pool's liquidity changes over the past 24 hours
+```
+
+---
+
+## Rankingツール
+
+### ranking_get_hot_tokens
+
+注目トークンランキングを取得します。
+
+```
+Top 10 hottest tokens today
+```
+
+### ranking_get_new_tokens
+
+新着トークンリストを取得します。
+
+```
+Tokens created in the last hour
+```
+
+### ranking_get_stocks
+
+ストックトークン（未卒業）を取得します。
+
+```
+Which tokens are still on bonding curve on Pump.fun
+```
+
+### ranking_get_final_stretch
+
+卒業間近のトークンを取得します。
+
+```
+Which tokens are about to graduate from Pump.fun
+```
+
+### ranking_get_migrated
+
+卒業済みトークンリストを取得します。
+
+```
+Recently graduated tokens to Raydium
+```
+
+---
+
+## Blockchainツール
+
+### blockchain_list
+
+サポートされているブロックチェーンリストを取得します。
+
+```
+Which blockchains does ChainStream support?
+```
+
+### blockchain_get_latest_block
+
+最新ブロック情報を取得します。
+
+```
+What's the latest block number on Ethereum?
+```
+
+---
+
+## Dexツール
+
+### dex_list
+
+サポートされているDEXリストを取得します。
+
+```
+Which DEXes are supported on Solana?
+```
+
+### dex_get_quote
+
+取引クオートを取得します。
+
+```
+How much USDC can I get for 1 SOL?
+```
+
+### dex_get_route
+
+最適な取引ルートを取得します。
+
+```
+Find the best route from ETH to ARB
+```
+
+### dex_swap
+
+トークンスワップを実行します。
+
+```
+Swap 0.5 SOL to BONK for me
+```
+
+### dex_create
+
+トランザクションを作成します（署名が必要）。
+
+```
+Create a transaction from USDC to ETH
+```
+
+---
+
+## DeFiツール
+
+### pumpfun_create
+
+Pump.funでトークンを作成します。
+
+```
+Create a new token on Pump.fun
+```
+
+### moonshot_create
+
+Moonshotでトークンを作成します。
+
+```
+Create a token on Moonshot
+```
+
+### moonshot_submit_create_token
+
+Moonshotトークン作成トランザクションを送信します。
+
+```
+Submit Moonshot token creation transaction
+```
+
+---
+
+## Transactionツール
+
+### transaction_send
+
+署名済みトランザクションを送信します。
+
+```
+Send this transaction
+```
+
+### transaction_get_gas_price
+
+現在のガス価格を取得します。
+
+```
+What's the gas price on Ethereum right now?
+```
+
+### transaction_estimate_gas_limit
+
+トランザクションのガスリミットを見積もります。
+
+```
+Estimate how much gas this transaction needs
+```
+
+---
+
+## RedPacketツール
+
+### redpacket_create
+
+レッドパケットを作成します。
+
+```
+Create a red packet with 10 SOL, split into 100 shares
+```
+
+### redpacket_claim
+
+レッドパケットを受け取ります。
+
+```
+Claim this red packet
+```
+
+### redpacket_get
+
+レッドパケット情報を取得します。
+
+```
+View details of this red packet
+```
+
+### redpacket_get_claims
+
+レッドパケットの受取記録を取得します。
+
+```
+Who claimed this red packet?
+```
+
+---
+
+## Webhookツール
+
+### webhook_list_endpoints
+
+設定済みのWebhookエンドポイントリストを取得します。
+
+```
+View all my configured webhooks
+```
+
+### webhook_create_endpoint
+
+新しいWebhookエンドポイントを作成します。
+
+```
+Create a new webhook to receive token creation events
+```
+
+### webhook_update_endpoint
+
+Webhookエンドポイントの設定を更新します。
+
+```
+Update this webhook's callback URL
+```
+
+### webhook_delete_endpoint
+
+Webhookエンドポイントを削除します。
+
+```
+Delete this webhook
+```
+
+### webhook_get_secret
+
+Webhookの署名シークレットを取得します。
+
+```
+Get the signing secret for this webhook
+```
+
+### webhook_rotate_secret
+
+Webhookの署名シークレットをローテーションします。
+
+```
+Regenerate this webhook's secret
+```
+
+---
+
+## WebSocketサブスクリプション
+
+MCPサービスは、以下のデータに対するWebSocketリアルタイムサブスクリプションもサポートしています：
+
+### サブスクリプションタイプ
+
+| タイプ | 説明 | プロンプト例 |
+|-------|------|------------|
+| Candles | リアルタイム価格ローソク足 | 「このトークンの1分足ローソク足をサブスクライブ」 |
+| Token Stats | リアルタイム取引統計 | 「このトークンの取引データをリアルタイムで監視」 |
+| New Tokens | 新規トークン通知 | 「Solanaの新規トークンを通知して」 |
+| Token Metadata | 新規トークンメタデータ | 「新規トークンの詳細情報を取得」 |
+| Wallet Balance | 残高変動 | 「このウォレットの残高変動を監視」 |
+| Wallet Trades | 取引通知 | 「このウォレットが取引したら通知して」 |
+| Trade Activities | リアルタイム取引ストリーム | 「このトークンのリアルタイム取引を表示」 |
+| Pool | プール状態 | 「このプールの流動性変動を監視」 |
+| Rankings | 注目トークン更新 | 「リアルタイム注目トークンランキング更新」 |
+
+<Note>
+WebSocketサブスクリプションの詳細なパラメータとレスポンスフォーマットについては、[WebSocket APIドキュメント](/jp/api-reference/endpoint/websocket/api)を参照してください。
+</Note>
+
+---
+
+## サポートされているブロックチェーン
+
+| チェーン | 識別子 | タイプ |
+|---------|--------|-------|
+| Solana | `sol` | L1 |
+| Ethereum | `eth` | L1 (EVM) |
+| BSC | `bsc` | L1 (EVM) |
+
+---
+
+## プロンプトのベストプラクティス
+
+### チェーンを指定する
+
+```
+✅ 良い例: Query balance of 0x... on Ethereum
+❌ 悪い例: Query balance of 0x...
+```
+
+### 完全なアドレスを提供する
+
+```
+✅ 良い例: Analyze 0x1234567890abcdef1234567890abcdef12345678
+❌ 悪い例: Analyze 0x1234...5678
+```
+
+### 時間範囲を指定する
+
+```
+✅ 良い例: View trade records from the past 7 days
+❌ 悪い例: View recent trades
+```
+
+### 複雑なタスクを分割する
+
+複雑なタスクはシンプルな質問に分割しましょう：
+
+```
+✅ 良い例:
+1. First query this address's holdings
+2. Then analyze its trade history
+3. Finally determine its investment style
+
+❌ 悪い例:
+Tell me everything about this address
+```
+
+### フォローアップにコンテキストを活用する
+
+```
+User: Query holdings of 0x...
+AI: [Returns holdings list]
+User: Which of these tokens has the highest gain?
+User: Analyze reasons for holding PEPE
+```
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="MCP入門" icon="plug" href="/jp/guides/ai-infrastructure/mcp-server/introduction">
+    MCPプロトコルと機能について学ぶ
+  </Card>
+  <Card title="セットアップガイド" icon="gear" href="/jp/guides/ai-infrastructure/mcp-server/setup-guide">
+    MCP Serverの設定
+  </Card>
+  <Card title="APIリファレンス" icon="code" href="/jp/api-reference/authentication/authenticate">
+    完全なREST APIドキュメント
+  </Card>
+  <Card title="WebSocket API" icon="bolt" href="/jp/api-reference/endpoint/websocket/api">
+    リアルタイムデータサブスクリプション
+  </Card>
+</CardGroup>

@@ -1,0 +1,237 @@
+---
+title: "コードエクスポート"
+description: "GraphQLクエリから7つのプログラミング言語でのすぐに使えるコードスニペットを生成"
+icon: "file-export"
+---
+
+## 概要
+
+コードエクスポート機能は、現在のGraphQLクエリを選択した言語のすぐに使えるコードスニペットに変換します。生成されたコードには、エンドポイントURL、認証ヘッダー、クエリボディ、変数を含む完全なHTTPリクエストセットアップが含まれているため、プロジェクトに直接コピーできます。
+
+---
+
+## 対応言語
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| 言語 | フォーマット | ユースケース |
+|:--|:--|:--|
+| **cURL** | シェルコマンド | ターミナルでのクイックテスト、CI/CDスクリプト |
+| **Python** | `requests`ライブラリ | バックエンドサービス、データパイプライン、Jupyterノートブック |
+| **JavaScript** | `fetch` API | ブラウザアプリ、Node.jsサービス |
+| **Go** | `net/http` | バックエンドマイクロサービス、CLIツール |
+| **Rust** | `reqwest`クレート | 高性能サービス |
+| **Ruby** | `net/http` | Railsアプリケーション、スクリプト |
+| **PHP** | `cURL`エクステンション | PHPバックエンド、WordPressプラグイン |
+
+</div>
+
+---
+
+## エクスポート方法
+
+<Steps>
+  <Step title="クエリを記述">
+    エディタにクエリを入力またはロードします。エクスポート前に正常に実行されることを確認してください。
+  </Step>
+  <Step title="Export Codeをクリック">
+    ツールバーの**Export Code**ボタンをクリックします。言語セレクタと生成されたスニペットを含むモーダルが開きます。
+  </Step>
+  <Step title="言語を選択">
+    ドロップダウンから対象言語を選択します。スニペットは即座に更新されます。
+  </Step>
+  <Step title="スニペットをコピー">
+    **Copy**ボタンをクリックして、生成されたコードをクリップボードにコピーします。
+  </Step>
+</Steps>
+
+<Tip>
+エクスポートされたコードは、現在のIDE設定のGraphQLエンドポイントとAPIキーを使用します。カスタムエンドポイントやヘッダーを設定している場合、それらが生成されたスニペットに反映されます。
+</Tip>
+
+---
+
+## スニペットの例
+
+以下の例は、シンプルなDEXTradesクエリ（Solanaの最新10件のDEXトレードを取得）をエクスポートしたものです：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST "https://graphql.chainstream.io/graphql" \
+      -H "Content-Type: application/json" \
+      -H "X-API-KEY: your_api_key" \
+      -d '{
+        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    url = "https://graphql.chainstream.io/graphql"
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    }
+    query = """
+    {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Transaction { Hash }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    """
+
+    response = requests.post(url, json={"query": query}, headers=headers)
+    data = response.json()
+    print(data)
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch("https://graphql.chainstream.io/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+      },
+      body: JSON.stringify({
+        query: `{
+          DEXTrades(
+            network: sol
+            limit: {count: 10}
+            orderBy: Block_Time_DESC
+          ) {
+            Block { Time }
+            Transaction { Hash }
+            Trade {
+              Buy { Currency { MintAddress } Amount PriceInUSD }
+              Sell { Currency { MintAddress } Amount }
+              Dex { ProtocolName }
+            }
+          }
+        }`,
+      }),
+    });
+
+    const data = await response.json();
+    console.log(data);
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+    )
+
+    func main() {
+        payload := map[string]string{
+            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+        }
+        body, _ := json.Marshal(payload)
+
+        req, _ := http.NewRequest("POST", "https://graphql.chainstream.io/graphql", bytes.NewBuffer(body))
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("X-API-KEY", "your_api_key")
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            panic(err)
+        }
+        defer resp.Body.Close()
+
+        result, _ := io.ReadAll(resp.Body)
+        fmt.Println(string(result))
+    }
+    ```
+  </Tab>
+  <Tab title="Rust">
+    ```rust
+    use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+    use serde_json::json;
+
+    #[tokio::main]
+    async fn main() -> Result<(), reqwest::Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
+
+        let body = json!({
+            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+        });
+
+        let client = reqwest::Client::new();
+        let res = client
+            .post("https://graphql.chainstream.io/graphql")
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
+
+        println!("{}", res.text().await?);
+        Ok(())
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## エクスポートされるコードの内容
+
+生成されるすべてのスニペットには以下が含まれます：
+
+| コンポーネント | 説明 |
+|:--|:--|
+| **エンドポイントURL** | `https://graphql.chainstream.io/graphql` |
+| **認証** | IDEのHeadersパネルからの`X-API-KEY`ヘッダー |
+| **Content-Type** | `application/json` |
+| **クエリボディ** | エディタからのGraphQLクエリ全文 |
+| **変数** | 変数パネルに値が含まれている場合に含まれます |
+
+<Note>
+エクスポートされたコードを実行する前に、`your_api_key`を実際のAPIキーに置き換えることを忘れないでください。セキュリティのため、IDEはエクスポートされたスニペットに実際のキーを埋め込みません。
+</Note>
+
+---
+
+## ヒント
+
+- **エクスポート前にテスト** — まずIDEでクエリを実行して動作を確認してください。エクスポートされたコードはクエリをそのままコピーします。
+- **変数でパラメータ化** — ハードコードされた値の代わりにGraphQL変数を使用してください。エクスポートされたコードはクエリとともに`variables` JSONを含みます。
+- **依存関係を確認** — Pythonスニペットは`requests`を、Rustは`reqwest`を、Goは標準ライブラリを使用します。プロジェクトに必要なパッケージがインストールされていることを確認してください。

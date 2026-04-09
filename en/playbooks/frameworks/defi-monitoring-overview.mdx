@@ -5,6 +5,10 @@ icon: "landmark"
 tag: "Coming Soon"
 ---
 
+<Info>
+ChainStream currently supports **Solana** (`sol`), **Ethereum** (`eth`), and **BSC** (`bsc`). Supported DEXes are Jupiter, Raydium, PumpFun, Moonshot, Candy (Solana), and KyberSwap (Ethereum/BSC). Some examples below reference additional protocols for conceptual illustration — check [Supported Chains](/en/guides/getting-started/supported-chains) for the current coverage.
+</Info>
+
 <Warning>
 **Coming Soon** - This feature is currently under development. Stay tuned!
 </Warning>
@@ -19,37 +23,16 @@ This document introduces how to use ChainStream to monitor DeFi protocol activit
 
 | Protocol | Chains | Supported Features |
 |----------|--------|-------------------|
-| **Uniswap V2/V3** | Ethereum, Polygon, Arbitrum, Base | Trading, LP, Pool data |
-| **PancakeSwap** | BSC | Trading, LP, Pool data |
-| **SushiSwap** | Multi-chain | Trading, LP |
-| **Raydium** | Solana | Trading, LP |
 | **Jupiter** | Solana | Aggregated trading |
-| **Curve** | Ethereum, Multi-chain | Stablecoin trading, LP |
+| **Raydium** | Solana | Trading, LP, Pool data |
+| **PumpFun** | Solana | Launch/bonding, trading |
+| **Moonshot** | Solana | Trading |
+| **Candy** | Solana | Trading |
+| **KyberSwap** | Ethereum, BSC | Trading, quotes |
 
-### Lending Protocols
+### Other DeFi verticals
 
-| Protocol | Chains | Supported Features |
-|----------|--------|-------------------|
-| **Aave V3** | Ethereum, Polygon, Arbitrum | Lending, Liquidation, Rates |
-| **Compound V3** | Ethereum, Base | Lending, Liquidation |
-| **Venus** | BSC | Lending, Liquidation |
-| **Morpho** | Ethereum | Lending optimization |
-
-### Yield Aggregators
-
-| Protocol | Chains | Supported Features |
-|----------|--------|-------------------|
-| **Yearn Finance** | Ethereum | Vault strategies, Yields |
-| **Convex Finance** | Ethereum | Curve LP enhancement |
-| **Beefy Finance** | Multi-chain | Auto-compounding |
-
-### Liquid Staking
-
-| Protocol | Chains | Supported Features |
-|----------|--------|-------------------|
-| **Lido** | Ethereum | ETH staking |
-| **Rocket Pool** | Ethereum | ETH staking |
-| **Marinade** | Solana | SOL staking |
+Lending, yield aggregators, and liquid staking are common monitoring targets in DeFi generally. ChainStream’s indexed swap and DEX analytics focus on the protocols above on **Solana**, **Ethereum**, and **BSC**. Before building lending- or vault-specific alerts, confirm what your deployment exposes in the API reference and [Supported Chains](/en/guides/getting-started/supported-chains).
 
 ---
 
@@ -113,8 +96,8 @@ Subscribe to real-time trades via WebSocket:
 ```typescript
 // Subscribe to DEX trading flow
 ws.subscribe('defi_trades', {
-  protocol: 'uniswap_v3',
-  chain: 'ethereum',
+  protocol: 'kyberswap',
+  chain: 'eth',
   min_amount_usd: 10000
 }, (trade) => {
   console.log(`${trade.type}: ${trade.token_in} → ${trade.token_out}`);
@@ -197,7 +180,7 @@ Impermanent Loss = 2 × √(Price Ratio) / (1 + Price Ratio) - 1
 ```json
 {
   "alert_type": "liquidity_remove",
-  "protocol": "uniswap_v3",
+  "protocol": "kyberswap",
   "pool": "0x...",
   "threshold": {
     "type": "percentage",
@@ -229,7 +212,7 @@ flowchart TD
 
 ```typescript
 ws.subscribe('pool_created', {
-  chain: 'ethereum',
+  chain: 'sol',
   min_liquidity_usd: 10000
 }, async (pool) => {
   // Check token safety
@@ -292,8 +275,8 @@ ws.subscribe('liquidity_remove', {
 const prices = {};
 
 ws.subscribe('token_price', { 
-  token: 'WETH',
-  dex: ['uniswap', 'sushiswap', 'curve']
+  token: 'SOL',
+  dex: ['jupiter', 'raydium', 'pumpfun']
 }, (data) => {
   prices[data.dex] = data.price;
   checkArbitrage(prices);
@@ -331,8 +314,9 @@ function checkArbitrage(prices) {
 
 ```typescript
 async function monitorLiquidationRisk(address: string) {
-  const position = await getDefiPosition(address, 'aave_v3');
-  
+  // Wire to lending APIs your deployment exposes (not DEX-specific)
+  const position = await getLendingPosition(address);
+
   if (position.health_factor < 1.2) {
     urgentAlert(`🚨 Liquidation risk! Health factor: ${position.health_factor}`);
   } else if (position.health_factor < 1.5) {

@@ -1,0 +1,191 @@
+---
+title: "跨 Agent 相容性"
+description: "在 40+ AI Agent 中安裝 ChainStream Skill 的相容性表格和配置詳情。"
+---
+
+## 概述
+
+ChainStream Skill 包（`chainstream-io/skills`）透過 [Vercel Skills CLI](https://skills.dev) 分發，支援 **40+ AI Agent**。只需一條命令即可為你選擇的 Agent 安裝和配置 ChainStream MCP 工具。
+
+```bash
+npx skills add chainstream-io/skills
+```
+
+## 相容性表格
+
+下表列出了最常用的 Agent 及其安裝命令和配置檔案位置。
+
+| Agent | 安裝命令 | 配置檔案位置 |
+|-------|----------|-------------|
+| OpenClaw | `npx skills add chainstream-io/skills -a openclaw` | `skills/` 或 `~/.openclaw/skills/` |
+| Claude Code | `npx skills add chainstream-io/skills -a claude-code` | `.claude.json` |
+| Cursor | `npx skills add chainstream-io/skills -a cursor` | Cursor MCP 設定 |
+| Cline | `npx skills add chainstream-io/skills -a cline` | Cline 配置 |
+| GitHub Copilot | `npx skills add chainstream-io/skills -a copilot` | `.github/copilot/` |
+| Codex | `npx skills add chainstream-io/skills -a codex` | Codex 配置 |
+
+## Agent 詳細配置
+
+### OpenClaw
+
+Skills CLI 將配置寫入 OpenClaw 的 Skills 目錄：
+
+- **專案級別**：`./skills/chainstream.yaml`
+- **使用者級別**：`~/.openclaw/skills/chainstream.yaml`
+
+生成的配置：
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: ${CHAINSTREAM_API_KEY}
+```
+
+在執行 Agent 之前設定環境變數：
+
+```bash
+export CHAINSTREAM_API_KEY=your-key
+openclaw run
+```
+
+### Claude Code
+
+Skills CLI 將 MCP Server 條目新增到專案根目錄的 `.claude.json` 中：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+另請參閱：[Stdio 傳輸](/zh-Hant/guides/ai-infrastructure/mcp-server/stdio-transport)瞭解手動 Claude Code 設定。
+
+### Cursor
+
+Skills CLI 在 Cursor 的設定中配置 MCP Server。配置顯示在 **Settings > Features > MCP Servers** 下：
+
+| 欄位 | 值 |
+|------|-----|
+| Name | `chainstream` |
+| Type | `stdio` |
+| Command | `npx @chainstream-io/mcp` |
+
+對於專案級別配置，CLI 會寫入 `.cursor/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### Cline
+
+Skills CLI 將 Server 新增到 Cline 的 MCP 配置中：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### GitHub Copilot
+
+Skills CLI 將配置寫入倉庫中的 `.github/copilot/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### Codex
+
+Skills CLI 將 MCP Server 新增到 Codex Agent 配置中：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+## 自動檢測
+
+當你執行 `npx skills add chainstream-io/skills` 而不帶 `-a` 引數時，CLI 會透過以下方式自動檢測你的環境：
+
+1. 檢查當前目錄中的 Agent 特定配置檔案
+2. 檢查全域性安裝的 Agent CLI 工具
+3. 檢查 IDE 特定的目錄和設定
+
+如果檢測到多個 Agent，CLI 會提示你選擇。
+
+## 更新
+
+要將 ChainStream Skill 更新到最新版本：
+
+```bash
+npx skills update chainstream-io/skills
+```
+
+## 解除安裝
+
+要移除 ChainStream Skill：
+
+```bash
+npx skills remove chainstream-io/skills
+```
+
+這會從 Agent 的配置檔案中移除配置條目，但不會刪除你的 API Key。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="工具參考" icon="wrench" href="/zh-Hant/guides/ai-infrastructure/mcp-server/overview">
+    瀏覽安裝後可用的全部 15 個 MCP 工具。
+  </Card>
+  <Card title="安全注意事項" icon="shield" href="/zh-Hant/guides/integrations/openclaw/security">
+    ChainStream 整合的安全注意事項。
+  </Card>
+</CardGroup>

@@ -1,0 +1,467 @@
+---
+title: "FAQ"
+description: "ChainStream よくある質問"
+icon: "circle-question"
+---
+
+## アカウントと認証
+
+<AccordionGroup>
+  <Accordion title="Access Token はどうやって取得しますか？">
+    1. [ChainStream Dashboard](https://www.chainstream.io/dashboard) にログイン
+    2. **Apps** ページに移動
+    3. **Create New App** をクリック
+    4. Client ID と Client Secret を取得
+    5. Client ID と Client Secret を使用して Auth サービスから Access Token（JWT）をリクエスト
+
+    詳細は[認証ドキュメント](/jp/guides/getting-started/authentication)を参照してください。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## データ関連
+
+<AccordionGroup>
+  <Accordion title="どのブロックチェーンに対応していますか？">
+    現在対応しているチェーン：
+
+    | チェーン | ステータス | 備考 |
+    |:--|:--|:--|
+    | Ethereum | ✅ 対応 | メインネットおよび主要 L2 を含む |
+    | Solana | ✅ 対応 | |
+    | BSC | ✅ 対応 | |
+    | Polygon | ✅ 対応 | |
+    | Arbitrum | ✅ 対応 | |
+    | Optimism | ✅ 対応 | |
+    | Base | ✅ 対応 | |
+    | Tron | ✅ 対応 | |
+
+    詳細は[リアルタイムストリーミング](/jp/guides/data-concepts/realtime-streaming)を参照してください。
+  </Accordion>
+
+  <Accordion title="データのレイテンシはどれくらいですか？">
+    | データタイプ | レイテンシ |
+    |:--|:--|
+    | リアルタイム価格（WebSocket） | < 2ms (P99) |
+    | REST API クエリ | < 100ms |
+    | 履歴データクエリ | < 500ms |
+
+    レイテンシはネットワーク状況やデータの複雑さによって変動する場合があります。
+  </Accordion>
+
+  <Accordion title="データの更新頻度はどれくらいですか？">
+    | データタイプ | 更新頻度 |
+    |:--|:--|
+    | トークン価格 | リアルタイム（各取引でトリガー） |
+    | ウォレット保有 | ブロックごとに更新 |
+    | スマートマネーラベル | 毎日更新 |
+
+    最もリアルタイムなデータプッシュには WebSocket を使用してください。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 課金関連
+
+<AccordionGroup>
+  <Accordion title="Free プランの制限は？">
+    Free プランの制限：
+
+    - **クォータ:** 30K ユニット/月
+    - **リクエストレート:** 10 リクエスト/秒
+    - **データレイテンシ:** 1〜2 秒の遅延がある場合あり
+    - **SLA:** 保証なし
+    - **超過:** クォータ消費時は 403 エラーを返し、翌月にリセット
+
+    開発テストや POC に適しており、本番環境には推奨されません。
+  </Accordion>
+
+  <Accordion title="現在の使用量はどうやって確認しますか？">
+    1. [Dashboard](https://www.chainstream.io/dashboard) にログイン
+    2. **Usage** ページで当月の使用量、残りクォータ、過去のトレンドを確認
+  </Accordion>
+
+  <Accordion title="どの支払い方法に対応していますか？">
+    | 方法 | 対応プラン |
+    |:--|:--|
+    | クレジットカード（Visa、MasterCard、AMEX） | 全プラン |
+    | 暗号資産（USDT、USDC） | Starter 以上 |
+    | 銀行振込 | Enterprise / Custom |
+
+    暗号資産支払いは ERC-20 および TRC-20 ネットワークをサポートしています。
+  </Accordion>
+
+  <Accordion title="いつでもアップグレード/ダウングレードできますか？">
+    - **アップグレード:** 即座に適用、日割り計算で請求
+    - **ダウングレード:** 次の請求サイクルから適用
+
+    Dashboard → Billing → Subscription で管理してください。
+  </Accordion>
+
+  <Accordion title="未使用のクォータは繰り越されますか？">
+    いいえ。月間クォータは月末にリセットされ、繰り越されません。実際の使用量に基づいてプランを選択してください。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 技術的な問題
+
+<AccordionGroup>
+  <Accordion title="429 や 403 エラーが出たらどうすればいいですか？">
+    - **429 エラー**: リクエストレート超過
+    - **403 エラー**: クォータ消費
+
+    **トラブルシューティング：**
+
+    1. **429 - レート制限の確認**
+       - Free プラン: 10 リクエスト/分
+       - 有料プラン: [API セキュリティ](/jp/guides/data-concepts/api-security)を参照
+
+    2. **403 - クォータ消費の確認**
+       - Dashboard → Usage で残りクォータを確認
+       - 有料プランは追加クォータの購入でサービス復旧可能
+
+    **解決策：**
+    - 429: リクエストスロットリングまたは指数バックオフリトライを実装
+    - 403: 追加クォータの購入またはプランのアップグレード
+    - ポーリングの代わりに WebSocket を使用してリクエスト数を削減
+
+```javascript
+// エラー処理の例
+async function handleApiError(error) {
+  if (error.status === 429) {
+    // レート制限、待機してリトライ
+    await sleep(1000);
+    return retry();
+  } else if (error.status === 403) {
+    // クォータ消費、追加クォータの購入が必要
+    console.error('Quota exhausted, please purchase additional quota in Dashboard');
+  }
+}
+```
+  </Accordion>
+
+  <Accordion title="WebSocket 切断にはどう対処しますか？">
+    自動再接続メカニズムを実装してください：
+
+```javascript
+class ChainStreamWebSocket {
+  constructor(baseUrl, accessToken) {
+    this.baseUrl = baseUrl;
+    this.accessToken = accessToken;
+    this.reconnectDelay = 1000;
+    this.maxReconnectDelay = 30000;
+    this.connect();
+  }
+
+  connect() {
+    // URL パラメータでトークンを渡す
+    const url = `${this.baseUrl}?token=${this.accessToken}`;
+    this.ws = new WebSocket(url);
+    this.ws.onopen = () => {
+      console.log('Connected');
+      this.reconnectDelay = 1000; // 遅延をリセット
+    };
+    this.ws.onclose = () => {
+      console.log('Disconnected, reconnecting...');
+      setTimeout(() => this.connect(), this.reconnectDelay);
+      // 指数バックオフ
+      this.reconnectDelay = Math.min(
+        this.reconnectDelay * 2,
+        this.maxReconnectDelay
+      );
+    };
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+}
+```
+
+    **再接続のヒント：**
+    - 指数バックオフを使用（1s → 2s → 4s → ... → 30s）
+    - 最大再接続遅延を設定（例: 30 秒）
+    - 再接続成功後にデータを再サブスクライブ
+  </Accordion>
+
+  <Accordion title="API レスポンスのフォーマットは？">
+    すべての API は JSON フォーマットを返します。
+
+    **成功レスポンス：**
+
+```json
+{
+  "chain": "solana",
+  "address": "So11111111111111111111111111111111111111112",
+  "name": "Wrapped SOL",
+  "symbol": "SOL",
+  "decimals": 9,
+  "price": 95.42
+}
+```
+
+    **エラーレスポンス：**
+
+```json
+{
+  "error": {
+    "code": "INVALID_TOKEN",
+    "message": "Token not found"
+  }
+}
+```
+
+    一般的なエラーコードについては[エラーコード](/jp/guides/resources/error-codes)を参照してください。
+  </Accordion>
+
+  <Accordion title="API リクエストをデバッグするには？">
+    **方法 1: API Playground を使用**
+
+    [API リファレンス](/jp/api-reference)ページの「Try It」機能でコードを書かずにテストできます。
+
+    **方法 2: cURL を使用**
+
+    `-v` フラグを追加して詳細なリクエスト情報を表示：
+
+```bash
+curl -v "https://api.chainstream.io/v1/token/{chain}/{address}/metadata" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## KYT/KYA 関連
+
+<AccordionGroup>
+  <Accordion title="KYT と KYA の違いは？">
+    | 機能 | KYA（アドレス検証） | KYT レポート |
+    |:--|:--|:--|
+    | 目的 | アドレスのリスクとプロファイル分析の検証 | トランザクションレベルのリスクレポート |
+    | 入力 | ウォレットアドレス | トランザクションハッシュまたはアドレス |
+    | 出力 | リスクレベル + アドレスタイプ + リスクエクスポージャー | トランザクション関連のリスク分析 |
+    | 典型的なユースケース | ユーザー登録/入金前のアドレススクリーニング | 特定トランザクションのコンプライアンスチェック |
+
+    [セキュリティコンプライアンスのドキュメント](/jp/guides/security-compliance/overview)を参照してください。
+  </Accordion>
+
+  <Accordion title="アドレス検証はどのような情報を返しますか？">
+    アドレス検証は以下のフィールドを返します：
+
+    | フィールド | 説明 | 値の例 |
+    |:--|:--|:--|
+    | Risk | リスクレベル | Low、Medium、High、Severe |
+    | Status | 検証ステータス | COMPLETE、PENDING |
+    | Address Type | アドレスタイプ | PRIVATE_WALLET、EXCHANGE、CONTRACT 等 |
+    | Risk Exposures | リスクエクスポージャーの詳細 | リスクラベルと関連金額 |
+  </Accordion>
+
+  <Accordion title="リスクレベルはどう解釈しますか？">
+    アドレス検証は以下のリスクレベルを返します：
+
+    | リスクレベル | 意味 | 推奨アクション |
+    |:--|:--|:--|
+    | Low | 低リスク、明らかな不審な関連なし | 通常通り処理 |
+    | Medium | 中リスク、一部不審な関連あり | 手動レビュー推奨 |
+    | High | 高リスク、重大な不審な関連あり | 拒否または強化レビュー推奨 |
+    | Severe | 重大リスク、制裁/違法団体との直接的な関連 | 拒否を強く推奨 |
+
+    **注意:** 具体的な対応ポリシーはビジネスのコンプライアンス要件に基づいてください。上記は参考提案です。
+  </Accordion>
+
+  <Accordion title="Risk Exposures にはどのようなリスクラベルがありますか？">
+    Risk Exposures はアドレスと各種リスクエンティティとの関連を表示します。一般的なラベル：
+
+    **高リスクラベル (Severe)：**
+
+    | ラベル | 説明 |
+    |:--|:--|
+    | sanctioned entity | 制裁対象との関連 |
+    | sanctioned jurisdiction | 制裁対象地域との関連 |
+    | terrorist financing | テロ資金供与との関連 |
+
+    **中立/低リスクラベル：**
+
+    | ラベル | 説明 |
+    |:--|:--|
+    | bridge | クロスチェーンブリッジ経由の資金送金 |
+    | decentralized exchange | DEX 経由の取引 |
+    | atm | 暗号資産 ATM 経由の取引 |
+
+    **その他のリスクラベル：**
+
+    | ラベル | 説明 |
+    |:--|:--|
+    | mixer | ミキシングサービス経由 |
+    | gambling | ギャンブルプラットフォームとの関連 |
+    | darknet | ダークネットマーケットとの関連 |
+
+    各ラベルは以下を表示：
+    - **direct / indirect**: 直接的または間接的な関連
+    - **amount**: 関連する資金額
+    - **percentage**: 総取引量に対する割合
+  </Accordion>
+
+  <Accordion title="direct と indirect の違いは？">
+    | タイプ | 意味 | リスクレベル |
+    |:--|:--|:--|
+    | direct | アドレスがリスクエンティティと直接やり取り | より高い |
+    | indirect | アドレスが中間アドレスを通じて間接的に関連 | 比較的低い |
+
+    **例：**
+    - `sanctioned entity + direct`: アドレスが制裁対象アドレスに直接送金
+    - `sanctioned entity + indirect`: このアドレスの関連アドレスが以前に制裁対象アドレスとやり取り
+
+    Severe レベルのラベル（制裁、テロ資金供与）が関わる場合は、間接的な関連であっても慎重に対応する必要があります。
+  </Accordion>
+
+  <Accordion title="アドレスタイプにはどのようなものがありますか？">
+    | アドレスタイプ | 説明 |
+    |:--|:--|
+    | PRIVATE_WALLET | 個人ウォレットアドレス |
+    | EXCHANGE | 中央集権型取引所アドレス |
+    | CONTRACT | スマートコントラクトアドレス |
+    | MINING_POOL | マイニングプールアドレス |
+    | MERCHANT | マーチャントアドレス |
+    | PAYMENT_PROCESSOR | ペイメントプロセッサー |
+
+    アドレスタイプは資金フローとビジネスコンテキストの理解に役立ちます。
+  </Accordion>
+
+  <Accordion title="API 経由でアドレス検証を呼び出すには？">
+
+```bash
+curl -X POST "https://api.chainstream.io/v1/kya/address/verify" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "So11111111111111111111111111111111111111112",
+    "chain": "sol"
+  }'
+```
+
+    **レスポンス例：**
+
+```json
+{
+  "address": "So11111111111111111111111111111111111111112",
+  "risk": "Low",
+  "status": "COMPLETE",
+  "address_type": "PRIVATE_WALLET",
+  "risk_exposures": [
+    {
+      "label": "sanctioned entity",
+      "severity": "Severe",
+      "type": "indirect",
+      "amount": 372262.76,
+      "percentage": 0.6
+    },
+    {
+      "label": "bridge",
+      "severity": "Info",
+      "type": "indirect",
+      "amount": 816082.22,
+      "percentage": 1.3
+    }
+  ]
+}
+```
+  </Accordion>
+
+  <Accordion title="KYT 検出にはどのくらい時間がかかりますか？">
+    | 操作 | 応答時間 |
+    |:--|:--|
+    | 新規アドレスの初回検証 | 通常 1〜5 秒 |
+    | キャッシュ済みアドレスのクエリ | < 500ms |
+    | 複雑なアドレス（取引が多い） | 5〜10 秒の場合あり |
+
+    ステータスが `PENDING` の場合は分析が進行中です。後で再試行して完全な結果を取得してください。
+  </Accordion>
+
+  <Accordion title="KYT/KYA の課金は？">
+    KYT/KYA API は**プランのユニットを消費しません**。別途 KYT アカウント残高（USD 建て）から課金されます。
+
+    | 操作 | コスト |
+    |:--|:--|
+    | 入金リスク評価 | $0.25/回 |
+    | 出金リスク評価 | $0.25/回 |
+    | アドレス登録 | $1.25/回 |
+
+    Dashboard → KYT サービスでチャージしてください。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## AI/MCP 関連
+
+<AccordionGroup>
+  <Accordion title="MCP とは？">
+    MCP（Model Context Protocol）は Anthropic が提唱したプロトコルで、AI モデルが外部ツールを呼び出せるようにします。
+
+    ChainStream は MCP Server を提供しており、Claude やその他の AI がオンチェーンデータを直接クエリできます。
+
+    [MCP Server のドキュメント](/jp/guides/ai-infrastructure/mcp-server/introduction)を参照してください。
+  </Accordion>
+
+  <Accordion title="Claude Desktop で ChainStream を使うには？">
+    1. ChainStream MCP Server をインストール
+    2. Claude Desktop の MCP 設定を構成
+    3. Claude Desktop を再起動
+    4. チャットを開始 — Claude が自動的に ChainStream を呼び出してデータをクエリできます
+
+    セットアップの詳細は [Claude 統合ガイド](/jp/guides/ai-infrastructure/mcp-server/setup-guide)を参照してください。
+  </Accordion>
+
+  <Accordion title="AI はトランザクションを実行できますか？">
+    **現在はサポートされていません。** ChainStream MCP Server は読み取り操作のみを提供します：
+
+    - トークンの価格と情報のクエリ
+    - ウォレットの保有状況と取引履歴のクエリ
+    - KYT/KYA リスク評価の実行
+
+    セキュリティ上の理由から、自動トランザクション実行、送金、その他の書き込み操作はサポートしていません。
+  </Accordion>
+
+  <Accordion title="MCP 呼び出しの課金は？">
+    MCP 呼び出しは直接の API 呼び出しと同じ料金が適用され、実際に呼び出された API の種類に基づいてユニットが消費されます。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## お問い合わせ
+
+<AccordionGroup>
+  <Accordion title="テクニカルサポートを受けるには？">
+    | チャネル | ユースケース | 応答時間 |
+    |:--|:--|:--|
+    | メール support@chainstream.io | 一般的な質問 | 24 時間以内 |
+    | Discord コミュニティ | 技術的な議論、使い方の質問 | コミュニティサポート |
+    | 専任アカウントマネージャー | Enterprise / Custom のお客様 | 4 時間以内 |
+
+    **お問い合わせの際は以下をご提供ください：**
+    - Client ID
+    - エラーメッセージと再現手順
+  </Accordion>
+
+  <Accordion title="ドキュメントの間違いを報告するには？">
+    - **GitHub Issues:** ドキュメントの問題を提出
+    - **メール:** docs@chainstream.io
+
+    ドキュメントの改善にご協力いただきありがとうございます！
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 回答が見つかりませんでしたか？
+
+<Card title="お問い合わせ" icon="headset" href="mailto:support@chainstream.io">
+  上記の FAQ で疑問が解消されなかった場合は、テクニカルサポートチームにお問い合わせください。
+</Card>

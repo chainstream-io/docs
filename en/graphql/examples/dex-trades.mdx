@@ -7,12 +7,12 @@ icon: "arrow-right-arrow-left"
 The **DEXTrades** Cube contains per-trade DEX swap events — the most granular trading data available. Use it to query individual trades, analyze wallet activity, track token prices, and find top traders.
 
 <Note>
-All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+All examples below use `network: sol` (Solana). Replace with `eth`, `bsc`, or `polygon` for other supported chains.
 </Note>
 
 ---
 
-## Latest Trades
+## How do I get the latest DEX trades?
 
 Fetch the 10 most recent DEX trades on Solana, including block info, transaction hash, buy/sell details, and the DEX protocol.
 
@@ -44,6 +44,10 @@ query {
 }
 ```
 
+<Tip>
+[Open in GraphQL IDE](https://ide.chainstream.io) — paste the query above to run it interactively with auto-complete and schema exploration.
+</Tip>
+
 <AccordionGroup>
   <Accordion title="Key fields">
     | Field | Description |
@@ -58,7 +62,7 @@ query {
     | `Pool.Address` | Liquidity pool address where the trade executed |
   </Accordion>
   <Accordion title="Customization tips">
-    - **Switch chain**: Replace `network: sol` with `network: eth` or `network: bsc`
+    - **Switch chain**: Replace `network: sol` with `network: eth`, `network: bsc`, or `network: polygon`
     - **Increase results**: Change `count: 10` to up to `10000`
     - **Add time filter**: Add `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` to scope to a time range
     - **Filter by DEX**: Add `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` to limit to a specific protocol
@@ -67,7 +71,7 @@ query {
 
 ---
 
-## Token Trades
+## How do I get trades for a specific token?
 
 Get trades for a specific token by passing its address via the `tokenAddress` selector.
 
@@ -91,7 +95,7 @@ query {
 ```
 
 <Tip>
-Replace `TOKEN_ADDRESS` with the actual token mint address (e.g. `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` for USDC on Solana). Use the [TokenSearch](/en/graphql/examples/ohlc-stats#token-lookup) query to look up addresses by name.
+Replace `TOKEN_ADDRESS` with the actual token mint address (e.g. `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` for USDC on Solana). See [token metadata](/en/graphql/examples/ohlc-stats#how-do-i-look-up-token-information) to look up addresses by name.
 </Tip>
 
 <AccordionGroup>
@@ -113,7 +117,7 @@ Replace `TOKEN_ADDRESS` with the actual token mint address (e.g. `EPjFWdd5AufqSS
 
 ---
 
-## Wallet Trades
+## How do I get all trades by a wallet?
 
 Get all trades by a specific wallet address.
 
@@ -157,7 +161,7 @@ The `walletAddress` selector matches trades where the given wallet is either the
 
 ---
 
-## Token Price
+## How do I get a token's current price?
 
 Get the latest price for a token from its most recent non-suspect trade.
 
@@ -193,12 +197,12 @@ query {
 </AccordionGroup>
 
 <Tip>
-For reliable token price data over time, consider using the [OHLC](/en/graphql/examples/ohlc-stats#k-line-ohlc-data) Cube instead — it provides pre-computed candlestick data with open/high/low/close prices per minute.
+For reliable token price data over time, consider using the [Pairs](/en/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cube instead — it provides pre-computed candlestick data with open/high/low/close prices per minute.
 </Tip>
 
 ---
 
-## Top Traders
+## How do I find the top traders for a token?
 
 Find the top traders for a token using aggregation. This query groups trades by buyer wallet and returns the total buy count and volume.
 

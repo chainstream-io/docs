@@ -1,0 +1,203 @@
+---
+title: 'Python'
+description: 'ChainStream Python SDK'
+icon: 'python'
+---
+
+## インストール
+
+```bash
+pip install chainstream-sdk
+```
+
+## クイックスタート
+
+```python
+from chainstream import ChainStreamClient
+
+client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
+```
+
+## REST APIの例
+
+トークンメタデータの照会：
+
+```python
+import asyncio
+from chainstream.openapi_client import ApiClient, Configuration
+from chainstream.openapi_client.api.token_api import TokenApi
+from chainstream.openapi_client.models.chain_symbol import ChainSymbol
+
+ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
+BASE_URL = 'https://api.chainstream.io'
+
+async def main():
+    # APIクライアントを設定
+    config = Configuration(
+        host=BASE_URL,
+        access_token=ACCESS_TOKEN,
+    )
+    
+    async with ApiClient(config) as api_client:
+        # トークンAPIインスタンスを作成
+        token_api = TokenApi(api_client)
+        
+        chain = ChainSymbol.SOL
+        token_address = 'So11111111111111111111111111111111111111112'  # SOL
+        
+        print(f'トークン照会: {chain.value}/{token_address}')
+        
+        # トークンメタデータを取得
+        result = await token_api.get_metadata(
+            chain=chain,
+            token_address=token_address,
+        )
+        
+        print('トークンメタデータ:')
+        print(f'  名前: {result.name}')
+        print(f'  シンボル: {result.symbol}')
+        print(f'  小数点桁数: {result.decimals}')
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## WebSocketの例
+
+リアルタイムのトークンキャンドルデータを購読：
+
+```python
+import asyncio
+import signal
+from chainstream import ChainStreamClient
+from chainstream.stream import Resolution, TokenCandle
+
+ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
+
+async def main():
+    client = ChainStreamClient(ACCESS_TOKEN)
+
+    chain = 'sol'
+    token_address = 'So11111111111111111111111111111111111111112'  # SOL
+    resolution = Resolution.S1
+
+    print(f'トークンキャンドルを購読: {chain}/{token_address}')
+    print('リッスン中... (Ctrl+Cで停止)\n')
+
+    message_count = 0
+
+    def on_candle(candle: TokenCandle) -> None:
+        nonlocal message_count
+        message_count += 1
+        print(
+            f'[{message_count}] open={candle.open}, close={candle.close}, '
+            f'high={candle.high}, low={candle.low}, volume={candle.volume}'
+        )
+
+    unsub = await client.stream.subscribe_token_candles(
+        chain=chain,
+        token_address=token_address,
+        resolution=resolution,
+        callback=on_candle,
+    )
+
+    # Ctrl+Cを待つためのイベントを作成
+    stop_event = asyncio.Event()
+
+    def signal_handler(sig, frame):
+        print(f'\n{message_count}件のメッセージを受信')
+        print('接続を閉じています...')
+        stop_event.set()
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    await stop_event.wait()
+
+    # クリーンアップ
+    unsub.unsubscribe()
+    await client.close()
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+## その他の例
+
+### トークン検索
+
+```python
+results = await token_api.search_token(keyword='bonk')
+for t in results:
+    print(f'{t.symbol}: {t.address}')
+```
+
+### ウォレットPnLの取得
+
+```python
+from chainstream.openapi_client.api.wallet_api import WalletApi
+
+async with ApiClient(config) as api_client:
+    wallet_api = WalletApi(api_client)
+    pnl = await wallet_api.get_pnl(
+        chain=ChainSymbol.SOL,
+        wallet_address='WALLET_ADDRESS',
+    )
+    print(f'総PnL: {pnl.total_pnl_usd}')
+```
+
+### 取引リストの取得
+
+```python
+from chainstream.openapi_client.api.trade_api import TradeApi
+
+async with ApiClient(config) as api_client:
+    trade_api = TradeApi(api_client)
+    trades = await trade_api.get_trades(
+        chain=ChainSymbol.SOL,
+        token_address='TOKEN_ADDRESS',
+        limit=20,
+    )
+    for trade in trades:
+        print(f'{trade.timestamp}: {trade.side} {trade.amount}')
+```
+
+---
+
+## Pandas統合
+
+```python
+import pandas as pd
+
+candles = await client.token.get_candles('sol', 'TOKEN_ADDRESS', resolution='1h', limit=100)
+df = pd.DataFrame(candles)
+df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+```
+
+---
+
+## エラーハンドリング
+
+```python
+from chainstream.openapi_client.exceptions import ApiException
+
+try:
+    result = await token_api.get_token(chain=ChainSymbol.SOL, token_address='INVALID')
+except ApiException as e:
+    print(f'APIエラー {e.status}: {e.reason}')
+    if e.status == 429:
+        import asyncio
+        await asyncio.sleep(2)
+```
+
+---
+
+## リソース
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/python">
+    ソースコードを見る
+  </Card>
+  <Card title="PyPI" icon="python" href="https://pypi.org/project/chainstream-sdk">
+    パッケージレジストリ
+  </Card>
+</CardGroup>

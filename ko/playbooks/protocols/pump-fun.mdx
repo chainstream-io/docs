@@ -1,0 +1,441 @@
+---
+title: "Pump.fun"
+description: "Solana의 Pump.fun 토큰 분석 완전 가이드 — 발견, 가격, 거래, 홀더, 토큰 생성"
+icon: "rocket"
+---
+
+Pump.fun은 Solana의 대표적인 밈코인 런치패드입니다. ChainStream은 REST API, GraphQL, WebSocket, MCP Tools를 통해 Pump.fun 토큰의 전체 데이터 커버리지를 제공합니다.
+
+<Info>
+**지원 기능**: 토큰 발견, 가격 추적, 거래 분석, 홀더 분석, 토큰 생성(`pumpfun_create` 경유), 졸업/마이그레이션 추적.
+</Info>
+
+---
+
+## 새로운 Pump.fun 토큰을 발견하려면?
+
+랭킹 엔드포인트를 사용하여 Pump.fun 런치패드에서 새로 생성된 토큰을 찾습니다.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/newTokens" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 파라미터 레퍼런스는 [랭킹 - 신규 토큰](/ko/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get)을 참조하세요.
+  </Tab>
+  <Tab title="GraphQL">
+
+Solana의 `TokenSupplyUpdates`를 쿼리하고 Pump.fun 토큰으로 필터링:
+
+```graphql
+query {
+  TokenSupplyUpdates(
+    network: sol
+    limit: {count: 20}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    TokenSupplyUpdate {
+      Currency {
+        MintAddress
+        Decimals
+      }
+      PostBalance
+      MarketCapInUSD
+      PriceInUSD
+      TotalSupply
+    }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDE](https://ide.chainstream.io)에서 이 쿼리를 인터랙티브하게 실행할 수 있습니다.
+</Tip>
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_new_tokens({ chain: "solana" })
+```
+
+전체 도구 레퍼런스는 [MCP 도구 카탈로그](/ko/guides/ai-infrastructure/mcp-server/tools-catalog)를 참조하세요.
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun 토큰의 가격을 조회하려면?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/price" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [토큰 - 가격](/ko/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get)을 참조하세요.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_price({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+<Note>
+`TOKEN_ADDRESS`를 실제 Pump.fun 토큰 민트 주소로 교체하세요.
+</Note>
+
+---
+
+## Pump.fun 토큰의 거래를 조회하려면?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol?tokenAddress=TOKEN_ADDRESS&limit=20" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [거래 - 목록](/ko/api-reference/endpoint/data/trade/v2/trade-chain-get)을 참조하세요.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+        Account { Owner }
+      }
+      Dex { ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", limit: 20 })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun 토큰의 상위 홀더를 조회하려면?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/topHolders" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [토큰 - 상위 홀더](/ko/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-topholders-get)를 참조하세요.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_top_holders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun 토큰의 OHLCV(캔들) 데이터를 조회하려면?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/candles?resolution=1m&limit=60" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [토큰 - 캔들](/ko/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get)을 참조하세요.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 60}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_candles({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", resolution: "1m" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 졸업 임박 Pump.fun 토큰을 추적하려면?
+
+"파이널 스트레치" 토큰은 본딩 커브 졸업 임계값에 근접하여 Raydium으로의 마이그레이션이 임박한 토큰입니다.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/finalStretch" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [랭킹 - 파이널 스트레치](/ko/api-reference/endpoint/data/ranking/v2/ranking-chain-finalstretch-get)를 참조하세요.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_final_stretch({ chain: "solana" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun에서 졸업한 토큰을 찾으려면?
+
+졸업한 토큰은 본딩 커브를 완료하고 Raydium 유동성 풀로 마이그레이션되었습니다.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/migrated" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [랭킹 - 마이그레이션 완료](/ko/api-reference/endpoint/data/ranking/v2/ranking-chain-migrated-get)를 참조하세요.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_migrated({ chain: "solana" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun 토큰의 상위 트레이더를 조회하려면?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol/top-traders?tokenAddress=TOKEN_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [거래 - 상위 트레이더](/ko/api-reference/endpoint/data/trade/v2/trade-chain-top-traders-get)를 참조하세요.
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get_top_traders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun 토큰의 보안을 확인하려면?
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/security" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [토큰 - 보안](/ko/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-security-get)을 참조하세요.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_security({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Pump.fun에서 토큰을 생성하려면?
+
+ChainStream은 API를 통해 Pump.fun에서 직접 토큰을 생성하는 것을 지원합니다.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl -X POST "https://api.chainstream.io/v2/dex/sol/create" \
+  -H "X-API-KEY: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "launchpad": "pumpfun",
+    "name": "My Token",
+    "symbol": "MYTKN",
+    "description": "A test token",
+    "privateKey": "YOUR_PRIVATE_KEY"
+  }'
+```
+
+전체 레퍼런스는 [DEX - 생성](/ko/api-reference/endpoint/defi/dex/v2/dex-chain-create-post)을 참조하세요.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+pumpfun_create({
+  name: "My Token",
+  symbol: "MYTKN",
+  description: "A test token"
+})
+```
+  </Tab>
+</Tabs>
+
+<Note>
+토큰 생성에는 자금이 있는 Solana 지갑이 필요합니다. 프라이빗 키는 생성 트랜잭션 서명에 사용됩니다.
+</Note>
+
+---
+
+## 개발자의 다른 토큰을 조회하려면?
+
+특정 개발자 주소가 Solana에서 생성한 모든 토큰을 검색합니다.
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/dev/DEV_ADDRESS/tokens" \
+  -H "X-API-KEY: your_api_key"
+```
+
+전체 레퍼런스는 [토큰 - 개발자 토큰](/ko/api-reference/endpoint/data/token/v2/token-chain-dev-devaddress-tokens-get)을 참조하세요.
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_dev_get_tokens({ chain: "solana", devAddress: "DEV_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Pump.fun 졸업이란?">
+    Pump.fun 토큰의 본딩 커브가 100%에 도달하면 "졸업"하여 유동성이 Raydium 풀로 마이그레이션되고 오픈 마켓에서 거래가 시작됩니다. 졸업 임박 토큰을 추적하려면 `ranking/sol/finalStretch` 엔드포인트를, 이미 졸업한 토큰에는 `ranking/sol/migrated`를 사용하세요.
+  </Accordion>
+  <Accordion title="봇/MEV 거래를 필터링하려면?">
+    GraphQL `DEXTrades` 큐브에는 기본 필터 `IsSuspect = false`가 있어 의심되는 봇 및 MEV 거래를 자동으로 제외합니다. REST API의 경우 거래 응답의 `isSuspect` 필드를 확인하세요.
+  </Accordion>
+  <Accordion title="Pump.fun 토큰을 실시간으로 추적할 수 있나요?">
+    예. WebSocket 구독을 사용하여 실시간 가격 업데이트와 거래 스트림을 수신할 수 있습니다. 설정 방법은 [실시간 스트리밍](/ko/guides/data-concepts/realtime-streaming)을 참조하세요.
+  </Accordion>
+  <Accordion title="어떤 체인이 Pump.fun을 지원하나요?">
+    Pump.fun은 Solana 전용 런치패드입니다. 모든 Pump.fun 쿼리에서 `chain: sol`(REST) 또는 `network: sol`(GraphQL)을 사용하세요.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 관련 문서
+
+<CardGroup cols={2}>
+  <Card title="GraphQL DEX 트레이드" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
+    DEX 거래 분석을 위한 GraphQL 쿼리 예시.
+  </Card>
+  <Card title="토큰 분석 프레임워크" icon="magnifying-glass-chart" href="/ko/playbooks/frameworks/token-analysis-framework">
+    포괄적인 토큰 평가 방법론.
+  </Card>
+  <Card title="MCP 도구 카탈로그" icon="robot" href="/ko/guides/ai-infrastructure/mcp-server/tools-catalog">
+    AI 에이전트 통합을 위한 50개 이상의 MCP 도구 전체 목록.
+  </Card>
+  <Card title="Raydium 가이드" icon="droplet" href="/ko/playbooks/protocols/raydium">
+    Raydium DEX 거래 및 유동성 분석.
+  </Card>
+</CardGroup>

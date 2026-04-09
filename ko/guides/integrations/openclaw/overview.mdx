@@ -1,0 +1,74 @@
+---
+title: "OpenClaw 통합"
+description: "ChainStream의 MCP 도구, 토큰 분석, DEX 실행으로 OpenClaw 에이전트에 온체인 인텔리전스를 추가합니다."
+---
+
+## 개요
+
+[OpenClaw](https://openclaw.ai)는 **GitHub 스타 30만 이상**을 보유한 오픈소스 AI 에이전트 프레임워크로, 도구, API, 외부 시스템과 상호작용하는 자율 에이전트를 구축하는 데 널리 사용됩니다.
+
+ChainStream은 **온체인 인텔리전스 레이어**로서 OpenClaw와 통합되어, 에이전트가 블록체인 데이터를 조회하고, 토큰을 분석하고, 지갑을 프로파일링하고, 거래를 실행하고, 실시간 알림을 수신할 수 있도록 합니다 — 모두 표준 MCP 프로토콜을 통해 이루어집니다.
+
+## 에이전트가 할 수 있는 것
+
+ChainStream이 연결되면, OpenClaw 에이전트는 전체 온체인 도구 세트에 접근할 수 있습니다:
+
+| 기능 | 설명 | 예시 도구 |
+|------|------|-----------|
+| **토큰 분석** | 10개 체인에서 토큰 검색, 분석, 비교 | `tokens_search`, `tokens_analyze`, `tokens_compare` |
+| **지갑 프로파일링** | 지갑 보유량, PnL, 트랜잭션 이력 프로파일링 | `wallets_profile`, `wallets_activity` |
+| **DEX 실행** | 탈중앙화 거래소에서 견적 조회 및 스왑 실행 | `dex_quote`, `dex_swap` |
+| **컴플라이언스 스크리닝** | 토큰 보안 플래그, 허니팟 탐지, 권한 리스크 확인 | `tokens_analyze` (보안 필드) |
+| **실시간 알림** | 온체인 이벤트에 대한 웹훅 기반 알림 설정 | `webhooks_manage` |
+| **마켓 디스커버리** | 트렌딩, 신규, 졸업 토큰 탐색 | `market_trending`, `tokens_discover` |
+
+## 통합 경로
+
+OpenClaw 에이전트에 ChainStream을 연결하는 두 가지 방법이 있습니다:
+
+<CardGroup cols={2}>
+  <Card title="ClawHub 스킬" icon="puzzle-piece" href="/ko/guides/integrations/openclaw/skills-install">
+    ClawHub 또는 크로스 에이전트 Vercel Skills CLI를 통해 ChainStream 스킬을 설치합니다. 가장 빠른 설정 — 1분 이내에 완료됩니다.
+  </Card>
+  <Card title="직접 MCP 구성" icon="server" href="/ko/guides/integrations/openclaw/skills-install#method-3-direct-mcp-config">
+    클라우드 MCP 엔드포인트 또는 로컬 npm 패키지를 통해 연결합니다. 커스텀 에이전트 구성에 최적입니다.
+  </Card>
+</CardGroup>
+
+## 아키텍처
+
+```
+┌─────────────────┐     MCP Protocol     ┌──────────────────┐
+│                  │ ◄──────────────────► │                  │
+│  OpenClaw Agent  │     15 Tools         │  ChainStream MCP │
+│                  │     4 Prompts        │     Server       │
+│                  │     4 Resources      │                  │
+└─────────────────┘                       └────────┬─────────┘
+                                                   │
+                                          ┌────────▼─────────┐
+                                          │  ChainStream API  │
+                                          │  10 Chains        │
+                                          │  8+ DEXes         │
+                                          └──────────────────┘
+```
+
+OpenClaw 에이전트는 MCP 프로토콜을 통해 ChainStream과 통신합니다. ClawHub를 통해 설치하든 셀프 호스팅하든, 에이전트는 동일한 15개 도구, 4개 프롬프트, 4개 리소스를 사용합니다.
+
+## 사전 요구사항
+
+통합을 설정하기 전에 다음을 준비하세요:
+
+1. **ChainStream API 키** — [app.chainstream.io](https://app.chainstream.io)에서 가입하고 API 키를 생성합니다
+2. **OpenClaw** — 기존 OpenClaw 에이전트 또는 프로젝트 ([OpenClaw 문서](https://docs.openclaw.ai))
+3. **Node.js 18+** — MCP 서버 및 CLI 도구에 필요합니다
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="설치 방법" icon="download" href="/ko/guides/integrations/openclaw/skills-install">
+    세 가지 설치 방법: Vercel Skills CLI, ClawHub, 직접 MCP 구성.
+  </Card>
+  <Card title="보안" icon="shield" href="/ko/guides/integrations/openclaw/security">
+    프로덕션 사용을 위한 보안 고려사항 및 모범 사례.
+  </Card>
+</CardGroup>

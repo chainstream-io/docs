@@ -16,6 +16,9 @@ export interface Language {
 export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'en', baseDir: 'en' },
   { code: 'cn', baseDir: 'cn' },
+  { code: 'jp', baseDir: 'jp' },
+  { code: 'ko', baseDir: 'ko' },
+  { code: 'zh-Hant', baseDir: 'zh-Hant' },
 ];
 
 export const SERVICES: ServiceConfig[] = [

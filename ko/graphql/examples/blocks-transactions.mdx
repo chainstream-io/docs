@@ -1,0 +1,274 @@
+---
+title: "블록 및 트랜잭션"
+description: "블록, 트랜잭션, 이벤트, 콜 등 인프라 Cube에 대한 쿼리 예제"
+icon: "cube"
+---
+
+## 개요
+
+이 페이지에서는 블록체인 인프라 Cube에 대한 쿼리 예제를 다룹니다. 블록, 트랜잭션, 스마트 컨트랙트 이벤트, 내부 트레이스 등 기초 온체인 데이터를 조회합니다.
+
+---
+
+## Blocks
+
+### 최근 블록 (Solana)
+
+```graphql
+query {
+  Solana {
+    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block {
+        Time
+        Slot
+        Height
+        Hash
+        ParentSlot
+        TxCount
+      }
+    }
+  }
+}
+```
+
+### 최근 블록 (Ethereum)
+
+```graphql
+query {
+  EVM(network: eth) {
+    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block {
+        Time
+        Number
+        Hash
+        GasUsed
+        GasLimit
+        BaseFee
+        TxCount
+        Coinbase
+      }
+    }
+  }
+}
+```
+
+---
+
+## Transactions
+
+### 주소별 최근 트랜잭션 (Solana)
+
+```graphql
+query {
+  Solana {
+    Transactions(
+      signer: {is: "WALLET_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction {
+        Signature
+        Fee
+        FeePayer
+        Result { Success }
+      }
+    }
+  }
+}
+```
+
+### 주소별 최근 트랜잭션 (EVM)
+
+```graphql
+query {
+  EVM(network: eth) {
+    Transactions(
+      fromAddress: {is: "0xWALLET_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction {
+        Hash
+        From
+        To
+        Value
+        Gas
+        GasPrice
+      }
+    }
+  }
+}
+```
+
+---
+
+## Events (EVM 전용)
+
+### 컨트랙트 및 토픽별 이벤트 필터링
+
+```graphql
+query {
+  EVM(network: eth) {
+    Events(
+      contractAddress: {is: "0xCONTRACT_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Log {
+        SmartContract
+        Index
+        Signature { Name Signature }
+        Data
+      }
+    }
+  }
+}
+```
+
+### 이벤트 시그니처(Topic0)별 필터링
+
+```graphql
+query {
+  EVM(network: eth) {
+    Events(
+      topic0: {is: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Log { SmartContract Index Data }
+    }
+  }
+}
+```
+
+---
+
+## Calls / Traces (EVM 전용)
+
+### 컨트랙트로의 내부 호출
+
+```graphql
+query {
+  EVM(network: eth) {
+    Calls(
+      toAddress: {is: "0xCONTRACT_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Call {
+        From
+        To
+        Opcode
+        Value
+        Gas
+        GasUsed
+        Signature { Name }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Instructions (Solana 전용)
+
+### 프로그램의 최근 인스트럭션
+
+```graphql
+query {
+  Solana {
+    Instructions(
+      programId: {is: "PROGRAM_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction { Signature }
+      Instruction {
+        Index
+        Depth
+        Program { Address Name Method }
+        Accounts
+      }
+    }
+  }
+}
+```
+
+---
+
+## Rewards (Solana 전용)
+
+### 밸리데이터의 스테이킹 보상
+
+```graphql
+query {
+  Solana {
+    Rewards(
+      address: {is: "VALIDATOR_ADDRESS"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Reward {
+        Address
+        Amount
+        AmountInUSD
+        PostBalance
+        RewardType
+        Commission
+      }
+    }
+  }
+}
+```
+
+---
+
+## Miner Rewards (EVM 전용)
+
+### 블록 보상 분류
+
+```graphql
+query {
+  EVM(network: eth) {
+    MinerRewards(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Reward {
+        Miner
+        TotalReward
+        TotalRewardInUSD
+        StaticReward
+        DynamicReward
+        TxFees
+        BurntFees
+      }
+    }
+  }
+}
+```
+
+---
+
+## 관련 문서
+
+<CardGroup cols={2}>
+  <Card title="데이터 큐브" icon="cubes" href="/ko/graphql/schema/cubes">
+    Blocks, Transactions, Events, Calls를 포함한 모든 Cube의 상세 필드 구조.
+  </Card>
+  <Card title="체인 그룹" icon="layer-group" href="/ko/graphql/schema/chain-groups">
+    EVM과 Solana에서 어떤 Cube가 사용 가능한지 이해하세요.
+  </Card>
+</CardGroup>

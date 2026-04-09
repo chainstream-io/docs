@@ -1,0 +1,218 @@
+---
+title: "빠른 시작"
+description: "5분 만에 첫 번째 API 호출 완료하기"
+icon: "rocket"
+---
+
+## 학습 내용
+
+이 튜토리얼을 완료하면 다음을 할 수 있게 됩니다:
+
+- API Key 또는 OAuth 토큰을 사용하여 ChainStream 인증
+- API를 호출하여 토큰 메타데이터 가져오기
+- CLI와 SDK로 동일한 쿼리 수행
+- API 응답 구조 이해
+
+<Note>
+**예상 시간**: 5분
+</Note>
+
+---
+
+## 사전 요구사항
+
+- 등록된 ChainStream 계정 ([여기서 등록](https://www.chainstream.io/dashboard))
+
+---
+
+## 1단계: API Key 발급
+
+1. [ChainStream 대시보드](https://www.chainstream.io/dashboard)에 로그인
+2. **Applications**으로 이동
+3. **Create New App** 클릭
+4. **API Key**를 복사 (`cs_live_...`로 시작)
+
+<Tip>
+API Key는 가장 빠른 인증 방법입니다. OAuth 2.0 JWT 플로우에 대해서는 [인증](/ko/guides/getting-started/authentication)을 참고하세요.
+</Tip>
+
+---
+
+## 2단계: 첫 번째 요청 보내기
+
+Solana의 SOL 토큰 메타데이터를 조회합니다. 선호하는 방법을 선택하세요:
+
+<Tabs>
+  <Tab title="cURL">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="CLI">
+```bash
+# npx로 원라인 실행 (설치 불필요)
+npx @chainstream-io/cli token info --chain sol \
+  --address So11111111111111111111111111111111111111112
+```
+
+CLI는 첫 실행 시 인증을 요청합니다. 또는 사전에 키를 설정할 수 있습니다:
+
+```bash
+npx @chainstream-io/cli config set --key apiKey --value your_api_key
+```
+  </Tab>
+  <Tab title="SDK (TypeScript)">
+```typescript
+import { ChainStreamClient } from "@chainstream-io/sdk";
+
+const cs = new ChainStreamClient({ apiKey: "your_api_key" });
+
+const token = await cs.token.getToken(
+  "So11111111111111111111111111111111111111112",
+  "solana"
+);
+console.log(token.name, token.symbol, token.decimals);
+```
+  </Tab>
+  <Tab title="MCP (AI 에이전트)">
+코드 없이 AI 에이전트를 ChainStream 데이터에 연결하세요:
+
+```bash
+CHAINSTREAM_API_KEY=your_api_key npx @chainstream-io/mcp
+```
+
+그런 다음 AI에게 물어보세요: *"Solana의 SOL 토큰은 무엇인가요?"*
+
+Claude/Cursor 설정은 [MCP 서버 설정](/ko/guides/ai-infrastructure/mcp-server/setup-guide)을 참고하세요.
+  </Tab>
+  <Tab title="OAuth 2.0 (JWT)">
+OAuth 2.0 Client Credentials 플로우를 사용하는 앱의 경우:
+
+```bash
+# 1단계: 액세스 토큰 발급
+curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET",
+    "audience": "https://api.dex.chainstream.io",
+    "grant_type": "client_credentials"
+  }'
+
+# 2단계: 토큰 사용
+curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+`YOUR_ACCESS_TOKEN`을 2단계에서 생성한 토큰으로 교체하세요.
+</Tip>
+
+### 응답 예시
+
+```json
+{
+  "chain": "sol",
+  "decimals": 9,
+  "name": "Wrapped SOL",
+  "symbol": "SOL",
+  "address": "So11111111111111111111111111111111111111112",
+  "imageUrl": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  "tokenCreatedAt": 1710417600000
+}
+```
+
+---
+
+## 4단계: 응답 이해하기
+
+| 필드 | 타입 | 설명 |
+|:--|:--|:--|
+| `chain` | string | 블록체인 네트워크 식별자 |
+| `decimals` | integer | 토큰 소수점 자릿수 |
+| `name` | string | 토큰 이름 |
+| `symbol` | string | 토큰 심볼 |
+| `address` | string | 토큰 컨트랙트 주소 |
+| `imageUrl` | string | 토큰 로고 URL |
+| `tokenCreatedAt` | integer | 토큰 생성 타임스탬프 (밀리초) |
+
+<Note>
+전체 필드 설명은 [토큰 메타데이터 API 레퍼런스](/ko/api-reference/endpoint/token/v1/token-chain-tokenaddress-metadata-get)를 참고하세요.
+</Note>
+
+---
+
+## 5단계: 더 많은 API 시도하기
+
+첫 번째 호출을 성공적으로 완료했다면, 다음 API를 시도해 보세요:
+
+<CardGroup cols={2}>
+  <Card title="토큰 가격 조회" icon="chart-line" href="/ko/api-reference/endpoint/token/v1/token-chain-tokenaddress-price-get">
+    실시간 토큰 가격 조회
+    
+    `GET /v1/token/{chain}/{tokenAddress}/price`
+  </Card>
+  <Card title="지갑 잔액 조회" icon="wallet" href="/ko/api-reference/endpoint/wallet/v1/wallet-chain-walletaddress-balance-get">
+    지갑 토큰 보유량 조회
+    
+    `GET /v1/wallet/{chain}/{walletAddress}/balance`
+  </Card>
+</CardGroup>
+
+---
+
+## 자주 발생하는 문제
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized 오류">
+    다음을 확인하세요:
+    - Access Token이 올바르고 만료되지 않았는지?
+    - Header 형식이 `Authorization: Bearer YOUR_ACCESS_TOKEN`인지?
+    - Client ID와 Client Secret을 사용하여 새 토큰을 생성해 보세요
+  </Accordion>
+  <Accordion title="429 Too Many Requests 오류">
+    요청 속도 제한에 도달했습니다. 무료 플랜은 10 요청/초로 제한됩니다. 플랜을 업그레이드하여 제한을 늘릴 수 있습니다.
+    
+    자세한 내용은 [API 보안](/ko/guides/data-concepts/api-security)을 참고하세요.
+  </Accordion>
+  <Accordion title="다른 체인의 토큰은 어떻게 조회하나요?">
+    URL의 체인 파라미터를 변경하세요. 예:
+    
+    `GET /v1/token/eth/{address}/metadata` (Ethereum)
+    
+    `GET /v1/token/bsc/{address}/metadata` (BSC)
+    
+    전체 목록은 [실시간 스트리밍](/ko/guides/data-concepts/realtime-streaming)을 참고하세요.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 다음 단계
+
+사용 사례에 따라 다음 학습 경로를 선택하세요:
+
+<CardGroup cols={2}>
+  <Card title="데이터 개발자" icon="database" href="/ko/guides/data-concepts/realtime-streaming">
+    데이터 개념으로 이동하여 데이터 모델 이해하기
+  </Card>
+  <Card title="GraphQL API" icon="diagram-project" href="/ko/graphql/getting-started/overview">
+    유연한 온체인 쿼리를 위한 OLAP 분석 GraphQL API 탐색하기
+  </Card>
+  <Card title="컴플라이언스 사용자" icon="shield" href="/ko/guides/security-compliance/overview">
+    보안 컴플라이언스로 이동하여 KYT/KYA 학습하기
+  </Card>
+  <Card title="AI 개발자" icon="robot" href="/ko/guides/ai-infrastructure/overview">
+    AI 인프라로 이동하여 MCP와 Agent Skills 학습하기
+  </Card>
+  <Card title="CLI" icon="terminal" href="/ko/guides/cli/overview">
+    스크립팅, CI/CD 및 AI 에이전트 워크플로우에 CLI 사용하기
+  </Card>
+</CardGroup>
+
+<Info>
+문제가 있으신가요? [FAQ](/ko/guides/getting-started/faq)를 확인하거나 기술 지원팀에 문의하세요.
+</Info>

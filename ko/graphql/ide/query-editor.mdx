@@ -1,0 +1,174 @@
+---
+title: "쿼리 에디터"
+description: "자동 완성, 구문 강조, 패널, 실시간 쿼리 실행을 갖춘 Monaco 기반 GraphQL 에디터"
+icon: "pen-to-square"
+---
+
+## Monaco 에디터
+
+쿼리 에디터는 [Monaco](https://microsoft.github.io/monaco-editor/) — VS Code와 동일한 엔진 — 위에 구축되었으며, GraphQL 언어 워커가 다음을 제공합니다:
+
+- GraphQL 연산, 필드, 인자, 디렉티브에 대한 **구문 강조**
+- `Ctrl+Space`를 눌러 라이브 스키마 기반의 사용 가능한 필드, 인자, 타입을 확인하는 **스키마 기반 자동 완성**
+- 잘못된 필드 이름, 누락된 인자, 타입 불일치에 대한 빨간 밑줄과 오류 마커로 **실시간 오류 감지**
+- 중괄호, 괄호, 문자열에 대한 **괄호 매칭** 및 **자동 닫기**
+- 일괄 변경을 위한 **멀티 커서 편집**
+
+<Tip>
+자동 완성은 스키마를 인식합니다. Cube(예: `DEXTrades`) 내에서 타이핑하면 해당 Cube에 유효한 필드와 인자만 제안 목록에 나타납니다.
+</Tip>
+
+---
+
+## 에디터 패널
+
+에디터 영역은 하단에 세 개의 탭으로 나뉩니다. 요청의 각 부분을 구성하기 위해 탭을 전환하세요.
+
+### 쿼리 패널
+
+GraphQL 쿼리를 작성하는 메인 편집 영역입니다. Monaco의 자동 완성, 강조, 오류 감지가 활성화되어 있습니다.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+### 변수 패널
+
+매개변수화된 쿼리에 JSON 변수를 전달하려면 변수 패널을 사용합니다. 쿼리를 재사용 가능하게 유지합니다 — 쿼리 텍스트를 편집하지 않고 변수 값만 변경하면 됩니다.
+
+<Tabs>
+  <Tab title="쿼리">
+    ```graphql
+    query LatestTrades($network: Network!, $limit: Int!) {
+      DEXTrades(
+        network: $network
+        limit: {count: $limit}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="변수">
+    ```json
+    {
+      "network": "sol",
+      "limit": 20
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### 헤더 패널
+
+모든 요청과 함께 전송되는 HTTP 헤더를 구성합니다. 헤더 패널은 `X-API-KEY` 헤더가 미리 구성된 상태로 **기본 표시**됩니다.
+
+```json
+{
+  "X-API-KEY": "your_api_key"
+}
+```
+
+필요에 따라 추가 커스텀 헤더를 추가할 수 있습니다. 모든 헤더는 GraphQL 엔드포인트로의 POST 요청의 일부로 전송됩니다.
+
+<Note>
+`Content-Type: application/json` 헤더는 자동으로 포함됩니다 — 수동으로 설정할 필요가 없습니다.
+</Note>
+
+---
+
+## 툴바
+
+툴바는 에디터 상단에 위치하며 빠른 접근 액션을 제공합니다:
+
+| 버튼 | 액션 | 설명 |
+|:--|:--|:--|
+| **Execute** (▶) | 쿼리 실행 | 현재 쿼리(변수 및 헤더 포함)를 GraphQL 엔드포인트로 전송 |
+| **Prettify** | 쿼리 정렬 | 일관된 들여쓰기와 줄바꿈으로 쿼리를 자동 정렬 |
+| **Copy** | 쿼리 복사 | 현재 쿼리 텍스트를 클립보드에 복사 |
+| **Merge** | 프래그먼트 병합 | 인라인 프래그먼트를 하나의 평탄화된 쿼리로 병합 |
+| **Save Query** | 로컬 저장 | 제목과 선택적 태그와 함께 현재 쿼리를 저장 |
+| **Export Code** | 스니펫 내보내기 | 선택한 언어로 현재 쿼리의 코드 스니펫을 생성 |
+
+---
+
+## 쿼리 실행
+
+쿼리를 실행하려면:
+
+1. 에디터에 쿼리를 작성하거나 불러오기
+2. 헤더 패널에서 `X-API-KEY` 설정
+3. 툴바의 **Execute** 버튼(▶)을 클릭하거나 **Ctrl/Cmd+Enter** 누르기
+
+응답은 에디터 오른쪽의 **결과 패널**에 완전한 JSON 구문 강조와 함께 표시됩니다. 쿼리에 오류가 있으면 오류 메시지와 위치 세부 정보가 포함된 오류 응답이 표시됩니다.
+
+---
+
+## 결과 패널
+
+결과 패널은 GraphQL 엔드포인트의 JSON 응답을 다음과 함께 표시합니다:
+
+- JSON 키, 문자열, 숫자, 불리언에 대한 **구문 강조**
+- 깊이 중첩된 응답 탐색을 위한 **접을 수 있는 노드**
+- 마우스 오른쪽 클릭 컨텍스트 메뉴를 통한 **응답 복사** 지원
+
+일반적인 성공 응답에는 쿼리 구조와 일치하는 `data` 객체와 빌링 정보를 보여주는 `extensions.credits` 객체가 포함됩니다.
+
+---
+
+## 상태 표시줄
+
+IDE 하단의 상태 표시줄은 쿼리 실행에 대한 실시간 피드백을 제공합니다:
+
+| 표시기 | 값 | 설명 |
+|:--|:--|:--|
+| **State** | `Ready` · `Executing...` · `Success` · `Error` | 현재 요청 수명주기 상태 |
+| **Latency** | 예: `120ms` | 요청 전송부터 응답 수신까지의 왕복 시간 |
+| **Size** | 예: `2.4 KB` | 응답 본문 크기 |
+| **Credits** | 예: `8 CU` | 이 쿼리에서 소비된 Credit Unit |
+
+<Info>
+Credit Unit(CU)은 쿼리의 계산 비용을 반영합니다. 더 많은 데이터를 스캔하거나 더 큰 결과 세트를 반환하는 쿼리는 더 많은 CU를 소비합니다. 자세한 내용은 [빌링 & 크레딧](/ko/graphql/billing/graphql-billing)을 참조하세요.
+</Info>
+
+---
+
+## 키보드 단축키
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| 단축키 | 액션 |
+|:--|:--|
+| `Ctrl/Cmd + Enter` | 쿼리 실행 |
+| `Ctrl/Cmd + B` | 사이드바 토글 |
+| `Ctrl + Space` | 자동 완성 트리거 |
+| `Ctrl/Cmd + Shift + P` | 명령 팔레트 |
+| `Ctrl/Cmd + /` | 줄 주석 토글 |
+| `Ctrl/Cmd + D` | 다음 발생 선택 |
+| `Ctrl/Cmd + Shift + F` | 정렬 / Prettify |
+| `Alt + Up/Down` | 줄 위/아래 이동 |
+
+</div>
+
+<Tip>
+macOS에서는 `Ctrl`을 `Cmd`로 대체하세요. IDE가 자동으로 운영 체제를 감지하여 적절한 수정자 키를 표시합니다.
+</Tip>

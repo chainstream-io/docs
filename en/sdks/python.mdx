@@ -121,6 +121,48 @@ if __name__ == '__main__':
     asyncio.run(main())
 ```
 
+## More Examples
+
+### Search Tokens
+
+```python
+results = await token_api.search_token(keyword='bonk')
+for t in results:
+    print(f'{t.symbol}: {t.address}')
+```
+
+### Get Wallet PnL
+
+```python
+from chainstream.openapi_client.api.wallet_api import WalletApi
+
+async with ApiClient(config) as api_client:
+    wallet_api = WalletApi(api_client)
+    pnl = await wallet_api.get_pnl(
+        chain=ChainSymbol.SOL,
+        wallet_address='WALLET_ADDRESS',
+    )
+    print(f'Total PnL: {pnl.total_pnl_usd}')
+```
+
+### Get Trade List
+
+```python
+from chainstream.openapi_client.api.trade_api import TradeApi
+
+async with ApiClient(config) as api_client:
+    trade_api = TradeApi(api_client)
+    trades = await trade_api.get_trades(
+        chain=ChainSymbol.SOL,
+        token_address='TOKEN_ADDRESS',
+        limit=20,
+    )
+    for trade in trades:
+        print(f'{trade.timestamp}: {trade.side} {trade.amount}')
+```
+
+---
+
 ## Pandas Integration
 
 ```python
@@ -130,6 +172,24 @@ candles = await client.token.get_candles('sol', 'TOKEN_ADDRESS', resolution='1h'
 df = pd.DataFrame(candles)
 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
 ```
+
+---
+
+## Error Handling
+
+```python
+from chainstream.openapi_client.exceptions import ApiException
+
+try:
+    result = await token_api.get_token(chain=ChainSymbol.SOL, token_address='INVALID')
+except ApiException as e:
+    print(f'API error {e.status}: {e.reason}')
+    if e.status == 429:
+        import asyncio
+        await asyncio.sleep(2)
+```
+
+---
 
 ## Resources
 

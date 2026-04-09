@@ -1,0 +1,185 @@
+---
+title: "Dataset 與 Aggregates"
+description: "使用 dataset 和 aggregates 引數控制資料來源範圍與預聚合行為"
+icon: "database"
+---
+
+## 概述
+
+ChainStream GraphQL 中每個 Chain Group 都接受兩個可選引數，控制**查詢底層命中哪些表**。你可以據此在資料新鮮度、查詢速度與資料完整性之間做出權衡。
+
+---
+
+## Dataset 引數
+
+`dataset` 引數控制查詢的**資料時間範圍**。它決定查詢是命中實時表、歸檔表、還是二者兼查。
+
+| 值 | 說明 | 典型使用場景 |
+|:---|:-----|:-------------|
+| `combined` | 同時查詢實時和歸檔資料 **（預設）** | 需要全量範圍的通用查詢 |
+| `realtime` | 僅近期資料（約最近 24 小時） | 監控儀表盤、最新成交、實時告警 |
+| `archive` | 僅歷史資料（至保留期限 TTL） | 歷史分析、資料回灌、趨勢研究 |
+
+### 用法
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block { Time }
+      Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
+    }
+  }
+}
+```
+
+```graphql
+query {
+  EVM(network: eth, dataset: archive) {
+    Transfers(
+      where: { Block: { Time: { after: "2026-01-01T00:00:00Z", before: "2026-02-01T00:00:00Z" } } }
+      limit: {count: 100}
+    ) {
+      Block { Time }
+      Transfer { Currency { MintAddress } Amount AmountInUSD }
+    }
+  }
+}
+```
+
+### 歷史資料回灌
+
+在構建資料管道或從停機中恢復時，可使用 `dataset: archive` 配合時間範圍過濾來回灌歷史資料：
+
+1. 記錄最後處理的時間戳或區塊高度
+2. 以 `dataset: archive` 查詢從上次斷點到當前時間的資料
+3. 處理回灌資料
+4. 切換到 `dataset: realtime` 進行持續監控
+
+```graphql
+query BackfillTrades {
+  Solana(dataset: archive) {
+    DEXTrades(
+      where: {
+        Block: {
+          Time: {
+            after: "2026-04-01T00:00:00Z"
+            before: "2026-04-02T00:00:00Z"
+          }
+        }
+      }
+      limit: {count: 10000}
+      orderBy: Block_Time_ASC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+      }
+    }
+  }
+}
+```
+
+### 不支援 Dataset 的表
+
+部分 Cube 無論 `dataset` 取何值都查詢同一張表，包括：
+
+- **DWS Cube**：`TokenHolders`、`WalletTokenPnL`、`DEXPools` — 這些代表當前狀態快照
+- **特殊表**：`TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
+
+對這些 Cube，`dataset` 會被靜默忽略。
+
+---
+
+## Aggregates 引數
+
+`aggregates` 引數控制查詢是否使用**預聚合物化檢視**（DWM 層）替代原始明細表（DWD 層）。預聚合表包含預計算的 rollup（通常按分鐘），查詢速度顯著更快。
+
+| 值 | 說明 | 典型使用場景 |
+|:---|:-----|:-------------|
+| `yes` | 優先使用預聚合表 **（預設行為）** | 大多數分析查詢 |
+| `no` | 僅使用原始明細表 | 需要逐事件粒度時 |
+| `only` | 僅使用預聚合表 | 最高查詢速度，接受有限欄位集 |
+
+### 用法
+
+```graphql
+query {
+  EVM(network: eth, aggregates: only) {
+    Pairs(
+      where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+### 各模式適用場景
+
+| 場景 | 推薦值 | 原因 |
+|:-----|:-------|:-----|
+| 構建 OHLC K 線圖 | `aggregates: only` | 預計算 K 線資料，最快響應 |
+| 隨時間的成交量趨勢 | `aggregates: yes` | 利用預聚合成交量統計 |
+| 單筆成交分析 | `aggregates: no` | 需要 rollup 無法提供的逐事件細節 |
+| 統計獨立交易者數 | `aggregates: yes` | 預計算的獨立計數可用 |
+
+---
+
+## 組合使用
+
+可以同時使用 `dataset` 和 `aggregates`：
+
+```graphql
+query {
+  Trading(dataset: realtime, aggregates: yes) {
+    Tokens(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+該查詢使用實時資料與預聚合表，以最高速度獲取最近約 60 分鐘的跨鏈代幣成交統計。
+
+---
+
+## 效能考量
+
+<CardGroup cols={2}>
+  <Card title="儀表盤用 realtime" icon="gauge-high">
+    `dataset: realtime` 查詢更小的表分割槽，在監控場景下可獲得更快的響應時間。
+  </Card>
+  <Card title="分析用 aggregates" icon="chart-line">
+    `aggregates: yes` 或 `only` 利用預計算 rollup，比掃描原始事件錶快數個量級。
+  </Card>
+</CardGroup>
+
+<Tip>
+要獲得最快的 OHLC 或成交量查詢，組合使用 `dataset: realtime` 與 `aggregates: only`，命中最小、最最佳化的資料切片。
+</Tip>
+
+---
+
+## 相關文件
+
+<CardGroup cols={2}>
+  <Card title="Schema 概覽" icon="sitemap" href="/zh-Hant/graphql/schema/schema-overview">
+    瞭解 dataset 和 aggregates 如何融入整體查詢結構。
+  </Card>
+  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+    檢視哪些 Cube 支援 dataset 切換。
+  </Card>
+</CardGroup>

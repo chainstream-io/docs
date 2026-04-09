@@ -27,18 +27,15 @@ Block_Time_ASC
 
 | Enum Value | Cube(s) | Description |
 |:-----------|:--------|:------------|
-| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | 最旧在前 |
-| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | 最新在前 |
+| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 最旧在前 |
+| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 最新在前 |
+| `Interval_Time_Start_ASC` | Pairs, Tokens | 最旧在前（区间起始时间） |
+| `Interval_Time_Start_DESC` | Pairs, Tokens | 最新在前（区间起始时间） |
 | `Trade_Buy_Amount_DESC` | DEXTrades | 买入量最大在前 |
 | `Trade_Buy_PriceInUSD_DESC` | DEXTrades | USD 价格最高在前 |
 | `Transfer_AmountInUSD_DESC` | Transfers | USD 转账额最大在前 |
-| `TimeMinute_ASC` | OHLC, TokenTradeStats | 时间正序 |
-| `TimeMinute_DESC` | OHLC, TokenTradeStats | 时间倒序 |
 | `LatestBalanceUSD_DESC` | TokenHolders | 持仓 USD 最大在前 |
 | `BuyVolumeUSDState_DESC` | WalletTokenPnL | 买入量 USD 最大在前 |
-| `MarketCapUSDState_DESC` | TokenMarketCap | 市值最大在前 |
-| `Token_PriceUSD_DESC` | TokenSearch | 价格最高在前 |
-| `Token_MarketCapUSD_DESC` | TokenSearch | 市值最高在前 |
 
 </div>
 
@@ -91,13 +88,11 @@ input LimitInput {
 | BalanceUpdates | 25 | 10,000 |
 | DEXPools | 25 | 10,000 |
 | TokenSupplyUpdates | 25 | 10,000 |
-| OHLC | 25 | 10,000 |
-| TokenTradeStats | 25 | 10,000 |
-| PoolLiquiditySnapshots | 25 | 10,000 |
+| Pairs | 25 | 10,000 |
+| Tokens | 25 | 10,000 |
+| DEXPoolEvents | 25 | 10,000 |
 | TokenHolders | 25 | 10,000 |
 | WalletTokenPnL | 25 | 10,000 |
-| TokenMarketCap | 25 | 10,000 |
-| TokenSearch | 25 | 10,000 |
 
 <Info>
 若请求的 `count` 超过最大值，服务端会静默截断为最大值。
@@ -201,19 +196,23 @@ query {
 
 ```graphql
 query {
-  OHLC(
-    network: sol
-    tokenAddress: "So11111111111111111111111111111111111111112"
-    orderBy: TimeMinute_ASC
-    limit: { count: 60 }
-    where: {
-      TimeMinute: { after: "2025-03-27T09:00:00Z" }
+  Trading {
+    Pairs(
+      where: {
+        Token: { Address: { is: "So11111111111111111111111111111111111111112" } }
+        Market: { Network: { is: "sol" } }
+        Block: { Time: { after: "2025-03-27T09:00:00Z" } }
+      }
+      orderBy: Block_Time_ASC
+      limit: { count: 60 }
+    ) {
+      Block { Time }
+      Price {
+        Ohlc { Open High Low Close }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
     }
-  ) {
-    TimeMinute
-    Price { OpenState HighState LowState CloseState }
-    VolumeUSDState
-    TradeCountState
   }
 }
 ```

@@ -1,0 +1,96 @@
+---
+title: '자동 결제'
+description: 'CLI가 402 응답을 만나면 자동으로 구독을 구매합니다'
+icon: "credit-card"
+---
+
+## 개요
+
+ChainStream CLI는 402 (Payment Required) 응답을 만나면 자동으로 구독을 구매할 수 있습니다. 구매 성공 후 반환된 **API Key가 설정에 저장**되며, 이후 모든 호출은 추가 지갑 서명 없이 해당 키를 사용합니다.
+
+## 작동 방식
+
+CLI 명령어가 402 오류를 수신하면 자동 결제 흐름이 활성화됩니다:
+
+1. CLI가 `/x402/pricing`에서 사용 가능한 요금제를 가져와 선택 테이블을 표시합니다
+2. 요금제를 대화형으로 선택합니다
+3. CLI가 결제 방법을 묻습니다: **x402** (Base/Solana의 USDC) 또는 **MPP** (Tempo의 스테이블코인 / Stripe 카드)
+4. x402 선택 시: 자동으로 결제를 서명하고 전송한 후 반환된 API Key를 저장합니다
+5. MPP 선택 시: 수동 구매를 위한 `tempo request` 명령어를 출력합니다
+6. 새 API Key로 원래 명령어를 재시도합니다
+
+```bash
+$ chainstream token info --chain sol --address So11111111111111111111111111111111111111112
+
+[chainstream] No active subscription. Available plans:
+
+   #  Plan       Price    Quota           Duration
+   ── ────────── ──────── ──────────────── ────────
+   1  nano       $5             500,000 CU  30 days
+   2  starter    $199        10,000,000 CU  30 days
+   3  pro        $699        50,000,000 CU  30 days
+
+Select plan (1-3): 1
+
+[chainstream] Choose payment method:
+  1. x402 (USDC on Base/Solana)
+  2. MPP Tempo (USDC.e on Tempo)
+
+Select method (1-2): 1
+
+[chainstream] Purchasing nano plan via x402...
+[chainstream] Subscription activated: nano (expires: 2026-04-25T12:00:00.000Z)
+[chainstream] API Key saved to config.
+```
+
+<Note>
+API Key만 있고 지갑이 없는 경우 CLI는 x402를 건너뛰고 대신 MPP 안내를 출력합니다.
+</Note>
+
+## 지갑 설정
+
+x402 결제에는 자금이 충전된 지갑이 필요합니다:
+
+```bash
+# ChainStream TEE 지갑 생성 (권장)
+chainstream login
+
+# 또는 원시 개인키 가져오기 (개발/테스트 전용)
+chainstream wallet set-raw --chain base
+```
+
+## 요금제 확인
+
+```bash
+chainstream wallet pricing
+
+# 또는 curl로 확인
+curl https://api.chainstream.io/x402/pricing
+```
+
+## 구매 후
+
+1. API Key (`cs_live_...`)가 `~/.config/chainstream/config.json`에 자동 저장됩니다
+2. CLI 클라이언트가 새 키로 재초기화됩니다
+3. 원래 명령어가 재시도되어 성공합니다
+4. 이후 모든 명령어가 API Key를 사용하며 추가 지갑 서명이 필요하지 않습니다
+
+## 문제 해결
+
+| 문제 | 해결 방법 |
+|-------|----------|
+| "Insufficient USDC balance" | Base 또는 Solana에서 지갑에 USDC를 충전하세요 |
+| 구매 후에도 402 지속 | `chainstream config get`으로 API Key가 저장되었는지 확인하세요 |
+| 잘못된 체인 선택 | `chainstream config set --key walletChain --value base`를 사용하세요 |
+| 요금제 변경 | 새 요금제를 구매하면 기존 구독이 교체됩니다 |
+
+## 더 알아보기
+
+<CardGroup cols={2}>
+  <Card title="x402 결제 프로토콜" icon="money-bill-wave" href="/ko/guides/getting-started/x402-payments">
+    x402 프로토콜의 작동 방식, 상세 흐름, 수동 통합
+  </Card>
+  <Card title="MPP 결제 프로토콜" icon="coins" href="/ko/guides/getting-started/mpp-payments">
+    Tempo 스테이블코인 및 Stripe 카드를 통한 MPP 작동 방식
+  </Card>
+</CardGroup>

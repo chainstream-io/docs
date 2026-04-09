@@ -1,0 +1,237 @@
+---
+title: "觸發器節點"
+sidebarTitle: "觸發器節點"
+description: "使用 ChainStream Trigger 節點在 n8n 中接收實時鏈上事件。"
+icon: "bolt"
+---
+
+`ChainstreamTrigger` 節點在 n8n 中實現事件驅動的工作流。該節點不再按計劃輪詢變更，而是透過 Webhook 從 ChainStream 接收實時事件，在鏈上事件發生的瞬間啟動你的工作流。
+
+## 工作原理
+
+```
+ChainStream Event ──webhook POST──> n8n Webhook URL ──> ChainstreamTrigger Node ──> Your Workflow
+```
+
+1. 當觸發器節點處於活動狀態時，n8n 會暴露一個 Webhook 端點。
+2. 你在 ChainStream Dashboard 中註冊該端點。
+3. 當匹配的鏈上事件發生時，ChainStream 向該 Webhook 傳送 POST 請求。
+4. 觸發器節點解析負載並啟動工作流。
+
+## 設定
+
+### 步驟 1 —— 新增觸發器節點
+
+在 n8n 工作流編輯器中：
+
+1. 點選 **Add Node** 並搜尋 **ChainStream Trigger**。
+2. 將節點拖到畫布上作為工作流的第一個節點。
+3. 選擇你要監聽的 **Event Type**（參見下表）。
+
+### 步驟 2 —— 複製 Webhook URL
+
+放置觸發器節點後：
+
+1. 開啟節點設定。
+2. 複製頂部顯示的 **Webhook URL**。格式如下：
+
+```
+https://your-n8n-instance.com/webhook/chainstream-trigger/XXXXXXXX
+```
+
+<Warning>
+  在生產模式下，請使用 **Production URL**（而非測試 URL），以確保在工作流編輯器關閉後觸發器仍保持活動狀態。
+</Warning>
+
+### 步驟 3 —— 在 ChainStream 中註冊 Webhook
+
+1. 在 ChainStream Dashboard 中，前往 **Settings > Webhooks**。
+2. 點選 **Create Webhook**。
+3. 貼上 n8n 的 Webhook URL。
+4. 選擇要訂閱的事件型別。
+5. 儲存並啟用。
+
+### 步驟 4 —— 測試連線
+
+1. 在 n8n 中，點選觸發器節點上的 **Listen for Test Event**。
+2. 在 ChainStream 中，點選剛建立的 Webhook 上的 **Send Test Event**。
+3. 驗證觸發器節點是否收到負載。
+
+## 支援的事件
+
+| 事件 | 描述 | 示例負載欄位 |
+|------|------|-------------|
+| `token.price.change` | 代幣價格變動超過配置的閾值 | `tokenAddress`、`price`、`changePercent` |
+| `token.transfer.large` | 轉賬金額超過指定值 | `from`、`to`、`amount`、`tokenAddress` |
+| `token.new` | 在監控的鏈上檢測到新代幣 | `tokenAddress`、`chain`、`name`、`symbol` |
+| `trade.activity` | 檢測到監控的交易對或錢包的交易活動 | `tradeType`、`amount`、`wallet`、`pair` |
+
+## 節點配置
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "event": "token.price.change",
+        "options": {
+          "chain": "solana",
+          "tokenAddress": "So11111111111111111111111111111111111111112",
+          "threshold": 5
+        }
+      },
+      "name": "ChainStream Trigger",
+      "type": "n8n-nodes-chainstream.chainstreamTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "chainstream-trigger",
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+## 事件負載
+
+### token.price.change
+
+```json
+{
+  "event": "token.price.change",
+  "timestamp": "2026-03-26T12:00:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "So11111111111111111111111111111111111111112",
+    "symbol": "SOL",
+    "price": 185.42,
+    "previousPrice": 176.10,
+    "changePercent": 5.29,
+    "currency": "usd"
+  }
+}
+```
+
+### token.transfer.large
+
+```json
+{
+  "event": "token.transfer.large",
+  "timestamp": "2026-03-26T12:05:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "symbol": "USDC",
+    "from": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "to": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "amount": 2500000,
+    "txSignature": "5K4u...xQ7p"
+  }
+}
+```
+
+### token.new
+
+```json
+{
+  "event": "token.new",
+  "timestamp": "2026-03-26T12:10:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "NEW_TOKEN_MINT_ADDRESS",
+    "name": "Example Token",
+    "symbol": "EXT",
+    "decimals": 9,
+    "creator": "CREATOR_WALLET_ADDRESS"
+  }
+}
+```
+
+### trade.activity
+
+```json
+{
+  "event": "trade.activity",
+  "timestamp": "2026-03-26T12:15:00Z",
+  "data": {
+    "chain": "solana",
+    "tradeType": "buy",
+    "wallet": "TRADER_WALLET_ADDRESS",
+    "pair": "SOL/USDC",
+    "amount": 1500,
+    "price": 185.42,
+    "dex": "raydium",
+    "txSignature": "3Fj2...mN8k"
+  }
+}
+```
+
+## 示例：大額轉賬 Telegram 告警
+
+一個完整的工作流，當檢測到大額 USDC 轉賬時傳送 Telegram 訊息。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "event": "token.transfer.large",
+        "options": {
+          "chain": "solana",
+          "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "minAmount": 1000000
+        }
+      },
+      "name": "Large Transfer Trigger",
+      "type": "n8n-nodes-chainstream.chainstreamTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "large-transfer",
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "Large USDC transfer detected:\nFrom: {{ $json.data.from }}\nTo: {{ $json.data.to }}\nAmount: {{ $json.data.amount }} USDC\nTx: {{ $json.data.txSignature }}"
+      },
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Large Transfer Trigger": {
+      "main": [[{ "node": "Telegram", "type": "main", "index": 0 }]]
+    }
+  }
+}
+```
+
+## 故障排除
+
+| 問題 | 解決方案 |
+|------|----------|
+| 觸發器未觸發 | 確認 Webhook 在 ChainStream Dashboard 中處於 **啟用** 狀態，且工作流在 n8n 中已 **啟用**（不僅僅是在編輯器中開啟）。 |
+| 測試事件有效但實時事件無效 | 確保你使用的是 **生產** Webhook URL，而非測試 URL。 |
+| 重複事件 | ChainStream 可能會在超時時重試。確保你的 n8n 例項在 10 秒內響應。使用 `txSignature` 或事件 `timestamp` 進行去重。 |
+| 認證錯誤 | 確認 ChainStream API 憑證已在 n8n 憑證儲存中正確配置。 |
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="n8n 概覽" icon="arrows-split-up-and-left" href="/zh-Hant/guides/integrations/n8n/overview">
+    檢視 ChainStream n8n 節點中所有可用的資源和操作。
+  </Card>
+  <Card title="Webhooks API" icon="webhook" href="/api-reference/webhooks">
+    透過 ChainStream API 以程式設計方式管理 Webhook 訂閱。
+  </Card>
+</CardGroup>

@@ -1,0 +1,170 @@
+---
+title: "GraphQL IDE"
+description: "在瀏覽器中互動式探索、編寫與測試 ChainStream GraphQL 查詢"
+icon: "code"
+---
+
+<Info>
+ChainStream GraphQL IDE 是專為在 Solana、Ethereum、BSC 與 Polygon 上編寫、測試與分享 GraphQL 分析查詢而打造的瀏覽器端開發環境。無需安裝 — 開啟 URL 即可開始查詢。
+</Info>
+
+<Card title="開啟 GraphQL IDE" icon="arrow-up-right-from-square" href="https://ide.chainstream.io">
+  https://ide.chainstream.io
+</Card>
+
+---
+
+## 功能亮點
+
+<CardGroup cols={3}>
+  <Card title="Monaco 編輯器" icon="pen-to-square">
+    功能完備的程式碼編輯器：GraphQL 語法高亮、基於 schema 的自動補全，以及實時錯誤檢測。
+  </Card>
+  <Card title="Query Builder" icon="diagram-project">
+    側欄中的視覺化 schema 瀏覽器 — 無需手寫 introspection 查詢即可探索 Chain Group、Cube、欄位與過濾條件。
+  </Card>
+  <Card title="查詢模板" icon="book-open">
+    按鏈與 Cube 組織的內建模板 — 秒級載入、自定義並執行。
+  </Card>
+  <Card title="儲存 & 多標籤" icon="bookmark">
+    將常用查詢連同標題儲存在本地。透過多標籤同時編輯多個查詢。
+  </Card>
+  <Card title="程式碼匯出" icon="file-export">
+    將查詢匯出為 7 種語言的即用程式碼片段：cURL、Python、JavaScript、Go、Rust、Ruby、PHP。
+  </Card>
+  <Card title="AI 助手" icon="wand-magic-sparkles">
+    內建 AI 助手，可從自然語言描述生成 GraphQL 查詢，並解釋查詢結果。需登入。
+  </Card>
+  <Card title="分享查詢" icon="share-nodes">
+    為任意查詢生成可分享 URL。接收方在 IDE 中開啟即可預載入該查詢。
+  </Card>
+  <Card title="狀態列" icon="chart-simple">
+    實時展示請求狀態、延遲（ms）、響應體積，以及每次查詢消耗的 Credit Units。
+  </Card>
+  <Card title="深色主題" icon="moon">
+    與 ChainStream 品牌一致的深色介面，適合長時間編寫查詢。
+  </Card>
+</CardGroup>
+
+---
+
+## IDE 佈局
+
+IDE 分為以下區域：
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Toolbar  [▶ Execute] [Prettify] [Save] [Export] [Share] │
+│           [Endpoint URL input]                           │
+├──────┬─────────────────────────────────────┬─────────────┤
+│      │  Tab Bar [Query 1] [Query 2] [+]   │             │
+│      │─────────────────────────────────────│             │
+│      │                                     │     AI      │
+│ Side │         Query Editor                │   助手面板  │
+│ bar  │                                     │             │
+│      │─────────────────────────────────────│             │
+│ ┌──┐ │  Variables  │  Headers              │             │
+│ │Q │ │─────────────────────────────────────│             │
+│ │S │ │                                     │             │
+│ └──┘ │         Results Panel               │             │
+│      │                                     │             │
+├──────┴─────────────────────────────────────┴─────────────┤
+│  Status: Ready  │  120ms  │  2.4 KB  │  8 CU             │
+└──────────────────────────────────────────────────────────┘
+```
+
+| 區域 | 說明 |
+|:--|:--|
+| **Toolbar** | Execute、Prettify、Save/Fork、Export Code、Share 等按鈕，以及端點 URL 輸入框 |
+| **Sidebar** | **Query Builder** — 視覺化 schema 樹（Chain Group → Cube → 欄位）；**Queries** — 按鏈分組的內建模板；**Saved** — 本地儲存的查詢 |
+| **Tab Bar** | 多標籤查詢編輯 — 每個標籤維護獨立的查詢、變數與請求頭 |
+| **Query Editor** | 基於 Monaco 的 GraphQL 編輯器，支援自動補全與錯誤標記 |
+| **Variables / Headers** | 底部面板：JSON 變數與 HTTP 請求頭（預設顯示 Headers，並預填 `X-API-KEY`） |
+| **Results Panel** | GraphQL 端點返回的、帶語法高亮的 JSON 響應 |
+| **AI 助手面板** | 右側面板，用於自然語言生成查詢與結果解釋（需登入） |
+| **Status Bar** | 請求狀態、延遲、響應體積，以及消耗的 Credit Units（CU） |
+
+---
+
+## 快速開始
+
+<Steps>
+  <Step title="開啟 IDE">
+    在瀏覽器中訪問 [ide.chainstream.io](https://ide.chainstream.io)。
+  </Step>
+  <Step title="設定 API Key">
+    可透過兩種方式設定 API key：
+
+    **方式 A — 手動輸入**：點選編輯器底部的 **Headers** 面板，填入：
+    ```json
+    {
+      "X-API-KEY": "your_api_key"
+    }
+    ```
+
+    **方式 B — 登入賬號**：點選頂欄 **Sign In**，登入你的 ChainStream 賬號。已建立的 API Key 會自動載入，可在下拉框中選擇。
+
+    <Tip>
+    還沒有 Key？在 [ChainStream Dashboard](https://www.chainstream.io/dashboard) → **Applications** → **Create New App** 中建立。
+    </Tip>
+  </Step>
+  <Step title="載入模板">
+    開啟側邊欄（**Ctrl/Cmd+B**），展開某條鏈（例如 **Solana**），再點選模板如 **DEXTrades → Latest Trades**。查詢會載入編輯器並帶有佔位值。
+  </Step>
+  <Step title="替換佔位符">
+    將 `TOKEN_ADDRESS`、`WALLET_ADDRESS` 或 `POOL_ADDRESS` 等佔位符替換為真實鏈上地址。
+  </Step>
+  <Step title="執行">
+    按 **Ctrl/Cmd+Enter** 或點選 **Execute**（▶）按鈕。結果出現在右側面板，狀態列顯示延遲與 CU 消耗。
+  </Step>
+</Steps>
+
+---
+
+## Query Builder（Schema 瀏覽器）
+
+側欄包含視覺化 **Query Builder**，替代了標準 GraphiQL 的文件面板。它以互動式樹形結構展示完整 schema：
+
+- 頂層為 **Chain Group**（EVM、Solana、Trading）
+- 每個組內展示 **Cube** 列表
+- 每個 Cube 內展示 **欄位**、**過濾條件** 與 **排序選項**
+
+點選任意欄位即可將其插入查詢。該功能由後端 `/ide/builder-schema` 端點驅動，提供整個 schema 的結構化表示。
+
+---
+
+## AI 助手
+
+AI 助手面板（右側）可幫助你：
+
+- **生成查詢** — 從自然語言描述生成 GraphQL 查詢（例如"獲取今日 Solana DEX 成交量最大的 10 筆交易"）
+- **解釋結果** — 貼上響應，獲取通俗的摘要說明
+
+<Note>
+AI 助手需要登入 ChainStream 賬號。它使用與當前 IDE 會話相同的 API key。
+</Note>
+
+---
+
+## 分享查詢
+
+點選工具欄中的 **Share** 按鈕即可為任意查詢生成可分享 URL。URL 使用 `#q=` 片段編碼查詢內容、變數與網路選擇。接收方開啟連結即可在 IDE 中看到預載入的查詢。
+
+---
+
+## 延伸閱讀
+
+<CardGroup cols={2}>
+  <Card title="查詢編輯器" icon="pen-to-square" href="/zh-Hant/graphql/ide/query-editor">
+    瞭解 Monaco 編輯器、面板、工具欄、快捷鍵與狀態列。
+  </Card>
+  <Card title="查詢模板" icon="book-open" href="/zh-Hant/graphql/ide/query-templates">
+    瀏覽全部 Cube 上的內建模板。
+  </Card>
+  <Card title="儲存的查詢" icon="bookmark" href="/zh-Hant/graphql/ide/saved-queries">
+    儲存、整理並管理常用查詢。
+  </Card>
+  <Card title="程式碼匯出" icon="file-export" href="/zh-Hant/graphql/ide/code-export">
+    生成 7 種程式語言的即用程式碼片段。
+  </Card>
+</CardGroup>

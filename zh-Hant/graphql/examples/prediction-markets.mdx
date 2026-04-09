@@ -1,0 +1,203 @@
+---
+title: "預測市場"
+description: "PredictionTrades、PredictionManagements、PredictionSettlements Cube 的查詢示例"
+icon: "chart-mixed"
+---
+
+## 概述
+
+ChainStream GraphQL 提供三個預測市場資料 Cube，主要在 Polygon 上使用。這些 Cube 覆蓋預測市場的完整生命週期 — 從建立、交易到結算。
+
+<Note>
+預測市場 Cube 屬於 **EVM** Chain Group，主要配合 `network: polygon` 使用。
+</Note>
+
+---
+
+## PredictionTrades
+
+### 近期預測市場交易
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buyer
+        Seller
+        Amount
+        Price
+        Fee
+      }
+      Prediction {
+        Condition { Id Outcomes }
+        Question { Id }
+        Outcome
+        Marketplace { ProtocolName }
+      }
+    }
+  }
+}
+```
+
+### 特定 Condition 的交易
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      conditionId: {is: "CONDITION_ID"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Buyer Seller Amount Price }
+      Prediction { Outcome OutcomeToken { SmartContract } }
+    }
+  }
+}
+```
+
+### 按 Marketplace 統計交易量
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      marketplace: {is: "Polymarket"}
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Amount Price }
+      Prediction {
+        Question { Id }
+        Marketplace { ProtocolName }
+      }
+      count
+      sum(of: Trade_Amount)
+    }
+  }
+}
+```
+
+---
+
+## PredictionManagements
+
+### 市場建立與解析事件
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionManagements(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType
+        Description
+        Group
+        Prediction {
+          Condition { Id }
+          Question { Id }
+          Marketplace { ProtocolName }
+        }
+      }
+    }
+  }
+}
+```
+
+### 按事件型別過濾
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionManagements(
+      eventType: {is: "ConditionResolution"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Management {
+        EventType
+        Description
+        Prediction { Condition { Id Outcomes } }
+      }
+    }
+  }
+}
+```
+
+---
+
+## PredictionSettlements
+
+### 近期結算
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionSettlements(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType
+        Holder
+        OutcomeTokenIds
+        Amounts
+        Prediction {
+          Condition { Id }
+          CollateralToken { SmartContract Symbol }
+          Marketplace { ProtocolName }
+        }
+      }
+    }
+  }
+}
+```
+
+### 特定持有者的結算
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionSettlements(
+      holder: {is: "0xHOLDER_ADDRESS"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Settlement {
+        EventType
+        Amounts
+        Prediction { Condition { Id } }
+      }
+    }
+  }
+}
+```
+
+---
+
+## 相關文件
+
+<CardGroup cols={2}>
+  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+    預測市場 Cube 的詳細欄位結構。
+  </Card>
+  <Card title="Chain Groups" icon="layer-group" href="/zh-Hant/graphql/schema/chain-groups">
+    預測市場 Cube 屬 EVM 專屬，主要在 Polygon 使用。
+  </Card>
+</CardGroup>

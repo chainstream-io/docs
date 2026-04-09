@@ -1,0 +1,99 @@
+---
+title: "API の選択"
+description: "REST、GraphQL、WebSocket、MCP、CLI を比較 — ユースケースに合ったアクセス方法を選びましょう"
+icon: "code-compare"
+---
+
+ChainStream はオンチェーンデータにアクセスするための 5 つの方法を提供しています。それぞれ異なる強みがあるため、ユースケースに基づいて選択してください。
+
+---
+
+## クイック比較
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| | **REST API** | **GraphQL API** | **WebSocket** | **MCP Tools** | **CLI** |
+|:--|:--|:--|:--|:--|:--|
+| **最適な用途** | シンプルなクエリ、システム統合 | 柔軟な分析、カスタム集計 | リアルタイムの価格・取引ストリーム | AI エージェント統合 | スクリプト、CI/CD、ターミナルワークフロー |
+| **エンドポイント** | 56 の `/v2/*` パス | 単一エンドポイント | `wss://realtime-dex.chainstream.io/...` | MCP プロトコル経由 | `npx @chainstream-io/cli` |
+| **認証** | `X-API-KEY` ヘッダー | `X-API-KEY` ヘッダー | URL `?token=` パラメータ | Bearer Token | `cli login` / API Key |
+| **レスポンス** | 固定 JSON スキーマ | クライアント側でフィールド選択 | リアルタイムプッシュ | 構造化ツール結果 | JSON / テーブル出力 |
+| **集計** | 定義済みエンドポイント | `count` / `sum` / `avg` / `min` / `max` / `uniq` | なし | 基盤 API に依存 | なし |
+| **チェーン** | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc |
+| **SDK** | TS / Python / Go / Rust | 任意の GraphQL クライアント | TS SDK 組み込み | MCP クライアント | N/A |
+
+</div>
+
+---
+
+## 各方法の使いどころ
+
+<CardGroup cols={2}>
+  <Card title="REST API" icon="bolt">
+    **使用場面**: トークン価格、ウォレット残高、取引リストなど、特定のデータを素早く取得し、予測可能なレスポンススキーマが必要な場合。
+
+    **例**: dApp でトークン情報を表示、ウォレット PnL の確認、ランキングリストの取得。
+
+    [REST API リファレンス](/jp/api-reference/authentication/authenticate)
+  </Card>
+  <Card title="GraphQL API" icon="diagram-project">
+    **使用場面**: 柔軟な分析クエリが必要な場合 — 取引の集計、複数ディメンションでのフィルタリング、必要なフィールドのみの選択。
+
+    **例**: ボリューム上位のトレーダー、OHLC ローソク足データ、トークン保有者の分布分析。
+
+    [GraphQL 概要](/jp/graphql/getting-started/overview)
+  </Card>
+  <Card title="WebSocket" icon="tower-broadcast">
+    **使用場面**: アプリケーションにリアルタイムデータのプッシュが必要な場合 — 価格ティック、新規取引、ウォレットの残高変更。
+
+    **例**: ライブ価格フィード、取引アクティビティストリーム、新規トークン作成アラート。
+
+    [リアルタイムストリーミング](/jp/guides/data-concepts/realtime-streaming)
+  </Card>
+  <Card title="MCP Tools" icon="robot">
+    **使用場面**: 自然言語や構造化ツール呼び出しでオンチェーンデータをクエリする AI エージェントを構築する場合。
+
+    **例**: Claude / GPT によるトークンセキュリティ分析、スマートマネーを追跡する AI アシスタント、自動リサーチワークフロー。
+
+    [MCP Server 入門](/jp/guides/ai-infrastructure/mcp-server/introduction)
+  </Card>
+</CardGroup>
+
+---
+
+## インターフェース別データカバレッジ
+
+すべてのインターフェースは同じ基盤データパイプラインを共有し、3 チェーン（Solana、Ethereum、BSC）すべてをサポートします。
+
+| データタイプ | REST | GraphQL | WebSocket | MCP |
+|:----------|:-----|:--------|:----------|:----|
+| トークンメタデータ＆価格 | Yes | Yes (DEXTrades, TokenSearch) | Yes (Token series) | Yes (`token_get_price`) |
+| 取引履歴 | Yes | Yes (DEXTrades) | Yes (Trade series) | Yes (`trade_get`) |
+| ウォレット残高＆PnL | Yes | Yes (BalanceUpdates, WalletTokenPnL) | Yes (Wallet series) | Yes (`wallet_get_balance`) |
+| OHLCV / K 線 | Yes | Yes (OHLC) | Yes (Candle series) | Yes (`token_get_candles`) |
+| トークン保有者 | Yes | Yes (TokenHolders) | No | Yes (`token_get_holders`) |
+| DEX プール流動性 | Yes | Yes (DEXPools, PoolLiquiditySnapshots) | Yes (DexPool series) | Yes (`dexpool_get`) |
+| ランキング（ホット、新規） | Yes | No | Yes (Ranking series) | Yes (`ranking_get_hot_tokens`) |
+| DeFi スワップ / 作成 | Yes | No | No | Yes (`dex_swap`, `pumpfun_create`) |
+| KYT / コンプライアンス | Yes | No | No | No |
+| Webhook 管理 | Yes | No | No | Yes (`webhook_*`) |
+
+<Tip>
+**GraphQL** は集計を伴う柔軟な分析クエリに優れています。**REST** は DeFi 操作やコンプライアンスを含む最も広い機能セットをカバーします。**WebSocket** はリアルタイムプッシュ更新を取得する唯一の方法です。**MCP** は AI エージェント向けに REST 機能をラップします。
+</Tip>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={3}>
+  <Card title="クイックスタート" icon="rocket" href="/jp/guides/getting-started/quickstart">
+    5 分で最初の API 呼び出しを行いましょう。
+  </Card>
+  <Card title="GraphQL 最初のクエリ" icon="play" href="/jp/graphql/getting-started/first-query">
+    最初の GraphQL クエリを実行しましょう。
+  </Card>
+  <Card title="対応チェーン" icon="link-simple" href="/jp/guides/getting-started/supported-chains">
+    対応するすべてのチェーンと DEX を確認しましょう。
+  </Card>
+</CardGroup>

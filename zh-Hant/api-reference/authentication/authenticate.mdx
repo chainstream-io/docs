@@ -1,0 +1,126 @@
+---
+title: '認證'
+description: '如何對 API 請求進行簽名認證'
+icon: "key"
+---
+
+## 簽名請求
+
+ChainStream 使用 API 金鑰對所有 API 呼叫進行認證。根據工作區環境型別，**基礎 API URL** 將是以下之一：
+
+* 主網: `https://api.chainstream.io/`
+
+每個 API 請求必須包含以下請求頭：
+
+* `Authorization` - 此值應設定為 `Bearer <Access Token>`。訪問令牌是一個 Base64 編碼的 JSON Web Token (JWT)。
+
+## 生成 JWT 令牌
+
+你可以使用以下程式碼生成 JWT 令牌。`scope` 引數是可選的，用於控制特定 API 模組的訪問許可權。
+
+### 可用的 Scope
+
+當前支援以下 scope：
+
+- `webhook.read` - Webhook API 端點的讀取許可權
+- `webhook.write` - Webhook API 端點的寫入許可權  
+- `kyt.read` - KYT（瞭解您的交易）API 端點的讀取許可權
+- `kyt.write` - KYT API 端點的寫入許可權
+
+<Note>
+如果不指定 scope，令牌將可以訪問所有通用 API 端點。僅在訪問受保護的 Webhook 或 KYT 端點時才需要 scope。
+</Note>
+
+### JavaScript
+
+**示例 1：不使用 scope（通用 API 訪問）**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io'
+    });
+
+return response.data.access_token;
+```
+
+**示例 2：使用 Webhook 訪問許可權**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: 'webhook.read webhook.write'
+    });
+
+return response.data.access_token;
+```
+
+**示例 3：使用 KYT 訪問許可權**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: 'kyt.read kyt.write'
+    });
+
+return response.data.access_token;
+```
+
+**示例 4：使用多個 scope**
+
+```javascript
+import { AuthenticationClient } from 'auth0';
+
+const auth0Client = new AuthenticationClient({
+    domain: `dex.asia.auth.chainstream.io`,
+    clientId: 'your client id',
+    clientSecret: 'your client secret'
+  });
+
+const response = await auth0Client.oauth.clientCredentialsGrant({
+      audience: 'https://api.dex.chainstream.io',
+      scope: 'webhook.read webhook.write kyt.read kyt.write'
+    });
+
+return response.data.access_token;
+```
+
+## 使用 SDK
+
+生成 JWT 令牌後，你可以使用它來初始化 SDK：
+
+### JavaScript SDK
+
+```javascript
+import { ChainStreamClient } from "@chainstream-io/sdk";
+
+// 从上一步生成的令牌
+const dex = new ChainStreamClient("your-jwt-token");
+```
+
+<Note>
+請確保將示例中的佔位值替換為你的實際 API 憑據。
+</Note> 

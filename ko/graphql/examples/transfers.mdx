@@ -1,0 +1,270 @@
+---
+title: "전송"
+description: "온체인 전송 데이터 쿼리 예제"
+icon: "paper-plane"
+---
+
+**Transfers** Cube는 온체인 토큰 전송 이벤트를 포함합니다 — 토큰이 한 월렛에서 다른 월렛으로 이동할 때마다 기록됩니다. 월렛 활동 추적, 고래 움직임 모니터링, 토큰 흐름 분석, 거래소 입출금 감지에 사용합니다.
+
+<Note>
+아래 모든 예제는 `network: sol` (Solana)을 사용합니다. 다른 지원 체인의 경우 `eth`, `bsc`, `polygon`으로 교체하세요.
+</Note>
+
+---
+
+## 최근 전송을 어떻게 조회하나요?
+
+발신자, 수신자, 금액, USD 가치를 포함하여 Solana의 최근 토큰 전송 10건을 가져옵니다.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여넣어 자동 완성과 스키마 탐색 기능으로 인터랙티브하게 실행해 보세요.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="주요 필드">
+    | 필드 | 설명 |
+    |:------|:------------|
+    | `Block.Time` | 블록 타임스탬프 (ISO 8601) |
+    | `Transaction.Hash` | 온체인 트랜잭션 해시 |
+    | `Transfer.Currency.MintAddress` | 전송되는 토큰 주소 |
+    | `Transfer.Sender.Address` | 토큰을 보낸 월렛 |
+    | `Transfer.Receiver.Address` | 토큰을 받은 월렛 |
+    | `Transfer.Amount` | 전송된 토큰 수 |
+    | `Transfer.AmountInUSD` | 전송 시점의 USD 가치 |
+  </Accordion>
+  <Accordion title="커스터마이즈 팁">
+    - **토큰별 필터**: `tokenAddress: {is: "TOKEN_ADDRESS"}`를 추가하여 특정 토큰의 전송만 표시
+    - **대규모 전송만**: `where: {Transfer: {AmountInUSD: {gt: 10000}}}`를 추가하여 고래 움직임 탐지
+    - **시간 범위**: `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}`를 추가하여 기간으로 제한
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 월렛의 발신 전송을 어떻게 조회하나요?
+
+`senderAddress` 셀렉터를 사용하여 특정 월렛의 발신 전송을 조회합니다.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    senderAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+`WALLET_ADDRESS`를 조사하려는 실제 월렛 주소로 교체하세요.
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="주요 필드">
+    | 필드 | 설명 |
+    |:------|:------------|
+    | `Transfer.Currency.MintAddress` | 어떤 토큰이 전송되었는지 |
+    | `Transfer.Receiver.Address` | 누가 토큰을 받았는지 |
+    | `Transfer.Amount` | 얼마나 많은 토큰이 전송되었는지 |
+    | `Transfer.AmountInUSD` | 전송 시점의 USD 가치 |
+  </Accordion>
+  <Accordion title="커스터마이즈 팁">
+    - **특정 토큰만**: `tokenAddress: {is: "TOKEN_ADDRESS"}`를 추가하여 하나의 토큰으로 좁히기
+    - **결과 증가**: 더 깊은 히스토리를 위해 `count: 20`을 최대 `10000`까지 변경
+    - **수신자 필터 추가**: `where: {Transfer: {Receiver: {Address: {is: "RECEIVER_ADDRESS"}}}}`를 사용하여 두 특정 월렛 간의 전송 추적
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 월렛으로의 수신 전송을 어떻게 조회하나요?
+
+`receiverAddress` 셀렉터를 사용하여 월렛으로의 수신 전송을 찾습니다.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    receiverAddress: {is: "WALLET_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<Tip>
+Transfers Cube는 `senderAddress`와 `receiverAddress` 셀렉터를 모두 지원합니다. 추가 필터링(예: 시간 범위 또는 최소 금액)을 위해 `where`와 결합하세요.
+</Tip>
+
+---
+
+## 특정 토큰의 모든 전송을 어떻게 조회하나요?
+
+네트워크 전체에서 특정 토큰의 모든 전송을 추적합니다.
+
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Transfer {
+      Sender { Address }
+      Receiver { Address }
+      Amount
+      AmountInUSD
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="커스터마이즈 팁">
+    - **고래 알림**: `where: {Transfer: {AmountInUSD: {gt: 100000}}}`를 추가하여 대규모 전송만 표시 (>$100K)
+    - **더스트 제외**: `where: {Transfer: {Amount: {gt: 0.01}}}`를 추가하여 미미한 금액 필터링
+    - **시간 제한**: 오늘 전송을 위해 `where: {Block: {Time: {since: "2025-03-27T00:00:00Z"}}}`와 결합
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 멀티체인 예제
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  Transfers(
+    network: sol
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  Transfers(
+    network: eth
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  Transfers(
+    network: bsc
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  Transfers(
+    network: polygon
+    limit: {count: 5}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transfer {
+      Currency { MintAddress }
+      Sender { Address }
+      Receiver { Address }
+      Amount
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="DEX 트레이드" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
+    DEX 트레이딩 데이터를 쿼리합니다 — 토큰 트레이드, 월렛 활동, 상위 트레이더.
+  </Card>
+  <Card title="잔액 & 홀더" icon="wallet" href="/ko/graphql/examples/balance-holders">
+    월렛 잔액, 잔액 히스토리, 상위 토큰 홀더를 조회합니다.
+  </Card>
+  <Card title="풀 & 유동성" icon="droplet" href="/ko/graphql/examples/pools-liquidity">
+    DEX 풀과 유동성 데이터를 탐색합니다.
+  </Card>
+  <Card title="OHLC & 통계" icon="chart-candlestick" href="/ko/graphql/examples/ohlc-stats">
+    캔들스틱 데이터, 트레이드 통계, 시가총액, 토큰 메타데이터를 가져옵니다.
+  </Card>
+</CardGroup>

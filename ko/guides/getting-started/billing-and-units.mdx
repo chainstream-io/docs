@@ -1,0 +1,578 @@
+---
+title: "빌링과 Unit"
+description: "ChainStream의 빌링 모델 및 쿼터 관리 이해하기"
+icon: "credit-card"
+---
+
+## 개요
+
+ChainStream은 **Unit 기반 빌링 모델**을 사용합니다. API마다 다른 양의 Unit을 소비하며, 비즈니스 요구에 맞는 플랜을 선택할 수 있습니다.
+
+---
+
+## 빌링 모델
+
+### 플랜 유형
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="gift">
+    **$0 / 월**
+
+    - 30K Units/월
+    - 초과 없음
+    - 개발, POC용
+  </Card>
+
+  <Card title="Starter" icon="rocket">
+    **$199 / 월**
+
+    - 10M Units/월
+    - 초과: $12.9/M
+    - 소규모 프로젝트, MVP용
+  </Card>
+
+  <Card title="Pro" icon="bolt">
+    **$699 / 월**
+
+    - 50M Units/월
+    - 초과: $9.9/M
+    - 프로덕션, 중간 트래픽용
+  </Card>
+
+  <Card title="Enterprise" icon="building">
+    **$1,699 / 월**
+
+    - 200M Units/월
+    - 초과: $6.9/M
+    - 대기업, 높은 동시성용
+  </Card>
+
+  <Card title="Custom" icon="handshake">
+    **맞춤 가격**
+
+    - 맞춤 Units 쿼터
+    - 맞춤 초과 요금
+    - 프라이빗 배포, 전용 SLA
+  </Card>
+</CardGroup>
+
+<Tip>
+모든 플랜은 쿼터가 소진되면 차단됩니다 (403 오류 반환). 유료 플랜은 대시보드에서 추가 쿼터를 구매하여 서비스를 복원할 수 있습니다.
+</Tip>
+
+### 플랜 선택 가이드
+
+<AccordionGroup>
+  <Accordion title="Free — 개발 및 테스트용">
+    **사용 사례:**
+    - 로컬 개발 및 디버깅
+    - 기능 검증 및 데모
+    - ChainStream API 학습 및 평가
+
+    **일반적인 사용량 추정:**
+    - 일 300회 가격 조회 → ~9,000 Units/월
+
+    **제한사항:**
+    - 데이터에 1-2초 지연이 있을 수 있음
+    - SLA 보장 없음
+    - 쿼터 소진 후 호출 불가
+  </Accordion>
+
+  <Accordion title="Starter — 소규모 프로젝트용">
+    **사용 사례:**
+    - 개인 개발자의 소규모 dApp
+    - 트레이딩 봇 프로토타입
+    - 소규모 시장 표시 웹사이트
+
+    **일반적인 사용량 추정:**
+    - 시장 대시보드 (10개 토큰, 매분 갱신) → ~43,200 Units/월
+    - 소규모 트레이딩 봇 (1회/초 조회) → ~86,400 Units/월 (단일 토큰)
+
+    **예시 시나리오:**
+    20개 인기 토큰을 표시하고 30초마다 갱신하는 Solana 토큰 시장 웹사이트 구축:
+    ```
+    20개 토큰 × 2회/분 × 60분 × 24시간 × 30일 = 1,728,000 요청
+    1 Unit/요청 기준 = 1,728,000 Units/월
+    ```
+    이 시나리오에는 Pro 플랜을 추천합니다.
+  </Accordion>
+
+  <Accordion title="Pro — 프로덕션 환경용">
+    **사용 사례:**
+    - 중소 거래소 또는 지갑의 데이터 수요
+    - 전문 거래 도구
+    - KYT/KYA 리스크 제어가 필요한 비즈니스
+
+    **일반적인 사용량 추정:**
+    - 중간 규모 시장 플랫폼 (100개 토큰, 실시간 WebSocket) → ~500,000 Units/월
+    - 입금 리스크 제어 (일 1000회 KYT 확인) → ~150,000 Units/월
+
+    **예시 시나리오:**
+    다음이 필요한 소규모 거래소 운영:
+    - 시장 데이터: 50개 거래쌍, WebSocket 실시간 푸시
+    - 입금 리스크 제어: 일 500건 입금, 각각 KYT 확인
+    ```
+    WebSocket: 50 × 0.1 Unit/메시지 × 86400초 × 30일 ≈ 12,960,000 메시지 = 1,296,000 Units
+    KYT: 500 × 5 Units × 30일 = 75,000 Units
+    합계: ~1,371,000 Units/월
+    ```
+    이 시나리오에는 Pro 플랜 + 초과 예산, 또는 영업팀에 Enterprise 견적 문의를 추천합니다.
+  </Accordion>
+
+  <Accordion title="Enterprise — 대기업용">
+    **사용 사례:**
+    - 대형 거래소
+    - 기관 퀀트 트레이딩
+    - 프라이빗 배포 또는 맞춤 SLA 요구
+
+    **포함:**
+    - 무제한 API 호출
+    - 전담 기술 지원
+    - 맞춤 SLA (99.99%+)
+    - 프라이빗 배포 옵션
+
+    가격은 영업팀에 문의하세요.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Unit 계산
+
+### Unit이란
+
+Unit은 ChainStream의 빌링 단위입니다. API마다 다른 양의 Unit을 소비하며, 더 복잡한 API일수록 더 많이 소비합니다.
+
+### Data API 소비량
+
+Unit 비용은 연산 복잡도에 따라 계층화됩니다. 단순 조회는 저렴하고, 집계가 많은 엔드포인트와 온체인 실행 엔드포인트는 더 비쌉니다.
+
+<Tabs>
+  <Tab title="Token API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Token Search | 0.25 | `GET /v2/token/search` |
+    | Token Detail | 1.00 | `GET /v2/token/{chain}/{tokenAddress}` |
+    | Batch Detail | 0.75 | `GET /v2/token/{chain}/multi` |
+    | Token Metadata | 0.05 | `GET /v2/token/{chain}/{tokenAddress}/metadata` |
+    | Batch Metadata | 0.05 | `GET /v2/token/{chain}/metadata/multi` |
+    | Token Price | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/price` |
+    | Price History | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/prices` |
+    | Market Data | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/marketData` |
+    | Batch Market Data | 0.10 | `GET /v2/token/{chain}/marketData/multi` |
+    | Token Stats | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/stats` |
+    | Batch Stats | 2.50 | `GET /v2/token/{chain}/stats/multi` |
+    | Candles (OHLCV) | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/candles` |
+    | Pair Candles | 0.25 | `GET /v2/token/{chain}/pair/{pair}/candles` |
+    | Pool Candles | 0.25 | `GET /v2/token/{chain}/pool/{poolAddress}/candles` |
+    | Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders` |
+    | Batch Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders/multi` |
+    | Top Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/topHolders` |
+    | Pools | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/pools` |
+    | Security | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/security` |
+    | Creation Info | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/creation` |
+    | Mint/Burn | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/mintAndBurn` |
+    | Traders by Tag | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/traders/{tag}` |
+    | Liquidity Snapshots | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/liquiditySnapshots` |
+    | Token List | 0.05 | `GET /v2/token/{chain}/list` |
+    | Dev Tokens | 0.50 | `GET /v2/token/{chain}/dev/{devAddress}/tokens` |
+    | Transfer Total | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfer-total` |
+    | Transfers | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfers` |
+  </Tab>
+  <Tab title="Wallet API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Token Balances | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/tokens-balance` |
+    | Balance Updates | 0.50 | `GET /v2/wallet/{chain}/{walletAddress}/balance-updates` |
+    | PnL | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl` |
+    | PnL by Token | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-by-token` |
+    | PnL Details | 1.50 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-details` |
+    | Calculate PnL | 1.50 | `POST /v2/wallet/{chain}/{walletAddress}/calculate-pnl` |
+    | Net Worth | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth` |
+    | Net Worth Chart | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-chart` |
+    | Net Worth Details | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-details` |
+    | Net Worth Tokens | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth/tokens` |
+    | Transfers | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfers` |
+    | Transfer Total | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfer-total` |
+    | First Transaction | 0.10 | `GET /v2/wallet/{chain}/first-tx` |
+    | Net Worth Summary | 1.00 | `GET /v2/wallet/{chain}/net-worth-summary` |
+    | PnL by Wallet | 1.00 | `GET /v2/wallet/{chain}/pnl-by-wallet` |
+    | Add to Watchlist | 0.05 | `POST /v2/watchlist/{chain}/{walletAddress}` |
+  </Tab>
+  <Tab title="Trade API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Trades | 0.25 | `GET /v2/trade/{chain}` |
+    | Activities | 0.25 | `GET /v2/trade/{chain}/activities` |
+    | Top Traders | 0.50 | `GET /v2/trade/{chain}/top-traders` |
+    | Gainers/Losers | 0.50 | `GET /v2/trade/{chain}/trader-gainers-losers` |
+  </Tab>
+  <Tab title="Pool API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Pool Info | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}` |
+    | Pool Snapshots | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}/snapshots` |
+  </Tab>
+  <Tab title="Ranking API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Hot Tokens | 0.25 | `GET /v2/ranking/{chain}/hotTokens/{duration}` |
+    | New Tokens | 0.25 | `GET /v2/ranking/{chain}/newTokens` |
+    | Migrated Tokens | 0.25 | `GET /v2/ranking/{chain}/migrated` |
+    | Final Stretch | 0.25 | `GET /v2/ranking/{chain}/finalStretch` |
+    | Stock Tokens | 0.25 | `GET /v2/ranking/{chain}/stocks` |
+  </Tab>
+  <Tab title="DEX / DeFi API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Supported DEXs | 0.05 | `GET /v2/dex` |
+    | Quote | 0.25 | `GET /v2/dex/{chain}/quote` |
+    | Route | 0.25 | `POST /v2/dex/{chain}/route` |
+    | Token Creation | 5.00 | `POST /v2/dex/{chain}/create` |
+    | Execute Swap | 5.00 | `POST /v2/dex/{chain}/swap` |
+    | Job Status | 0.05 | `GET /v2/job/{id}` |
+    | Job Streaming | 0.05 | `GET /v2/job/{id}/streaming` |
+  </Tab>
+  <Tab title="Blockchain / Tx API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | Supported Chains | 0.05 | `GET /v2/blockchain` |
+    | Latest Block | 0.05 | `GET /v2/blockchain/{chain}/latest_block` |
+    | Gas Price | 0.10 | `GET /v2/transaction/{chain}/gas-price` |
+    | Gas Estimate | 0.25 | `POST /v2/transaction/{chain}/estimate-gas-limit` |
+    | Send Transaction | 5.00 | `POST /v2/transaction/{chain}/send` |
+  </Tab>
+  <Tab title="Webhook API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | List Endpoints | 0.05 | `GET /v2/webhook/endpoint` |
+    | Create Endpoint | 0.05 | `POST /v2/webhook/endpoint` |
+    | Get Endpoint | 0.05 | `GET /v2/webhook/endpoint/{id}` |
+    | Update Endpoint | 0.05 | `PATCH /v2/webhook/endpoint` |
+    | Delete Endpoint | 0.05 | `DELETE /v2/webhook/endpoint/{id}` |
+    | Get Secret | 0.05 | `GET /v2/webhook/endpoint/{id}/secret` |
+    | Rotate Secret | 0.10 | `POST /v2/webhook/endpoint/{id}/secret/rotate` |
+  </Tab>
+  <Tab title="RedPacket API">
+    | API | CU | 엔드포인트 |
+    |:--|:--|:--|
+    | List Red Packets | 0.05 | `GET /v2/redpacket` |
+    | Get Red Packet | 0.05 | `GET /v2/redpacket/{id}` |
+    | Get Claims | 0.05 | `GET /v2/redpacket/{id}/claims` |
+    | Wallet Claims | 0.05 | `GET /v2/redpacket/wallet/{address}/claims` |
+    | Wallet Red Packets | 0.05 | `GET /v2/redpacket/wallet/{address}/redpackets` |
+    | Create Red Packet | 5.00 | `POST /v2/redpacket/{chain}/create` |
+    | Claim Red Packet | 5.00 | `POST /v2/redpacket/{chain}/claim` |
+    | Send Red Packet | 5.00 | `POST /v2/redpacket/{chain}/send` |
+  </Tab>
+</Tabs>
+
+### CU 가격 계층
+
+| 계층 | CU 비용 | 설명 | 예시 |
+|:--|:--|:--|:--|
+| Tier 1 | 0.05 | 메타데이터, 목록, 간단한 조회 | 토큰 목록, 블록체인 정보, webhook CRUD, 작업 상태 |
+| Tier 2 | 0.10 | 단일 필드 쿼리 | 가격, 시장 데이터, 생성 정보, 가스 가격 |
+| Tier 3 | 0.25 | 검색, 거래, 랭킹, 캔들 | 토큰 검색, OHLCV, 거래 활동, 랭킹 |
+| Tier 4 | 0.50 | 홀더, 보안, 스냅샷 | 홀더, 보안 감사, 풀 스냅샷, 상위 트레이더 |
+| Tier 5 | 1.00 | 전체 프로필, PnL, 순자산 | 토큰 상세, 지갑 PnL, 순자산 |
+| Tier 6 | 1.50 | 연산 집약적 분석 | PnL 상세, PnL 계산 |
+| Tier 7 | 2.50 | 집계 집약적 | 토큰 통계, 풀 (다중 소스 집계) |
+| Tier 8 | 5.00 | 온체인 실행 | 스왑, 토큰 생성, 트랜잭션 전송 |
+
+---
+
+## WebSocket 실시간 구독 빌링
+
+WebSocket 실시간 데이터 구독은 별도 과금되며, 데이터 바이트 기준으로 과금됩니다:
+
+| 항목 | 요금 | 설명 |
+|:--|:--|:--|
+| WebSocket 데이터 | **0.005 Unit/byte** | 푸시 데이터 바이트 기준 과금 |
+| WebSocket 연결 | 무료 | 연결 수립 시 과금 없음 |
+| 하트비트 메시지 | 무료 | 하트비트 패킷 과금 없음 |
+
+### 지원 구독 채널
+
+<Tabs>
+  <Tab title="캔들">
+    | 채널 | 설명 |
+    |:--|:--|
+    | `dex-candle:{chain}_{tokenAddress}_{resolution}` | 실시간 캔들 데이터 |
+  </Tab>
+  <Tab title="토큰 데이터">
+    | 채널 | 설명 |
+    |:--|:--|
+    | `dex-token-stats:{chain}_{tokenAddress}` | 토큰 통계 |
+    | `dex-token-holding:{chain}_{tokenAddress}` | 홀더 통계 |
+    | `dex-token-supply:{chain}_{tokenAddress}` | 공급량 및 시가총액 |
+    | `dex-token-general-stat-num:{chain}_{tokenAddress}` | 유동성 통계 |
+    | `dex-new-token:{chain}` | 새 토큰 정보 |
+    | `dex-new-tokens-metadata:{chain}` | 새 토큰 메타데이터 |
+  </Tab>
+  <Tab title="랭킹 데이터">
+    | 채널 | 설명 |
+    |:--|:--|
+    | `dex-ranking-list:{chain}_{ranking_type}` | 랭킹 토큰 목록 |
+    | `dex-ranking-token-stats-list:{chain}_{channelType}` | 랭킹 토큰 통계 |
+    | `dex-ranking-token-holding-list:{chain}_{channelType}` | 랭킹 홀더 통계 |
+    | `dex-ranking-token-supply-list:{chain}_{channelType}` | 랭킹 공급량 |
+  </Tab>
+  <Tab title="지갑 데이터">
+    | 채널 | 설명 |
+    |:--|:--|
+    | `dex-wallet-balance:{chain}_{walletAddress}` | 지갑 잔액 |
+    | `dex-wallet-token-pnl:{chain}_{walletAddress}` | 토큰별 PnL |
+    | `dex-wallet-pnl-list:{chain}_{walletAddress}` | 지갑 수준 PnL |
+  </Tab>
+  <Tab title="거래 데이터">
+    | 채널 | 설명 |
+    |:--|:--|
+    | `dex-trade:{chain}_{tokenAddress}` | 토큰 거래 |
+    | `dex-wallet-trade:{chain}_{walletAddress}` | 지갑 거래 |
+  </Tab>
+  <Tab title="풀 데이터">
+    | 채널 | 설명 |
+    |:--|:--|
+    | `dex-pool-balance:{chain}_{poolAddress}` | 풀 잔액 |
+  </Tab>
+</Tabs>
+
+### WebSocket 사용량 추정 예시
+
+```
+시나리오: 10개 토큰의 실시간 캔들 모니터링 (1분 해상도)
+
+계산:
+- 캔들 메시지 약 200바이트
+- 각 토큰당 분당 약 1개 캔들 메시지
+- 10개 토큰 × 1메시지/분 × 60분 × 24시간 × 30일 = 432,000 메시지
+- 총 데이터: 432,000 × 200 = 86,400,000 바이트
+- 월간: 86,400,000 × 0.005 = 432,000 Units
+
+시나리오: 50개 토큰의 통계 모니터링 (실시간, 약 1회/초 업데이트)
+
+계산:
+- 토큰 통계 메시지 약 500바이트
+- 50개 토큰 × 1메시지/초 × 86,400초 × 30일 = 129,600,000 메시지
+- 총 데이터: 129,600,000 × 500 = 64,800,000,000 바이트 (~64.8 GB)
+- 월간: 64,800,000,000 × 0.005 = 324,000,000 Units (~324M)
+```
+
+<Note>
+배치 API는 일반적으로 할인이 적용됩니다. 정확한 소비량은 API 레퍼런스를 참고하세요. WebSocket 메시지 빈도는 시장 활동에 따라 다르며, 변동성이 높은 시기에는 메시지 양이 증가합니다.
+</Note>
+
+---
+
+## KYT/KYA 서비스 빌링
+
+<Warning>
+KYT/KYA API는 **플랜 Unit을 소비하지 않습니다**. 별도의 KYT 계정 잔액(USD)에서 차감됩니다. 대시보드 → KYT 서비스에서 충전하세요.
+</Warning>
+
+| API | 비용 | 엔드포인트 |
+|:--|:--|:--|
+| Register Transfer | $0.25/호출 | `POST /v2/kyt/transfer` |
+| Register Withdrawal | $0.25/호출 | `POST /v2/kyt/withdrawal` |
+| Register Address | $1.25/호출 | `POST /v2/kyt/address` |
+| Query Risk / Alerts / Exposures | 포함 | `GET /v2/kyt/addresses/*/risk`, `GET /v2/kyt/transfers/*/summary` 등 |
+
+---
+
+### 비용 추정 예시
+
+<Tabs>
+  <Tab title="시장 표시 앱">
+    **시나리오:** 50개 토큰 가격을 표시하고 10초마다 갱신하는 DeFi 시장 웹사이트
+    ```
+    계산:
+    - 요청 빈도: 50개 토큰 × 6회/분 = 300 요청/분
+    - 월간 요청: 300 × 60 × 24 × 30 = 12,960,000 요청
+    - 요청당 CU: 0.10 (Token Price 엔드포인트)
+    - 월간 CU: 12,960,000 × 0.10 = 1,296,000 CU
+
+    추천: Starter 플랜 (10M CU)
+    ```
+  </Tab>
+  <Tab title="트레이딩 봇">
+    **시나리오:** 5개 거래쌍을 모니터링하고 매초 가격을 조회하는 차익거래 봇
+    ```
+    REST 방식:
+    - 5 × 1/초 × 86,400 × 30 = 12,960,000 요청
+    - CU: 12,960,000 × 0.10 = 1,296,000 CU
+
+    WebSocket 방식 (추천):
+    - 5개 쌍 × ~200바이트/메시지 × 1메시지/초 × 86,400 × 30
+    - = 2,592,000,000 바이트 × 0.005 CU/바이트 = 12,960,000 CU
+
+    추천: REST는 Pro 플랜; WebSocket은 Starter
+    ```
+  </Tab>
+  <Tab title="거래소 리스크 제어">
+    **시나리오:** 일 1,000건 입금에 KYT 확인이 필요한 소규모 거래소
+    ```
+    계산:
+    - 일간: 1,000건 KYT transfer 등록
+    - 월간: 1,000 × 30 = 30,000 호출
+    - 비용: 30,000 × $0.25 = $7,500/월 (KYT는 USD로 별도 과금)
+
+    참고: KYT는 플랜 CU를 소비하지 않습니다. KYT 잔액을 별도로 충전하세요.
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 쿼터 관리
+
+### 대시보드에서 사용량 확인
+
+<Steps>
+  <Step title="대시보드 로그인">
+    [ChainStream 대시보드](https://www.chainstream.io/dashboard) 방문
+  </Step>
+  <Step title="사용량 확인">
+    Usage 페이지에서 현재 월 사용량, 잔여 쿼터, 히스토리 트렌드 확인
+  </Step>
+</Steps>
+
+### 쿼터 알림 설정
+
+사용량이 임계값에 도달하면 알림을 받도록 쿼터 알림을 설정할 수 있습니다:
+
+| 알림 수준 | 트리거 조건 | 알림 방법 |
+|:--|:--|:--|
+| 알림 | 50% 사용 | 이메일 |
+| 경고 | 80% 사용 | 이메일 + 대시보드 알림 |
+| 위험 | 100% 사용 | 이메일 + 대시보드 알림 |
+
+<Tip>
+예상치 못한 서비스 중단을 방지하려면 최소 80% 알림을 활성화하는 것을 추천합니다.
+</Tip>
+
+---
+
+## 쿼터 소진 처리
+
+### 쿼터가 소진되면 어떻게 되나요
+
+월간 쿼터가 소진되면 API는 403 오류를 반환하며 계속 호출할 수 없습니다. 유료 플랜 사용자는 수동으로 추가 쿼터를 구매하여 서비스를 복원할 수 있습니다.
+
+| 플랜 | 처리 방법 |
+|:--|:--|
+| Free | API가 403 오류 반환, 다음 달 쿼터 리셋 대기 |
+| Starter / Pro / Enterprise | API가 403 오류 반환, 추가 쿼터 구매로 서비스 복원 가능 |
+| Custom | 계약 조건에 따름 |
+
+### 추가 쿼터 구매
+
+유료 플랜 사용자는 대시보드에서 추가 쿼터를 구매할 수 있으며, 플랜의 초과 요금에 따라 과금됩니다:
+
+| 플랜 | 추가 쿼터 가격 |
+|:--|:--|
+| Starter | $12.9 / 1M Units |
+| Pro | $9.9 / 1M Units |
+| Enterprise | $6.9 / 1M Units |
+
+<Warning>
+쿼터 소진 시 서비스가 즉시 중단됩니다 (403 오류 반환). 80% 사용량 알림을 설정하고 사전에 추가 쿼터를 구매하여 비즈니스 영향을 방지하는 것을 추천합니다.
+</Warning>
+
+---
+
+## 결제 수단
+
+### 지원 결제 수단
+
+| 수단 | 설명 | 적용 플랜 |
+|:--|:--|:--|
+| 신용카드 | Visa, MasterCard, AMEX | 모든 플랜 |
+| 암호화폐 | USDT, USDC (ERC-20 / TRC-20) | Starter 이상 |
+| 은행 이체 | 영업팀 문의 | Enterprise |
+
+### 빌링 주기
+
+- **월간 플랜:** 전월분 청구서가 매월 1일에 생성
+- **연간 플랜:** 2개월 무료 (16.7% 할인에 해당)
+
+---
+
+## AI 에이전트 결제 (x402 / MPP)
+
+대시보드 가입 없이 프로그래밍 방식의 접근이 필요한 AI 에이전트를 위해, ChainStream은 두 가지 온체인 결제 프로토콜을 지원합니다:
+
+### x402 (Base / Solana USDC)
+
+[x402 프로토콜](https://www.x402.org/)은 HTTP 네이티브 마이크로결제를 가능하게 합니다. API 호출이 402를 반환하면, 에이전트의 지갑이 USDC 전송에 서명하고 재시도합니다 — 계정 등록이 필요 없습니다.
+
+| 속성 | 값 |
+|----------|-------|
+| 네트워크 | Base (chain ID 8453), Solana |
+| 통화 | USDC |
+| 표준 | EIP-3009 (Base), 네이티브 전송 (Solana) |
+| 가스 수수료 | **무료** — ChainStream의 facilitator가 모든 가스 비용을 부담 |
+
+<Tip>
+USDC로 구독 가격만 지불하면 됩니다. ChainStream은 자체 x402 facilitator를 운영하여 온체인 트랜잭션을 제출하고 대신 가스 수수료를 지불합니다 — 에이전트 지갑에 ETH나 SOL이 필요 없습니다.
+</Tip>
+
+### MPP (Tempo USDC.e)
+
+MPP는 Tempo 네트워크를 사용하여 결제합니다. 가스는 USDC.e로 직접 지불되며 — ETH가 필요 없습니다.
+
+| 속성 | 값 |
+|----------|-------|
+| 네트워크 | Tempo (chain ID 4217) |
+| 통화 | USDC.e |
+
+### 동작 원리
+
+1. 에이전트가 ChainStream API 호출
+2. 서버가 402 반환 (활성 구독 없음)
+3. 에이전트가 `/x402/pricing`에서 사용 가능한 플랜 조회
+4. 에이전트가 x402 또는 MPP를 통해 플랜 구매
+5. 서버가 **API Key**를 반환 — 에이전트가 향후 모든 호출에 사용
+
+<Card title="x402 결제 가이드" icon="credit-card" href="/ko/guides/cli/x402-payment">
+  x402 및 MPP 결제 플로우에 대한 전체 상세 정보
+</Card>
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="올바른 플랜은 어떻게 선택하나요?">
+    실제 사용량을 평가하기 위해 Free 플랜부터 시작하고, 월간 소비량에 따라 선택하는 것을 추천합니다:
+    - &lt; 30K Units: Free
+    - 30K - 10M Units: Starter
+    - 10M - 50M Units: Pro
+    - &gt; 50M Units: Enterprise
+  </Accordion>
+  <Accordion title="언제든 업그레이드/다운그레이드할 수 있나요?">
+    예. 업그레이드는 즉시 적용되며 비례 과금됩니다. 다운그레이드는 다음 빌링 주기에 적용됩니다.
+  </Accordion>
+  <Accordion title="미사용 쿼터는 이월되나요?">
+    아니오. 월간 쿼터는 매월 말에 리셋되며 이월되지 않습니다.
+  </Accordion>
+  <Accordion title="인보이스는 어떻게 받나요?">
+    대시보드 → Billing → Invoices에서 과거 인보이스를 다운로드하세요. Enterprise 고객은 영업팀에 커스텀 인보이스를 요청할 수 있습니다.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 다음 단계
+
+<CardGroup cols={3}>
+  <Card title="FAQ" icon="circle-question" href="/ko/guides/getting-started/faq">
+    자주 묻는 질문
+  </Card>
+  <Card title="API 보안" icon="shield-halved" href="/ko/guides/data-concepts/api-security">
+    API 보안 설정 이해하기
+  </Card>
+  <Card title="API 레퍼런스" icon="book" href="/ko/api-reference/authentication/authenticate">
+    API 호출 시작하기
+  </Card>
+</CardGroup>

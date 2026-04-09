@@ -1,0 +1,1134 @@
+{
+  "openapi": "3.1.0",
+  "paths": {
+    "/v2/dex/{chain}/swap": {
+      "post": {
+        "description": "Swap parameters including input token, output token, amount and slippage",
+        "operationId": "swap",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dex - Swap",
+        "tags": [
+          "Dex"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    let body = serde_json::json!({\n        // Add your request body here based on the schema\n    });\n    \n    let response = client\n        .post(\"https://api.chainstream.io/v2/dex/{chain}/swap\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .header(\"Content-Type\", \"application/json\")\n        .json(&body)\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/dex/{chain}/route": {
+      "post": {
+        "description": "Calculate the best route for token swap considering price impact and fees. Returns the optimal path and a prepared transaction.",
+        "operationId": "route",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapRouteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapRouteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dex - Route",
+        "tags": [
+          "Dex"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    let body = serde_json::json!({\n        // Add your request body here based on the schema\n    });\n    \n    let response = client\n        .post(\"https://api.chainstream.io/v2/dex/{chain}/route\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .header(\"Content-Type\", \"application/json\")\n        .json(&body)\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/dex/{chain}/quote": {
+      "get": {
+        "description": "Get DEX trading quote information",
+        "operationId": "quote",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          },
+          {
+            "name": "dex",
+            "required": true,
+            "in": "query",
+            "description": "DEX protocol type",
+            "schema": {
+              "example": "raydium",
+              "enum": [
+                "raydium",
+                "pumpfun"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "amount",
+            "required": true,
+            "in": "query",
+            "description": "Trading amount",
+            "schema": {
+              "example": 1000000000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "inputMint",
+            "required": true,
+            "in": "query",
+            "description": "Input token address",
+            "schema": {
+              "example": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+              "type": "string"
+            }
+          },
+          {
+            "name": "outputMint",
+            "required": true,
+            "in": "query",
+            "description": "Output token address",
+            "schema": {
+              "example": "So11111111111111111111111111111111111111112",
+              "type": "string"
+            }
+          },
+          {
+            "name": "exactIn",
+            "required": true,
+            "in": "query",
+            "description": "Exact input mode",
+            "schema": {
+              "default": true,
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "slippage",
+            "required": true,
+            "in": "query",
+            "description": "Slippage tolerance",
+            "schema": {
+              "format": "int64",
+              "example": 10,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DexQuoteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dex - Get Quote",
+        "tags": [
+          "Dex"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    \n    let response = client\n        .get(\"https://api.chainstream.io/v2/dex/{chain}/quote?dex={dex}&amount={amount}&inputMint={inputMint}&outputMint={outputMint}&exactIn={exactIn}&slippage={slippage}\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/dex/{chain}/create": {
+      "post": {
+        "description": "Create a new token on the specified DEX",
+        "operationId": "create.token",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "$ref": "#/components/schemas/ChainSymbol"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Token creation parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTokenInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTokenReply"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dex - Create Token",
+        "tags": [
+          "Dex"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    let body = serde_json::json!({\n        // Add your request body here based on the schema\n    });\n    \n    let response = client\n        .post(\"https://api.chainstream.io/v2/dex/{chain}/create\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .header(\"Content-Type\", \"application/json\")\n        .json(&body)\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/transaction/{chain}/send": {
+      "post": {
+        "description": "Submit a signed transaction to the blockchain",
+        "operationId": "send",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "sol",
+                "bsc",
+                "eth"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Transaction parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTxInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendTxResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transaction - Send",
+        "tags": [
+          "Transaction"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    let body = serde_json::json!({\n        // Add your request body here based on the schema\n    });\n    \n    let response = client\n        .post(\"https://api.chainstream.io/v2/transaction/{chain}/send\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .header(\"Content-Type\", \"application/json\")\n        .json(&body)\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/transaction/{chain}/gas-price": {
+      "get": {
+        "description": "Get the current gas price for an EVM chain",
+        "operationId": "get.gasPrice",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "bsc",
+                "eth"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GasPriceResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transaction - Gas Price",
+        "tags": [
+          "Transaction"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    \n    let response = client\n        .get(\"https://api.chainstream.io/v2/transaction/{chain}/gas-price\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/transaction/{chain}/estimate-gas-limit": {
+      "post": {
+        "description": "Estimate the gas limit for an EVM transaction",
+        "operationId": "get.gasLimit",
+        "parameters": [
+          {
+            "name": "chain",
+            "required": true,
+            "in": "path",
+            "description": "A chain name listed in supported networks",
+            "schema": {
+              "enum": [
+                "bsc",
+                "eth"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Gas estimation parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateGasLimitInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateGasLimitResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transaction - Estimate Gas Limit",
+        "tags": [
+          "Transaction"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    let body = serde_json::json!({\n        // Add your request body here based on the schema\n    });\n    \n    let response = client\n        .post(\"https://api.chainstream.io/v2/transaction/{chain}/estimate-gas-limit\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .header(\"Content-Type\", \"application/json\")\n        .json(&body)\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/job/{id}": {
+      "get": {
+        "description": "Retrieve the current status and result of a job by its ID",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Job identifier",
+            "schema": {
+              "example": "12345",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Job - Get",
+        "tags": [
+          "Job"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    \n    let response = client\n        .get(\"https://api.chainstream.io/v2/job/{id}\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    },
+    "/v2/job/{id}/streaming": {
+      "get": {
+        "description": "Subscribe to real-time job status updates via Server-Sent Events (SSE). The connection will remain open until the job completes or an error occurs",
+        "operationId": "streaming",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Job identifier",
+            "schema": {
+              "example": "12345",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE stream established successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStreamingDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Job - Streaming",
+        "tags": [
+          "Job"
+        ],
+        "x-codeSamples": [
+          {
+            "lang": "Rust",
+            "source": "use reqwest::Client;\nuse serde_json::Value;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let client = Client::new();\n    \n    let response = client\n        .get(\"https://api.chainstream.io/v2/job/{id}/streaming\")\n        .header(\"Authorization\", \"Bearer YOUR_ACCESS_TOKEN\")\n        .send()\n        .await?;\n    \n    let data: Value = response.json().await?;\n    println!(\"{:?}\", data);\n    \n    Ok(())\n}"
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Defi Services API",
+    "description": "Defi Services API ⚡️",
+    "version": "1.0",
+    "contact": {
+      "name": "AI",
+      "url": "https://github.com/chainstream-io/defi-service",
+      "email": "ai@sx.ai"
+    }
+  },
+  "tags": [
+    {
+      "name": "Endpoints",
+      "description": ""
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://api.chainstream.io",
+      "description": "Chainstream Production"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "ChainSymbol": {
+        "type": "string",
+        "enum": [
+          "sol",
+          "bsc",
+          "eth"
+        ]
+      },
+      "SwapInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier for the trade",
+            "example": "jupiter",
+            "enum": [
+              "jupiter",
+              "kyberswap",
+              "raydium",
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Public key of the wallet initiating the transaction",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "Priority fee in SOL to increase transaction processing speed",
+            "example": "1000"
+          },
+          "poolAddress": {
+            "type": "string",
+            "description": "DEX pool address",
+            "example": "58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount to swap. Use \"auto\" for full balance or percentage like \"50%\"",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "description": "Swap direction mode",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          },
+          "slippage": {
+            "type": "integer",
+            "description": "Slippage tolerance percentage",
+            "example": 10,
+            "default": 10,
+            "minimum": 0,
+            "maximum": 100,
+            "format": "int64"
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "Input token mint address"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "Output token mint address"
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "amount",
+          "swapMode",
+          "slippage"
+        ]
+      },
+      "SwapReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 encoded transaction",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "elapsedTime": {
+            "type": "integer",
+            "description": "Time taken to process the request in milliseconds",
+            "example": 245,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "serializedTx",
+          "elapsedTime"
+        ]
+      },
+      "SwapRouteInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier for the trade",
+            "example": "jupiter",
+            "enum": [
+              "jupiter",
+              "kyberswap",
+              "raydium",
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Public key of the wallet initiating the transaction",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "Priority fee in SOL to increase transaction processing speed",
+            "example": "1000"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Amount to swap. Use \"auto\" for full balance or percentage like \"50%\"",
+            "example": "1000000000"
+          },
+          "swapMode": {
+            "type": "string",
+            "description": "Swap direction mode",
+            "enum": [
+              "ExactIn",
+              "ExactOut"
+            ],
+            "example": "ExactIn"
+          },
+          "slippage": {
+            "type": "integer",
+            "description": "Slippage tolerance percentage",
+            "example": 5,
+            "default": 5,
+            "minimum": 0,
+            "maximum": 100,
+            "format": "int64"
+          },
+          "inputMint": {
+            "type": "string",
+            "description": "Input token mint address",
+            "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+          },
+          "outputMint": {
+            "type": "string",
+            "description": "Output token mint address",
+            "example": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+          },
+          "recipientAddress": {
+            "type": "string",
+            "description": "Recipient wallet address for the swap",
+            "example": "0x0000000000000000000000000000000000000001"
+          },
+          "permit": {
+            "type": "string",
+            "description": "Permit data for the swap",
+            "example": "66c85d1637257e890e581f724f69f4d4fc17eee156c0619c4719ed0c66eed0e9"
+          },
+          "deadline": {
+            "type": "integer",
+            "description": "Swap deadline timestamp",
+            "example": 1716806400000,
+            "format": "int64"
+          },
+          "tipFee": {
+            "type": "string",
+            "description": "Tip fee in SOL to increase transaction processing speed",
+            "example": "1000000"
+          },
+          "isAntiMev": {
+            "type": "boolean",
+            "description": "Whether to enable anti-MEV protection",
+            "example": true,
+            "default": false
+          },
+          "maxFeePerGas": {
+            "type": "string",
+            "description": "Maximum fee per gas unit (EIP-1559) in wei",
+            "example": "50000000000"
+          },
+          "maxPriorityFeePerGas": {
+            "type": "string",
+            "description": "Maximum priority fee per gas unit (EIP-1559) in wei",
+            "example": "2000000000"
+          },
+          "gasPrice": {
+            "type": "string",
+            "description": "Gas price in wei (legacy transactions)",
+            "example": "50000000000"
+          },
+          "gasLimit": {
+            "type": "string",
+            "description": "Gas limit for the transaction",
+            "example": "300000"
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "amount",
+          "swapMode",
+          "slippage"
+        ]
+      },
+      "SwapRouteResponse": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "description": "Original swap request parameters",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SwapRouteInput"
+              }
+            ]
+          },
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 encoded transaction",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "routeInfo": {
+            "type": "object",
+            "description": "Detailed routing information",
+            "example": {
+              "inAmount": "1000000000",
+              "outAmount": "985000000",
+              "priceImpact": "0.15",
+              "route": [
+                "USDC",
+                "SOL"
+              ]
+            }
+          },
+          "elapsedTime": {
+            "type": "integer",
+            "description": "Time taken to process the request in milliseconds",
+            "example": 245,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "args",
+          "serializedTx",
+          "routeInfo",
+          "elapsedTime"
+        ]
+      },
+      "DexQuoteResponse": {
+        "type": "object",
+        "properties": {
+          "amountOut": {
+            "type": "string",
+            "description": "Output amount",
+            "example": "1000000000"
+          },
+          "minAmountOut": {
+            "type": "string",
+            "description": "Minimum output amount"
+          },
+          "currentPrice": {
+            "type": "string",
+            "description": "Current price"
+          },
+          "executionPrice": {
+            "type": "string",
+            "description": "Execution price"
+          },
+          "priceImpact": {
+            "type": "string",
+            "description": "Price impact",
+            "example": "10.5"
+          },
+          "fee": {
+            "type": "string",
+            "description": "Trading fee",
+            "example": "1000000000"
+          }
+        }
+      },
+      "CreateTokenInput": {
+        "type": "object",
+        "properties": {
+          "dex": {
+            "type": "string",
+            "description": "DEX identifier for the trade",
+            "example": "raydium",
+            "enum": [
+              "raydium",
+              "pumpfun",
+              "moonshot",
+              "candy",
+              "launchpad"
+            ]
+          },
+          "userAddress": {
+            "type": "string",
+            "description": "Public key of the wallet initiating the transaction",
+            "example": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
+            "minLength": 8,
+            "maxLength": 64
+          },
+          "priorityFee": {
+            "type": "string",
+            "description": "Priority fee in SOL to increase transaction processing speed",
+            "example": "1000"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the token to be created",
+            "example": "Candy Token",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Token symbol/ticker",
+            "example": "CANDY",
+            "minLength": 1,
+            "maxLength": 10
+          },
+          "uri": {
+            "type": "string",
+            "description": "URI for token metadata (usually points to image or JSON)",
+            "example": "https://assets.candyproject.com/token/icon.png"
+          },
+          "image": {
+            "type": "string",
+            "description": "Token image URL (Base64 or HTTPS)",
+            "example": "https://assets.candyproject.com/token/icon.png"
+          },
+          "extra": {
+            "type": "object",
+            "description": "Additional metadata about the created token",
+            "example": {
+              "decimals": 6,
+              "migrateType": "amm",
+              "slippage": 100,
+              "buyAmount": 0,
+              "supply": 1000000000000000,
+              "totalSellA": 793100000000000,
+              "totalFundRaisingB": 85000000000,
+              "totalLockedAmount": 0,
+              "cliffPeriod": 0,
+              "unlockPeriod": 0,
+              "shareFeeReceiver": "oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7",
+              "shareFeeRate": 1000
+            }
+          }
+        },
+        "required": [
+          "dex",
+          "userAddress",
+          "name",
+          "symbol"
+        ]
+      },
+      "CreateTokenReply": {
+        "type": "object",
+        "properties": {
+          "serializedTx": {
+            "type": "string",
+            "description": "Base64 encoded transaction for token creation",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "mintAddress": {
+            "type": "string",
+            "description": "Token mint address that requires signature for the transaction",
+            "example": "So11111111111111111111111111111111111111112"
+          }
+        },
+        "required": [
+          "serializedTx",
+          "mintAddress"
+        ]
+      },
+      "SendTxInput": {
+        "type": "object",
+        "properties": {
+          "signedTx": {
+            "type": "string",
+            "description": "Base64 encoded signed transaction",
+            "example": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          },
+          "submitType": {
+            "type": "string",
+            "description": "Transaction submission method",
+            "example": "default",
+            "enum": [
+              "default",
+              "priority"
+            ]
+          },
+          "options": {
+            "type": "object",
+            "description": "jito | direct",
+            "example": {
+              "isAntiMev": true
+            }
+          }
+        },
+        "required": [
+          "signedTx"
+        ]
+      },
+      "SendTxResponse": {
+        "type": "object",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "description": "Transaction signature/hash",
+            "example": "37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F"
+          },
+          "elapsedTime": {
+            "type": "integer",
+            "description": "Transaction processing time in milliseconds",
+            "example": 1500,
+            "format": "int64"
+          },
+          "jobId": {
+            "type": "string",
+            "description": "job id",
+            "example": "1234567890"
+          }
+        },
+        "required": [
+          "signature",
+          "elapsedTime",
+          "jobId"
+        ]
+      },
+      "GasPriceResponse": {
+        "type": "object",
+        "properties": {
+          "gasPrice": {
+            "type": "string",
+            "description": "Current gas price in wei (hex string)",
+            "example": "0x5d21dba00"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Chain symbol",
+            "example": "ethereum"
+          }
+        },
+        "required": [
+          "gasPrice",
+          "chain"
+        ]
+      },
+      "EstimateGasLimitInput": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "From address",
+            "example": "0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8"
+          },
+          "to": {
+            "type": "string",
+            "description": "To address",
+            "example": "0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8"
+          },
+          "data": {
+            "type": "string",
+            "description": "Transaction data (hex)",
+            "example": "0xa9059cbb000000000000000000000000742d35cc6634c0532925a3b8d8c9c4b8a8d4c8b80000000000000000000000000000000000000000000000000de0b6b3a7640000"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value to send (in wei, hex string)",
+            "example": "0x0"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "data"
+        ]
+      },
+      "EstimateGasLimitResponse": {
+        "type": "object",
+        "properties": {
+          "gasLimit": {
+            "type": "string",
+            "description": "Estimated gas limit (hex string)",
+            "example": "0x5208"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Chain symbol",
+            "example": "ethereum"
+          }
+        },
+        "required": [
+          "gasLimit",
+          "chain"
+        ]
+      },
+      "JobDTO": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "Job state",
+            "example": "completed"
+          },
+          "result": {
+            "type": "object",
+            "description": "Job result",
+            "example": {
+              "success": true,
+              "data": {
+                "message": "Job completed successfully"
+              }
+            }
+          }
+        },
+        "required": [
+          "state",
+          "result"
+        ]
+      },
+      "JobStreamingDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Streaming job ID",
+            "example": 1
+          },
+          "data": {
+            "type": "object",
+            "description": "Streaming data",
+            "example": {
+              "id": "5rKfmXQyMhz7F2zRE6SpWWx3YkSxtA4gFqZD8CwGRYMx5YLTB8NhbiM9xEHG9jruiWdUyUz7Fpz8jmB8SKcjsLqe",
+              "status": "completed",
+              "result": {
+                "success": true,
+                "data": {
+                  "message": "Job completed successfully"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "data"
+        ]
+      }
+    }
+  }
+}

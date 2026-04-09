@@ -1,0 +1,185 @@
+---
+title: "Dataset & Aggregates"
+description: "Control data source scope and pre-aggregation behavior with the dataset and aggregates parameters"
+icon: "database"
+---
+
+## Overview
+
+Every Chain Group in ChainStream GraphQL accepts two optional parameters that control **which underlying tables** are queried. These parameters let you optimize for freshness, query speed, or data completeness depending on your use case.
+
+---
+
+## Dataset Parameter
+
+The `dataset` parameter controls the **time scope** of the data being queried. It determines whether the query hits real-time tables, archive tables, or both.
+
+| Value | Description | Typical Use Case |
+|:------|:------------|:-----------------|
+| `combined` | Queries both real-time and archive data **(default)** | General-purpose queries where you need the full range |
+| `realtime` | Only recent data (approximately the last 24 hours) | Monitoring dashboards, latest trades, real-time alerts |
+| `archive` | Only historical data up to the retention TTL | Historical analysis, backfilling, trend research |
+
+### Usage
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block { Time }
+      Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
+    }
+  }
+}
+```
+
+```graphql
+query {
+  EVM(network: eth, dataset: archive) {
+    Transfers(
+      where: { Block: { Time: { after: "2026-01-01T00:00:00Z", before: "2026-02-01T00:00:00Z" } } }
+      limit: {count: 100}
+    ) {
+      Block { Time }
+      Transfer { Currency { MintAddress } Amount AmountInUSD }
+    }
+  }
+}
+```
+
+### Historical Data Backfilling
+
+When building data pipelines or recovering from downtime, you can use `dataset: archive` with time-range filters to backfill historical data:
+
+1. Record the last processed timestamp or block height
+2. Query `dataset: archive` with a `where` filter from your last checkpoint to the current time
+3. Process the backfilled data
+4. Switch to `dataset: realtime` for ongoing monitoring
+
+```graphql
+query BackfillTrades {
+  Solana(dataset: archive) {
+    DEXTrades(
+      where: {
+        Block: {
+          Time: {
+            after: "2026-04-01T00:00:00Z"
+            before: "2026-04-02T00:00:00Z"
+          }
+        }
+      }
+      limit: {count: 10000}
+      orderBy: Block_Time_ASC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+      }
+    }
+  }
+}
+```
+
+### Tables Without Dataset Support
+
+Some Cubes always query the same table regardless of the `dataset` value. These include:
+
+- **DWS Cubes**: `TokenHolders`, `WalletTokenPnL`, `DEXPools` — these represent current-state snapshots
+- **Special tables**: `TransactionBalances`, `PredictionTrades`, `PredictionManagements`, `PredictionSettlements`
+
+For these Cubes, `dataset` is silently ignored.
+
+---
+
+## Aggregates Parameter
+
+The `aggregates` parameter controls whether the query uses **pre-aggregated materialized views** (DWM layer) instead of raw detail tables (DWD layer). Pre-aggregated tables contain pre-computed rollups (typically per-minute) that are significantly faster to query.
+
+| Value | Description | Typical Use Case |
+|:------|:------------|:-----------------|
+| `yes` | Prefer pre-aggregated tables when available **(default behavior)** | Most analytical queries |
+| `no` | Use raw detail tables only | When you need per-event granularity |
+| `only` | Only use pre-aggregated tables | Maximum query speed, accepts limited field set |
+
+### Usage
+
+```graphql
+query {
+  EVM(network: eth, aggregates: only) {
+    Pairs(
+      where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+### When to Use Each Mode
+
+| Scenario | Recommended | Why |
+|:---------|:------------|:----|
+| Building OHLC charts | `aggregates: only` | Pre-computed candlestick data, fastest response |
+| Volume trends over time | `aggregates: yes` | Leverages pre-aggregated volume stats |
+| Individual trade analysis | `aggregates: no` | Need per-event detail that rollups don't provide |
+| Counting unique traders | `aggregates: yes` | Pre-computed unique counts available |
+
+---
+
+## Combining Both Parameters
+
+You can use `dataset` and `aggregates` together:
+
+```graphql
+query {
+  Trading(dataset: realtime, aggregates: yes) {
+    Tokens(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+This query fetches the last ~60 minutes of cross-chain token trade statistics using real-time data with pre-aggregated tables for maximum speed.
+
+---
+
+## Performance Considerations
+
+<CardGroup cols={2}>
+  <Card title="Use realtime for dashboards" icon="gauge-high">
+    `dataset: realtime` queries a smaller table partition, resulting in faster response times for monitoring use cases.
+  </Card>
+  <Card title="Use aggregates for analytics" icon="chart-line">
+    `aggregates: yes` or `only` leverages pre-computed rollups that are orders of magnitude faster than scanning raw event tables.
+  </Card>
+</CardGroup>
+
+<Tip>
+For the fastest possible OHLC or volume queries, combine `dataset: realtime` with `aggregates: only`. This targets the smallest, most optimized data slice.
+</Tip>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Schema Overview" icon="sitemap" href="/en/graphql/schema/schema-overview">
+    See how dataset and aggregates fit into the overall query structure.
+  </Card>
+  <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
+    Check which Cubes support dataset switching.
+  </Card>
+</CardGroup>

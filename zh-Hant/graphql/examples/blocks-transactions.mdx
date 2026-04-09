@@ -1,0 +1,274 @@
+---
+title: "區塊與交易"
+description: "Blocks、Transactions、Events、Calls 等基礎設施 Cube 的查詢示例"
+icon: "cube"
+---
+
+## 概述
+
+本頁包含區塊鏈基礎設施 Cube 的查詢示例 — 區塊、交易、智慧合約事件和內部呼叫追蹤等基礎資料。
+
+---
+
+## 區塊
+
+### 最新區塊（Solana）
+
+```graphql
+query {
+  Solana {
+    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block {
+        Time
+        Slot
+        Height
+        Hash
+        ParentSlot
+        TxCount
+      }
+    }
+  }
+}
+```
+
+### 最新區塊（Ethereum）
+
+```graphql
+query {
+  EVM(network: eth) {
+    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block {
+        Time
+        Number
+        Hash
+        GasUsed
+        GasLimit
+        BaseFee
+        TxCount
+        Coinbase
+      }
+    }
+  }
+}
+```
+
+---
+
+## 交易
+
+### 按地址查詢近期交易（Solana）
+
+```graphql
+query {
+  Solana {
+    Transactions(
+      signer: {is: "WALLET_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction {
+        Signature
+        Fee
+        FeePayer
+        Result { Success }
+      }
+    }
+  }
+}
+```
+
+### 按地址查詢近期交易（EVM）
+
+```graphql
+query {
+  EVM(network: eth) {
+    Transactions(
+      fromAddress: {is: "0xWALLET_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction {
+        Hash
+        From
+        To
+        Value
+        Gas
+        GasPrice
+      }
+    }
+  }
+}
+```
+
+---
+
+## 事件 Events（僅 EVM）
+
+### 按合約與 Topic 過濾事件
+
+```graphql
+query {
+  EVM(network: eth) {
+    Events(
+      contractAddress: {is: "0xCONTRACT_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Log {
+        SmartContract
+        Index
+        Signature { Name Signature }
+        Data
+      }
+    }
+  }
+}
+```
+
+### 按事件簽名（Topic0）過濾
+
+```graphql
+query {
+  EVM(network: eth) {
+    Events(
+      topic0: {is: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Log { SmartContract Index Data }
+    }
+  }
+}
+```
+
+---
+
+## 呼叫追蹤 Calls（僅 EVM）
+
+### 對某合約的內部呼叫
+
+```graphql
+query {
+  EVM(network: eth) {
+    Calls(
+      toAddress: {is: "0xCONTRACT_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Transaction { Hash }
+      Call {
+        From
+        To
+        Opcode
+        Value
+        Gas
+        GasUsed
+        Signature { Name }
+      }
+    }
+  }
+}
+```
+
+---
+
+## 指令 Instructions（僅 Solana）
+
+### 某程式的近期指令
+
+```graphql
+query {
+  Solana {
+    Instructions(
+      programId: {is: "PROGRAM_ADDRESS"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Transaction { Signature }
+      Instruction {
+        Index
+        Depth
+        Program { Address Name Method }
+        Accounts
+      }
+    }
+  }
+}
+```
+
+---
+
+## 獎勵 Rewards（僅 Solana）
+
+### 驗證者質押獎勵
+
+```graphql
+query {
+  Solana {
+    Rewards(
+      address: {is: "VALIDATOR_ADDRESS"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Slot }
+      Reward {
+        Address
+        Amount
+        AmountInUSD
+        PostBalance
+        RewardType
+        Commission
+      }
+    }
+  }
+}
+```
+
+---
+
+## 礦工獎勵 MinerRewards（僅 EVM）
+
+### 區塊獎勵明細
+
+```graphql
+query {
+  EVM(network: eth) {
+    MinerRewards(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time Number }
+      Reward {
+        Miner
+        TotalReward
+        TotalRewardInUSD
+        StaticReward
+        DynamicReward
+        TxFees
+        BurntFees
+      }
+    }
+  }
+}
+```
+
+---
+
+## 相關文件
+
+<CardGroup cols={2}>
+  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+    全部 Cube 的詳細欄位結構，含 Blocks、Transactions、Events、Calls。
+  </Card>
+  <Card title="Chain Groups" icon="layer-group" href="/zh-Hant/graphql/schema/chain-groups">
+    瞭解 EVM 與 Solana 各有哪些 Cube。
+  </Card>
+</CardGroup>

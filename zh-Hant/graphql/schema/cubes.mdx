@@ -1,0 +1,755 @@
+---
+title: "資料 Cube"
+description: "全部 25 個 GraphQL Cube — 欄位結構、selectors、預設值與使用場景，按 Chain Group 組織"
+icon: "cubes"
+---
+
+## 什麼是 Cube？
+
+**Cube** 是一種分析型資料模型，對映到一個或多個 OLAP 資料庫表。每個 Cube 定義：
+
+- **Dimensions** — 可查詢欄位，組織為巢狀層級（例如 `Block.Time`、`Trade.Buy.Currency.MintAddress`）
+- **Selectors** — 頂層的快捷篩選引數（例如 `tokenAddress`），用於簡化常見篩選模式
+- **Metrics** — Record 型別上可用的聚合函式（`count`、`sum` 等）
+- **Defaults** — 自動應用的預設篩選與分頁 limit
+
+查詢 Cube 時，activecube-rs 會將 GraphQL 查詢編譯為針對該 Cube 底層表的最佳化 SQL；表名遵循 `{chain}_{table_name}` 模式（例如 `sol_dex_trades`、`eth_transfers`）。
+
+---
+
+## Cube 概覽
+
+25 個 Cube 分為三個 Chain Group。每個 Cube 屬於某一資料倉儲層級：
+
+- **DWD**（明細層）— 逐事件原始資料，粒度最高
+- **DWM**（聚合層）— 預計算彙總（例如按分鐘）
+- **DWS**（彙總層）— 高度聚合的快照
+- **DIM**（維度層）— 參考 / 查詢表
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | Chain Group | 層級 | 用途 |
+|:-----|:------------|:------|:--------|
+| **DEXTrades** | EVM, Solana | DWD | 逐筆 DEX  swap 事件 |
+| **DEXTradeByTokens** | EVM, Solana | DWD | 按代幣索引的 DEX 成交（買/賣側） |
+| **Transfers** | EVM, Solana | DWD | 代幣轉賬事件 |
+| **BalanceUpdates** | EVM, Solana | DWD | 錢包餘額變動事件 |
+| **DEXPoolEvents** | EVM, Solana | DWD | 流動性新增/移除事件 |
+| **TokenSupplyUpdates** | EVM, Solana | DWD | 代幣 mint/burn 事件 |
+| **Blocks** | EVM, Solana | DWD | 區塊級資料 |
+| **Transactions** | EVM, Solana | DWD | 交易級資料 |
+| **TransactionBalances** | EVM, Solana | DWD | 單筆交易內的餘額變動 |
+| **Instructions** | Solana | DWD | Solana instruction 資料 |
+| **InstructionBalanceUpdates** | Solana | DWD | instruction 級餘額變動 |
+| **Rewards** | Solana | DWD | 驗證者 / staking 獎勵 |
+| **DEXOrders** | Solana | DWD | DEX 訂單事件（限價單等） |
+| **Events** | EVM | DWD | 智慧合約 event log |
+| **Calls** | EVM | DWD | 內部 call trace |
+| **MinerRewards** | EVM | DWD | 礦工 / 驗證者獎勵 |
+| **DEXPoolSlippages** | EVM | DWD | 池子滑點資料 |
+| **Uncles** | EVM | DWD | Uncle 區塊資料 |
+| **Pairs** | Trading | DWM | OHLC K 線（跨鏈） |
+| **Tokens** | Trading | DWM | 按代幣的成交統計（跨鏈） |
+| **DEXPools** | EVM, Solana | DWS | 含當前儲備的池子快照 |
+| **TokenHolders** | EVM, Solana | DWS | 代幣持有者餘額 |
+| **WalletTokenPnL** | EVM, Solana | DWS | 按錢包-代幣的 PnL |
+| **PredictionTrades** | EVM (Polygon) | DWD | 預測市場成交 |
+| **PredictionManagements** | EVM (Polygon) | DWD | 預測市場管理事件 |
+| **PredictionSettlements** | EVM (Polygon) | DWD | 預測市場結算 |
+
+</div>
+
+---
+
+## EVM + Solana 共享 Cube
+
+以下 Cube 在 **EVM** 與 **Solana** Chain Group 中均可用。
+
+<AccordionGroup>
+  <Accordion title="DEXTrades" icon="arrow-right-arrow-left">
+    **表：** `{chain}_dex_trades`
+    **預設 limit：** 25（最大 10,000）
+    **預設 filter：** `IsSuspect = false`（預設排除 bot/MEV 成交）
+    **Selectors：** `tokenAddress`、`walletAddress`、`poolAddress`、`dexProgram`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    DEXTradesRecord {
+      Block { Time, Slot, Height }
+      Transaction { Hash, FeeInNative }
+      Trade {
+        Buy { Currency { MintAddress }, Amount, PriceInUSD, Account { Owner } }
+        Sell { Currency { MintAddress }, Amount, Account { Owner } }
+        Dex { ProgramAddress, ProtocolName }
+      }
+      Pool { Address }
+      IsSuspect
+    }
+    ```
+
+    **適用場景：** 成交歷史、錢包成交分析、DEX 成交量拆解、大額成交檢測。
+  </Accordion>
+
+  <Accordion title="DEXTradeByTokens" icon="coins">
+    **表：** `{chain}_dex_trades_enriched`（UNION 子查詢 — 每筆成交一側一行）
+    **Selectors：** `tokenAddress`、`sideType`、`poolAddress`、`dexProgram`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    DEXTradeByTokensRecord {
+      Block { Time, Slot, Height }
+      Transaction { Signature, Fee, FeeInUSD }
+      Trade {
+        Currency { MintAddress, Symbol, Name }
+        Amount, AmountInUSD, PriceInUSD, PriceInNative
+        Side { Type, Currency { MintAddress }, Amount }
+        Account { Owner }
+        Dex { ProgramAddress, ProtocolName }
+        Market { PoolAddress }
+      }
+    }
+    ```
+
+    **適用場景：** 按代幣查詢成交（買賣兩側）、代幣成交量分析、單代幣高效篩選。
+  </Accordion>
+
+  <Accordion title="Transfers" icon="paper-plane">
+    **表：** `{chain}_transfers`
+    **Selectors：** `tokenAddress`、`senderAddress`、`receiverAddress`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    TransfersRecord {
+      Block { Time, Slot }
+      Transaction { Hash, Signer }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address, TokenAccount }
+        Receiver { Address, TokenAccount }
+        Amount, AmountInUSD, PriceInUSD
+      }
+    }
+    ```
+
+    **適用場景：** 錢包轉賬歷史、巨鯨監控、交易所充提追蹤。
+  </Accordion>
+
+  <Accordion title="BalanceUpdates" icon="scale-balanced">
+    **表：** `{chain}_balance_updates`
+    **Selectors：** `ownerAddress`、`tokenAddress`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    BalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Hash }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        PreBalance, PostBalance
+        PreBalanceInUSD, PostBalanceInUSD
+      }
+    }
+    ```
+
+    **適用場景：** 餘額變動追蹤、倉位監控、吸籌/派發識別。
+  </Accordion>
+
+  <Accordion title="DEXPoolEvents" icon="water">
+    **表：** `{chain}_dex_pool_events_enriched`
+    **Selectors：** `poolAddress`、`tokenAddress`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    DEXPoolEventsRecord {
+      Block { Time }
+      Transaction { Signature }
+      Pool {
+        Market { Address, BaseCurrency { ... }, QuoteCurrency { ... } }
+        Dex { ProgramAddress, ProtocolName }
+        Base { PostAmount, ChangeAmount, PriceInUSD }
+        Quote { PostAmount, ChangeAmount }
+        LiquidityInUSD
+      }
+    }
+    ```
+
+    **適用場景：** 流動性增減監控、池子 TVL 追蹤、新池發現。
+  </Accordion>
+
+  <Accordion title="TokenSupplyUpdates" icon="coins">
+    **表：** `{chain}_token_supplies`
+    **Selectors：** `tokenAddress`
+
+    **關鍵欄位：**
+    ```graphql
+    TokenSupplyUpdatesRecord {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency { MintAddress, Decimals }
+        PostBalance, MarketCapInUSD, PriceInUSD, FDVInUSD, TotalSupply
+      }
+    }
+    ```
+
+    **適用場景：** mint/burn 事件追蹤、供應變動告警、市值歷史。
+  </Accordion>
+
+  <Accordion title="Blocks" icon="cube">
+    **表：** `{chain}_blocks`
+    **Selectors：** `date`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    BlocksRecord {
+      Block {
+        Time, Date, Height, Hash, ParentHash, TxCount
+        # Solana-specific
+        Slot, ParentSlot, RewardsCount
+        # EVM-specific
+        Number, Coinbase, GasLimit, GasUsed, BaseFee, Difficulty
+      }
+    }
+    ```
+
+    **適用場景：** 出塊監控、gas 分析（EVM）、slot 追蹤（Solana）。
+  </Accordion>
+
+  <Accordion title="Transactions" icon="receipt">
+    **表：** `{chain}_transactions`
+    **Selectors：** `date`、`txHash`/`txSignature`、`fromAddress`、`toAddress`、`feePayer`、`signer`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    TransactionsRecord {
+      Block { Time, Slot, Height }
+      Transaction {
+        # Solana: Signature, Fee, FeePayer, Signer, Result { Success }
+        # EVM: Hash, From, To, Value, Gas, GasPrice, Nonce, Type
+      }
+      Fee { ... }     # EVM EIP-1559 fee breakdown
+      Receipt { ... } # EVM receipt fields
+    }
+    ```
+
+    **適用場景：** 交易查詢、gas/fee 分析、活躍度監控。
+  </Accordion>
+
+  <Accordion title="TransactionBalances" icon="scale-unbalanced">
+    **表：** `{chain}_transaction_balances`
+    **Selectors：** `date`、`address`、`currency`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    TransactionBalancesRecord {
+      Block { Time }
+      Transaction { Hash, Index }
+      TokenBalance {
+        Address, TokenAccount
+        Currency { SmartContract, Symbol, Name, Decimals }
+        PreBalance, PostBalance, Change
+        PreBalanceInUSD, PostBalanceInUSD, ChangeInUSD
+        UpdateType
+      }
+    }
+    ```
+
+    **適用場景：** 單筆交易對餘額的影響分析、代幣流向追蹤。
+
+    <Note>
+    該 Cube 不支援 `dataset` 切換（無 `_realtime` / `_archive` 等表變體）。
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Solana 專屬 Cube
+
+以下 Cube 僅在 **Solana** Chain Group 中可用。
+
+<AccordionGroup>
+  <Accordion title="Instructions" icon="terminal">
+    **表：** `sol_instructions_enriched`
+    **Selectors：** `date`、`programId`、`txSignature`
+    **Metrics：** `count`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    InstructionsRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction {
+        Index, Depth, InternalSeqNumber
+        Program { Address, Name, Method }
+        Accounts       # Array of account addresses
+        Data           # Raw instruction data
+        CallPath, Logs
+      }
+    }
+    ```
+
+    **適用場景：** 程式互動分析、instruction 級除錯、協議使用追蹤。
+  </Accordion>
+
+  <Accordion title="InstructionBalanceUpdates" icon="scale-balanced">
+    **表：** `sol_balance_updates_enriched`
+    **Selectors：** `date`、`tokenAddress`、`ownerAddress`、`programId`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    InstructionBalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction { Index, Program { Address } }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        Amount, AmountInUSD
+        PreBalance, PostBalance
+      }
+    }
+    ```
+
+    **適用場景：** instruction 級餘額影響分析、程式手續費追蹤。
+
+    <Note>
+    該 Cube 不支援 `dataset` 切換。
+    </Note>
+  </Accordion>
+
+  <Accordion title="Rewards" icon="trophy">
+    **表：** `sol_rewards`
+    **Selectors：** `date`、`address`
+    **Metrics：** `count`、`sum`、`avg`
+
+    **關鍵欄位：**
+    ```graphql
+    RewardsRecord {
+      Block { Time, Slot }
+      Reward {
+        Address          # Validator/staker address
+        Amount           # Reward amount in SOL
+        AmountInUSD      # Reward value in USD
+        PostBalance      # Balance after reward
+        RewardType       # Type: voting, staking, etc.
+        Commission       # Validator commission
+      }
+    }
+    ```
+
+    **適用場景：** staking 獎勵追蹤、驗證者表現、獎勵歷史。
+  </Accordion>
+
+  <Accordion title="DEXOrders" icon="list-check">
+    **表：** `sol_dex_orders`
+    **Selectors：** `date`、`marketAddress`、`orderType`、`ownerAddress`
+    **Metrics：** `count`、`sum`、`avg`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    DEXOrdersRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      OrderEvent {
+        Type             # Order type (place, cancel, fill, etc.)
+        Market { Address }
+        Order { Id, BuySide, LimitPrice, Mint, Owner }
+        Dex { ProgramAddress, ProtocolName }
+      }
+    }
+    ```
+
+    **適用場景：** 訂單簿分析、限價單追蹤、市場微觀結構研究。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## EVM 專屬 Cube
+
+以下 Cube 僅在 **EVM** Chain Group（`eth`、`bsc`、`polygon`）中可用。
+
+<AccordionGroup>
+  <Accordion title="Events" icon="bell">
+    **表：** `{chain}_logs_enriched`
+    **Selectors：** `date`、`contractAddress`、`txHash`、`topic0`
+    **Metrics：** `count`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    EventsRecord {
+      Block { Time, Number }
+      Transaction { Hash, From, To }
+      Log {
+        SmartContract    # Contract emitting the event
+        Index            # Log index in transaction
+        Signature { Name, Signature }
+        Topics           # Event topics array
+        Data             # ABI-encoded event data
+      }
+    }
+    ```
+
+    **適用場景：** 智慧合約 event 監控、協議活動追蹤、自定義 event 篩選。
+  </Accordion>
+
+  <Accordion title="Calls" icon="code-branch">
+    **表：** `{chain}_traces_enriched`
+    **Selectors：** `date`、`txHash`、`toAddress`
+    **Metrics：** `count`、`sum`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    CallsRecord {
+      Block { Time, Number }
+      Transaction { Hash }
+      Call {
+        Index, Depth
+        From, To
+        Opcode          # CALL, DELEGATECALL, STATICCALL, CREATE, etc.
+        Gas, GasUsed
+        Input, Output
+        Value           # ETH/BNB transferred
+        Signature { Name, Signature }
+      }
+    }
+    ```
+
+    **適用場景：** 內部交易 trace、合約互動分析、MEV 檢測。
+  </Accordion>
+
+  <Accordion title="MinerRewards" icon="gem">
+    **表：** `{chain}_miner_rewards`
+    **Selectors：** `date`、`miner`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    MinerRewardsRecord {
+      Block { Time, Number, Hash }
+      Reward {
+        Miner
+        TotalReward, TotalRewardInUSD
+        BurntFees, DynamicReward, StaticReward
+        TxFees, UncleReward
+      }
+    }
+    ```
+
+    **適用場景：** 驗證者/礦工獎勵分析、區塊獎勵趨勢、MEV 收入追蹤。
+  </Accordion>
+
+  <Accordion title="DEXPoolSlippages" icon="chart-line">
+    **表：** `{chain}_dex_pool_slippages`
+    **Selectors：** `date`、`poolAddress`
+    **Metrics：** `count`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    DEXPoolSlippagesRecord {
+      Block { Time }
+      Price {
+        Pool { SmartContract, CurrencyA { ... }, CurrencyB { ... } }
+        AtoB, BtoA             # Current prices
+        AtoBMin, AtoBMax       # Price range
+        SlippageBasisPoints    # Slippage in basis points
+        Dex { ProtocolName }
+      }
+    }
+    ```
+
+    **適用場景：** 滑點監控、池子深度分析、執行質量評估。
+  </Accordion>
+
+  <Accordion title="Uncles" icon="diagram-subtask">
+    **表：** `{chain}_uncles`
+    **Selectors：** `date`、`miner`
+    **Metrics：** `count`
+
+    **關鍵欄位：**
+    ```graphql
+    UnclesRecord {
+      Block { Time, Number }
+      Uncle {
+        Index, Hash, ParentHash
+        Miner, Difficulty, Number
+        GasLimit, GasUsed, Timestamp
+      }
+    }
+    ```
+
+    **適用場景：** Uncle 區塊分析、網路健康監控（主要為 Ethereum PoW 歷史資料）。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Trading Cube（跨鏈）
+
+以下 Cube 屬於 **Trading** Chain Group，在全部支援的鏈（`sol`、`eth`、`bsc`）上彙總資料，幷包含用於篩選的 `chain` dimension。
+
+<AccordionGroup>
+  <Accordion title="Pairs (OHLC)" icon="chart-candlestick">
+    **表：** 跨鏈物化檢視（`{chain}_ohlc_mv`）
+    **Selectors：** `tokenAddress`、`chain`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    PairsRecord {
+      Token { Address }
+      Market { Network }       # Chain identifier (sol, eth, bsc)
+      Block { Time }
+      Interval { Time }        # Minute-bucket timestamp
+      Price {
+        Ohlc { Open, High, Low, Close }
+      }
+      Volume { Usd, Native }
+      Stats { TradeCount, BuyCount, SellCount }
+    }
+    ```
+
+    **適用場景：** K 線圖、價格歷史、成交量分析、跨鏈價格對比。
+  </Accordion>
+
+  <Accordion title="Tokens (Trade Statistics)" icon="chart-bar">
+    **表：** 跨鏈物化檢視（`{chain}_token_trade_stats_mv`）
+    **Selectors：** `tokenAddress`、`chain`、`date`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`
+
+    **關鍵欄位：**
+    ```graphql
+    TokensRecord {
+      Token { Address }
+      Market { Network }           # Chain identifier
+      Block { Time }
+      Interval { Time }            # Minute-bucket timestamp
+      Volume { Usd, BuyVolumeUSD, SellVolumeUSD, Base }
+      Stats {
+        TradeCount, BuyCount, SellCount
+        UniqueBuyers, UniqueSellers
+      }
+    }
+    ```
+
+    **適用場景：** 買賣壓力分析、獨立交易者數量、成交量趨勢、跨鏈代幣對比。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 彙總 Cube（DWS）
+
+彙總 Cube 提供**高度聚合、快照式**資料，便於快速查詢。
+
+<AccordionGroup>
+  <Accordion title="DEXPools (Snapshot)" icon="water">
+    **表：** `{chain}_dex_pools`（DWS 層）
+    **Selectors：** `poolAddress`、`tokenA`、`tokenB`
+    **Metrics：** `count`
+
+    **關鍵欄位：**
+    ```graphql
+    DEXPoolsRecord {
+      Pool {
+        Address
+        TokenAAddress, TokenBAddress
+        ProgramAddress
+        LiquidityUSD
+        PriceAtoB, PriceBtoA
+        LastUpdated
+      }
+    }
+    ```
+
+    **適用場景：** 池子發現、當前流動性排名、池子後設資料查詢。
+
+    <Note>
+    該 Cube 不支援 `dataset` 切換或基於時間的篩選；表示池子狀態的最新快照。
+    </Note>
+  </Accordion>
+
+  <Accordion title="TokenHolders" icon="users">
+    **表：** `{chain}_token_holders`
+    **Selectors：** `tokenAddress`
+
+    **關鍵欄位：**
+    ```graphql
+    TokenHoldersRecord {
+      Token { Address }
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
+    ```
+
+    **適用場景：** 大戶列表、持有者分佈、巨鯨追蹤。
+
+    <Note>
+    該 Cube 不支援 `dataset` 切換。
+    </Note>
+  </Accordion>
+
+  <Accordion title="WalletTokenPnL" icon="chart-line">
+    **表：** `{chain}_wallet_token_pnl`
+    **Selectors：** `walletAddress`
+
+    **關鍵欄位：**
+    ```graphql
+    WalletTokenPnLRecord {
+      Wallet { Address }
+      Token { Address }
+      BuyVolumeUSDState, SellVolumeUSDState
+      BuyCountState, SellCountState
+      FirstTradeState, LastTradeState
+    }
+    ```
+
+    **適用場景：** 按代幣的錢包 PnL、交易表現排行榜、組合分析。
+
+    <Note>
+    該 Cube 不支援 `dataset` 切換。
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 預測市場 Cube
+
+以下 Cube 在 **EVM** Chain Group 中可用，主要用於 Polygon 上的預測市場協議。
+
+<AccordionGroup>
+  <Accordion title="PredictionTrades" icon="chart-mixed">
+    **表：** `{chain}_prediction_trades`
+    **Selectors：** `date`、`conditionId`、`questionId`、`marketplace`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    PredictionTradesRecord {
+      Block { Time }
+      Transaction { Hash }
+      Trade { Buyer, Seller, Amount, Price, Fee }
+      Prediction {
+        Condition { Id, Outcomes }
+        Question { Id }
+        Outcome, OutcomeToken
+        Marketplace { ProtocolName }
+        CollateralToken { SmartContract }
+      }
+    }
+    ```
+
+    **適用場景：** 預測市場成交歷史、結果定價、marketplace 成交量。
+
+    <Note>
+    預測市場 Cube 不支援 `dataset` 切換。
+    </Note>
+  </Accordion>
+
+  <Accordion title="PredictionManagements" icon="gear">
+    **表：** `{chain}_prediction_managements`
+    **Selectors：** `date`、`eventType`、`conditionId`、`questionId`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    PredictionManagementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType, Description, Group
+        Prediction { Condition { ... }, Question { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **適用場景：** 市場建立/結算追蹤、condition 管理事件。
+  </Accordion>
+
+  <Accordion title="PredictionSettlements" icon="flag-checkered">
+    **表：** `{chain}_prediction_settlements`
+    **Selectors：** `date`、`eventType`、`conditionId`、`holder`
+    **Metrics：** `count`、`sum`、`avg`、`min`、`max`、`uniq`
+
+    **關鍵欄位：**
+    ```graphql
+    PredictionSettlementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType, Holder
+        OutcomeTokenIds, Amounts
+        Prediction { Condition { ... }, CollateralToken { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **適用場景：** 結算追蹤、派息分析、頭寸贖回監控。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 選擇合適的 Cube
+
+<Tip>
+在滿足需求的前提下，優先選擇聚合度最高的 Cube。對時間序列與摘要類資料，DWM/DWS Cube 通常比 DWD Cube 快幾個數量級。
+</Tip>
+
+| 需求 | 推薦 Cube | 層級 |
+|:-----|:-----------------|:------|
+| 單筆成交事件 | DEXTrades | DWD |
+| 按代幣的成交查詢 | DEXTradeByTokens | DWD |
+| 代幣轉賬歷史 | Transfers | DWD |
+| K 線 / 價格圖 | Pairs | DWM |
+| 隨時間變化的成交量 | Tokens | DWM |
+| 當前大戶列表 | TokenHolders | DWS |
+| 錢包 PnL 拆解 | WalletTokenPnL | DWS |
+| 池子當前狀態 | DEXPools | DWS |
+| 流動性事件 | DEXPoolEvents | DWD |
+| 智慧合約 event（EVM） | Events | DWD |
+| 內部 trace（EVM） | Calls | DWD |
+| Solana instruction | Instructions | DWD |
+| 預測市場成交 | PredictionTrades | DWD |
+
+---
+
+## Dataset 相容性
+
+並非所有 Cube 都支援 `dataset` 引數（realtime/archive/combined）。以下 Cube 無論 `dataset` 取何值，都會查詢全表：
+
+- `TokenHolders`、`WalletTokenPnL`、`DEXPools`（DWS 層 — 始終為最新快照）
+- `TransactionBalances`
+- `PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
+
+詳見 [Dataset 與 Aggregates](/zh-Hant/graphql/schema/dataset-aggregates)。
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="Chain Groups" icon="layer-group" href="/zh-Hant/graphql/schema/chain-groups">
+    瞭解 EVM、Solana 與 Trading Chain Group。
+  </Card>
+  <Card title="篩選" icon="filter" href="/zh-Hant/graphql/schema/filtering">
+    使用 `where` 與 selector 快捷方式篩選。
+  </Card>
+  <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
+    使用 count、sum、avg、min、max、uniq 聚合資料。
+  </Card>
+</CardGroup>

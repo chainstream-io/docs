@@ -1,0 +1,203 @@
+---
+title: "Prediction Markets"
+description: "Query examples for PredictionTrades, PredictionManagements, and PredictionSettlements Cubes"
+icon: "chart-mixed"
+---
+
+## Overview
+
+ChainStream GraphQL provides three Cubes for prediction market data, primarily available on Polygon. These Cubes cover the full lifecycle of prediction markets — from creation and trading to settlement.
+
+<Note>
+Prediction Market Cubes are available in the **EVM** Chain Group. They are primarily used with `network: polygon`.
+</Note>
+
+---
+
+## PredictionTrades
+
+### Recent Prediction Market Trades
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buyer
+        Seller
+        Amount
+        Price
+        Fee
+      }
+      Prediction {
+        Condition { Id Outcomes }
+        Question { Id }
+        Outcome
+        Marketplace { ProtocolName }
+      }
+    }
+  }
+}
+```
+
+### Trades for a Specific Condition
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      conditionId: {is: "CONDITION_ID"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Buyer Seller Amount Price }
+      Prediction { Outcome OutcomeToken { SmartContract } }
+    }
+  }
+}
+```
+
+### Trade Volume by Marketplace
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionTrades(
+      marketplace: {is: "Polymarket"}
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Amount Price }
+      Prediction {
+        Question { Id }
+        Marketplace { ProtocolName }
+      }
+      count
+      sum(of: Trade_Amount)
+    }
+  }
+}
+```
+
+---
+
+## PredictionManagements
+
+### Market Creation and Resolution Events
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionManagements(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType
+        Description
+        Group
+        Prediction {
+          Condition { Id }
+          Question { Id }
+          Marketplace { ProtocolName }
+        }
+      }
+    }
+  }
+}
+```
+
+### Filter by Event Type
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionManagements(
+      eventType: {is: "ConditionResolution"}
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Management {
+        EventType
+        Description
+        Prediction { Condition { Id Outcomes } }
+      }
+    }
+  }
+}
+```
+
+---
+
+## PredictionSettlements
+
+### Recent Settlements
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionSettlements(
+      limit: {count: 20}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType
+        Holder
+        OutcomeTokenIds
+        Amounts
+        Prediction {
+          Condition { Id }
+          CollateralToken { SmartContract Symbol }
+          Marketplace { ProtocolName }
+        }
+      }
+    }
+  }
+}
+```
+
+### Settlements for a Specific Holder
+
+```graphql
+query {
+  EVM(network: polygon) {
+    PredictionSettlements(
+      holder: {is: "0xHOLDER_ADDRESS"}
+      limit: {count: 50}
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Settlement {
+        EventType
+        Amounts
+        Prediction { Condition { Id } }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
+    Detailed field structures for Prediction Market Cubes.
+  </Card>
+  <Card title="Chain Groups" icon="layer-group" href="/en/graphql/schema/chain-groups">
+    Prediction Cubes are EVM-only, primarily on Polygon.
+  </Card>
+</CardGroup>

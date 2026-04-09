@@ -1,0 +1,400 @@
+---
+title: "Raydium DEX 与流动性分析"
+description: "在 Solana 上分析 Raydium DEX 的完整指南——交易、流动性池、代币发射与价格数据"
+icon: "droplet"
+---
+
+Raydium 是 Solana 上规模最大的 AMM 与流动性提供者。ChainStream 通过 REST API、GraphQL、WebSocket 与 MCP 工具，为 Raydium 成交与资金池提供完整数据覆盖。
+
+<Info>
+**支持的能力**：成交分析、流动性池监控、代币价格跟踪、OHLCV 数据、持仓者分析，以及通过 Raydium launchpad 创建代币。
+</Info>
+
+---
+
+## 如何获取 Raydium 上的近期成交？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol?limit=20" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整参数说明见 [Trade - List](/cn/api-reference/endpoint/data/trade/v2/trade-chain-get)。
+  </Tab>
+  <Tab title="GraphQL">
+
+查询 `DEXTrades`，并按 Raydium 的协议名称过滤：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    dexProgram: {is: "RAYDIUM_PROGRAM_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+      }
+      Dex { ProgramAddress ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get({ chain: "solana", limit: 20 })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Raydium 上某代币的价格？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/price" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Price](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_price({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Raydium 上某代币的流动性池？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/pools" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Pools](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-pools-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 10}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Dex { ProgramAddress }
+      Base { Address PostAmount }
+      Quote { Address PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_pools({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何按池地址获取池子详情？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/dexpools/sol/POOL_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [DexPool - Get](/cn/api-reference/endpoint/data/dexpool/v2/dexpools-chain-pooladdress-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXPools(
+    network: sol
+    limit: {count: 1}
+    poolAddress: {is: "POOL_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Pool {
+      Address
+      Base { Address PostAmount }
+      Quote { Address PostAmount }
+      LiquidityInUSD
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+dexpool_get({ chain: "solana", poolAddress: "POOL_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Raydium 代币的 OHLCV（K 线）数据？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/candles?resolution=1m&limit=60" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 60}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_candles({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", resolution: "1m" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Raydium 相关代币的持仓者？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/topHolders" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_top_holders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Raydium 代币的顶级交易者？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol/top-traders?tokenAddress=TOKEN_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get_top_traders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取池子流动性快照？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/dexpools/sol/POOL_ADDRESS/snapshots" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [DexPool - Snapshots](/cn/api-reference/endpoint/data/dexpool/v2/dexpools-chain-pooladdress-snapshots-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  PoolLiquiditySnapshots(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Pool { Address ProgramAddress }
+    TokenA { Address }
+    TokenB { Address }
+    LiquidityUSDState
+    EventCountState
+    LastSeenState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+dexpool_get_snapshots({ chain: "solana", poolAddress: "POOL_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何在 Raydium 上创建代币？
+
+ChainStream 支持通过 API 直接在 Raydium launchpad 上创建代币。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl -X POST "https://api.chainstream.io/v2/dex/sol/create" \
+  -H "X-API-KEY: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "launchpad": "raydium",
+    "name": "My Token",
+    "symbol": "MYTKN",
+    "description": "A test token",
+    "privateKey": "YOUR_PRIVATE_KEY"
+  }'
+```
+
+完整说明见 [DEX - Create](/cn/api-reference/endpoint/defi/dex/v2/dex-chain-create-post)。
+  </Tab>
+</Tabs>
+
+<Note>
+代币创建仅支持 Solana。私钥用于签名创建交易。
+</Note>
+
+---
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="Pump.fun 池与 Raydium 池有什么区别？">
+    Pump.fun 代币在 bonding curve 上交易直至毕业；毕业后流动性会迁移到 Raydium AMM 池。可使用 `ranking/sol/migrated` 查找近期毕业的代币。
+  </Accordion>
+  <Accordion title="如何按 DEX 过滤成交？">
+    在 GraphQL 中，使用 `dexProgram` 选择器按 Raydium 程序地址过滤。REST 返回的成交可能来自多个 DEX——请在响应中查看 `dex` 字段以识别 Raydium 成交。
+  </Accordion>
+  <Accordion title="能否实时跟踪 Raydium 池事件？">
+    可以。使用 WebSocket 订阅获取池子与成交的实时更新。配置方式见 [实时流式传输](/cn/guides/data-concepts/realtime-streaming)。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="Pump.fun 指南" icon="rocket" href="/cn/playbooks/protocols/pump-fun">
+    Pump.fun 代币分析完整说明，含毕业跟踪。
+  </Card>
+  <Card title="GraphQL 池与流动性" icon="droplet" href="/cn/graphql/examples/pools-liquidity">
+    池子与流动性数据的 GraphQL 查询示例。
+  </Card>
+  <Card title="GraphQL DEX 成交" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    DEX 成交分析的 GraphQL 查询示例。
+  </Card>
+  <Card title="MCP 工具目录" icon="robot" href="/cn/guides/ai-infrastructure/mcp-server/tools-catalog">
+    50+ MCP 工具完整列表，便于接入 AI Agent。
+  </Card>
+</CardGroup>

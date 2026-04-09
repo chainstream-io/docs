@@ -1,0 +1,398 @@
+---
+title: "MCP 도구 레퍼런스"
+description: "ChainStream MCP 서버의 17개 MCP 도구에 대한 전체 레퍼런스."
+icon: "wrench"
+---
+
+ChainStream MCP 서버는 토큰 분석, 지갑 프로파일링, DEX 트레이딩, 시장 트렌드, 블록체인 운영을 위한 **17개 도구**를 제공합니다. **Cloud 엔드포인트**(`https://mcp.chainstream.io/mcp`) 또는 **npm 패키지**(`@chainstream-io/mcp`) 어느 쪽을 사용하든 동일한 17개 도구를 사용할 수 있습니다.
+
+---
+
+## 도구 (17)
+
+### Token 도구 (5)
+
+#### `tokens_search`
+
+모든 지원 체인에서 이름, 심볼 또는 컨트랙트 주소로 토큰을 검색합니다. 이름, 심볼, 체인, 가격, 24시간 변동률, 시가총액을 포함한 상위 결과를 반환합니다. 사용자가 이름으로 토큰을 언급할 때 첫 번째 단계로 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `query` | string | 예 | — | 검색 쿼리: 토큰 이름, 심볼 또는 컨트랙트 주소 |
+| `chain` | string | 아니오 | — | 체인 필터 (생략 시 전체 체인 검색) |
+| `limit` | number | 아니오 | `10` | 최대 결과 수 (1–50) |
+
+#### `tokens_analyze`
+
+가격, 거래량, 홀더 분포, 보안 평가, 유동성 깊이를 결합한 종합 토큰 분석입니다. 토큰을 평가하기 위한 주요 도구로, "토큰 X에 대해 알려줘" 또는 "이 토큰 안전해?"라고 질문할 때 사용하세요. 가격 차트가 필요하면 `tokens_price_history`를 대신 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `address` | string | 예 | — | 토큰 컨트랙트 주소 |
+| `sections` | array | 아니오 | `["overview","metrics","holders","security"]` | 포함할 데이터 섹션. 값: `overview`, `metrics`, `holders`, `security`, `liquidity` |
+
+<Info>
+  이 도구는 여러 REST API 호출(토큰 상세, 통계, 시장 데이터, 상위 홀더, 보안)을 하나의 응답으로 집계합니다.
+</Info>
+
+#### `tokens_price_history`
+
+차트 및 기술 분석을 위한 OHLCV 캔들스틱 데이터를 조회합니다. 시가, 고가, 저가, 종가, 거래량을 포함한 최대 100개 캔들을 반환합니다. 일중 분석에는 `1h` 또는 `4h` 해상도를, 장기 추세에는 `1d`를 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `address` | string | 예 | — | 토큰 컨트랙트 주소 |
+| `resolution` | enum | 아니오 | `"1h"` | 캔들 해상도: `1m`, `5m`, `15m`, `1h`, `4h`, `1d` |
+| `limit` | number | 아니오 | `50` | 캔들 수 (1–100) |
+
+#### `tokens_discover`
+
+온체인 지표를 기반으로 토큰을 발견합니다. "Solana에서 거래량 높은 토큰" 또는 "가격 상승폭이 큰 토큰" 같은 특정 기준에 맞는 토큰을 찾을 때 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `sort_by` | enum | 아니오 | `"volume"` | 정렬 기준: `volume`, `price_change`, `trades`, `market_cap` |
+| `time_frame` | enum | 아니오 | `"24h"` | 시간 범위: `1h`, `4h`, `24h` |
+| `min_volume_usd` | number | 아니오 | — | 최소 거래량 (USD) |
+| `limit` | number | 아니오 | `20` | 최대 결과 수 (1–50) |
+
+#### `tokens_compare`
+
+최대 5개 토큰을 나란히 비교합니다. 각 토큰의 표준화된 지표(가격, 거래량, 시가총액, 홀더 수, 24시간 변동률)를 반환합니다. 사용자가 "어떤 토큰이 더 좋아?" 또는 옵션을 비교할 때 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `tokens` | array | 예 | — | `{ chain, address }` 객체 배열 (2–5개) |
+
+---
+
+### Wallet 도구 (2)
+
+#### `wallets_profile`
+
+전체 지갑 프로필: 현재 토큰 보유 내역(가치 포함), 실현/미실현 PnL, 총 순자산. "이 지갑에 뭐가 있어?" 또는 "이 지갑 수익 좋아?"라고 질문할 때 사용하세요. 최근 트랜잭션은 `wallets_activity`를 대신 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `address` | string | 예 | — | 지갑 주소 |
+| `include` | array | 아니오 | `["holdings","pnl"]` | 데이터 섹션: `holdings` (토큰 잔액), `pnl` (손익), `net_worth` (총 가치) |
+
+<Info>
+  호스팅 엔드포인트의 `wallet_get_balance` + `wallet_get_pnl` + `wallet_get_net_worth`와 동일합니다.
+</Info>
+
+#### `wallets_activity`
+
+최근 지갑 활동: 토큰 전송 및 트랜잭션 이력. "이 지갑이 최근에 뭘 했어?" 또는 의심스러운 활동을 확인할 때 사용하세요. 포트폴리오와 PnL 데이터는 `wallets_profile`을 대신 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `address` | string | 예 | — | 지갑 주소 |
+| `limit` | number | 아니오 | `20` | 전송 수 (1–50) |
+
+---
+
+### Market 도구 (1)
+
+#### `market_trending`
+
+카테고리별 트렌딩 토큰을 조회합니다. `hot` = 가장 활발히 거래됨, `new` = 최근 생성된 토큰, `migrated` = 런치패드에서 DEX로 이동한 토큰, `graduating` = 마이그레이션 임계값에 근접한 토큰, `stocks` = 주식 관련 밈 토큰. 기본 체인은 solana입니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 아니오 | `"solana"` | 조회할 체인 |
+| `category` | enum | 아니오 | `"hot"` | 트렌딩 카테고리: `hot`, `new`, `migrated`, `graduating`, `stocks` |
+| `limit` | number | 아니오 | `20` | 최대 결과 수 (1–50) |
+
+---
+
+### DEX 도구 (3)
+
+#### `dex_quote`
+
+예상 출력 수량, 가격 영향, 수수료를 보여주는 스왑 견적을 조회합니다. 읽기 전용으로, 자금이 이동하지 않습니다. `dex_swap` 전에 항상 이 도구를 먼저 호출하여 사용자에게 받을 금액을 보여주고 실행 전 확인을 받으세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `dex` | string | 예 | — | DEX 프로토콜 (jupiter, raydium, pumpfun 등) |
+| `inputMint` | string | 예 | — | 입력 토큰 주소 |
+| `outputMint` | string | 예 | — | 출력 토큰 주소 |
+| `amount` | string | 예 | — | 최소 단위 입력 수량 |
+| `slippage` | number | 예 | — | 슬리피지 허용 범위 (0–100, 퍼센트) |
+
+#### `dex_swap`
+
+DEX에서 토큰 스왑을 실행합니다. **고위험** — 자금을 이동시키는 실제 트랜잭션을 생성합니다. 반드시 먼저 `dex_quote`를 호출하여 견적을 사용자에게 보여주세요. 이 도구를 호출하기 전에 사용자가 명시적으로 확인해야 합니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `dex` | string | 예 | — | DEX 프로토콜 |
+| `userAddress` | string | 예 | — | 사용자 지갑 주소 |
+| `inputMint` | string | 예 | — | 입력 토큰 주소 |
+| `outputMint` | string | 예 | — | 출력 토큰 주소 |
+| `amount` | string | 예 | — | 최소 단위 입력 수량 |
+| `slippage` | number | 예 | — | 슬리피지 허용 범위 (0–100, 퍼센트) |
+| `swapMode` | enum | 아니오 | `"ExactIn"` | 스왑 모드: `ExactIn`, `ExactOut` |
+| `poolAddress` | string | 아니오 | — | 특정 풀 주소 |
+| `priorityFee` | string | 아니오 | — | Solana 우선 수수료 |
+
+<Warning>
+  실제 온체인 트랜잭션을 실행합니다. MCP 클라이언트는 명시적 사용자 확인을 요구해야 합니다.
+</Warning>
+
+#### `dex_create_token`
+
+런치패드 DEX(PumpFun, Raydium, Moonshot 등)에서 새 토큰을 생성합니다. **고위험** — 실제 토큰 컨트랙트를 배포합니다. 사용자 확인이 필요합니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `dex` | enum | 예 | — | 런치패드 DEX: `raydium`, `pumpfun`, `moonshot`, `candy`, `launchpad` |
+| `userAddress` | string | 예 | — | 생성자 지갑 주소 |
+| `name` | string | 예 | — | 토큰 이름 (최대 32자) |
+| `symbol` | string | 예 | — | 토큰 심볼 (최대 10자) |
+| `uri` | string | 아니오 | — | 토큰 메타데이터 URI |
+| `image` | string | 아니오 | — | 토큰 이미지 URL |
+| `priorityFee` | string | 아니오 | — | Solana 우선 수수료 |
+
+<Warning>
+  실제 온체인 토큰을 생성합니다. 명시적 사용자 확인이 필요합니다.
+</Warning>
+
+---
+
+### Trading 도구 (2)
+
+#### `trading_backtest`
+
+과거 데이터를 기반으로 트레이딩 전략을 백테스트합니다. PnL 곡선, 샤프 비율, 최대 낙폭, 거래 상세를 반환합니다. 현재 개발 중이며, 결과가 준비되면 진행 알림을 통해 전달됩니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `token` | string | 예 | — | 토큰 주소 |
+| `strategy` | string | 예 | — | 전략 설명 또는 코드 |
+| `startTime` | number | 예 | — | 시작 타임스탬프 (유닉스 초) |
+| `endTime` | number | 예 | — | 종료 타임스탬프 (유닉스 초) |
+| `initialCapital` | number | 아니오 | `10000` | 초기 자본금 (USD) |
+
+<Note>
+  이 도구는 개발 중이며, 제출된 파라미터가 포함된 플레이스홀더 응답을 반환합니다.
+</Note>
+
+#### `trading_execute`
+
+트레이딩 시그널을 기반으로 DEX에서 거래를 실행합니다. **고위험** — 실제 자금을 이동시킵니다. 명시적 사용자 확인이 필요합니다. 스왑 파라미터를 더 세밀하게 제어하려면 `dex_swap`을 직접 사용하는 것을 고려하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `action` | enum | 예 | — | 거래 행위: `buy`, `sell` |
+| `token` | string | 예 | — | 토큰 주소 |
+| `amount` | string | 예 | — | 거래 수량 |
+| `maxSlippage` | number | 아니오 | `3.0` | 최대 슬리피지 (퍼센트) |
+| `userAddress` | string | 예 | — | 사용자 지갑 주소 |
+
+<Warning>
+  실제 온체인 트랜잭션을 실행합니다. MCP 클라이언트는 명시적 사용자 확인을 요구해야 합니다.
+</Warning>
+
+<Note>
+  이 도구는 개발 중이며, 플레이스홀더 응답을 반환합니다.
+</Note>
+
+---
+
+### Trade 도구 (1)
+
+#### `trades_recent`
+
+선택적 토큰 또는 지갑 필터를 사용하여 최근 온체인 거래를 조회합니다. 가격, 수량, 매수자/매도자, 타임스탬프를 포함한 거래 상세를 반환합니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `tokenAddress` | string | 아니오 | — | 특정 토큰으로 거래 필터링 |
+| `walletAddress` | string | 아니오 | — | 특정 지갑으로 거래 필터링 |
+| `limit` | number | 아니오 | `20` | 거래 수 (1–50) |
+
+---
+
+### Infrastructure 도구 (3)
+
+#### `webhooks_manage`
+
+실시간 이벤트 알림을 위한 Webhook 엔드포인트를 관리합니다. `list`로 기존 Webhook 확인, `create`로 새 이벤트 구독 설정, `delete`로 엔드포인트 제거가 가능합니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `action` | enum | 예 | — | 작업: `list`, `create`, `delete` |
+| `endpoint_id` | string | 아니오 | — | `delete` 작업 시 필수 |
+| `url` | string | 아니오 | — | Webhook URL (`create` 시 필수) |
+| `events` | array | 아니오 | — | 구독할 이벤트 유형 (`create` 시 필수) |
+
+#### `blockchain_info`
+
+지원되는 블록체인 및 사용 가능한 DEX 프로토콜 정보를 조회합니다. 에이전트가 어떤 체인이나 DEX를 사용할 수 있는지 알아야 할 때 사용하세요.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 아니오 | — | 특정 체인 조회 (생략 시 전체 체인) |
+
+#### `transaction_send`
+
+서명된 트랜잭션을 블록체인에 브로드캐스트합니다. **고위험** — 되돌릴 수 없는 실제 트랜잭션을 제출합니다. 트랜잭션은 사용자의 지갑으로 이미 서명되어 있어야 합니다.
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|---|---|---|
+| `chain` | string | 예 | — | 블록체인 식별자 |
+| `signedTransaction` | string | 예 | — | 서명된 트랜잭션 데이터 (base64 또는 hex) |
+
+<Warning>
+  되돌릴 수 없는 온체인 트랜잭션입니다. 적절한 서명과 검토를 확인하세요.
+</Warning>
+
+---
+
+## REST API 커버리지
+
+17개 MCP 도구는 여러 REST API 엔드포인트를 상위 수준 작업으로 집계합니다. 아래는 참고용 REST API 매핑입니다.
+
+### Token API (27개 엔드포인트)
+
+| 도구 | 설명 |
+|---|---|
+| `token_search` | 이름/심볼/주소로 토큰 검색 |
+| `token_get` | 상세 토큰 정보 |
+| `token_get_metadata` | 토큰 메타데이터 (이름, 심볼, 로고) |
+| `token_get_stats` | 거래 통계 |
+| `token_get_price` | 현재 가격 |
+| `token_get_prices` | 과거 가격 데이터 |
+| `token_get_candles` | 캔들스틱 차트 데이터 |
+| `token_get_holders` | 홀더 수 |
+| `token_get_top_holders` | 상위 홀더 목록 |
+| `token_get_pools` | 유동성 풀 |
+| `token_get_security` | 보안/감사 검사 |
+| `token_get_creation` | 생성 상세 (배포자, tx, 시간) |
+| `token_get_mint_and_burn` | 발행/소각 이력 |
+| `token_list` | 필터 지원 페이지네이션 토큰 목록 |
+| `token_get_traders_tag` | 트레이더 유형 분포 |
+| `token_get_liquidity_snapshots` | 과거 유동성 |
+| `token_dev_get_tokens` | 개발자의 모든 토큰 |
+
+### Wallet (5개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `wallet_get_balance` | 토큰 잔액 |
+| `wallet_get_balance_updates` | 잔액 변동 이력 |
+| `wallet_get_pnl` | 손익 지표 |
+| `wallet_calculate_pnl` | 특정 기간 PnL |
+| `wallet_get_stats` | 거래 패턴 및 활동 |
+
+### Trade (3개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `trade_get` | 거래 기록 |
+| `trade_get_activities` | 거래 활동 스트림 |
+| `trade_get_top_traders` | 상위 성과자 |
+
+### DexPool (2개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `dexpool_get` | 풀 정보 |
+| `dexpool_get_snapshots` | 과거 풀 상태 |
+
+### Ranking (5개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `ranking_get_hot_tokens` | 트렌딩 토큰 |
+| `ranking_get_new_tokens` | 신규 생성 토큰 |
+| `ranking_get_stocks` | 본딩 커브 토큰 |
+| `ranking_get_final_stretch` | 졸업 근접 토큰 |
+| `ranking_get_migrated` | 최근 졸업 토큰 |
+
+### Blockchain (2개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `blockchain_list` | 지원 블록체인 |
+| `blockchain_get_latest_block` | 현재 블록 정보 |
+
+### DEX (5개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `dex_list` | 지원 DEX |
+| `dex_get_quote` | 스왑 견적 |
+| `dex_get_route` | 최적 경로 |
+| `dex_swap` | 스왑 실행 |
+| `dex_create` | 미서명 스왑 tx 생성 |
+
+### DeFi / 토큰 생성 (3개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `pumpfun_create` | Pump.fun에서 토큰 생성 |
+| `moonshot_create` | Moonshot에서 토큰 생성 |
+| `moonshot_submit_create_token` | Moonshot 생성 tx 제출 |
+
+### Transaction (3개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `transaction_send` | 서명된 트랜잭션 전송 |
+| `transaction_get_gas_price` | 현재 가스 가격 |
+| `transaction_estimate_gas_limit` | 가스 추정 |
+
+### RedPacket (4개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `redpacket_create` | 홍바오 생성 |
+| `redpacket_claim` | 보상 수령 |
+| `redpacket_get` | 홍바오 상세 |
+| `redpacket_get_claims` | 수령 기록 |
+
+### KYT Compliance (7개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `kyt_register_transfer` | 리스크 평가를 위한 tx 등록 |
+| `kyt_get_transfer_summary` | 트랜잭션 리스크 요약 |
+| `kyt_get_transfer_exposures` | 트랜잭션 내 리스크 엔티티 |
+| `kyt_get_transfer_alerts` | 리스크 알림 |
+| `kyt_register_withdrawal` | 스크리닝을 위한 출금 등록 |
+| `kyt_register_address` | 모니터링을 위한 주소 등록 |
+| `kyt_get_address_risk` | 주소 리스크 평가 |
+
+### Webhook (6개 도구)
+
+| 도구 | 설명 |
+|---|---|
+| `webhook_list_endpoints` | 엔드포인트 목록 |
+| `webhook_create_endpoint` | 구독 생성 |
+| `webhook_update_endpoint` | 설정 수정 |
+| `webhook_delete_endpoint` | 엔드포인트 제거 |
+| `webhook_get_secret` | 서명 시크릿 조회 |
+| `webhook_rotate_secret` | 시크릿 재생성 |
+
+---
+
+## 연결 옵션
+
+| 방식 | 엔드포인트 | 설명 |
+|------|-----------|------|
+| **Cloud** | `https://mcp.chainstream.io/mcp` | 설정 불필요, 동일한 17개 도구 |
+| **npm stdio** | `npx @chainstream-io/mcp` | IDE 통합을 위한 로컬 프로세스 |
+| **npm HTTP** | `chainstream-mcp --transport http` | 팀 서버, 클라우드 배포 |

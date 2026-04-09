@@ -1,0 +1,428 @@
+---
+title: "スマートマネートラッカー"
+description: "スマートマネーアドレスを追跡し、取引シグナルを取得"
+icon: "user-secret"
+---
+
+本チュートリアルでは、スマートマネーアドレスの取引行動をリアルタイムで監視し、価値のある市場シグナルを取得するスマートマネー追跡システムの構築方法を紹介します。
+
+<Info>
+**所要時間**: 45分  
+**難易度**: ⭐⭐⭐ 中級
+</Info>
+
+---
+
+## 目標
+
+完全なスマートマネー追跡システムを構築します：
+
+```mermaid
+flowchart TD
+    A[Get SM List] --> B[Subscribe WebSocket]
+    B --> C[Analyze & Notify]
+```
+
+**機能チェックリスト**：
+- ✅ スマートマネーリストの取得
+- ✅ SM取引ストリームの購読
+- ✅ 取引の解析とパターン認識
+- ✅ シグナル通知
+
+---
+
+## 手法の確認
+
+開始前に[スマートマネー分析手法](/jp/guides/data-concepts/smart-money-methodology)を読んで、以下を理解することをお勧めします：
+
+- スマートマネーの定義と種類
+- スコアリングモデル（Smart Score）
+- シグナル強度の解釈
+- 使用上の注意点
+
+---
+
+## ステップ1：SMリストの取得
+
+### スマートマネーリスト取得API
+
+```python
+# sm_client.py
+import requests
+from config import CHAINSTREAM_ACCESS_TOKEN, CHAINSTREAM_BASE_URL
+
+class SmartMoneyClient:
+    def __init__(self):
+        self.headers = {'Authorization': f'Bearer {CHAINSTREAM_ACCESS_TOKEN}'}
+    
+    def get_smart_money_list(self, chain: str = 'ethereum', limit: int = 100) -> list:
+        """スマートマネーリストを取得"""
+        url = f"{CHAINSTREAM_BASE_URL}/discovery/smart-money"
+        
+        params = {
+            'chain': chain,
+            'limit': limit,
+            'min_score': 70,  # 最小Smart Score
+            'sort': 'score_desc'
+        }
+        
+        response = requests.get(url, headers=self.headers, params=params)
+        return response.json().get('wallets', [])
+        
+        # レスポンス例:
+        # [
+        #   {
+        #     "address": "0xabc...",
+        #     "smart_score": 92,
+        #     "tags": ["whale", "defi_expert"],
+        #     "stats": {
+        #       "roi_90d": "45.2%",
+        #       "win_rate": "72%"
+        #     }
+        #   },
+        #   ...
+        # ]
+    
+    def get_wallet_activities(self, address: str, limit: int = 20) -> list:
+        """ウォレットの最近のトランザクションを取得"""
+        url = f"{CHAINSTREAM_BASE_URL}/wallets/{address}/activities"
+        
+        params = {'limit': limit}
+        response = requests.get(url, headers=self.headers, params=params)
+        return response.json().get('activities', [])
+```
+
+### プリセットリストの使用
+
+```python
+# ChainStreamはプリセットSMリストを提供
+PRESET_LISTS = {
+    'ethereum_top_100': 'eth_top_traders',
+    'solana_smart_money': 'sol_smart_money',
+    'base_early_adopters': 'base_early'
+}
+
+def get_preset_list(list_id: str) -> list:
+    url = f"{CHAINSTREAM_BASE_URL}/discovery/lists/{list_id}"
+    response = requests.get(url, headers=headers)
+    return response.json().get('wallets', [])
+```
+
+---
+
+## ステップ2：取引の購読
+
+### WebSocket購読
+
+<Info>
+本チュートリアルのWebSocket例は概念を説明するための簡略化された擬似コードです。実際のWebSocket購読フォーマットと利用可能なチャネルについては、[WebSocket APIリファレンス](/jp/api-reference/endpoint/websocket/api)を参照してください。
+</Info>
+
+```python
+# tracker.py
+import asyncio
+import json
+import websockets
+from config import CHAINSTREAM_ACCESS_TOKEN
+
+class SmartMoneyTracker:
+    def __init__(self, wallets: list):
+        self.wallets = wallets
+        self.ws_url = 'wss://realtime-dex.chainstream.io/connection/websocket'
+        self.ws = None
+    
+    async def connect(self):
+        """WebSocketに接続"""
+        # URLパラメータでトークンを渡す
+        ws_url = f"{self.ws_url}?token={CHAINSTREAM_ACCESS_TOKEN}"
+        self.ws = await websockets.connect(ws_url)
+        print("✅ WebSocket接続完了")
+    
+    async def subscribe(self):
+        """スマートマネーの取引を購読"""
+        # 方法1: 特定アドレスを購読
+        for wallet in self.wallets[:50]:  # 購読数を制限
+            msg = {
+                'type': 'subscribe',
+                'channel': 'wallet_activity',
+                'params': {
+                    'address': wallet['address'],
+                    'events': ['swap', 'transfer']
+                }
+            }
+            await self.ws.send(json.dumps(msg))
+        
+        # 方法2: スマートマネー集約チャネルを購読（推奨）
+        msg = {
+            'type': 'subscribe',
+            'channel': 'smart_money',
+            'params': {
+                'chains': ['ethereum', 'arbitrum', 'base'],
+                'min_score': 70,
+                'min_value_usd': 10000
+            }
+        }
+        await self.ws.send(json.dumps(msg))
+        
+        print("📡 スマートマネー取引ストリームを購読中")
+    
+    async def listen(self, callback):
+        """取引イベントをリッスン"""
+        async for message in self.ws:
+            data = json.loads(message)
+            
+            if data.get('type') == 'smart_money_activity':
+                await callback(data)
+    
+    async def run(self, callback):
+        """トラッカーを実行"""
+        while True:
+            try:
+                await self.connect()
+                await self.subscribe()
+                await self.listen(callback)
+            except websockets.ConnectionClosed:
+                print("⚠️ 接続が切断されました。5秒後に再接続...")
+                await asyncio.sleep(5)
+```
+
+### またはWebhookを使用
+
+```python
+# Webhookを作成してスマートマネーアクティビティを購読
+webhook_config = {
+    'url': 'https://your-server.com/sm-webhook',
+    'events': ['smartmoney.buy', 'smartmoney.sell', 'smartmoney.new_token'],
+    'filters': {
+        'min_score': 70,
+        'min_value_usd': 10000,
+        'chains': ['ethereum', 'arbitrum']
+    }
+}
+```
+
+---
+
+## ステップ3：分析と通知
+
+### 取引の解析
+
+```python
+# analyzer.py
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class SmartMoneySignal:
+    wallet_address: str
+    wallet_score: int
+    wallet_tags: list
+    action: str  # buy, sell
+    token_symbol: str
+    token_address: str
+    amount_usd: float
+    price: float
+    signal_strength: str  # strong, medium, weak
+    timestamp: str
+
+class SignalAnalyzer:
+    
+    def analyze(self, event: dict) -> Optional[SmartMoneySignal]:
+        """取引イベントを分析し、シグナルを生成"""
+        wallet = event.get('wallet', {})
+        transaction = event.get('transaction', {})
+        
+        # シグナル強度を計算
+        strength = self._calc_signal_strength(wallet, transaction)
+        
+        if strength == 'ignore':
+            return None
+        
+        return SmartMoneySignal(
+            wallet_address=wallet['address'],
+            wallet_score=wallet.get('smart_score', 0),
+            wallet_tags=wallet.get('tags', []),
+            action=transaction.get('type', 'unknown'),
+            token_symbol=transaction.get('token', {}).get('symbol', 'Unknown'),
+            token_address=transaction.get('token', {}).get('address', ''),
+            amount_usd=float(transaction.get('value_usd', 0)),
+            price=float(transaction.get('price', 0)),
+            signal_strength=strength,
+            timestamp=event.get('timestamp', '')
+        )
+    
+    def _calc_signal_strength(self, wallet: dict, tx: dict) -> str:
+        """シグナル強度を計算"""
+        score = wallet.get('smart_score', 0)
+        value_usd = float(tx.get('value_usd', 0))
+        is_new_token = tx.get('is_first_buy', False)
+        
+        # 強いシグナルの条件
+        if score >= 85 and value_usd >= 100000:
+            return 'strong'
+        if is_new_token and score >= 80:
+            return 'strong'
+        
+        # 中程度のシグナル
+        if score >= 70 and value_usd >= 50000:
+            return 'medium'
+        
+        # 弱いシグナル
+        if score >= 60 and value_usd >= 10000:
+            return 'weak'
+        
+        return 'ignore'
+```
+
+### 通知モジュール
+
+```python
+# notifier.py
+import aiohttp
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+
+class Notifier:
+    
+    async def send_signal(self, signal):
+        """シグナル通知を送信"""
+        
+        # シグナル強度の絵文字
+        strength_emoji = {
+            'strong': '🔴',
+            'medium': '🟡',
+            'weak': '🟢'
+        }
+        
+        # アクションの絵文字
+        action_emoji = '📈' if signal.action == 'buy' else '📉'
+        
+        message = f"""
+{strength_emoji.get(signal.signal_strength, '⚪')} Smart Money Signal
+
+{action_emoji} **{signal.action.upper()}** {signal.token_symbol}
+
+👤 アドレス: `{signal.wallet_address[:10]}...`
+⭐ Smart Score: {signal.wallet_score}
+🏷️ タグ: {', '.join(signal.wallet_tags)}
+
+💰 金額: ${signal.amount_usd:,.0f}
+💵 価格: ${signal.price:.6f}
+
+⏰ {signal.timestamp}
+        """
+        
+        await self._send_telegram(message)
+    
+    async def _send_telegram(self, message: str):
+        """Telegramメッセージを送信"""
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        
+        async with aiohttp.ClientSession() as session:
+            await session.post(url, json={
+                'chat_id': TELEGRAM_CHAT_ID,
+                'text': message,
+                'parse_mode': 'Markdown'
+            })
+```
+
+---
+
+## 完全なコード
+
+```python
+# main.py
+import asyncio
+from sm_client import SmartMoneyClient
+from tracker import SmartMoneyTracker
+from analyzer import SignalAnalyzer
+from notifier import Notifier
+
+async def main():
+    # 初期化
+    client = SmartMoneyClient()
+    analyzer = SignalAnalyzer()
+    notifier = Notifier()
+    
+    # スマートマネーリストの取得
+    print("📋 スマートマネーリストを取得中...")
+    wallets = client.get_smart_money_list(chain='ethereum', limit=100)
+    print(f"✅ {len(wallets)}件のスマートマネーアドレスを取得")
+    
+    # コールバックハンドラの定義
+    async def on_activity(event):
+        signal = analyzer.analyze(event)
+        
+        if signal:
+            print(f"🎯 {signal.signal_strength.upper()} | {signal.action} {signal.token_symbol} | ${signal.amount_usd:,.0f}")
+            await notifier.send_signal(signal)
+    
+    # 追跡を開始
+    tracker = SmartMoneyTracker(wallets)
+    print("🚀 スマートマネートラッカーを開始...")
+    await tracker.run(on_activity)
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+---
+
+## ユースケース
+
+### コピートレード参考
+
+```python
+# 強いシグナルをフィルタリングして参考にする
+def filter_strong_signals(signals: list) -> list:
+    return [
+        s for s in signals 
+        if s.signal_strength == 'strong' 
+        and s.action == 'buy'
+    ]
+```
+
+### 市場センチメント指標
+
+```python
+# SM買い/売り比率の計算
+def calc_sentiment(signals: list, hours: int = 24) -> dict:
+    recent = filter_recent(signals, hours)
+    
+    buys = sum(1 for s in recent if s.action == 'buy')
+    sells = sum(1 for s in recent if s.action == 'sell')
+    
+    ratio = buys / max(sells, 1)
+    
+    return {
+        'buy_count': buys,
+        'sell_count': sells,
+        'ratio': ratio,
+        'sentiment': 'bullish' if ratio > 1.5 else 'bearish' if ratio < 0.7 else 'neutral'
+    }
+```
+
+---
+
+## 重要な注意事項
+
+<Warning>
+**重要なリマインダー**：
+
+1. **盲目的にコピートレードしないでください** — SMシグナルは参考用のみです
+2. **遅延に注意** — オンチェーン確認 + 分析にはレイテンシーがあります
+3. **注目を分散させる** — 複数のSMが共鳴するシグナルはより価値があります
+4. **独自調査を行う** — ファンダメンタルズと組み合わせて判断してください
+</Warning>
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="スマートマネー分析手法" icon="brain" href="/jp/guides/data-concepts/smart-money-methodology">
+    SMスコアリングモデルの理解
+  </Card>
+  <Card title="Webhookの基本" icon="webhook" href="/jp/playbooks/frameworks/webhook-fundamentals">
+    WebSocketの代わりにWebhookを使用
+  </Card>
+</CardGroup>

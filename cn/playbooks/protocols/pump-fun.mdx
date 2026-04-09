@@ -1,0 +1,441 @@
+---
+title: "Pump.fun 发射台与代币分析"
+description: "在 Solana 上分析 Pump.fun 代币的完整指南——发现、定价、交易、持仓者、毕业迁移与代币创建"
+icon: "rocket"
+---
+
+Pump.fun 是 Solana 上领先的 memecoin 发射台。ChainStream 通过 REST API、GraphQL、WebSocket 与 MCP 工具，为 Pump.fun 代币提供完整数据覆盖。
+
+<Info>
+**支持的能力**：代币发现、价格跟踪、成交分析、持仓者分析、通过 `pumpfun_create` 创建代币，以及毕业/迁移跟踪。
+</Info>
+
+---
+
+## 如何发现新上线的 Pump.fun 代币？
+
+使用排行榜接口查找 Pump.fun 发射台上新创建的代币。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/newTokens" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整参数说明见 [Ranking - New Tokens](/cn/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get)。
+  </Tab>
+  <Tab title="GraphQL">
+
+在 Solana 上查询 `TokenSupplyUpdates`，并筛选 Pump.fun 代币：
+
+```graphql
+query {
+  TokenSupplyUpdates(
+    network: sol
+    limit: {count: 20}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    TokenSupplyUpdate {
+      Currency {
+        MintAddress
+        Decimals
+      }
+      PostBalance
+      MarketCapInUSD
+      PriceInUSD
+      TotalSupply
+    }
+  }
+}
+```
+
+<Tip>
+在 [GraphQL IDE](https://ide.chainstream.io) 中打开即可交互式运行上述查询。
+</Tip>
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_new_tokens({ chain: "solana" })
+```
+
+完整工具说明见 [MCP 工具目录](/cn/guides/ai-infrastructure/mcp-server/tools-catalog)。
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Pump.fun 代币价格？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/price" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Price](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 1}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+    orderBy: Block_Time_DESC
+  ) {
+    Trade {
+      Buy { PriceInUSD PriceInNative }
+    }
+    Block { Time }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_price({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+<Note>
+将 `TOKEN_ADDRESS` 替换为实际的 Pump.fun 代币 mint 地址。
+</Note>
+
+---
+
+## 如何获取 Pump.fun 代币的成交记录？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol?tokenAddress=TOKEN_ADDRESS&limit=20" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Trade - List](/cn/api-reference/endpoint/data/trade/v2/trade-chain-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 20}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time Slot }
+    Transaction { Hash }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+        Account { Owner }
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+        Account { Owner }
+      }
+      Dex { ProtocolName }
+    }
+    Pool { Address }
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", limit: 20 })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Pump.fun 代币的主要持仓者？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/topHolders" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Top Holders](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-topholders-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_top_holders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Pump.fun 代币的 OHLCV（K 线）数据？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/candles?resolution=1m&limit=60" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Candles](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  OHLC(
+    network: sol
+    limit: {count: 60}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    TimeMinute
+    Token { Address }
+    Price {
+      OpenState
+      HighState
+      LowState
+      CloseState
+    }
+    VolumeUSDState
+    TradeCountState
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_candles({ chain: "solana", tokenAddress: "TOKEN_ADDRESS", resolution: "1m" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何跟踪即将毕业的 Pump.fun 代币？
+
+处于「最后冲刺」阶段的代币即将达到 bonding curve 毕业阈值，并将迁移至 Raydium。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/finalStretch" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Ranking - Final Stretch](/cn/api-reference/endpoint/data/ranking/v2/ranking-chain-finalstretch-get)。
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_final_stretch({ chain: "solana" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何查找已从 Pump.fun 毕业的代币？
+
+已毕业代币已完成 bonding curve，并已迁移至 Raydium 流动性池。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/ranking/sol/migrated" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Ranking - Migrated](/cn/api-reference/endpoint/data/ranking/v2/ranking-chain-migrated-get)。
+  </Tab>
+  <Tab title="MCP Tool">
+```
+ranking_get_migrated({ chain: "solana" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何获取 Pump.fun 代币的顶级交易者？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/trade/sol/top-traders?tokenAddress=TOKEN_ADDRESS" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Trade - Top Traders](/cn/api-reference/endpoint/data/trade/v2/trade-chain-top-traders-get)。
+  </Tab>
+  <Tab title="GraphQL">
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    where: {IsSuspect: {eq: false}}
+  ) {
+    Trade {
+      Buy {
+        Account { Owner }
+        Amount
+        PriceInUSD
+      }
+    }
+    count
+    sum(of: Trade_Buy_Amount)
+  }
+}
+```
+  </Tab>
+  <Tab title="MCP Tool">
+```
+trade_get_top_traders({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何检查 Pump.fun 代币的安全信息？
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/TOKEN_ADDRESS/security" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Security](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-security-get)。
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_get_security({ chain: "solana", tokenAddress: "TOKEN_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 如何在 Pump.fun 上创建代币？
+
+ChainStream 支持通过 API 直接在 Pump.fun 上创建代币。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl -X POST "https://api.chainstream.io/v2/dex/sol/create" \
+  -H "X-API-KEY: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "launchpad": "pumpfun",
+    "name": "My Token",
+    "symbol": "MYTKN",
+    "description": "A test token",
+    "privateKey": "YOUR_PRIVATE_KEY"
+  }'
+```
+
+完整说明见 [DEX - Create](/cn/api-reference/endpoint/defi/dex/v2/dex-chain-create-post)。
+  </Tab>
+  <Tab title="MCP Tool">
+```
+pumpfun_create({
+  name: "My Token",
+  symbol: "MYTKN",
+  description: "A test token"
+})
+```
+  </Tab>
+</Tabs>
+
+<Note>
+创建代币需要已充值的 Solana 钱包。私钥用于签名创建交易。
+</Note>
+
+---
+
+## 如何查看开发者发行的其他代币？
+
+查找 Solana 上某一开发者地址创建过的全部代币。
+
+<Tabs>
+  <Tab title="REST API">
+```bash
+curl "https://api.chainstream.io/v2/token/sol/dev/DEV_ADDRESS/tokens" \
+  -H "X-API-KEY: your_api_key"
+```
+
+完整说明见 [Token - Dev Tokens](/cn/api-reference/endpoint/data/token/v2/token-chain-dev-devaddress-tokens-get)。
+  </Tab>
+  <Tab title="MCP Tool">
+```
+token_dev_get_tokens({ chain: "solana", devAddress: "DEV_ADDRESS" })
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="什么是 Pump.fun 毕业？">
+    当 Pump.fun 代币的 bonding curve 达到 100% 时，代币会「毕业」——流动性迁移到 Raydium 池，代币开始在公开市场交易。使用 `ranking/sol/finalStretch` 接口跟踪接近毕业的代币，使用 `ranking/sol/migrated` 查看已毕业的代币。
+  </Accordion>
+  <Accordion title="如何过滤机器人/MEV 成交？">
+    GraphQL 的 `DEXTrades` Cube 默认带有 `IsSuspect = false` 过滤，可自动排除疑似机器人与 MEV 成交。使用 REST API 时，请在成交响应中查看 `isSuspect` 字段。
+  </Accordion>
+  <Accordion title="能否实时跟踪 Pump.fun 代币？">
+    可以。使用 WebSocket 订阅获取实时价格与成交流。配置方式见 [实时流式传输](/cn/guides/data-concepts/realtime-streaming)。
+  </Accordion>
+  <Accordion title="哪些链支持 Pump.fun？">
+    Pump.fun 仅支持 Solana。所有 Pump.fun 相关查询请使用 `chain: sol`（REST）或 `network: sol`（GraphQL）。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="GraphQL DEX 成交" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    更多用于 DEX 成交分析的 GraphQL 查询示例。
+  </Card>
+  <Card title="代币分析框架" icon="magnifying-glass-chart" href="/cn/playbooks/frameworks/token-analysis-framework">
+    系统化的代币评估方法。
+  </Card>
+  <Card title="MCP 工具目录" icon="robot" href="/cn/guides/ai-infrastructure/mcp-server/tools-catalog">
+    50+ MCP 工具完整列表，便于接入 AI Agent。
+  </Card>
+  <Card title="Raydium 指南" icon="droplet" href="/cn/playbooks/protocols/raydium">
+    Raydium DEX 交易与流动性分析。
+  </Card>
+</CardGroup>

@@ -1,0 +1,157 @@
+---
+title: 'CLI 認証'
+description: 'ChainStream CLI の API Key、ウォレットログイン、決済方法の設定'
+icon: "key"
+---
+
+## 認証方式
+
+ChainStream CLI は複数の認証方式に対応しています。用途に合わせて選んでください。
+
+| 方式 | コマンド | 用途 | DeFi 対応 |
+|--------|---------|----------|--------------|
+| API Key | `config set --key apiKey --value <key>` | 読み取り専用のデータクエリ | なし |
+| ウォレットログイン | `login` | DeFi を含むフルアクセス | あり |
+| メール OTP | `login user@example.com` | アカウント復旧、新しい端末 | あり |
+| 生の秘密鍵 | `wallet set-raw --chain base` | 開発・テストのみ | あり |
+
+<Warning>
+DeFi 操作（スワップ、トークン作成）にはウォレットが必要です。API Key だけではトランザクションに署名できません。
+</Warning>
+
+## API Key（データ向けの推奨）
+
+最もシンプルな認証方法です。エージェントのウォレット構成に依存しません。
+
+```bash
+chainstream config set --key apiKey --value <your_api_key>
+```
+
+API Key の取得先:
+
+- [ChainStream Dashboard](https://app.chainstream.io) — アプリを作成しキーをコピー
+- **x402 自動購入** — CLI がサブスクリプションを購入しキーを保存（[x402 決済](/jp/guides/cli/x402-payment) を参照）
+
+設定の確認:
+
+```bash
+chainstream config get
+# → apiKey: cs_live_****...
+# → walletMode: none
+```
+
+## ウォレットログイン（DeFi 向けの推奨）
+
+TEE（Trusted Execution Environment）によるリモート署名で、ノンカストディアルなウォレットを作成します。P-256 のデバイス鍵ペアはローカルに保存されセッション認証に使い、ウォレットの署名用キーは TEE 内に残ります。
+
+### 初回ログイン
+
+```bash
+chainstream login
+```
+
+`~/.config/chainstream/keys/` に P-256 デバイス鍵ペアを生成し、ChainStream の認証サービスに登録します。ウォレットは自動で作成され、メールは不要です。
+
+### 再ログイン
+
+```bash
+chainstream login --key
+```
+
+既存のデバイス鍵で再認証します。OTP は不要です。
+
+### メールを使う（任意）
+
+```bash
+# メール OTP でログイン
+chainstream login user@example.com
+
+# 検証を完了
+chainstream verify --otp-id <id> --code <code> --email user@example.com
+```
+
+### 復旧用にメールを紐付け
+
+```bash
+chainstream bind-email user@example.com
+chainstream bind-email-verify --otp-id <id> --code <code> --email user@example.com
+```
+
+### ログアウト
+
+```bash
+chainstream logout
+```
+
+設定からセッションを消去しますが、`~/.config/chainstream/keys/` のデバイス鍵は残します。
+
+## 生の秘密鍵（開発のみ）
+
+<Warning>
+秘密鍵が設定ファイルに平文で保存されます。開発とテストにのみ使ってください。
+</Warning>
+
+```bash
+# EVM 秘密鍵をインポート（Base）
+chainstream wallet set-raw --chain base
+
+# Solana 秘密鍵をインポート
+chainstream wallet set-raw --chain sol
+```
+
+対話的に秘密鍵の入力を求められます。
+
+## 設定
+
+CLI の設定はすべて `~/.config/chainstream/config.json` に保存されます。
+
+| 設定項目 | コマンド | 説明 |
+|---------|---------|-------------|
+| API Key | `config set --key apiKey --value <key>` | ChainStream の API Key |
+| Base URL | `config set --key baseUrl --value <url>` | API エンドポイント（既定: `https://api.chainstream.io`） |
+| ウォレットチェーン | `config set --key walletChain --value <chain>` | ウォレット操作の既定チェーン |
+
+### 設定の表示
+
+```bash
+# すべて表示（API Key はマスク）
+chainstream config get
+
+# 特定のキーだけ
+chainstream config get --key apiKey
+
+# 認証状態
+chainstream config auth
+# → Auth: TEE Wallet (org: ...)
+# → or: Auth: Raw Key (sol)
+# → or: Auth: API Key (cs_live_...)
+# → or: Auth: Not configured
+```
+
+## 認証の優先順位
+
+複数の資格情報がある場合、CLI は次の優先順位で使います。
+
+1. **API Key** — 設定に `apiKey` があればそのまま使用
+2. **ウォレット** — TEE ウォレットまたは生鍵が設定されていれば署名に使用
+
+## 環境変数
+
+| 変数名 | 既定値 | 説明 |
+|----------|---------|-------------|
+| `CHAINSTREAM_API_URL` | `https://api.chainstream.io` | API のベース URL |
+| `CHAINSTREAM_AUTH_URL` | `https://api.chainstream.io` | 認証サービスの URL |
+| `SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` | Solana RPC エンドポイント |
+| `BASE_RPC_URL` | `https://mainnet.base.org` | Base RPC エンドポイント |
+| `CHAINSTREAM_DEBUG` | （未設定） | エラー時にデバッグ出力を有効化 |
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="コマンドリファレンス" icon="book" href="/jp/guides/cli/commands">
+    利用可能なコマンドを確認
+  </Card>
+  <Card title="x402 決済" icon="credit-card" href="/jp/guides/cli/x402-payment">
+    USDC でサブスクリプションを自動購入
+  </Card>
+</CardGroup>

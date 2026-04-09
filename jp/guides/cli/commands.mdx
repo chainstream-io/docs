@@ -1,0 +1,349 @@
+---
+title: 'コマンドリファレンス'
+description: 'ChainStream CLI の全コマンドの完全リファレンス'
+icon: "book"
+---
+
+## グローバルオプション
+
+| Option | 説明 |
+|--------|-------------|
+| `--raw` | 1 行 JSON で出力（`jq` などへのパイプ用）。データクエリ系コマンドで利用可能。 |
+| `--help` | コマンドのヘルプを表示 |
+| `--version` | CLI のバージョンを表示 |
+
+```bash
+chainstream token info --chain sol --address <addr> --raw | jq '.marketData.priceInUsd'
+```
+
+## トークンコマンド
+
+メタデータ、セキュリティ、ホルダー、価格履歴など、トークンデータを問い合わせます。
+
+### `token search`
+
+キーワードでトークンを検索します。
+
+```bash
+chainstream token search --keyword PUMP --chain sol --limit 20
+```
+
+| Option | 必須 | 既定 | 説明 |
+|--------|----------|---------|-------------|
+| `--keyword` | はい | — | 検索キーワード |
+| `--chain` | はい | — | チェーン ID（`sol`、`bsc`、`eth`） |
+| `--limit` | いいえ | 20 | 最大件数 |
+
+### `token info`
+
+メタデータ、市場データ、統計を含むトークン詳細を取得します。
+
+```bash
+chainstream token info --chain sol --address <token_address>
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | トークンコントラクトアドレス |
+
+### `token security`
+
+トークンのセキュリティを確認します。ハニーポット検出、ミント権限、フリーズ権限、ホルダー集中度など。
+
+```bash
+chainstream token security --chain sol --address <token_address>
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | トークンコントラクトアドレス |
+
+### `token holders`
+
+上位ホルダーと残高を取得します。
+
+```bash
+chainstream token holders --chain sol --address <token_address> --limit 20
+```
+
+| Option | 必須 | 既定 | 説明 |
+|--------|----------|---------|-------------|
+| `--chain` | はい | — | チェーン ID |
+| `--address` | はい | — | トークンコントラクトアドレス |
+| `--limit` | いいえ | 20 | 最大件数 |
+
+### `token candles`
+
+OHLCV のローソク足データを取得します。
+
+```bash
+chainstream token candles --chain sol --address <token_address> --resolution 1h
+```
+
+| Option | 必須 | 既定 | 説明 |
+|--------|----------|---------|-------------|
+| `--chain` | はい | — | チェーン ID |
+| `--address` | はい | — | トークンコントラクトアドレス |
+| `--resolution` | はい | — | 足の間隔: `1m`、`5m`、`15m`、`1h`、`4h`、`1d` |
+| `--from` | いいえ | — | 開始タイムスタンプ |
+| `--to` | いいえ | — | 終了タイムスタンプ |
+| `--limit` | いいえ | 100 | 最大本数 |
+
+### `token pools`
+
+トークンの流動性プールを取得します。
+
+```bash
+chainstream token pools --chain sol --address <token_address>
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | トークンコントラクトアドレス |
+
+## マーケットコマンド
+
+トレンド、新規上場、直近の取引を追跡します。
+
+### `market trending`
+
+アクティビティ順のホット／トレンドトークンを取得します。
+
+```bash
+chainstream market trending --chain sol --duration 1h --limit 20
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--duration` | はい | 時間窓: `1h`、`6h`、`24h` |
+| `--limit` | いいえ | 最大件数 |
+
+### `market new`
+
+新規作成されたトークンを取得します。
+
+```bash
+chainstream market new --chain sol --limit 20
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--limit` | いいえ | 最大件数 |
+
+### `market trades`
+
+チェーン上の直近取引を取得します。トークンで絞り込み可能。
+
+```bash
+chainstream market trades --chain sol --token <token_address> --limit 20
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--token` | いいえ | トークンアドレスでフィルタ |
+| `--limit` | いいえ | 最大件数 |
+
+## ウォレットコマンド
+
+任意のウォレットの保有資産、PnL、アクティビティを分析します。CLI ウォレットの管理も行います。
+
+### `wallet profile`
+
+PnL、純資産、上位保有の概要を取得します。
+
+```bash
+chainstream wallet profile --chain sol --address <wallet_address>
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | 分析するウォレットアドレス |
+
+### `wallet pnl`
+
+PnL の詳細内訳を取得します。
+
+```bash
+chainstream wallet pnl --chain sol --address <wallet_address>
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | ウォレットアドレス |
+
+### `wallet holdings`
+
+ウォレット内のトークン残高を取得します。
+
+```bash
+chainstream wallet holdings --chain sol --address <wallet_address> --limit 50
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | ウォレットアドレス |
+| `--limit` | いいえ | 最大件数 |
+
+### `wallet activity`
+
+ウォレットの送受信履歴を取得します。
+
+```bash
+chainstream wallet activity --chain sol --address <wallet_address> --limit 20
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--address` | はい | ウォレットアドレス |
+| `--limit` | いいえ | 最大件数 |
+
+### `wallet address`
+
+CLI ウォレットのアドレスを表示します。
+
+```bash
+chainstream wallet address
+```
+
+### `wallet balance`
+
+指定チェーン上の CLI ウォレット残高を確認します。
+
+```bash
+chainstream wallet balance --chain sol
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+
+### `wallet set-raw`
+
+開発・テスト用に生の秘密鍵をインポートします。
+
+```bash
+chainstream wallet set-raw --chain base
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | `base` または `sol` |
+
+### `wallet pricing`
+
+x402 のサブスクリプション料金を取得します。
+
+```bash
+chainstream wallet pricing
+```
+
+## DeFi コマンド
+
+オンチェーンの DeFi 操作を実行します。ウォレットが必要です（[認証](/jp/guides/cli/authentication) を参照）。
+
+<Warning>
+DeFi 操作は**取り消せません**。スワップ前に必ず見積を確認してください。
+</Warning>
+
+### `dex quote`
+
+スワップの見積を取得します（読み取りのみ、ウォレット不要）。
+
+```bash
+chainstream dex quote --chain sol --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| Option | 必須 | 説明 |
+|--------|----------|-------------|
+| `--chain` | はい | チェーン ID |
+| `--input-token` | はい | 入力トークンのアドレスまたはシンボル |
+| `--output-token` | はい | 出力トークンのアドレスまたはシンボル |
+| `--amount` | はい | 最小単位での数量（lamports、wei など） |
+
+### `dex swap`
+
+トークンスワップを実行します。
+
+```bash
+chainstream dex swap --chain sol --from <wallet> --input-token SOL --output-token <token_address> --amount 1000000
+```
+
+| Option | 必須 | 既定 | 説明 |
+|--------|----------|---------|-------------|
+| `--chain` | はい | — | チェーン ID |
+| `--from` | はい | — | 送金元ウォレットアドレス |
+| `--input-token` | はい | — | 入力トークン |
+| `--output-token` | はい | — | 出力トークン |
+| `--amount` | はい | — | 最小単位での数量 |
+| `--slippage` | いいえ | 0.01 | スリッページ許容（0.01 = 1%） |
+| `--yes` | いいえ | false | 確認プロンプトをスキップ |
+
+スワップの流れ: **見積** → **確認** → **署名** → **送信** → **ジョールポーリング**。
+
+### `dex create`
+
+ローンチパッド（例: PumpFun、Raydium）でトークンを作成します。
+
+```bash
+chainstream dex create --chain sol --name "My Token" --symbol MTK --uri <metadata_uri>
+```
+
+| Option | 必須 | 既定 | 説明 |
+|--------|----------|---------|-------------|
+| `--chain` | はい | — | チェーン ID |
+| `--name` | はい | — | トークン名 |
+| `--symbol` | はい | — | トークンシンボル |
+| `--uri` | はい | — | メタデータ URI |
+| `--platform` | いいえ | — | `pumpfun` または `raydium` |
+
+## ジョブコマンド
+
+非同期 DeFi 操作の状態を追跡します。
+
+### `job status`
+
+ジョブの状態を確認します。
+
+```bash
+chainstream job status --id <job_id> --wait --timeout 60000
+```
+
+| Option | 必須 | 既定 | 説明 |
+|--------|----------|---------|-------------|
+| `--id` | はい | — | ジョブ ID |
+| `--wait` | いいえ | false | 完了までポーリング |
+| `--timeout` | いいえ | 60000 | 最大待機時間（ミリ秒） |
+
+## 認証コマンド
+
+認証を管理します。詳細は [CLI 認証](/jp/guides/cli/authentication) を参照してください。
+
+| コマンド | 説明 |
+|---------|-------------|
+| `login [email]` | ログイン（既定は P-256 鍵、またはメール OTP） |
+| `login --key` | 既存のデバイス鍵で再ログイン |
+| `login --email` | メール OTP ログインを明示的に使用 |
+| `verify` | メール OTP の検証を完了 |
+| `logout` | セッションをクリア |
+| `bind-email [email]` | アカウント復旧用にメールを紐付け |
+| `bind-email-verify` | メール紐付けを完了（非対話） |
+
+## 設定コマンド
+
+CLI の設定を管理します。詳細は [CLI 認証](/jp/guides/cli/authentication) を参照してください。
+
+| コマンド | 説明 |
+|---------|-------------|
+| `config set --key <key> --value <val>` | 設定値を設定（`apiKey`、`baseUrl`、`walletChain`） |
+| `config get [--key <key>]` | 設定を表示（または特定のキー） |
+| `config auth` | 認証状態を表示 |

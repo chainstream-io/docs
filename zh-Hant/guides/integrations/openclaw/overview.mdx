@@ -1,0 +1,74 @@
+---
+title: "OpenClaw 整合"
+description: "透過 ChainStream 的 MCP 工具、代幣分析和 DEX 執行能力，為 OpenClaw Agent 新增鏈上智慧。"
+---
+
+## 概述
+
+[OpenClaw](https://openclaw.ai) 是一個開源 AI Agent 框架，擁有 **300K+ GitHub Stars**，廣泛用於構建能夠與工具、API 和外部系統互動的自主 Agent。
+
+ChainStream 作為 **鏈上智慧層** 與 OpenClaw 整合，賦予 Agent 查詢區塊鏈資料、分析代幣、分析錢包、執行交易和接收實時告警的能力——所有操作均透過標準 MCP 協議完成。
+
+## Agent 能力
+
+連線 ChainStream 後，OpenClaw Agent 可以使用完整的鏈上工具集：
+
+| 能力 | 描述 | 示例工具 |
+|------|------|----------|
+| **代幣分析** | 跨 10 條鏈搜尋、分析和比較代幣 | `tokens_search`、`tokens_analyze`、`tokens_compare` |
+| **錢包畫像** | 分析錢包持倉、盈虧和交易歷史 | `wallets_profile`、`wallets_activity` |
+| **DEX 執行** | 在去中心化交易所獲取報價並執行交換 | `dex_quote`、`dex_swap` |
+| **合規篩查** | 檢查代幣安全標誌、蜜罐檢測、許可權風險 | `tokens_analyze`（安全欄位） |
+| **實時告警** | 設定基於 Webhook 的鏈上事件通知 | `webhooks_manage` |
+| **市場發現** | 發現熱門、新上線和畢業代幣 | `market_trending`、`tokens_discover` |
+
+## 整合方式
+
+有兩種方式將 ChainStream 連線到你的 OpenClaw Agent：
+
+<CardGroup cols={2}>
+  <Card title="ClawHub Skill" icon="puzzle-piece" href="/zh-Hant/guides/integrations/openclaw/skills-install">
+    從 ClawHub 安裝 ChainStream Skill，或透過跨 Agent 的 Vercel Skills CLI 安裝。最快的設定方式——不到一分鐘即可完成。
+  </Card>
+  <Card title="直接 MCP 配置" icon="server" href="/zh-Hant/guides/integrations/openclaw/skills-install#方式三直接-mcp-配置">
+    透過雲端 MCP 端點或本地 npm 包連線。適合自定義 Agent 配置。
+  </Card>
+</CardGroup>
+
+## 架構
+
+```
+┌─────────────────┐     MCP Protocol     ┌──────────────────┐
+│                  │ ◄──────────────────► │                  │
+│  OpenClaw Agent  │     15 Tools         │  ChainStream MCP │
+│                  │     4 Prompts        │     Server       │
+│                  │     4 Resources      │                  │
+└─────────────────┘                       └────────┬─────────┘
+                                                   │
+                                          ┌────────▼─────────┐
+                                          │  ChainStream API  │
+                                          │  10 Chains        │
+                                          │  8+ DEXes         │
+                                          └──────────────────┘
+```
+
+OpenClaw Agent 透過 MCP 協議與 ChainStream 通訊。無論你是透過 ClawHub 安裝還是自託管，Agent 都能看到相同的 15 個工具、4 個提示詞和 4 個資源。
+
+## 前置條件
+
+在設定整合之前：
+
+1. **ChainStream API Key** —— 在 [app.chainstream.io](https://app.chainstream.io) 註冊並建立 API Key
+2. **OpenClaw** —— 已有的 OpenClaw Agent 或專案（[OpenClaw 文件](https://docs.openclaw.ai)）
+3. **Node.js 18+** —— MCP Server 和 CLI 工具所需
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="安裝方式" icon="download" href="/zh-Hant/guides/integrations/openclaw/skills-install">
+    三種安裝方式：Vercel Skills CLI、ClawHub 或直接 MCP 配置。
+  </Card>
+  <Card title="安全注意事項" icon="shield" href="/zh-Hant/guides/integrations/openclaw/security">
+    生產環境使用的安全注意事項和最佳實踐。
+  </Card>
+</CardGroup>

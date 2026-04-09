@@ -1,189 +1,112 @@
 ---
 title: "OHLC & Statistics"
-description: "Query examples for K-line data, trade statistics, market cap, and token search"
+description: "Query examples for K-line data (Pairs), per-token trade statistics (Tokens), supply and valuation (TokenSupplyUpdates), and where to find token metadata"
 icon: "chart-candlestick"
 ---
 
-This page covers the aggregated and summary Cubes for market data analysis:
+This page covers aggregated trading and supply data. The **cube names** are **Pairs** and **Tokens** in the **Trading** chain group (cross-chain OHLC and trade stats). Market cap and price snapshots over time come from **TokenSupplyUpdates** under **Solana** or **EVM**.
 
-- **OHLC** (DWM) — per-minute candlestick / K-line data
-- **TokenTradeStats** (DWM) — per-minute trade statistics with buy/sell breakdown
-- **TokenMarketCap** (DWS) — token market cap, price, and FDV
-- **TokenSearch** (DIM) — token metadata and aggregate metrics lookup
+- **Pairs** (Trading, DWM) — per-minute candlestick / K-line data (OHLC, volume, trade count)
+- **Tokens** (Trading, DWM) — per-minute trade statistics with buy/sell breakdown and unique traders
+- **TokenSupplyUpdates** (Solana / EVM, DWD) — mint/burn events with supply, price, market cap, and FDV fields
+- **Token metadata** — there is no separate **TokenSearch** cube; use **Token** (and related) dimensions on **Pairs** / **Tokens**, or other cubes such as **DEXPools**, **TokenHolders**, and **DEXTradeByTokens** for discovery and screening
 
 <Note>
-All examples below use `network: sol` (Solana). Replace with `eth` or `bsc` for other supported chains.
+**Trading** has **no** `network` argument. Filter by chain with `where: { Market: { Network: { is: "sol" } } }` (or `eth`, `bsc`, `polygon`). **Solana** and **EVM** groups use their usual wrappers (`Solana { ... }`, `EVM(network: eth) { ... }`).
 </Note>
 
 ---
 
-## K-Line (OHLC) Data
+## How do I get K-line (OHLC) candlestick data?
 
-Fetch candlestick data for a token — open, high, low, close prices per minute, plus volume and trade count.
+Fetch candlestick data for a token — open, high, low, close prices per minute, plus USD volume and trade count. Use the **Pairs** cube inside **Trading**.
 
 ```graphql
 query {
-  OHLC(
-    network: sol
-    limit: {count: 24}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    TimeMinute
-    Token { Address }
-    Price {
-      OpenState
-      HighState
-      LowState
-      CloseState
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Token { Address }
+      Market { Network }
+      Price {
+        Ohlc {
+          Open
+          High
+          Low
+          Close
+        }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
     }
-    VolumeUSDState
-    TradeCountState
   }
 }
 ```
 
 <Tip>
-Replace `TOKEN_ADDRESS` with the token mint address. Each row represents one minute of trading data — request `count: 60` for 1 hour, `count: 1440` for 24 hours.
+[Open in GraphQL IDE](https://ide.chainstream.io) — paste the query above to run it interactively with auto-complete and schema exploration.
+</Tip>
+
+<Tip>
+Replace `TOKEN_ADDRESS` with the token mint or contract address. Each row is one minute bucket — use `limit: { count: 60 }` for about one hour, `count: 1440` for about 24 hours. Omit the `Market` filter to query across all chains in one result set.
 </Tip>
 
 <AccordionGroup>
   <Accordion title="Key fields">
     | Field | Description |
     |:------|:------------|
-    | `TimeMinute` | Minute bucket timestamp |
+    | `Interval.Time.Start` | Minute-bucket start (same as candle time) |
     | `Token.Address` | Token address |
-    | `Price.OpenState` | Opening price for the interval |
-    | `Price.HighState` | Highest price during the interval |
-    | `Price.LowState` | Lowest price during the interval |
-    | `Price.CloseState` | Closing price for the interval |
-    | `VolumeUSDState` | Total USD volume traded in this interval |
-    | `TradeCountState` | Number of trades in this interval |
+    | `Market.Network` | Chain identifier (`sol`, `eth`, `bsc`, …) |
+    | `Price.Ohlc.Open` | Opening price for the interval |
+    | `Price.Ohlc.High` | Highest price during the interval |
+    | `Price.Ohlc.Low` | Lowest price during the interval |
+    | `Price.Ohlc.Close` | Closing price for the interval |
+    | `Volume.Usd` | Total USD volume in this interval |
+    | `Stats.TradeCount` | Number of trades in this interval |
   </Accordion>
   <Accordion title="Customization tips">
-    - **Longer timeframes**: To get hourly or daily candles, query per-minute data and aggregate client-side, or increase the limit for a wider window
-    - **Volume filter**: Add `where: {VolumeUSDState: {gt: 100}}` to skip low-volume intervals
-    - **Time range**: Add `where: {TimeMinute: {since: "2025-03-27T00:00:00Z"}}` for a specific day
+    - **Longer timeframes**: Request more rows with `limit`, or aggregate client-side; candles are stored at minute granularity
+    - **Volume filter**: e.g. `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }` to skip low-volume intervals
+    - **Time range**: e.g. `where: { Block: { Time: { since: "2026-03-27T00:00:00Z" } }, Market: { Network: { is: "sol" } } }`
   </Accordion>
 </AccordionGroup>
 
 <Info>
-The **OHLC** Cube is a DWM (Aggregated) layer table — data is pre-computed per minute from raw trades. It's significantly faster than scanning individual trades for chart data.
+The **Pairs** cube is a **DWM** (aggregated) model — data is pre-computed per minute. It is much faster than scanning raw trades for chart data.
 </Info>
 
 ---
 
-## Trade Statistics
+## How do I get trade statistics for a token?
 
-Get per-minute trade statistics with buy/sell breakdown, unique trader counts, and volume.
-
-```graphql
-query {
-  TokenTradeStats(
-    network: sol
-    limit: {count: 24}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    TimeMinute
-    Token { Address }
-    TradeCountState
-    BuyCountState
-    SellCountState
-    VolumeUSDState
-    UniqueBuyersState
-    UniqueSellersState
-  }
-}
-```
-
-<AccordionGroup>
-  <Accordion title="Key fields">
-    | Field | Description |
-    |:------|:------------|
-    | `TimeMinute` | Minute bucket timestamp |
-    | `TradeCountState` | Total trades in this interval |
-    | `BuyCountState` | Number of buy trades |
-    | `SellCountState` | Number of sell trades |
-    | `VolumeUSDState` | Total USD volume |
-    | `UniqueBuyersState` | Count of unique buyer wallets |
-    | `UniqueSellersState` | Count of unique seller wallets |
-  </Accordion>
-  <Accordion title="Customization tips">
-    - **Buy/sell pressure**: Compare `BuyCountState` vs `SellCountState` to gauge market sentiment
-    - **Unique traders**: `UniqueBuyersState` and `UniqueSellersState` reveal whether volume comes from many wallets or a few large players
-    - **Activity heatmap**: Query a full day (`count: 1440`) and visualize by minute to spot peak trading times
-  </Accordion>
-</AccordionGroup>
-
-<Tip>
-Combine **OHLC** and **TokenTradeStats** queries for the same time range to build comprehensive trading dashboards — price candles alongside volume and trader metrics.
-</Tip>
-
----
-
-## Market Cap
-
-Get the latest market cap, price, supply, and FDV for a token.
+Get per-minute trade statistics with buy/sell counts, unique buyer/seller counts, and volume. Use the **Tokens** cube inside **Trading**.
 
 ```graphql
 query {
-  TokenMarketCap(
-    network: sol
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    limit: {count: 1}
-  ) {
-    Token { Address }
-    PriceUSDState
-    MarketCapUSDState
-    TotalSupplyState
-    FDVUSDState
-    LastSeenState
-  }
-}
-```
-
-<AccordionGroup>
-  <Accordion title="Key fields">
-    | Field | Description |
-    |:------|:------------|
-    | `Token.Address` | Token address |
-    | `PriceUSDState` | Current price in USD |
-    | `MarketCapUSDState` | Market capitalization (circulating supply x price) |
-    | `TotalSupplyState` | Total token supply |
-    | `FDVUSDState` | Fully diluted valuation (total supply x price) |
-    | `LastSeenState` | Last time this data was updated |
-  </Accordion>
-  <Accordion title="Customization tips">
-    - **Compare tokens**: Query multiple tokens by making separate requests and comparing metrics
-    - **For historical supply/mcap events**: Use [TokenSupplyUpdates](/en/graphql/examples/pools-liquidity#token-supply--market-cap) to get time-series market cap data
-  </Accordion>
-</AccordionGroup>
-
-<Info>
-**TokenMarketCap** is a DWS (Summary) layer Cube — it returns a single pre-aggregated snapshot, making it ideal for quick lookups and screening. For time-series market cap history, use the **TokenSupplyUpdates** Cube.
-</Info>
-
----
-
-## Token Lookup
-
-Look up token metadata and aggregate metrics — decimals, current price, market cap, total trade count, volume, holder count, and pool count.
-
-```graphql
-query {
-  TokenSearch(
-    network: sol
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    limit: {count: 1}
-  ) {
-    Token {
-      Address
-      Decimals
-      PriceUSD
-      MarketCapUSD
-      TotalTradeCount
-      TotalVolumeUSD
-      HolderCount
-      PoolCount
+  Trading {
+    Tokens(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Token { Address }
+      Market { Network }
+      Stats {
+        TradeCount
+        BuyCount
+        SellCount
+        UniqueBuyers
+        UniqueSellers
+      }
+      Volume { Usd }
     }
   }
 }
@@ -193,71 +116,194 @@ query {
   <Accordion title="Key fields">
     | Field | Description |
     |:------|:------------|
-    | `Token.Address` | Token mint address |
-    | `Token.Decimals` | Token decimal places |
-    | `Token.PriceUSD` | Current USD price |
-    | `Token.MarketCapUSD` | Market capitalization |
-    | `Token.TotalTradeCount` | All-time number of DEX trades |
-    | `Token.TotalVolumeUSD` | All-time USD trading volume |
-    | `Token.HolderCount` | Number of current holders |
-    | `Token.PoolCount` | Number of DEX pools this token is in |
+    | `Interval.Time.Start` | Minute-bucket start (same as candle time) |
+    | `Stats.TradeCount` | Total trades in this interval |
+    | `Stats.BuyCount` | Buy-side trades |
+    | `Stats.SellCount` | Sell-side trades |
+    | `Volume.Usd` | Total USD volume |
+    | `Stats.UniqueBuyers` | Distinct buyer wallets |
+    | `Stats.UniqueSellers` | Distinct seller wallets |
   </Accordion>
   <Accordion title="Customization tips">
-    - **Token screening**: Remove the `tokenAddress` filter and increase `count` to discover tokens by criteria (e.g. filter by `MarketCapUSD`, `HolderCount`)
-    - **Verify token**: Use this query to confirm a token address exists and has trading activity before running more expensive queries
+    - **Buy/sell pressure**: Compare `Stats.BuyCount` vs `Stats.SellCount`
+    - **Unique traders**: `Stats.UniqueBuyers` and `Stats.UniqueSellers` show whether volume is broad or concentrated
+    - **Activity heatmap**: Query a full day (`count: 1440`) and chart by `Interval.Time.Start` (or `Block.Time`)
+    - **Buy/sell volume**: The **Tokens** record also exposes `Volume.BuyVolumeUSD` and `Volume.SellVolumeUSD` when you need USD split
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-**TokenSearch** is a DIM (Dimension) layer Cube — it's a lightweight lookup table. Use it as a first step to verify token addresses and get basic metrics before diving into detailed trade or holder queries.
+Combine **Pairs** and **Tokens** for the same token, chain, and time window to build dashboards — OHLC alongside flow and participant metrics.
 </Tip>
+
+---
+
+## How do I get market cap, price, and supply over time?
+
+The legacy **TokenMarketCap** summary cube is not used in the current schema. Use **TokenSupplyUpdates** (Solana or EVM): each row reflects a supply-affecting event with **TokenSupplyUpdate** metrics including price, market cap, FDV, and total supply.
+
+### Solana
+
+```graphql
+query {
+  Solana {
+    TokenSupplyUpdates(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress
+          Decimals
+          Symbol
+          Name
+        }
+        PriceInUSD
+        MarketCapInUSD
+        TotalSupply
+        FDVInUSD
+        PostBalance
+      }
+      Transaction { Signature }
+    }
+  }
+}
+```
+
+### EVM (Ethereum example)
+
+```graphql
+query {
+  EVM(network: eth) {
+    TokenSupplyUpdates(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      limit: { count: 24 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Block { Time }
+      TokenSupplyUpdate {
+        Currency {
+          MintAddress
+          Decimals
+          Symbol
+          Name
+        }
+        PriceInUSD
+        MarketCapInUSD
+        TotalSupply
+        FDVInUSD
+        PostBalance
+      }
+      Transaction { Hash }
+    }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Key fields">
+    | Field | Description |
+    |:------|:------------|
+    | `Block.Time` | Event time |
+    | `TokenSupplyUpdate.Currency.*` | Token identity (mint/contract, decimals, symbol, name) |
+    | `TokenSupplyUpdate.PriceInUSD` | Price in USD at this update |
+    | `TokenSupplyUpdate.MarketCapInUSD` | Market capitalization |
+    | `TokenSupplyUpdate.TotalSupply` | Total supply |
+    | `TokenSupplyUpdate.FDVInUSD` | Fully diluted valuation |
+    | `TokenSupplyUpdate.PostBalance` | Supply-related balance after the event |
+  </Accordion>
+  <Accordion title="Customization tips">
+    - **Latest snapshot**: `limit: { count: 1 }` with `orderBy: { descending: Block_Time }`
+    - **Compare chains**: Run the same shape under `Solana` and `EVM(network: bsc)` (or other supported networks)
+    - **More context**: See also [Pools & Liquidity](/en/graphql/examples/pools-liquidity#how-do-i-get-token-supply-and-market-cap) for supply and pool-related examples
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**TokenSupplyUpdates** is **DWD** (event-level). It is the right place for historical valuation and supply changes tied to mint/burn activity, rather than a single static “market cap” summary row.
+</Info>
+
+---
+
+## Where is token search / metadata?
+
+The **TokenSearch** cube is **not** part of the current API. For token context:
+
+- **Pairs** and **Tokens** expose **Token** dimensions (e.g. **Token.Address**) alongside OHLC and stats — use them when you already know the address and want aggregated trading data.
+- For richer metadata, holder counts, pools, or discovery, use cubes such as **DEXPools**, **TokenHolders**, or **DEXTradeByTokens** under **Solana** or **EVM**, depending on your chain.
 
 ---
 
 ## Multi-Chain Examples
 
 <Tabs>
-  <Tab title="Solana">
+  <Tab title="Solana (Trading)">
 ```graphql
 query {
-  OHLC(
-    network: sol
-    limit: {count: 10}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    TimeMinute
-    Price { OpenState, CloseState }
-    VolumeUSDState
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "sol" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
   }
 }
 ```
   </Tab>
-  <Tab title="Ethereum">
+  <Tab title="Ethereum (Trading)">
 ```graphql
 query {
-  OHLC(
-    network: eth
-    limit: {count: 10}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    TimeMinute
-    Price { OpenState, CloseState }
-    VolumeUSDState
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "eth" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
   }
 }
 ```
   </Tab>
-  <Tab title="BSC">
+  <Tab title="BSC (Trading)">
 ```graphql
 query {
-  OHLC(
-    network: bsc
-    limit: {count: 10}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    TimeMinute
-    Price { OpenState, CloseState }
-    VolumeUSDState
+  Trading {
+    Pairs(
+      tokenAddress: { is: "TOKEN_ADDRESS" }
+      where: { Market: { Network: { is: "bsc" } } }
+      limit: { count: 10 }
+      orderBy: { descending: Block_Time }
+    ) {
+      Interval { Time { Start } }
+      Price {
+        Ohlc {
+          Open
+          Close
+        }
+      }
+      Volume { Usd }
+    }
   }
 }
 ```

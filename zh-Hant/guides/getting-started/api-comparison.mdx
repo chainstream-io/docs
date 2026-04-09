@@ -1,0 +1,99 @@
+---
+title: "選擇 API"
+description: "對比 REST、GraphQL、WebSocket、MCP 和 CLI — 為你的場景選擇合適的接入方式"
+icon: "code-compare"
+---
+
+ChainStream 提供五種訪問鏈上資料的方式。各有不同優勢 — 請根據你的使用場景選擇。
+
+---
+
+## 快速對比
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| | **REST API** | **GraphQL API** | **WebSocket** | **MCP Tools** | **CLI** |
+|:--|:--|:--|:--|:--|:--|
+| **最適合** | 簡單查詢、系統整合 | 靈活分析、自定義聚合 | 實時價格與交易推送 | AI Agent 整合 | 指令碼、CI/CD、終端工作流 |
+| **端點** | 56 個 `/v2/*` 路徑 | 單一端點 | `wss://realtime-dex.chainstream.io/...` | 透過 MCP 協議 | `npx @chainstream-io/cli` |
+| **認證** | `X-API-KEY` Header | `X-API-KEY` Header | URL `?token=` 引數 | Bearer Token | `cli login` / API Key |
+| **響應** | 固定 JSON Schema | 客戶端自選欄位 | 實時推送 | 結構化工具結果 | JSON / 表格輸出 |
+| **聚合** | 預定義端點 | `count` / `sum` / `avg` / `min` / `max` / `uniq` | 無 | 取決於底層 API | 無 |
+| **鏈** | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc | sol / eth / bsc |
+| **SDK** | TS / Python / Go / Rust | 任意 GraphQL 客戶端 | TS SDK 內建 | MCP 客戶端 | N/A |
+
+</div>
+
+---
+
+## 何時使用
+
+<CardGroup cols={2}>
+  <Card title="REST API" icon="bolt">
+    **適用場景**：需要快速獲取特定資料 — 代幣價格、錢包餘額、交易列表 — 並希望響應 Schema 可預測。
+
+    **示例**：在 dApp 中展示代幣資訊、檢視錢包 PnL、獲取排行榜。
+
+    [REST API 參考](/zh-Hant/api-reference/authentication/authenticate)
+  </Card>
+  <Card title="GraphQL API" icon="diagram-project">
+    **適用場景**：需要靈活的分析查詢 — 聚合交易、按多維度過濾、僅選所需欄位。
+
+    **示例**：按成交量排名的頭部交易者、OHLC K 線資料、代幣持有者分佈分析。
+
+    [GraphQL 概覽](/zh-Hant/graphql/getting-started/overview)
+  </Card>
+  <Card title="WebSocket" icon="tower-broadcast">
+    **適用場景**：需要實時推送資料到應用 — 價格跳動、新交易、錢包活動變化。
+
+    **示例**：實時價格推送、交易活動流、新代幣建立提醒。
+
+    [實時資料流](/zh-Hant/guides/data-concepts/realtime-streaming)
+  </Card>
+  <Card title="MCP Tools" icon="robot">
+    **適用場景**：構建 AI Agent，透過自然語言或結構化工具呼叫查詢鏈上資料。
+
+    **示例**：Claude / GPT 分析代幣安全、AI 助手追蹤聰明錢、自動化研究工作流。
+
+    [MCP Server 介紹](/zh-Hant/guides/ai-infrastructure/mcp-server/introduction)
+  </Card>
+</CardGroup>
+
+---
+
+## 各介面資料覆蓋
+
+所有介面共享同一底層資料管道，支援全部 3 條鏈（Solana、Ethereum、BSC）。
+
+| 資料型別 | REST | GraphQL | WebSocket | MCP |
+|:----------|:-----|:--------|:----------|:----|
+| 代幣後設資料與價格 | Yes | Yes (DEXTrades, TokenSearch) | Yes (Token series) | Yes (`token_get_price`) |
+| 交易歷史 | Yes | Yes (DEXTrades) | Yes (Trade series) | Yes (`trade_get`) |
+| 錢包餘額與 PnL | Yes | Yes (BalanceUpdates, WalletTokenPnL) | Yes (Wallet series) | Yes (`wallet_get_balance`) |
+| OHLCV / K 線 | Yes | Yes (OHLC) | Yes (Candle series) | Yes (`token_get_candles`) |
+| 代幣持有者 | Yes | Yes (TokenHolders) | No | Yes (`token_get_holders`) |
+| DEX 池流動性 | Yes | Yes (DEXPools, PoolLiquiditySnapshots) | Yes (DexPool series) | Yes (`dexpool_get`) |
+| 排行榜（熱門、新幣） | Yes | No | Yes (Ranking series) | Yes (`ranking_get_hot_tokens`) |
+| DeFi swap / create | Yes | No | No | Yes (`dex_swap`, `pumpfun_create`) |
+| KYT / 合規 | Yes | No | No | No |
+| Webhook 管理 | Yes | No | No | Yes (`webhook_*`) |
+
+<Tip>
+**GraphQL** 擅長靈活的聚合分析查詢。**REST** 覆蓋最廣泛的功能集，包括 DeFi 操作與合規。**WebSocket** 是獲取實時推送的唯一方式。**MCP** 為 AI Agent 封裝了 REST 能力。
+</Tip>
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="快速開始" icon="rocket" href="/zh-Hant/guides/getting-started/quickstart">
+    5 分鐘完成你的首次 API 呼叫。
+  </Card>
+  <Card title="GraphQL 第一個查詢" icon="play" href="/zh-Hant/graphql/getting-started/first-query">
+    執行你的第一個 GraphQL 查詢。
+  </Card>
+  <Card title="支援的鏈" icon="link-simple" href="/zh-Hant/guides/getting-started/supported-chains">
+    檢視所有支援的鏈與 DEX。
+  </Card>
+</CardGroup>

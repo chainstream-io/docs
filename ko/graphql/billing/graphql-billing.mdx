@@ -1,0 +1,160 @@
+---
+title: "빌링 & 크레딧"
+description: "Credit Unit 시스템을 사용한 GraphQL API 쿼리 빌링 방식 이해"
+icon: "credit-card"
+---
+
+## 개요
+
+모든 GraphQL 쿼리는 쿼리한 Cube, 요청한 행 수, 집계의 복잡성에 따라 **Credit Unit (CU)**을 소비합니다. 크레딧은 REST API와 동일한 빌링 플랜에서 차감됩니다 — API Key는 두 API에서 모두 작동합니다.
+
+<Info>
+GraphQL API는 REST Data API와 동일한 API Key와 빌링 플랜을 공유합니다. GraphQL 쿼리에서 소비된 크레딧은 전체 사용량에 집계됩니다.
+</Info>
+
+---
+
+## 크레딧 계산 공식
+
+크레딧은 다음 공식을 사용하여 Cube별로 계산됩니다:
+
+```
+Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+```
+
+| 요소 | 계산 | 설명 |
+|:-------|:-----------|:------------|
+| **BaseCost** | Cube별 기본 가격 (아래 표 참조) | Cube 복잡성에 따라 달라지는 고정 비용 |
+| **LimitFactor** | `ceil(limit / 100)`, 최소 1 | 요청한 행 수에 따라 비례 |
+| **AggregationFactor** | 1.0 (없음), 1.5 (GROUP BY), 2.0 (HAVING) | 집계 또는 HAVING 필터를 사용하는 쿼리에 더 높음 |
+| **MetricFactor** | `1.0 + (metric_count × 0.2)` | 추가 메트릭(count, sum 등)마다 증가 |
+
+<Tip>
+기본 제한(25행)과 집계가 없는 간단한 쿼리는 기본 비용만 지불합니다. 더 많은 행을 요청하거나 집계 메트릭을 추가하면 크레딧이 증가합니다.
+</Tip>
+
+### 계산 예제
+
+<AccordionGroup>
+  <Accordion title="간단한 쿼리: DEXTrades 10행">
+    ```
+    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ```
+  </Accordion>
+  <Accordion title="대규모 쿼리: DEXTrades 500행">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ```
+  </Accordion>
+  <Accordion title="집계 쿼리: 500행 + GROUP BY + 메트릭 2개">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
+    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Cube별 기본 비용
+
+| Cube | 기본 비용 (CU) | 비고 |
+|:-----|:---------------|:------|
+| **DEXTrades** | 50 | 가장 많은 디멘션을 가진 최대 테이블 |
+| **DEXTradeByTokens** | 50 | DEXTrades와 동일한 기본 데이터 |
+| **DEXPoolEvents** | 30 | 유동성 이벤트 |
+| **Pairs** | 30 | OHLC 캔들스틱 데이터 (Trading 그룹) |
+| **Tokens** | 30 | 토큰 트레이드 통계 (Trading 그룹) |
+| **WalletTokenPnL** | 25 | DWS 요약 |
+| **Transfers** | 15 | |
+| **BalanceUpdates** | 10 | |
+| **Events**, **Calls** | 20 | EVM 전용 트레이스/이벤트 데이터 |
+| **Instructions** | 20 | Solana 전용 |
+| **PredictionTrades** | 20 | 예측 시장 데이터 |
+| 기타 모든 Cube | 20 | 기본 비용 |
+
+<Note>
+기본 비용은 쿼리 복잡성과 각 Cube의 기본 데이터 볼륨을 반영합니다. `extensions.credits`에 보고되는 실제 Cube 이름은 서버에 의해 결정됩니다 — 항상 응답 값을 권위 있는 빌링 참조로 사용하세요.
+</Note>
+
+---
+
+## 응답: `extensions.credits`
+
+모든 GraphQL 응답에는 `extensions` 필드에 크레딧 소비 세부 정보가 포함됩니다:
+
+```json
+{
+  "data": {
+    "DEXTrades": [ ... ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        {
+          "cube": "DEXTrades",
+          "credits": 50,
+          "row_count": 10
+        }
+      ]
+    }
+  }
+}
+```
+
+| 필드 | 타입 | 설명 |
+|:------|:-----|:------------|
+| `total` | `Int` | 전체 쿼리에서 소비된 총 크레딧 |
+| `cubes` | `Array` | Cube별 상세 |
+| `cubes[].cube` | `String` | Cube 이름 |
+| `cubes[].credits` | `Int` | 이 Cube에 부과된 크레딧 |
+| `cubes[].row_count` | `Int` | 반환된 행 수 |
+
+<Note>
+`extensions.credits` 필드는 크레딧이 소비될 때 (즉, `total > 0`) 존재합니다. 0행을 반환하는 쿼리도 기본 비용이 발생합니다.
+</Note>
+
+---
+
+## IDE에서 사용량 모니터링
+
+[GraphQL IDE](https://ide.chainstream.io) 상태 표시줄은 각 쿼리 후 크레딧 소비를 표시합니다:
+
+- **CU 표시기**: 소비된 총 CU 표시 (예: `50 CU`)
+- **지연 시간**: 요청 소요 시간 (밀리초)
+- **응답 크기**: 페이로드 크기
+
+---
+
+## 크레딧 사용 최적화 팁
+
+<CardGroup cols={3}>
+  <Card title="필드 수 줄이기" icon="minimize">
+    필요한 디멘션만 요청하세요. 필드가 적을수록 처리되는 데이터가 줄어듭니다.
+  </Card>
+  <Card title="적절한 제한 사용" icon="gauge">
+    `limit.count`를 실용적인 수준으로 낮게 유지하세요. 크레딧은 `ceil(limit / 100)`에 비례합니다.
+  </Card>
+  <Card title="사전 집계 Cube 사용" icon="layer-group">
+    집계 데이터는 DWD Cube(DEXTrades)에서 메트릭을 실행하는 대신 DWM/DWS Cube(Pairs, Tokens, TokenHolders)를 선호하세요.
+  </Card>
+</CardGroup>
+
+---
+
+## 관련 문서
+
+<CardGroup cols={2}>
+  <Card title="일반 빌링 & 단위" icon="receipt" href="/ko/guides/getting-started/billing-and-units">
+    ChainStream 빌링 플랜, 단위 할당량, 결제 방법 개요.
+  </Card>
+  <Card title="메트릭 & 집계" icon="chart-simple" href="/ko/graphql/schema/metrics-aggregation">
+    집계 메트릭이 쿼리 크레딧에 미치는 영향을 알아보세요.
+  </Card>
+</CardGroup>

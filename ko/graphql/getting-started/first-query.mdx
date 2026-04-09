@@ -1,0 +1,262 @@
+---
+title: "첫 번째 쿼리"
+description: "IDE와 cURL에서 첫 번째 GraphQL 쿼리를 단계별로 실행하기"
+icon: "play"
+---
+
+<Note>
+**예상 소요 시간**: 5분
+</Note>
+
+## 사전 준비
+
+시작하기 전에 다음을 준비하세요:
+
+- 등록된 ChainStream 계정 ([여기서 등록](https://www.chainstream.io/dashboard))
+- API Key (`cs_live_...`로 시작)
+
+<Tip>
+GraphQL API는 REST Data API와 동일한 API Key를 공유합니다. REST API용 키가 이미 있다면 여기서 재사용할 수 있습니다.
+</Tip>
+
+---
+
+## 1단계: API Key 발급
+
+1. [ChainStream Dashboard](https://www.chainstream.io/dashboard)에 로그인
+2. **Applications**으로 이동
+3. **Create New App** 클릭 (또는 기존 앱 선택)
+4. **API Key** 복사
+
+---
+
+## 2단계: GraphQL IDE 열기
+
+ChainStream GraphQL IDE를 방문하세요:
+
+<Card title="GraphQL IDE" icon="code" href="https://ide.chainstream.io">
+  https://ide.chainstream.io
+</Card>
+
+IDE는 자동 완성, 구문 강조, 인라인 문서, 쿼리 히스토리를 제공하여 스키마를 탐색하고 쿼리를 작성하는 가장 빠른 방법입니다.
+
+---
+
+## 3단계: 인증 설정
+
+IDE에서 **Headers** 패널(하단 왼쪽)을 열고 API Key를 추가하세요:
+
+```json
+{
+  "X-API-KEY": "your_api_key"
+}
+```
+
+---
+
+## 4단계: 샘플 쿼리 실행
+
+다음 쿼리를 에디터에 붙여넣으세요. **Solana의 최근 DEX 트레이드 10건**을 조회하며, 블록 시간, 트랜잭션 해시, 매수/매도 토큰 정보, 금액, USD 가격, DEX 프로토콜 이름이 포함됩니다.
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block {
+      Time
+      Slot
+    }
+    Transaction {
+      Hash
+    }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Sell {
+        Currency { MintAddress }
+        Amount
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여넣어 자동 완성과 스키마 탐색 기능으로 인터랙티브하게 실행해 보세요.
+</Tip>
+
+**Play** 버튼을 클릭하거나 `Ctrl+Enter` / `Cmd+Enter`를 눌러 실행하세요.
+
+---
+
+## cURL 동일 예제
+
+터미널에서 동일한 쿼리를 실행할 수 있습니다:
+
+```bash
+curl -X POST "https://graphql.chainstream.io/graphql" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key" \
+  -d '{
+    "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time Slot } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+  }'
+```
+
+---
+
+## 응답 예제
+
+성공적인 응답은 다음과 같습니다:
+
+```json
+{
+  "data": {
+    "DEXTrades": [
+      {
+        "Block": {
+          "Time": "2025-03-27T10:32:18Z",
+          "Slot": 325847291
+        },
+        "Transaction": {
+          "Hash": "4vKzR8g...x9bQ"
+        },
+        "Trade": {
+          "Buy": {
+            "Currency": { "MintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+            "Amount": 1523.45,
+            "PriceInUSD": 1.0001
+          },
+          "Sell": {
+            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+            "Amount": 10.237
+          },
+          "Dex": { "ProtocolName": "Raydium" }
+        }
+      },
+      {
+        "Block": {
+          "Time": "2025-03-27T10:32:17Z",
+          "Slot": 325847289
+        },
+        "Transaction": {
+          "Hash": "3mPqW7n...kR2J"
+        },
+        "Trade": {
+          "Buy": {
+            "Currency": { "MintAddress": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
+            "Amount": 48291037.12,
+            "PriceInUSD": 0.00003152
+          },
+          "Sell": {
+            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+            "Amount": 10.5
+          },
+          "Dex": { "ProtocolName": "Orca" }
+        }
+      }
+    ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        { "cube": "DEXTrades", "credits": 50, "row_count": 10 }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## 응답 이해하기
+
+응답은 쿼리의 구조를 그대로 반영합니다:
+
+| 경로 | 설명 |
+|:--|:--|
+| `Block.Time` | ISO 8601 형식의 블록 타임스탬프 |
+| `Block.Slot` | Solana 슬롯 번호 (Solana 전용) |
+| `Transaction.Hash` | 온체인 트랜잭션 해시 |
+| `Trade.Buy.Currency.MintAddress` | 매수한 자산의 토큰 주소 |
+| `Trade.Buy.Amount` | 매수한 토큰 수량 |
+| `Trade.Buy.PriceInUSD` | 거래 시점의 매수 토큰 USD 가격 |
+| `Trade.Sell.Currency.MintAddress` | 매도한 자산의 토큰 주소 |
+| `Trade.Sell.Amount` | 매도한 토큰 수량 |
+| `Trade.Dex.ProtocolName` | 거래를 실행한 DEX 프로토콜 (예: Raydium, Orca, PancakeSwap) |
+
+<Info>
+`extensions.credits` 객체는 이 쿼리에서 소비된 빌링 크레딧과 남은 잔액을 보여줍니다. 자세한 내용은 [빌링 & 크레딧](/ko/graphql/billing/graphql-billing)을 참조하세요.
+</Info>
+
+---
+
+## 쿼리 수정해 보기
+
+이제 동작하는 쿼리가 있으니 다음과 같이 수정해 보세요:
+
+<AccordionGroup>
+  <Accordion title="Ethereum으로 전환">
+    `network: sol`을 `network: eth`로 변경하여 Ethereum DEX 트레이드(Uniswap, SushiSwap 등)를 조회합니다.
+  </Accordion>
+  <Accordion title="시간 필터 추가">
+    `where` 절을 추가하여 최근 1시간의 트레이드를 필터링합니다:
+    ```graphql
+    DEXTrades(
+      network: sol
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+      where: {Block: {Time: {after: "2025-03-27T09:00:00Z"}}}
+    ) { ... }
+    ```
+  </Accordion>
+  <Accordion title="특정 토큰 쿼리">
+    토큰 민트 주소로 필터링하여 특정 토큰의 트레이드를 조회합니다:
+    ```graphql
+    DEXTrades(
+      network: sol
+      limit: {count: 10}
+      orderBy: Block_Time_DESC
+      where: {Trade: {Buy: {Currency: {MintAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}}}}}
+    ) { ... }
+    ```
+  </Accordion>
+  <Accordion title="집계 추가">
+    DEX 프로토콜별 총 트레이드 수 집계:
+    ```graphql
+    DEXTrades(
+      network: sol
+      where: {Block: {Time: {after: "2025-03-27T00:00:00Z"}}}
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="스키마 & 데이터 모델" icon="diagram-project" href="/ko/graphql/schema/schema-overview">
+    25개 Cube, 필드 타입, 필터링 연산자, 집계 함수를 살펴보세요.
+  </Card>
+  <Card title="쿼리 예제" icon="flask" href="/ko/graphql/examples/dex-trades">
+    DEX 트레이드, 전송, OHLC, 홀더 등을 위한 실제 쿼리 예제를 찾아보세요.
+  </Card>
+  <Card title="GraphQL IDE 가이드" icon="code" href="/ko/graphql/ide/introduction">
+    IDE를 마스터하세요 — 쿼리 템플릿, 저장된 쿼리, 변수 패널, 코드 내보내기.
+  </Card>
+  <Card title="빌링 & 크레딧" icon="credit-card" href="/ko/graphql/billing/graphql-billing">
+    쿼리 크레딧 계산 방법과 비용 최적화 방법을 알아보세요.
+  </Card>
+</CardGroup>

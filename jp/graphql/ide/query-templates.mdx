@@ -1,0 +1,195 @@
+---
+title: "クエリテンプレート"
+description: "チェーンとCubeごとに整理された組み込みクエリテンプレート — 一般的なオンチェーン分析クエリのロード、カスタマイズ、実行"
+icon: "book-open"
+---
+
+## クエリテンプレートとは
+
+クエリテンプレートは、Solana、Ethereum、BSC全体で最も一般的な分析ユースケースをカバーする事前作成されたGraphQLクエリです。各テンプレートは特定のCubeを対象とし、正しいクエリ構造、フィールド、フィルタ引数が事前に設定されています。プレースホルダー値を置き換えるだけですぐに実行できます。
+
+テンプレートの活用方法：
+
+- **スキーマを例で学ぶ** — フィールド、フィルタ、ソートが実際にどのように機能するかを確認
+- **すぐに開始** — ゼロからクエリを書かずにスタート
+- **Cubeを発見** — 知らなかったCubeの存在に気付く
+
+---
+
+## テンプレートへのアクセス
+
+<Steps>
+  <Step title="サイドバーを開く">
+    サイドバートグルをクリックするか、**Ctrl/Cmd+B**を押して左パネルを開きます。
+  </Step>
+  <Step title="クエリタブを選択">
+    サイドバーには2つのタブがあります：**Queries**（テンプレート）と**Saved**（保存済みクエリ）。**Queries**を選択します。
+  </Step>
+  <Step title="チェーンとCubeで閲覧">
+    テンプレートはツリー構造で整理されています：**チェーン**（Solana / Ethereum / BSC） → **Cube**（DEXTrades、Transfersなど） → **テンプレート**。
+  </Step>
+  <Step title="クリックしてロード">
+    テンプレートをクリックしてクエリエディタにロードします。プレースホルダー値は簡単に置き換えられるようにハイライトされています。
+  </Step>
+</Steps>
+
+---
+
+## テンプレートの構成
+
+テンプレートは2レベルの階層に従っています：
+
+```
+Chain (Solana / Ethereum / BSC)
+ └── Cube
+      └── Template
+```
+
+各チェーンには同じCubeとテンプレートのセットが含まれ、正しい`network`値（`sol`、`eth`、`bsc`）が事前設定されています。
+
+---
+
+## テンプレートカタログ
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | テンプレート | 数 |
+|:--|:--|:--|
+| **DEXTrades** | Latest Trades · Token Trades · Pair Trades · Trades by DEX · Wallet Trades | 5 |
+| **Transfers** | Token Transfers · Wallet Transfers | 2 |
+| **BalanceUpdates** | Token Balance Updates · Wallet Balance Updates | 2 |
+| **DEXPools** | Pool Info · Token Pools · Liquidity Snapshots | 3 |
+| **TokenSupplyUpdates** | Mint & Burn Events · Market Cap (via TokenSupplyUpdates) | 2 |
+| **TokenHolders** | Top Holders | 1 |
+| **WalletTokenPnL** | Wallet PnL | 1 |
+| **Pairs** | Price Candles | 1 |
+| **Tokens** | Trade Statistics · Search Tokens (via token dimensions) | 2 |
+
+</div>
+
+<Info>
+最も一般的に使用されるCubeが**19のテンプレート**でカバーされています。各テンプレートはすべての対応チェーンで利用可能です。
+</Info>
+
+---
+
+## Cubeごとのテンプレート詳細
+
+<AccordionGroup>
+  <Accordion title="DEXTrades（5テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Latest Trades** | ネットワーク上の最新DEXトレード | — |
+    | **Token Trades** | 特定のトークンに関連するトレード | `TOKEN_ADDRESS` |
+    | **Pair Trades** | 特定のトークンペアのトレード | `TOKEN_ADDRESS` (×2) |
+    | **Trades by DEX** | DEXプロトコル名でフィルタされたトレード | — |
+    | **Wallet Trades** | ウォレットが実行したすべてのDEXトレード | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="Transfers（2テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Token Transfers** | 特定のトークンのトランスファーイベント | `TOKEN_ADDRESS` |
+    | **Wallet Transfers** | ウォレットが送受信したすべてのトランスファー | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="BalanceUpdates（2テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Token Balance Updates** | 特定のトークンの残高変更イベント | `TOKEN_ADDRESS` |
+    | **Wallet Balance Updates** | ウォレットのすべての残高変更 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="DEXPools（3テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Pool Info** | 特定のプールのメタデータとリザーブ | `POOL_ADDRESS` |
+    | **Token Pools** | トークンを含むすべての流動性プール | `TOKEN_ADDRESS` |
+    | **Liquidity Snapshots** | プールの経時的な流動性履歴データ | `POOL_ADDRESS` |
+  </Accordion>
+  <Accordion title="TokenSupplyUpdates（2テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Mint & Burn Events** | トークンサプライに影響するミント・バーンイベント | `TOKEN_ADDRESS` |
+    | **Market Cap** | トークンの時価総額スナップショット | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="TokenHolders（1テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Top Holders** | 残高順の特定トークンの最大ホルダー | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="WalletTokenPnL（1テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Wallet PnL** | ウォレット-トークンペアの実現・未実現PnL | `WALLET_ADDRESS`、`TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="Pairs（1テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Price Candles** | 設定可能な間隔でのOHLCローソク足データ | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="Tokens（2テンプレート）">
+    | テンプレート | 説明 | プレースホルダー |
+    |:--|:--|:--|
+    | **Trade Statistics** | 集計されたトレード出来高、数、ユニークトレーダー | `TOKEN_ADDRESS` |
+    | **Search Tokens** | 名前、シンボル、アドレスによるトークンの全文検索 | — |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## プレースホルダー
+
+テンプレートは大文字のプレースホルダーを使用して、実行前に実際のオンチェーンアドレスに置き換える必要がある値を示します。
+
+| プレースホルダー | 説明 | 例 |
+|:--|:--|:--|
+| `TOKEN_ADDRESS` | トークンコントラクト/ミントアドレス | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`（SolanaのUSDC） |
+| `WALLET_ADDRESS` | ウォレットパブリックアドレス | `5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1` |
+| `POOL_ADDRESS` | DEX流動性プールアドレス | `58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2` |
+
+<Note>
+プレースホルダーはクエリ内でリテラル文字列として表示されます（例：`MintAddress: {is: "TOKEN_ADDRESS"}`）。引用符を含むプレースホルダー文字列全体を実際のアドレスに置き換えてください。
+</Note>
+
+---
+
+## 例：テンプレートの使用
+
+Solanaで**DEXTrades → Latest Trades**テンプレートを使用する方法：
+
+<Steps>
+  <Step title="サイドバーを開いてテンプレートを選択">
+    **Solana → DEXTrades → Latest Trades**に移動してクリックしてロードします。
+  </Step>
+  <Step title="ロードされたクエリを確認">
+    エディタに以下が表示されます：
+    ```graphql
+    query {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time Slot }
+        Transaction { Hash }
+        Trade {
+          Buy {
+            Currency { MintAddress Symbol Name }
+            Amount
+            PriceInUSD
+          }
+          Sell {
+            Currency { MintAddress Symbol Name }
+            Amount
+          }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    ```
+  </Step>
+  <Step title="実行">
+    このテンプレートにはプレースホルダーがありません — 最新の10件のトレードを取得します。**Ctrl/Cmd+Enter**を押して実行します。
+  </Step>
+  <Step title="反復">
+    フィルタの追加、リミットの変更、異なるフィールドの選択などでクエリを修正します。スキーマの自動補完が利用可能なオプションの発見を支援します。
+  </Step>
+</Steps>

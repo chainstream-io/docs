@@ -1,6 +1,6 @@
 ---
 title: "Schema Overview"
-description: "How the ChainStream GraphQL schema is structured — root types, Cube fields, generated types, and introspection"
+description: "How the ChainStream GraphQL schema is structured — Chain Groups, Cube fields, generated types, and introspection"
 icon: "sitemap"
 ---
 
@@ -8,7 +8,7 @@ icon: "sitemap"
 
 The ChainStream GraphQL schema is **dynamically generated** at startup by **activecube-rs**, a Rust library that compiles **Cube** definitions into a fully-typed [async-graphql](https://github.com/async-graphql/async-graphql) schema. Each Cube maps to an analytical data model backed by an OLAP table, and activecube-rs automatically produces:
 
-- A **top-level Query field** for the Cube
+- A **top-level Query field** for the Cube (nested under its Chain Group)
 - A **Record type** (`{Cube}Record`) representing the selectable dimensions
 - A **Filter input** (`{Cube}Filter`) matching the dimension hierarchy
 - An **OrderBy enum** (`{Cube}OrderBy`) with ASC/DESC variants for every dimension path
@@ -21,24 +21,34 @@ Because the schema is generated from Cube definitions, any new data model added 
 
 ---
 
-## Root Query Type
+## Root Query Structure
 
-The schema has a single root type: `Query`. Every Cube is exposed as a top-level field on `Query`:
+The root query type is named `ChainStream`. Cubes are organized into three **Chain Groups**, each exposed as a top-level field:
 
 ```graphql
-type Query {
-  DEXTrades(...): [DEXTradesRecord!]!
-  Transfers(...): [TransfersRecord!]!
-  BalanceUpdates(...): [BalanceUpdatesRecord!]!
-  DEXPools(...): [DEXPoolsRecord!]!
-  TokenSupplyUpdates(...): [TokenSupplyUpdatesRecord!]!
-  OHLC(...): [OHLCRecord!]!
-  TokenTradeStats(...): [TokenTradeStatsRecord!]!
-  PoolLiquiditySnapshots(...): [PoolLiquiditySnapshotsRecord!]!
-  TokenHolders(...): [TokenHoldersRecord!]!
-  WalletTokenPnL(...): [WalletTokenPnLRecord!]!
-  TokenMarketCap(...): [TokenMarketCapRecord!]!
-  TokenSearch(...): [TokenSearchRecord!]!
+type ChainStream {
+  EVM(network: Network!, dataset: Dataset, aggregates: Aggregates) {
+    DEXTrades(...): [DEXTradesRecord!]!
+    Transfers(...): [TransfersRecord!]!
+    BalanceUpdates(...): [BalanceUpdatesRecord!]!
+    Blocks(...): [BlocksRecord!]!
+    Transactions(...): [TransactionsRecord!]!
+    Events(...): [EventsRecord!]!
+    Calls(...): [CallsRecord!]!
+    # ... more EVM Cubes
+  }
+
+  Solana(dataset: Dataset, aggregates: Aggregates) {
+    DEXTrades(...): [DEXTradesRecord!]!
+    Instructions(...): [InstructionsRecord!]!
+    DEXOrders(...): [DEXOrdersRecord!]!
+    # ... more Solana Cubes
+  }
+
+  Trading(dataset: Dataset, aggregates: Aggregates) {
+    Pairs(...): [PairsRecord!]!
+    Tokens(...): [TokensRecord!]!
+  }
 }
 ```
 
@@ -46,35 +56,86 @@ There are no `Mutation` or `Subscription` types — the GraphQL API is read-only
 
 ---
 
-## Network Enum
+## Chain Groups
 
-Every Cube field requires a `network` argument that specifies which blockchain to query. The enum values are:
+Cubes are organized into three groups based on the blockchain ecosystem they target:
 
-| Value | Blockchain |
-|:------|:-----------|
-| `sol` | Solana |
-| `eth` | Ethereum |
-| `bsc` | BNB Chain (BSC) |
+| Chain Group | `network` Argument | Available Networks | Description |
+|:--|:--|:--|:--|
+| **EVM** | Required | `eth`, `bsc`, `polygon` | Shared Cubes for all EVM-compatible chains |
+| **Solana** | Not needed | `sol` (implicit) | Cubes for Solana including chain-specific ones (Instructions, DEXOrders) |
+| **Trading** | Not needed | Cross-chain (`sol`, `eth`, `bsc`) | Pre-aggregated trading analytics (OHLC candles, token statistics) with a `chain` dimension |
+
+<Note>
+The **EVM** group requires a `network` argument to select which chain to query. **Solana** and **Trading** do not need a `network` argument — Solana is implicit, and Trading includes a `chain` dimension within the data.
+</Note>
+
+See [Chain Groups](/en/graphql/schema/chain-groups) for the full breakdown of which Cubes belong to each group.
+
+---
+
+## Chain Group Parameters
+
+Every Chain Group accepts two optional parameters that control data source behavior:
+
+### Dataset
+
+The `dataset` parameter controls the time scope of data queried:
+
+| Value | Description |
+|:------|:------------|
+| `combined` | Full range — queries both recent and historical data **(default)** |
+| `realtime` | Recent data only (approximately the last 24 hours) |
+| `archive` | Historical data up to the retention TTL |
 
 ```graphql
 query {
-  DEXTrades(network: sol) { ... }
+  Solana(dataset: realtime) {
+    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block { Time }
+      Trade { Buy { Amount } }
+    }
+  }
 }
 ```
 
-<Note>
-The `network` argument is **required** on every top-level Cube query. Omitting it will result in a validation error.
-</Note>
+### Aggregates
+
+The `aggregates` parameter controls whether pre-aggregated (DWM/DWS) tables are used:
+
+| Value | Description |
+|:------|:------------|
+| `yes` | Prefer pre-aggregated tables when available **(default for applicable Cubes)** |
+| `no` | Use raw detail tables only |
+| `only` | Only use pre-aggregated tables (faster but limited fields) |
+
+```graphql
+query {
+  Trading(aggregates: only) {
+    Pairs(
+      where: { Token: { Address: { is: "0x..." } } }
+      limit: {count: 100}
+    ) {
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+<Tip>
+See [Dataset & Aggregates](/en/graphql/schema/dataset-aggregates) for detailed usage, supported tables, and performance guidance.
+</Tip>
 
 ---
 
 ## Common Argument Pattern
 
-Every Cube field accepts the same set of standard arguments, plus optional Cube-specific **selectors**:
+Within a Chain Group, every Cube field accepts the same set of standard arguments, plus optional Cube-specific **selectors**:
 
 | Argument | Type | Required | Description |
 |:---------|:-----|:---------|:------------|
-| `network` | `Network!` | Yes | Target blockchain (`sol`, `eth`, `bsc`) |
 | `where` | `{Cube}Filter` | No | Nested filter object matching the dimension hierarchy |
 | `limit` | `LimitInput` | No | Pagination: `{count: Int, offset: Int}` |
 | `orderBy` | `{Cube}OrderBy` | No | Sort order enum (`{Path}_ASC` / `{Path}_DESC`) |
@@ -82,15 +143,16 @@ Every Cube field accepts the same set of standard arguments, plus optional Cube-
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    where: { Block: { Time: { after: "2025-01-01T00:00:00Z" } } }
-    limit: { count: 50, offset: 0 }
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      where: { Block: { Time: { after: "2026-01-01T00:00:00Z" } } }
+      limit: { count: 50, offset: 0 }
+      orderBy: Block_Time_DESC
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
@@ -218,7 +280,13 @@ The [GraphQL IDE](https://ide.chainstream.io) auto-fetches the introspection sch
 
 <CardGroup cols={2}>
   <Card title="Data Cubes" icon="cubes" href="/en/graphql/schema/cubes">
-    Explore all 12 Cubes — their fields, selectors, and data warehouse layers.
+    Explore all 25 Cubes — their fields, selectors, and data warehouse layers.
+  </Card>
+  <Card title="Chain Groups" icon="layer-group" href="/en/graphql/schema/chain-groups">
+    Understand the EVM, Solana, and Trading Chain Groups and their available Cubes.
+  </Card>
+  <Card title="Dataset & Aggregates" icon="database" href="/en/graphql/schema/dataset-aggregates">
+    Control data source scope and pre-aggregation behavior with `dataset` and `aggregates`.
   </Card>
   <Card title="Filtering" icon="filter" href="/en/graphql/schema/filtering">
     Learn how to use `where` filters and selector shortcuts to narrow your queries.

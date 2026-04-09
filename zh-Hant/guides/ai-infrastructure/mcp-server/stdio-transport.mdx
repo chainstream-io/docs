@@ -1,0 +1,180 @@
+---
+title: "Stdio 傳輸"
+description: "為 Claude Desktop、Claude Code 和 Cursor 配置 ChainStream MCP Server 的 stdio 傳輸。"
+icon: "terminal"
+---
+
+## 概述
+
+Stdio 是 ChainStream MCP Server 的**預設傳輸方式**。它透過標準輸入/輸出通訊，是本地 IDE 與桌面整合的常規選擇。
+
+```bash
+chainstream-mcp
+```
+
+或未全域性安裝時：
+
+```bash
+npx @chainstream-io/mcp
+```
+
+無需額外標誌；未指定 `--transport` 時會自動使用 stdio。
+
+## Claude Desktop
+
+將下列內容加入 Claude Desktop 的 MCP 配置檔案：
+
+<Tabs>
+  <Tab title="macOS">
+    編輯 `~/Library/Application Support/Claude/claude_desktop_config.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "command": "npx",
+          "args": ["@chainstream-io/mcp"],
+          "env": {
+            "CHAINSTREAM_API_KEY": "your-key"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Windows">
+    編輯 `%APPDATA%\Claude\claude_desktop_config.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "command": "npx",
+          "args": ["@chainstream-io/mcp"],
+          "env": {
+            "CHAINSTREAM_API_KEY": "your-key"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+若已全域性安裝該包，可直接使用二進位制：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "chainstream-mcp",
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+儲存配置後重啟 Claude Desktop。ChainStream 工具會自動出現在工具列表中。
+
+## Claude Code
+
+使用 CLI 將 MCP 伺服器新增到 Claude Code：
+
+```bash
+claude mcp add chainstream -- npx @chainstream-io/mcp
+```
+
+在啟動 Claude Code 前將 API 金鑰設為環境變數：
+
+```bash
+export CHAINSTREAM_API_KEY=your-key
+```
+
+也可將伺服器配置寫入專案的 `.mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+## Cursor
+
+開啟 Cursor 設定，進入 **Features > MCP Servers**。點選 **Add new MCP server**，填寫如下：
+
+| 欄位 | 值 |
+|-------|-------|
+| Name | `chainstream` |
+| Type | `stdio` |
+| Command | `npx @chainstream-io/mcp` |
+
+然後在 Cursor 的環境配置中設定 API 金鑰：
+
+```
+CHAINSTREAM_API_KEY=your-key
+```
+
+也可在專案級 `.cursor/mcp.json` 中新增：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+<Tip>
+  Cursor 使用與 Claude Desktop 相同的 MCP 配置格式。若你已有可用的 Claude Desktop 配置，可直接複用相同的 `mcpServers` 塊。
+</Tip>
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title="工具列表中看不到伺服器">
+    確認 `CHAINSTREAM_API_KEY` 已在 `env` 中正確設定。若金鑰缺失或無效，工具呼叫會因 API 錯誤失敗。可在終端手動執行命令進行測試：
+
+    ```bash
+    CHAINSTREAM_API_KEY=your-key npx @chainstream-io/mcp
+    ```
+  </Accordion>
+  <Accordion title="npx 啟動較慢">
+    首次使用 `npx` 會下載包，可能需要數秒。執行 `npm install -g @chainstream-io/mcp` 全域性安裝可加快啟動，然後將命令改為 `chainstream-mcp`。
+  </Accordion>
+  <Accordion title="macOS 上出現許可權錯誤">
+    若全域性 npm 安裝遇到許可權問題，可使用 `npx`，或將 npm 配置為使用者級字首：
+
+    ```bash
+    mkdir -p ~/.npm-global
+    npm config set prefix '~/.npm-global'
+    export PATH=~/.npm-global/bin:$PATH
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="HTTP 傳輸" icon="globe" href="/zh-Hant/guides/ai-infrastructure/mcp-server/http-transport">
+    部署為遠端伺服器，用於雲端與團隊環境。
+  </Card>
+  <Card title="工具參考" icon="wrench" href="/zh-Hant/guides/ai-infrastructure/mcp-server/tools-reference">
+    瀏覽伺服器提供的全部 MCP 工具。
+  </Card>
+</CardGroup>

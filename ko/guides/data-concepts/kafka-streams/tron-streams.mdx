@@ -1,0 +1,357 @@
+---
+title: "TRON Streams"
+description: "TRON 네트워크의 Protobuf 데이터 스트림"
+icon: "circle-t"
+---
+
+TRON은 약 3초마다 블록을 생성하며, 높은 처리량의 트랜잭션과 스마트 컨트랙트 실행을 지원합니다. TRON은 고유한 리소스 모델(Energy와 Bandwidth)과 Witness(슈퍼 대표자) 합의 메커니즘을 사용합니다.
+
+**스키마 리포지토리**: [github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron)
+
+---
+
+## 메시지 유형 개요
+
+TRON Streams는 다음 메시지 유형을 제공합니다:
+
+| 메시지 유형 | 설명 | Topic |
+|:---|:---|:---|
+| TradeEvents | DEX 거래 이벤트 | `tron.dex.trades` |
+| TokenEvents | 토큰 이벤트 | `tron.tokens` |
+| BalanceEvents | 잔액 변경 이벤트 | `tron.balances` |
+| DexPoolEvents | 유동성 풀 이벤트 | `tron.dex.pools` |
+| TransfersMessage | 전송 메시지 | `tron.v1.transfers.proto` |
+| CandlestickEvents | 캔들스틱 데이터 | `tron.candlesticks` |
+
+---
+
+## 블록 수준 데이터
+
+### BlockHeader 핵심 필드
+
+| 필드 | 타입 | 설명 |
+|:---|:---|:---|
+| `Number` | uint64 | 블록 번호 |
+| `Hash` | bytes | 블록 해시 |
+| `ParentHash` | bytes | 부모 블록 해시 |
+| `Timestamp` | Timestamp | 블록 시간 |
+| `TxTrieRoot` | bytes | 트랜잭션 트라이 루트 |
+| `Version` | uint32 | 블록 버전 |
+
+### Witness (슈퍼 대표자) 정보
+
+| 필드 | 설명 |
+|:---|:---|
+| `Address` | Witness 주소 |
+| `Id` | Witness ID |
+| `Signature` | 블록 서명 |
+
+<Note>
+TRON은 DPoS 합의 메커니즘을 사용하며, 27명의 슈퍼 대표자(Witnesses)가 교대로 블록을 생성합니다.
+</Note>
+
+---
+
+## 트랜잭션 수준 데이터
+
+### TransactionHeader
+
+| 필드 | 타입 | 설명 |
+|:---|:---|:---|
+| `Hash` | bytes | 트랜잭션 해시 |
+| `Fee` | uint64 | 트랜잭션 수수료 |
+| `Index` | uint32 | 블록 내 인덱스 |
+| `Expiration` | Timestamp | 만료 시간 |
+| `FeeLimit` | uint64 | 수수료 한도 |
+| `Signatures` | []bytes | 서명 목록 |
+| `FeePayer` | bytes | 수수료 지불자 |
+
+### Result — 실행 결과
+
+| 필드 | 설명 |
+|:---|:---|
+| `Status` | 실행 상태 |
+| `Success` | 성공 여부 |
+| `Message` | 실패 시 오류 메시지 |
+
+### Receipt — 리소스 소비
+
+| 필드 | 설명 |
+|:---|:---|
+| `EnergyUsageTotal` | 총 Energy 소비 |
+| `EnergyFee` | Energy 수수료 |
+| `NetUsage` | Bandwidth 소비 |
+| `NetFee` | Bandwidth 수수료 |
+
+### Contract
+
+컨트랙트 실행 세부 정보를 포함합니다:
+
+| 필드 | 설명 |
+|:---|:---|
+| `Address` | 컨트랙트 주소 |
+| `Type` | 컨트랙트 유형 (TransferContract, TriggerSmartContract 등) |
+| `Parameters` | 호출 파라미터 |
+| `InternalTransactions` | 내부 트랜잭션 |
+| `Logs` | 이벤트 로그 |
+| `ExecutionTrace` | 실행 추적 |
+| `WithdrawInfo` | 보상 출금 정보 |
+
+---
+
+## 전송 데이터
+
+`TransfersMessage`는 TRON 체인 전송 정보를 제공합니다 (Topic: `tron.v1.transfers.proto`).
+
+### TransfersMessage 구조
+
+```protobuf
+message TransfersMessage {
+  Chain Chain = 1;
+  BlockHeader Header = 2;
+  repeated Transfer Transfers = 3;
+}
+```
+
+### Transfer 구조
+
+| 필드 | 타입 | 설명 |
+|:---|:---|:---|
+| `CallIndex` | uint64 | 호출 인덱스 |
+| `LogIndex` | uint64 | 로그 인덱스 |
+| `Sender` | string | 발신자 주소 |
+| `Receiver` | string | 수신자 주소 |
+| `Amount` | string | 전송 금액 |
+| `Id` | string | 토큰 ID (NFT) |
+| `URI` | string | 토큰 URI |
+| `Currency` | TokenInfo | 토큰 정보 |
+| `Success` | bool | 성공 상태 |
+| `Index` | uint32 | 전송 인덱스 |
+| `TransactionHeader` | TransactionHeader | 트랜잭션 헤더 |
+
+### TokenInfo 구조
+
+| 필드 | 타입 | 설명 |
+|:---|:---|:---|
+| `SmartContract` | string | 컨트랙트 주소 |
+| `Delegated` | bool | 위임 여부 |
+| `DelegatedTo` | string | 위임 주소 |
+| `ProtocolName` | string | 프로토콜 이름 |
+| `Name` | string | 토큰 이름 |
+| `Symbol` | string | 토큰 심볼 |
+| `Decimals` | int32 | 소수점 자릿수 |
+| `HasURI` | bool | URI 존재 여부 |
+| `Fungible` | bool | 대체 가능 여부 |
+| `AssetId` | string | 자산 ID (TRC-10) |
+
+### TRON 토큰 표준
+
+| 표준 | 설명 |
+|:---|:---|
+| TRC-10 | TRON 네이티브 토큰, 스마트 컨트랙트 불필요 |
+| TRC-20 | 스마트 컨트랙트 토큰 (ERC-20 유사) |
+| TRC-721 | NFT 토큰 (ERC-721 유사) |
+
+<Note>
+TRC-10은 TRON의 고유한 네이티브 토큰 표준으로, 생성 및 전송 비용이 저렴하지만 TRC-20보다 유연성이 떨어집니다.
+</Note>
+
+---
+
+## DEX 데이터
+
+`TradeEvents`는 DEX 거래 데이터를 제공하며 (Topic: `tron.dex.trades`), 공통 TradeEvent 구조를 사용합니다.
+
+### Trade 핵심 필드
+
+| 필드 | 설명 |
+|:---|:---|
+| `token_a_address` / `token_b_address` | 거래쌍 토큰 주소 |
+| `user_a_amount` / `user_b_amount` | 사용자 거래 금액 |
+| `pool_address` | 풀 주소 |
+| `vault_a` / `vault_b` | 풀 볼트 주소 |
+| `vault_a_amount` / `vault_b_amount` | 볼트 금액 |
+
+### DApp 정보
+
+| 필드 | 설명 |
+|:---|:---|
+| `program_address` | DEX 컨트랙트 주소 (예: SunSwap) |
+| `inner_program_address` | 내부 프로그램 주소 |
+| `chain` | 체인 식별자 (CHAIN_TRON) |
+
+### DexPoolEvent - 유동성 풀
+
+| 필드 | 설명 |
+|:---|:---|
+| `type` | 이벤트 유형 (INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP) |
+| `address` | 풀 주소 |
+| `token_a_address` / `token_b_address` | 토큰 주소 |
+| `token_a_amount` / `token_b_amount` | 토큰 금액 |
+| `lp_wallet` | LP 지갑 주소 |
+
+---
+
+## TRON 체인 특성
+
+### Energy와 Bandwidth 리소스 모델
+
+EVM의 Gas 모델과 달리 TRON은 두 가지 리소스를 사용합니다:
+
+| 리소스 | 설명 | 획득 방법 |
+|:---|:---|:---|
+| **Energy** | 스마트 컨트랙트 실행 소비를 측정 | TRX 스테이킹 또는 지불 |
+| **Bandwidth (Net)** | 트랜잭션 데이터 크기 소비를 측정 | TRX 스테이킹 또는 지불 |
+
+Receipt에는 두 리소스의 사용량과 수수료가 표시됩니다:
+
+```
+Receipt {
+  EnergyUsageTotal: 50000    // 스마트 컨트랙트 소비
+  EnergyFee: 0               // 스테이킹한 경우 0
+  NetUsage: 265              // 트랜잭션 데이터 크기
+  NetFee: 0                  // 스테이킹한 경우 0
+}
+```
+
+### Witness 시스템
+
+| 특성 | 설명 |
+|:---|:---|
+| 명칭 | Witness (슈퍼 대표자) |
+| 수 | 27명의 활성 슈퍼 대표자 |
+| 선출 | 토큰 홀더에 의해 선출 |
+| 블록 생성 | 교대로 생성, ~3초/블록 |
+
+`BlockMessage`에는 Witness 주소, ID, 서명이 포함됩니다.
+
+### 사전 정의된 컨트랙트 유형
+
+TRON은 일반적인 작업을 위한 컨트랙트 유형을 사전 정의합니다:
+
+| 유형 | 설명 |
+|:---|:---|
+| `TransferContract` | TRX 전송 |
+| `TransferAssetContract` | TRC-10 전송 |
+| `TriggerSmartContract` | 스마트 컨트랙트 호출 |
+| `CreateSmartContract` | 스마트 컨트랙트 생성 |
+| `FreezeBalanceV2Contract` | TRX 스테이킹 |
+| `UnfreezeBalanceV2Contract` | 언스테이킹 |
+| `DelegateResourceContract` | 리소스 위임 |
+| `WithdrawBalanceContract` | 보상 출금 |
+
+Contract의 `Type` 필드를 통해 식별합니다.
+
+### 리소스 위임
+
+사용자는 다른 계정에 Energy와 Bandwidth를 위임할 수 있으며, TRON 생태계에서 일반적으로 사용됩니다:
+- 사용자 트랜잭션 비용 절감
+- DApp이 사용자를 위해 리소스 지불
+
+---
+
+## Topic → 메시지 유형 매핑
+
+| Topic | Proto 파일 | 메시지 유형 | 설명 |
+|:---|:---|:---|:---|
+| `tron.dex.trades` | trade_event.proto | TradeEvents | DEX 거래 이벤트 |
+| `tron.dex.trades.processed` | trade_event.proto | TradeEvents | USD 가격, 의심 플래그 포함 |
+| `tron.tokens` | token_event.proto | TokenEvents | 토큰 이벤트 |
+| `tron.tokens.processed` | token_event.proto | TokenEvents | 설명, 이미지, 소셜 링크 포함 |
+| `tron.balances` | balance_event.proto | BalanceEvents | 잔액 변경 이벤트 |
+| `tron.v1.transfers.proto` | tron/transfers_message.proto | TransfersMessage | TRON 전송 메시지 |
+| `tron.v1.transfers.processed.proto` | tron/transfers_message.proto | TransfersMessage | 처리된 전송 메시지 |
+| `tron.dex.pools` | dex_pool_event.proto | DexPoolEvents | 유동성 풀 이벤트 |
+| `tron.candlesticks` | candlestick.proto | CandlestickEvents | 캔들스틱 데이터 |
+
+---
+
+## 코드 예시
+
+### Python 예시: TRON DEX 거래 소비
+
+```python
+from kafka import KafkaConsumer
+from common import trade_event_pb2  # streaming_protobuf 리포지토리에서 가져오기
+
+# 컨슈머 생성
+consumer = KafkaConsumer(
+    'tron.dex.trades',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    enable_auto_commit=False,
+    group_id='my-tron-consumer'
+)
+
+# 메시지 소비 및 파싱
+for message in consumer:
+    trade_events = trade_event_pb2.TradeEvents()
+    trade_events.ParseFromString(message.value)
+    
+    for event in trade_events.events:
+        print(f"Pool: {event.trade.pool_address}")
+        print(f"Token A: {event.trade.token_a_address}")
+        print(f"Token B: {event.trade.token_b_address}")
+        print(f"Amount A: {event.trade.user_a_amount}")
+        print(f"Amount B: {event.trade.user_b_amount}")
+        print(f"Block: {event.block.height}")
+        print(f"DEX: {event.d_app.program_address}")
+        print("---")
+```
+
+### TRC-20 토큰 이벤트 모니터링
+
+```python
+from kafka import KafkaConsumer
+from common import token_event_pb2
+
+consumer = KafkaConsumer(
+    'tron.tokens',
+    bootstrap_servers=['<your_broker_address>'],
+    security_protocol='SASL_SSL',
+    sasl_mechanism='SCRAM-SHA-512',
+    sasl_plain_username='your_username',
+    sasl_plain_password='your_password',
+    auto_offset_reset='latest',
+    group_id='my-tron-token-consumer'
+)
+
+# TRON의 USDT
+USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+
+for message in consumer:
+    token_events = token_event_pb2.TokenEvents()
+    token_events.ParseFromString(message.value)
+    
+    for event in token_events.events:
+        # USDT 이벤트 필터링
+        if event.token.address == USDT_ADDRESS:
+            print(f"Event Type: {event.type}")  # CREATED 또는 UPDATED
+            print(f"Token: {event.token.symbol}")
+            print(f"Name: {event.token.name}")
+            print(f"Decimals: {event.token.decimals}")
+            print("---")
+```
+
+---
+
+## 관련 문서
+
+<CardGroup cols={2}>
+  <Card title="개념 및 통합 가이드" icon="book-open" href="/ko/guides/data-concepts/kafka-streams/overview">
+    Kafka Streams 통합 기초
+  </Card>
+  <Card title="EVM Streams" icon="ethereum" href="/ko/guides/data-concepts/kafka-streams/evm-streams">
+    EVM 체인 데이터 스트림
+  </Card>
+  <Card title="Solana Streams" icon="bolt" href="/ko/guides/data-concepts/kafka-streams/solana-streams">
+    Solana 고처리량 데이터 스트림
+  </Card>
+  <Card title="WebSocket 실시간 데이터" icon="bolt" href="/ko/guides/data-concepts/realtime-streaming">
+    WebSocket 통합
+  </Card>
+</CardGroup>

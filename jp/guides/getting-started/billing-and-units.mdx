@@ -1,0 +1,578 @@
+---
+title: "課金とユニット"
+description: "ChainStream の課金モデルとクォータ管理について"
+icon: "credit-card"
+---
+
+## 概要
+
+ChainStream は**ユニットベースの課金モデル**を採用しています。API によって消費するユニット数が異なり、ビジネスニーズに合ったプランを選択できます。
+
+---
+
+## 課金モデル
+
+### プラン一覧
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="gift">
+    **$0 / 月**
+
+    - 30K ユニット/月
+    - 超過なし
+    - 開発、POC 向け
+  </Card>
+
+  <Card title="Starter" icon="rocket">
+    **$199 / 月**
+
+    - 10M ユニット/月
+    - 超過: $12.9/M
+    - 小規模プロジェクト、MVP 向け
+  </Card>
+
+  <Card title="Pro" icon="bolt">
+    **$699 / 月**
+
+    - 50M ユニット/月
+    - 超過: $9.9/M
+    - 本番環境、中規模トラフィック向け
+  </Card>
+
+  <Card title="Enterprise" icon="building">
+    **$1,699 / 月**
+
+    - 200M ユニット/月
+    - 超過: $6.9/M
+    - 大企業、高同時接続向け
+  </Card>
+
+  <Card title="Custom" icon="handshake">
+    **カスタム料金**
+
+    - カスタムユニットクォータ
+    - カスタム超過レート
+    - プライベートデプロイ、専用 SLA
+  </Card>
+</CardGroup>
+
+<Tip>
+すべてのプランはクォータ消費時にブロックされます（403 エラーを返却）。有料プランは Dashboard で追加クォータを購入してサービスを復旧できます。
+</Tip>
+
+### プラン選択ガイド
+
+<AccordionGroup>
+  <Accordion title="Free — 開発・テスト向け">
+    **ユースケース：**
+    - ローカル開発とデバッグ
+    - 機能検証とデモ
+    - ChainStream API の学習と評価
+
+    **典型的な使用量の目安：**
+    - 1 日 300 回の価格クエリ → 約 9,000 ユニット/月
+
+    **制限事項：**
+    - データに 1〜2 秒の遅延がある場合があります
+    - SLA 保証なし
+    - クォータ消費後は呼び出し不可
+  </Accordion>
+
+  <Accordion title="Starter — 小規模プロジェクト向け">
+    **ユースケース：**
+    - 個人開発者の小規模 dApp
+    - 取引ボットのプロトタイプ
+    - 小規模マーケット表示ウェブサイト
+
+    **典型的な使用量の目安：**
+    - マーケットダッシュボード（10 トークン、毎分更新） → 約 43,200 ユニット/月
+    - 小規模取引ボット（1 クエリ/秒） → 約 86,400 ユニット/月（単一トークン）
+
+    **シナリオ例：**
+    Solana のトークンマーケットサイトで 20 の人気トークンを 30 秒ごとに更新する場合：
+    ```
+    20 トークン × 2 回/分 × 60 分 × 24 時間 × 30 日 = 1,728,000 リクエスト
+    1 ユニット/リクエストの場合 = 1,728,000 ユニット/月
+    ```
+    このシナリオでは Pro プランを推奨します。
+  </Accordion>
+
+  <Accordion title="Pro — 本番環境向け">
+    **ユースケース：**
+    - 中小規模の取引所やウォレットのデータニーズ
+    - プロフェッショナルトレーディングツール
+    - KYT/KYA リスク管理が必要なビジネス
+
+    **典型的な使用量の目安：**
+    - 中規模マーケットプラットフォーム（100 トークン、リアルタイム WebSocket） → 約 500,000 ユニット/月
+    - 入金リスク管理（1 日 1000 回の KYT チェック） → 約 150,000 ユニット/月
+
+    **シナリオ例：**
+    小規模取引所を運営し、以下が必要な場合：
+    - マーケットデータ: 50 取引ペア、WebSocket リアルタイムプッシュ
+    - 入金リスク管理: 1 日 500 件の入金、各 KYT チェック
+    ```
+    WebSocket: 50 × 0.1 ユニット/メッセージ × 86400 秒 × 30 日 ≈ 12,960,000 メッセージ = 1,296,000 ユニット
+    KYT: 500 × 5 ユニット × 30 日 = 75,000 ユニット
+    合計: 約 1,371,000 ユニット/月
+    ```
+    このシナリオでは Pro プラン + 超過予算、またはセールスに Enterprise の見積もりを依頼することを推奨します。
+  </Accordion>
+
+  <Accordion title="Enterprise — 大企業向け">
+    **ユースケース：**
+    - 大規模取引所
+    - 機関投資家の定量取引
+    - プライベートデプロイやカスタム SLA が必要
+
+    **含まれるもの：**
+    - 無制限 API 呼び出し
+    - 専任テクニカルサポート
+    - カスタム SLA（99.99%+）
+    - オプションのプライベートデプロイ
+
+    料金についてはセールスにお問い合わせください。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## ユニット計算
+
+### ユニットとは
+
+ユニットは ChainStream の課金単位です。API によって消費するユニット数が異なり、より複雑な API はより多くのユニットを消費します。
+
+### Data API 消費量
+
+ユニットコストは計算の複雑さに応じて階層化されています。シンプルな検索は低コスト、集計が多いエンドポイントやオンチェーン実行エンドポイントは高コストになります。
+
+<Tabs>
+  <Tab title="Token API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Token Search | 0.25 | `GET /v2/token/search` |
+    | Token Detail | 1.00 | `GET /v2/token/{chain}/{tokenAddress}` |
+    | Batch Detail | 0.75 | `GET /v2/token/{chain}/multi` |
+    | Token Metadata | 0.05 | `GET /v2/token/{chain}/{tokenAddress}/metadata` |
+    | Batch Metadata | 0.05 | `GET /v2/token/{chain}/metadata/multi` |
+    | Token Price | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/price` |
+    | Price History | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/prices` |
+    | Market Data | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/marketData` |
+    | Batch Market Data | 0.10 | `GET /v2/token/{chain}/marketData/multi` |
+    | Token Stats | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/stats` |
+    | Batch Stats | 2.50 | `GET /v2/token/{chain}/stats/multi` |
+    | Candles (OHLCV) | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/candles` |
+    | Pair Candles | 0.25 | `GET /v2/token/{chain}/pair/{pair}/candles` |
+    | Pool Candles | 0.25 | `GET /v2/token/{chain}/pool/{poolAddress}/candles` |
+    | Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders` |
+    | Batch Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders/multi` |
+    | Top Holders | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/topHolders` |
+    | Pools | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/pools` |
+    | Security | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/security` |
+    | Creation Info | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/creation` |
+    | Mint/Burn | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/mintAndBurn` |
+    | Traders by Tag | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/traders/{tag}` |
+    | Liquidity Snapshots | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/liquiditySnapshots` |
+    | Token List | 0.05 | `GET /v2/token/{chain}/list` |
+    | Dev Tokens | 0.50 | `GET /v2/token/{chain}/dev/{devAddress}/tokens` |
+    | Transfer Total | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfer-total` |
+    | Transfers | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfers` |
+  </Tab>
+  <Tab title="Wallet API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Token Balances | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/tokens-balance` |
+    | Balance Updates | 0.50 | `GET /v2/wallet/{chain}/{walletAddress}/balance-updates` |
+    | PnL | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl` |
+    | PnL by Token | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-by-token` |
+    | PnL Details | 1.50 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-details` |
+    | Calculate PnL | 1.50 | `POST /v2/wallet/{chain}/{walletAddress}/calculate-pnl` |
+    | Net Worth | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth` |
+    | Net Worth Chart | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-chart` |
+    | Net Worth Details | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-details` |
+    | Net Worth Tokens | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth/tokens` |
+    | Transfers | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfers` |
+    | Transfer Total | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfer-total` |
+    | First Transaction | 0.10 | `GET /v2/wallet/{chain}/first-tx` |
+    | Net Worth Summary | 1.00 | `GET /v2/wallet/{chain}/net-worth-summary` |
+    | PnL by Wallet | 1.00 | `GET /v2/wallet/{chain}/pnl-by-wallet` |
+    | Add to Watchlist | 0.05 | `POST /v2/watchlist/{chain}/{walletAddress}` |
+  </Tab>
+  <Tab title="Trade API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Trades | 0.25 | `GET /v2/trade/{chain}` |
+    | Activities | 0.25 | `GET /v2/trade/{chain}/activities` |
+    | Top Traders | 0.50 | `GET /v2/trade/{chain}/top-traders` |
+    | Gainers/Losers | 0.50 | `GET /v2/trade/{chain}/trader-gainers-losers` |
+  </Tab>
+  <Tab title="Pool API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Pool Info | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}` |
+    | Pool Snapshots | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}/snapshots` |
+  </Tab>
+  <Tab title="Ranking API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Hot Tokens | 0.25 | `GET /v2/ranking/{chain}/hotTokens/{duration}` |
+    | New Tokens | 0.25 | `GET /v2/ranking/{chain}/newTokens` |
+    | Migrated Tokens | 0.25 | `GET /v2/ranking/{chain}/migrated` |
+    | Final Stretch | 0.25 | `GET /v2/ranking/{chain}/finalStretch` |
+    | Stock Tokens | 0.25 | `GET /v2/ranking/{chain}/stocks` |
+  </Tab>
+  <Tab title="DEX / DeFi API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Supported DEXs | 0.05 | `GET /v2/dex` |
+    | Quote | 0.25 | `GET /v2/dex/{chain}/quote` |
+    | Route | 0.25 | `POST /v2/dex/{chain}/route` |
+    | Token Creation | 5.00 | `POST /v2/dex/{chain}/create` |
+    | Execute Swap | 5.00 | `POST /v2/dex/{chain}/swap` |
+    | Job Status | 0.05 | `GET /v2/job/{id}` |
+    | Job Streaming | 0.05 | `GET /v2/job/{id}/streaming` |
+  </Tab>
+  <Tab title="Blockchain / Tx API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | Supported Chains | 0.05 | `GET /v2/blockchain` |
+    | Latest Block | 0.05 | `GET /v2/blockchain/{chain}/latest_block` |
+    | Gas Price | 0.10 | `GET /v2/transaction/{chain}/gas-price` |
+    | Gas Estimate | 0.25 | `POST /v2/transaction/{chain}/estimate-gas-limit` |
+    | Send Transaction | 5.00 | `POST /v2/transaction/{chain}/send` |
+  </Tab>
+  <Tab title="Webhook API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | List Endpoints | 0.05 | `GET /v2/webhook/endpoint` |
+    | Create Endpoint | 0.05 | `POST /v2/webhook/endpoint` |
+    | Get Endpoint | 0.05 | `GET /v2/webhook/endpoint/{id}` |
+    | Update Endpoint | 0.05 | `PATCH /v2/webhook/endpoint` |
+    | Delete Endpoint | 0.05 | `DELETE /v2/webhook/endpoint/{id}` |
+    | Get Secret | 0.05 | `GET /v2/webhook/endpoint/{id}/secret` |
+    | Rotate Secret | 0.10 | `POST /v2/webhook/endpoint/{id}/secret/rotate` |
+  </Tab>
+  <Tab title="RedPacket API">
+    | API | CU | エンドポイント |
+    |:--|:--|:--|
+    | List Red Packets | 0.05 | `GET /v2/redpacket` |
+    | Get Red Packet | 0.05 | `GET /v2/redpacket/{id}` |
+    | Get Claims | 0.05 | `GET /v2/redpacket/{id}/claims` |
+    | Wallet Claims | 0.05 | `GET /v2/redpacket/wallet/{address}/claims` |
+    | Wallet Red Packets | 0.05 | `GET /v2/redpacket/wallet/{address}/redpackets` |
+    | Create Red Packet | 5.00 | `POST /v2/redpacket/{chain}/create` |
+    | Claim Red Packet | 5.00 | `POST /v2/redpacket/{chain}/claim` |
+    | Send Red Packet | 5.00 | `POST /v2/redpacket/{chain}/send` |
+  </Tab>
+</Tabs>
+
+### CU 料金ティア
+
+| ティア | CU コスト | 説明 | 例 |
+|:--|:--|:--|:--|
+| Tier 1 | 0.05 | メタデータ、リスト、シンプルな検索 | トークンリスト、ブロックチェーン情報、Webhook CRUD、ジョブステータス |
+| Tier 2 | 0.10 | 単一フィールドクエリ | 価格、マーケットデータ、作成情報、ガス価格 |
+| Tier 3 | 0.25 | 検索、取引、ランキング、ローソク足 | トークン検索、OHLCV、取引アクティビティ、ランキング |
+| Tier 4 | 0.50 | 保有者、セキュリティ、スナップショット | 保有者、セキュリティ監査、プールスナップショット、トップトレーダー |
+| Tier 5 | 1.00 | フルプロファイル、PnL、純資産 | トークン詳細、ウォレット PnL、純資産 |
+| Tier 6 | 1.50 | 計算集約型分析 | PnL 詳細、PnL 計算 |
+| Tier 7 | 2.50 | 集約集約型 | トークン統計、プール（マルチソース集約） |
+| Tier 8 | 5.00 | オンチェーン実行 | スワップ、トークン作成、トランザクション送信 |
+
+---
+
+## WebSocket リアルタイムサブスクリプション課金
+
+WebSocket リアルタイムデータサブスクリプションは別途課金され、データバイト数に基づいて請求されます：
+
+| 項目 | レート | 説明 |
+|:--|:--|:--|
+| WebSocket データ | **0.005 ユニット/バイト** | プッシュデータのバイト数で課金 |
+| WebSocket 接続 | 無料 | 接続確立には課金なし |
+| ハートビートメッセージ | 無料 | ハートビートパケットは課金対象外 |
+
+### 対応サブスクリプションチャンネル
+
+<Tabs>
+  <Tab title="ローソク足">
+    | チャンネル | 説明 |
+    |:--|:--|
+    | `dex-candle:{chain}_{tokenAddress}_{resolution}` | リアルタイムローソク足データ |
+  </Tab>
+  <Tab title="トークンデータ">
+    | チャンネル | 説明 |
+    |:--|:--|
+    | `dex-token-stats:{chain}_{tokenAddress}` | トークン統計 |
+    | `dex-token-holding:{chain}_{tokenAddress}` | 保有者統計 |
+    | `dex-token-supply:{chain}_{tokenAddress}` | 供給量と時価総額 |
+    | `dex-token-general-stat-num:{chain}_{tokenAddress}` | 流動性統計 |
+    | `dex-new-token:{chain}` | 新規トークン情報 |
+    | `dex-new-tokens-metadata:{chain}` | 新規トークンメタデータ |
+  </Tab>
+  <Tab title="ランキングデータ">
+    | チャンネル | 説明 |
+    |:--|:--|
+    | `dex-ranking-list:{chain}_{ranking_type}` | ランキングトークンリスト |
+    | `dex-ranking-token-stats-list:{chain}_{channelType}` | ランキングトークン統計 |
+    | `dex-ranking-token-holding-list:{chain}_{channelType}` | ランキング保有者統計 |
+    | `dex-ranking-token-supply-list:{chain}_{channelType}` | ランキング供給量 |
+  </Tab>
+  <Tab title="ウォレットデータ">
+    | チャンネル | 説明 |
+    |:--|:--|
+    | `dex-wallet-balance:{chain}_{walletAddress}` | ウォレット残高 |
+    | `dex-wallet-token-pnl:{chain}_{walletAddress}` | トークン別 PnL |
+    | `dex-wallet-pnl-list:{chain}_{walletAddress}` | ウォレット別 PnL |
+  </Tab>
+  <Tab title="取引データ">
+    | チャンネル | 説明 |
+    |:--|:--|
+    | `dex-trade:{chain}_{tokenAddress}` | トークン取引 |
+    | `dex-wallet-trade:{chain}_{walletAddress}` | ウォレット取引 |
+  </Tab>
+  <Tab title="プールデータ">
+    | チャンネル | 説明 |
+    |:--|:--|
+    | `dex-pool-balance:{chain}_{poolAddress}` | プール残高 |
+  </Tab>
+</Tabs>
+
+### WebSocket 使用量見積もり例
+
+```
+シナリオ: 10 トークンのリアルタイムローソク足（1 分足）を監視
+
+計算:
+- ローソク足メッセージ約 200 バイト/本
+- 各トークン約 1 本/分
+- 10 トークン × 1 メッセージ/分 × 60 分 × 24 時間 × 30 日 = 432,000 メッセージ
+- 合計データ: 432,000 × 200 = 86,400,000 バイト
+- 月間: 86,400,000 × 0.005 = 432,000 ユニット
+
+シナリオ: 50 トークンの統計を監視（リアルタイム、約 1 更新/秒）
+
+計算:
+- トークン統計メッセージ約 500 バイト/件
+- 50 トークン × 1 メッセージ/秒 × 86,400 秒 × 30 日 = 129,600,000 メッセージ
+- 合計データ: 129,600,000 × 500 = 64,800,000,000 バイト（約 64.8 GB）
+- 月間: 64,800,000,000 × 0.005 = 324,000,000 ユニット（約 324M）
+```
+
+<Note>
+バッチ API には通常割引があります。正確な消費量については API リファレンスを参照してください。WebSocket メッセージの頻度は市場の活動量に依存し、高ボラティリティ期間にはメッセージ量が増加します。
+</Note>
+
+---
+
+## KYT/KYA サービス課金
+
+<Warning>
+KYT/KYA API は**プランのユニットを消費しません**。別途 KYT アカウント残高（USD 建て）から課金されます。Dashboard → KYT サービスでチャージしてください。
+</Warning>
+
+| API | コスト | エンドポイント |
+|:--|:--|:--|
+| Register Transfer | $0.25/回 | `POST /v2/kyt/transfer` |
+| Register Withdrawal | $0.25/回 | `POST /v2/kyt/withdrawal` |
+| Register Address | $1.25/回 | `POST /v2/kyt/address` |
+| Query Risk / Alerts / Exposures | 含まれる | `GET /v2/kyt/addresses/*/risk`、`GET /v2/kyt/transfers/*/summary` 等 |
+
+---
+
+### コスト見積もり例
+
+<Tabs>
+  <Tab title="マーケット表示アプリ">
+    **シナリオ:** 50 トークンの価格を 10 秒ごとに更新する DeFi マーケットサイト
+    ```
+    計算:
+    - リクエスト頻度: 50 トークン × 6 回/分 = 300 リクエスト/分
+    - 月間リクエスト: 300 × 60 × 24 × 30 = 12,960,000 リクエスト
+    - リクエストあたりの CU: 0.10（Token Price エンドポイント）
+    - 月間 CU: 12,960,000 × 0.10 = 1,296,000 CU
+
+    推奨: Starter プラン（10M CU）
+    ```
+  </Tab>
+  <Tab title="取引ボット">
+    **シナリオ:** 5 つの取引ペアを毎秒監視するアービトラージボット
+    ```
+    REST アプローチ:
+    - 5 × 1/秒 × 86,400 × 30 = 12,960,000 リクエスト
+    - CU: 12,960,000 × 0.10 = 1,296,000 CU
+
+    WebSocket アプローチ（推奨）:
+    - 5 ペア × 約 200 バイト/メッセージ × 1 メッセージ/秒 × 86,400 × 30
+    - = 2,592,000,000 バイト × 0.005 CU/バイト = 12,960,000 CU
+
+    推奨: REST の場合は Pro プラン、WebSocket の場合は Starter
+    ```
+  </Tab>
+  <Tab title="取引所リスク管理">
+    **シナリオ:** 小規模取引所、1 日 1000 件の入金に KYT チェックが必要
+    ```
+    計算:
+    - 日間: 1,000 KYT transfer 登録
+    - 月間: 1,000 × 30 = 30,000 回
+    - コスト: 30,000 × $0.25 = $7,500/月（KYT は別途 USD で課金）
+
+    注: KYT はプラン CU を消費しません。KYT 残高は別途チャージしてください。
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## クォータ管理
+
+### Dashboard での使用量確認
+
+<Steps>
+  <Step title="Dashboard にログイン">
+    [ChainStream Dashboard](https://www.chainstream.io/dashboard) にアクセス
+  </Step>
+  <Step title="使用量の確認">
+    Usage ページで当月の使用量、残りクォータ、過去のトレンドを確認
+  </Step>
+</Steps>
+
+### クォータアラート設定
+
+使用量がしきい値に達した際に通知を受け取るクォータアラートを設定できます：
+
+| アラートレベル | トリガー条件 | 通知方法 |
+|:--|:--|:--|
+| リマインダー | 使用量 50% | メール |
+| 警告 | 使用量 80% | メール + Dashboard アラート |
+| 重大 | 使用量 100% | メール + Dashboard アラート |
+
+<Tip>
+予期しないサービス中断を避けるため、少なくとも 80% アラートを有効にすることを推奨します。
+</Tip>
+
+---
+
+## クォータ消費時の対応
+
+### クォータがなくなるとどうなるか
+
+月間クォータが消費されると、API は 403 エラーを返し、呼び出しを続行できなくなります。有料プランのユーザーは手動で追加クォータを購入してサービスを復旧できます。
+
+| プラン | 対応方法 |
+|:--|:--|
+| Free | API が 403 エラーを返し、翌月のクォータリセットを待つ |
+| Starter / Pro / Enterprise | API が 403 エラーを返し、追加クォータの購入でサービス復旧可能 |
+| Custom | 契約条件に従う |
+
+### 追加クォータの購入
+
+有料プランのユーザーは Dashboard で追加クォータを購入でき、プランの超過レートに基づいて料金が設定されます：
+
+| プラン | 追加クォータ料金 |
+|:--|:--|
+| Starter | $12.9 / 1M ユニット |
+| Pro | $9.9 / 1M ユニット |
+| Enterprise | $6.9 / 1M ユニット |
+
+<Warning>
+クォータ消費時はサービスが即座に中断されます（403 エラー）。80% 使用量アラートを設定し、ビジネスへの影響を避けるために事前に追加クォータを購入することを推奨します。
+</Warning>
+
+---
+
+## 支払い方法
+
+### 対応する支払い方法
+
+| 方法 | 説明 | 対象プラン |
+|:--|:--|:--|
+| クレジットカード | Visa、MasterCard、AMEX | 全プラン |
+| 暗号資産 | USDT、USDC（ERC-20 / TRC-20） | Starter 以上 |
+| 銀行振込 | セールスにお問い合わせ | Enterprise |
+
+### 請求サイクル
+
+- **月間プラン:** 前月分の請求書が 1 日に生成
+- **年間プラン:** 2 ヶ月分無料（16.7% 割引相当）
+
+---
+
+## AI エージェント決済（x402 / MPP）
+
+Dashboard サインアップなしでプログラマティックアクセスが必要な AI エージェント向けに、ChainStream は 2 つのオンチェーン決済プロトコルをサポートしています：
+
+### x402 (Base / Solana USDC)
+
+[x402 プロトコル](https://www.x402.org/)は HTTP ネイティブのマイクロペイメントを実現します。API 呼び出しが 402 を返すと、エージェントのウォレットが USDC 送金に署名してリトライします — アカウント登録は不要です。
+
+| プロパティ | 値 |
+|----------|-------|
+| ネットワーク | Base (チェーン ID 8453)、Solana |
+| 通貨 | USDC |
+| 標準 | EIP-3009 (Base)、ネイティブ送金 (Solana) |
+| ガス手数料 | **無料** — ChainStream のファシリテーターがすべてのガスコストを負担 |
+
+<Tip>
+支払うのはサブスクリプション料金（USDC）のみです。ChainStream は独自の x402 ファシリテーターを運営しており、オンチェーントランザクションの送信とガス手数料の支払いを代行します。エージェントウォレットにはガス用の ETH や SOL は不要です。
+</Tip>
+
+### MPP (Tempo USDC.e)
+
+MPP は Tempo ネットワークを使用して決済を行います。ガスは USDC.e で直接支払われ、ETH は不要です。
+
+| プロパティ | 値 |
+|----------|-------|
+| ネットワーク | Tempo (チェーン ID 4217) |
+| 通貨 | USDC.e |
+
+### 仕組み
+
+1. エージェントが ChainStream API を呼び出し
+2. サーバーが 402 を返す（アクティブなサブスクリプションなし）
+3. エージェントが `/x402/pricing` から利用可能なプランを取得
+4. エージェントが x402 または MPP でプランを購入
+5. サーバーが **API Key** を返す — エージェントはこれを保存して今後のすべての呼び出しに使用
+
+<Card title="x402 支払いガイド" icon="credit-card" href="/jp/guides/cli/x402-payment">
+  x402 と MPP 支払いフローの詳細
+</Card>
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="最適なプランの選び方は？">
+    まず Free プランで実際の使用量を評価し、月間消費量に基づいて選択することを推奨します：
+    - 30K ユニット未満: Free
+    - 30K〜10M ユニット: Starter
+    - 10M〜50M ユニット: Pro
+    - 50M ユニット超: Enterprise
+  </Accordion>
+  <Accordion title="いつでもアップグレード/ダウングレードできますか？">
+    はい。アップグレードは即座に適用され、日割り計算で請求されます。ダウングレードは次の請求サイクルから適用されます。
+  </Accordion>
+  <Accordion title="未使用のクォータは繰り越されますか？">
+    いいえ。月間クォータは月末にリセットされ、繰り越されません。
+  </Accordion>
+  <Accordion title="請求書を取得するには？">
+    Dashboard → Billing → Invoices から過去の請求書をダウンロードできます。Enterprise のお客様はセールスにカスタム請求書を依頼できます。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={3}>
+  <Card title="FAQ" icon="circle-question" href="/jp/guides/getting-started/faq">
+    よくある質問
+  </Card>
+  <Card title="API セキュリティ" icon="shield-halved" href="/jp/guides/data-concepts/api-security">
+    API セキュリティ設定を理解する
+  </Card>
+  <Card title="API リファレンス" icon="book" href="/jp/api-reference/authentication/authenticate">
+    API の呼び出しを開始する
+  </Card>
+</CardGroup>

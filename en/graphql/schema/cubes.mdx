@@ -1,6 +1,6 @@
 ---
 title: "Data Cubes"
-description: "All 12 GraphQL Cubes — field structures, selectors, defaults, and use cases organized by data warehouse layer"
+description: "All 25 GraphQL Cubes — field structures, selectors, defaults, and use cases organized by Chain Group"
 icon: "cubes"
 ---
 
@@ -19,34 +19,51 @@ When you query a Cube, activecube-rs compiles your GraphQL query into optimized 
 
 ## Cube Overview
 
+25 Cubes are organized into three Chain Groups. Each Cube belongs to a data warehouse layer:
+
+- **DWD** (Detail) — raw per-event data, highest granularity
+- **DWM** (Aggregated) — pre-computed rollups (e.g., per-minute)
+- **DWS** (Summary) — highly aggregated snapshots
+- **DIM** (Dimension) — reference/lookup tables
+
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| Cube | Layer | Purpose | Key Selectors |
-|:-----|:------|:--------|:--------------|
-| **DEXTrades** | DWD | Per-trade DEX swap events | `tokenAddress`, `walletAddress`, `poolAddress`, `dexProgram`, `date` |
-| **Transfers** | DWD | On-chain token transfers | `tokenAddress`, `senderAddress`, `receiverAddress`, `date` |
-| **BalanceUpdates** | DWD | Wallet balance change events | `ownerAddress`, `tokenAddress`, `date` |
-| **DEXPools** | DWD | DEX pool liquidity events | `poolAddress`, `tokenAddress`, `date` |
-| **TokenSupplyUpdates** | DWD | Token supply mint/burn events | `tokenAddress` |
-| **OHLC** | DWM | K-line / candlestick data | `tokenAddress` |
-| **TokenTradeStats** | DWM | Per-minute trade statistics | `tokenAddress` |
-| **PoolLiquiditySnapshots** | DWM | Pool liquidity snapshots | `tokenAddress` |
-| **TokenHolders** | DWS | Token holder balances | `tokenAddress` |
-| **WalletTokenPnL** | DWS | Wallet per-token PnL | `walletAddress` |
-| **TokenMarketCap** | DWS | Token market cap snapshots | `tokenAddress` |
-| **TokenSearch** | DIM | Token dimension lookup | `tokenAddress` |
+| Cube | Chain Group | Layer | Purpose |
+|:-----|:------------|:------|:--------|
+| **DEXTrades** | EVM, Solana | DWD | Per-trade DEX swap events |
+| **DEXTradeByTokens** | EVM, Solana | DWD | DEX trades indexed by token (buy/sell side) |
+| **Transfers** | EVM, Solana | DWD | Token transfer events |
+| **BalanceUpdates** | EVM, Solana | DWD | Wallet balance change events |
+| **DEXPoolEvents** | EVM, Solana | DWD | Liquidity add/remove events |
+| **TokenSupplyUpdates** | EVM, Solana | DWD | Token mint/burn events |
+| **Blocks** | EVM, Solana | DWD | Block-level data |
+| **Transactions** | EVM, Solana | DWD | Transaction-level data |
+| **TransactionBalances** | EVM, Solana | DWD | Per-transaction balance changes |
+| **Instructions** | Solana | DWD | Solana instruction data |
+| **InstructionBalanceUpdates** | Solana | DWD | Instruction-level balance changes |
+| **Rewards** | Solana | DWD | Validator/staking rewards |
+| **DEXOrders** | Solana | DWD | DEX order events (limit orders) |
+| **Events** | EVM | DWD | Smart contract event logs |
+| **Calls** | EVM | DWD | Internal call traces |
+| **MinerRewards** | EVM | DWD | Miner/validator rewards |
+| **DEXPoolSlippages** | EVM | DWD | Pool slippage data |
+| **Uncles** | EVM | DWD | Uncle block data |
+| **Pairs** | Trading | DWM | OHLC candlestick data (cross-chain) |
+| **Tokens** | Trading | DWM | Per-token trade statistics (cross-chain) |
+| **DEXPools** | EVM, Solana | DWS | Pool snapshots with current reserves |
+| **TokenHolders** | EVM, Solana | DWS | Token holder balances |
+| **WalletTokenPnL** | EVM, Solana | DWS | Per wallet-token PnL |
+| **PredictionTrades** | EVM (Polygon) | DWD | Prediction market trades |
+| **PredictionManagements** | EVM (Polygon) | DWD | Prediction market management events |
+| **PredictionSettlements** | EVM (Polygon) | DWD | Prediction market settlements |
 
 </div>
 
-<Note>
-**Layer abbreviations**: DWD = Detail (raw events), DWM = Aggregated (pre-computed rollups), DWS = Summary (further aggregated), DIM = Dimension (lookup / reference data).
-</Note>
-
 ---
 
-## DWD — Detail Layer
+## EVM + Solana Shared Cubes
 
-Detail Cubes contain **raw, per-event data**. They provide the highest granularity but return the most rows. Use them when you need individual transaction-level records.
+These Cubes are available in both the **EVM** and **Solana** Chain Groups.
 
 <AccordionGroup>
   <Accordion title="DEXTrades" icon="arrow-right-arrow-left">
@@ -56,46 +73,46 @@ Detail Cubes contain **raw, per-event data**. They provide the highest granulari
     **Selectors**: `tokenAddress`, `walletAddress`, `poolAddress`, `dexProgram`, `date`
     **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
     DEXTradesRecord {
-      Block {
-        Time          # DateTime — block timestamp
-        Slot          # Int — slot number (Solana)
-        Height        # Int — block height
-      }
-      Transaction {
-        Hash          # String — tx hash
-        FeeInNative   # Float — gas fee in native token
-      }
+      Block { Time, Slot, Height }
+      Transaction { Hash, FeeInNative }
       Trade {
-        Buy {
-          Currency { MintAddress }   # String — bought token address
-          Amount                     # Float — bought amount
-          PriceInUSD                 # Float — USD price at trade time
-          PriceInNative              # Float — price in native token
-          Account { Owner }          # String — buyer wallet
-        }
-        Sell {
-          Currency { MintAddress }   # String — sold token address
-          Amount                     # Float — sold amount
-          Account { Owner }          # String — seller wallet
-        }
-        Dex {
-          ProgramAddress    # String — DEX program/contract address
-          ProtocolName      # String — DEX name (Raydium, Orca, Uniswap, etc.)
-        }
+        Buy { Currency { MintAddress }, Amount, PriceInUSD, Account { Owner } }
+        Sell { Currency { MintAddress }, Amount, Account { Owner } }
+        Dex { ProgramAddress, ProtocolName }
       }
-      Pool {
-        Address       # String — liquidity pool address
-      }
-      IsSuspect       # Boolean — bot/MEV trade flag
-      count           # Metric — trade count
-      sum(of: ...)    # Metric — aggregate sum
+      Pool { Address }
+      IsSuspect
     }
     ```
 
-    **Use cases**: Trade history for a token, wallet trade analysis, DEX protocol volume breakdown, recent large trades.
+    **Use cases**: Trade history, wallet trade analysis, DEX volume breakdown, large trade detection.
+  </Accordion>
+
+  <Accordion title="DEXTradeByTokens" icon="coins">
+    **Table**: `{chain}_dex_trades_enriched` (UNION subquery — one row per trade side)
+    **Selectors**: `tokenAddress`, `sideType`, `poolAddress`, `dexProgram`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    DEXTradeByTokensRecord {
+      Block { Time, Slot, Height }
+      Transaction { Signature, Fee, FeeInUSD }
+      Trade {
+        Currency { MintAddress, Symbol, Name }
+        Amount, AmountInUSD, PriceInUSD, PriceInNative
+        Side { Type, Currency { MintAddress }, Amount }
+        Account { Owner }
+        Dex { ProgramAddress, ProtocolName }
+        Market { PoolAddress }
+      }
+    }
+    ```
+
+    **Use cases**: Per-token trade queries (both buy and sell sides), token volume analytics, efficient single-token filtering.
   </Accordion>
 
   <Accordion title="Transfers" icon="paper-plane">
@@ -103,35 +120,21 @@ Detail Cubes contain **raw, per-event data**. They provide the highest granulari
     **Selectors**: `tokenAddress`, `senderAddress`, `receiverAddress`, `date`
     **Metrics**: `count`, `sum`, `avg`, `uniq`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
     TransfersRecord {
-      Block {
-        Time          # DateTime
-        Slot          # Int — slot number
-      }
-      Transaction {
-        Hash          # String — tx hash
-        Signer        # String — transaction signer
-      }
+      Block { Time, Slot }
+      Transaction { Hash, Signer }
       Transfer {
-        Currency { MintAddress }       # String — token address
-        Sender {
-          Address                      # String — sender wallet
-          TokenAccount                 # String — sender token account
-        }
-        Receiver {
-          Address                      # String — receiver wallet
-          TokenAccount                 # String — receiver token account
-        }
-        Amount                         # Float — transferred amount
-        AmountInUSD                    # Float — USD value at transfer time
-        PriceInUSD                     # Float — token price at transfer time
+        Currency { MintAddress }
+        Sender { Address, TokenAccount }
+        Receiver { Address, TokenAccount }
+        Amount, AmountInUSD, PriceInUSD
       }
     }
     ```
 
-    **Use cases**: Wallet transfer history, token flow analysis, whale transfer monitoring, exchange deposit/withdrawal tracking.
+    **Use cases**: Wallet transfer history, whale monitoring, exchange deposit/withdrawal tracking.
   </Accordion>
 
   <Accordion title="BalanceUpdates" icon="scale-balanced">
@@ -139,263 +142,563 @@ Detail Cubes contain **raw, per-event data**. They provide the highest granulari
     **Selectors**: `ownerAddress`, `tokenAddress`, `date`
     **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
     BalanceUpdatesRecord {
-      Block {
-        Time            # DateTime
-        Slot            # Int — slot number
-      }
-      Transaction {
-        Hash            # String
-      }
+      Block { Time, Slot }
+      Transaction { Hash }
       BalanceUpdate {
-        Currency {
-          MintAddress   # String — token address
-          Decimals      # Int — token decimal places
-        }
-        Account {
-          Address       # String — token account address
-          Owner         # String — wallet owner address
-        }
-        PreBalance          # Float — balance before
-        PostBalance         # Float — balance after
-        PreBalanceInUSD     # Float — previous balance in USD
-        PostBalanceInUSD    # Float — new balance in USD
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        PreBalance, PostBalance
+        PreBalanceInUSD, PostBalanceInUSD
       }
     }
     ```
 
-    **Use cases**: Wallet balance change tracking, position monitoring, detecting accumulation/distribution patterns.
+    **Use cases**: Balance change tracking, position monitoring, accumulation/distribution detection.
   </Accordion>
 
-  <Accordion title="DEXPools" icon="water">
-    **Table**: `{chain}_dex_pool_events`
+  <Accordion title="DEXPoolEvents" icon="water">
+    **Table**: `{chain}_dex_pool_events_enriched`
     **Selectors**: `poolAddress`, `tokenAddress`, `date`
     **Metrics**: `count`, `sum`, `avg`, `max`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
-    DEXPoolsRecord {
-      Block {
-        Time             # DateTime
-      }
+    DEXPoolEventsRecord {
+      Block { Time }
+      Transaction { Signature }
       Pool {
-        Address          # String — pool address
-        Dex { ProgramAddress }   # String — DEX program address
-        Base {
-          Address        # String — base token address
-          PostAmount     # Float — base token amount after event
-        }
-        Quote {
-          Address        # String — quote token address
-          PostAmount     # Float — quote token amount after event
-        }
-        LiquidityInUSD   # Float — total pool liquidity in USD
+        Market { Address, BaseCurrency { ... }, QuoteCurrency { ... } }
+        Dex { ProgramAddress, ProtocolName }
+        Base { PostAmount, ChangeAmount, PriceInUSD }
+        Quote { PostAmount, ChangeAmount }
+        LiquidityInUSD
       }
     }
     ```
 
-    **Use cases**: Pool liquidity tracking, new pool detection, liquidity add/remove monitoring.
+    **Use cases**: Liquidity add/remove monitoring, pool TVL tracking, new pool detection.
   </Accordion>
 
   <Accordion title="TokenSupplyUpdates" icon="coins">
     **Table**: `{chain}_token_supplies`
     **Selectors**: `tokenAddress`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
     TokenSupplyUpdatesRecord {
-      Block {
-        Time              # DateTime
-      }
+      Block { Time }
       TokenSupplyUpdate {
-        Currency {
-          MintAddress     # String — token address
-          Decimals        # Int — token decimals
-        }
-        PostBalance       # Float — supply after update
-        MarketCapInUSD    # Float — market cap at update time
-        PriceInUSD        # Float — token price at update time
-        FDVInUSD          # Float — fully diluted valuation
-        TotalSupply       # Float — total supply
+        Currency { MintAddress, Decimals }
+        PostBalance, MarketCapInUSD, PriceInUSD, FDVInUSD, TotalSupply
       }
     }
     ```
 
     **Use cases**: Mint/burn event tracking, supply change alerts, market cap history.
   </Accordion>
+
+  <Accordion title="Blocks" icon="cube">
+    **Table**: `{chain}_blocks`
+    **Selectors**: `date`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    BlocksRecord {
+      Block {
+        Time, Date, Height, Hash, ParentHash, TxCount
+        # Solana-specific
+        Slot, ParentSlot, RewardsCount
+        # EVM-specific
+        Number, Coinbase, GasLimit, GasUsed, BaseFee, Difficulty
+      }
+    }
+    ```
+
+    **Use cases**: Block production monitoring, gas analysis (EVM), slot tracking (Solana).
+  </Accordion>
+
+  <Accordion title="Transactions" icon="receipt">
+    **Table**: `{chain}_transactions`
+    **Selectors**: `date`, `txHash`/`txSignature`, `fromAddress`, `toAddress`, `feePayer`, `signer`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    TransactionsRecord {
+      Block { Time, Slot, Height }
+      Transaction {
+        # Solana: Signature, Fee, FeePayer, Signer, Result { Success }
+        # EVM: Hash, From, To, Value, Gas, GasPrice, Nonce, Type
+      }
+      Fee { ... }     # EVM EIP-1559 fee breakdown
+      Receipt { ... } # EVM receipt fields
+    }
+    ```
+
+    **Use cases**: Transaction lookup, gas/fee analysis, activity monitoring.
+  </Accordion>
+
+  <Accordion title="TransactionBalances" icon="scale-unbalanced">
+    **Table**: `{chain}_transaction_balances`
+    **Selectors**: `date`, `address`, `currency`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    TransactionBalancesRecord {
+      Block { Time }
+      Transaction { Hash, Index }
+      TokenBalance {
+        Address, TokenAccount
+        Currency { SmartContract, Symbol, Name, Decimals }
+        PreBalance, PostBalance, Change
+        PreBalanceInUSD, PostBalanceInUSD, ChangeInUSD
+        UpdateType
+      }
+    }
+    ```
+
+    **Use cases**: Per-transaction balance impact analysis, token flow tracing.
+
+    <Note>
+    This Cube does not support `dataset` switching (no `_realtime` / `_archive` table variants).
+    </Note>
+  </Accordion>
 </AccordionGroup>
 
 ---
 
-## DWM — Aggregated Layer
+## Solana-Only Cubes
 
-Aggregated Cubes contain **pre-computed rollups** (typically per-minute). They are much faster to query than DWD Cubes for time-series and statistical analysis.
+These Cubes are only available in the **Solana** Chain Group.
 
 <AccordionGroup>
-  <Accordion title="OHLC" icon="chart-candlestick">
-    **Table**: `{chain}_ohlc`
-    **Selectors**: `tokenAddress`
+  <Accordion title="Instructions" icon="terminal">
+    **Table**: `sol_instructions_enriched`
+    **Selectors**: `date`, `programId`, `txSignature`
+    **Metrics**: `count`, `uniq`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
-    OHLCRecord {
-      TimeMinute              # DateTime — minute bucket
-      Token { Address }       # String — token address
+    InstructionsRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction {
+        Index, Depth, InternalSeqNumber
+        Program { Address, Name, Method }
+        Accounts       # Array of account addresses
+        Data           # Raw instruction data
+        CallPath, Logs
+      }
+    }
+    ```
+
+    **Use cases**: Program interaction analysis, instruction-level debugging, protocol usage tracking.
+  </Accordion>
+
+  <Accordion title="InstructionBalanceUpdates" icon="scale-balanced">
+    **Table**: `sol_balance_updates_enriched`
+    **Selectors**: `date`, `tokenAddress`, `ownerAddress`, `programId`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    InstructionBalanceUpdatesRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      Instruction { Index, Program { Address } }
+      BalanceUpdate {
+        Currency { MintAddress, Decimals }
+        Account { Address, Owner }
+        Amount, AmountInUSD
+        PreBalance, PostBalance
+      }
+    }
+    ```
+
+    **Use cases**: Instruction-level balance impact analysis, program fee tracking.
+
+    <Note>
+    This Cube does not support `dataset` switching.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Rewards" icon="trophy">
+    **Table**: `sol_rewards`
+    **Selectors**: `date`, `address`
+    **Metrics**: `count`, `sum`, `avg`
+
+    **Key Fields:**
+    ```graphql
+    RewardsRecord {
+      Block { Time, Slot }
+      Reward {
+        Address          # Validator/staker address
+        Amount           # Reward amount in SOL
+        AmountInUSD      # Reward value in USD
+        PostBalance      # Balance after reward
+        RewardType       # Type: voting, staking, etc.
+        Commission       # Validator commission
+      }
+    }
+    ```
+
+    **Use cases**: Staking reward tracking, validator performance, reward history.
+  </Accordion>
+
+  <Accordion title="DEXOrders" icon="list-check">
+    **Table**: `sol_dex_orders`
+    **Selectors**: `date`, `marketAddress`, `orderType`, `ownerAddress`
+    **Metrics**: `count`, `sum`, `avg`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    DEXOrdersRecord {
+      Block { Time, Slot }
+      Transaction { Signature }
+      OrderEvent {
+        Type             # Order type (place, cancel, fill, etc.)
+        Market { Address }
+        Order { Id, BuySide, LimitPrice, Mint, Owner }
+        Dex { ProgramAddress, ProtocolName }
+      }
+    }
+    ```
+
+    **Use cases**: Order book analysis, limit order tracking, market microstructure research.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## EVM-Only Cubes
+
+These Cubes are only available in the **EVM** Chain Group (`eth`, `bsc`, `polygon`).
+
+<AccordionGroup>
+  <Accordion title="Events" icon="bell">
+    **Table**: `{chain}_logs_enriched`
+    **Selectors**: `date`, `contractAddress`, `txHash`, `topic0`
+    **Metrics**: `count`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    EventsRecord {
+      Block { Time, Number }
+      Transaction { Hash, From, To }
+      Log {
+        SmartContract    # Contract emitting the event
+        Index            # Log index in transaction
+        Signature { Name, Signature }
+        Topics           # Event topics array
+        Data             # ABI-encoded event data
+      }
+    }
+    ```
+
+    **Use cases**: Smart contract event monitoring, protocol activity tracking, custom event filtering.
+  </Accordion>
+
+  <Accordion title="Calls" icon="code-branch">
+    **Table**: `{chain}_traces_enriched`
+    **Selectors**: `date`, `txHash`, `toAddress`
+    **Metrics**: `count`, `sum`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    CallsRecord {
+      Block { Time, Number }
+      Transaction { Hash }
+      Call {
+        Index, Depth
+        From, To
+        Opcode          # CALL, DELEGATECALL, STATICCALL, CREATE, etc.
+        Gas, GasUsed
+        Input, Output
+        Value           # ETH/BNB transferred
+        Signature { Name, Signature }
+      }
+    }
+    ```
+
+    **Use cases**: Internal transaction tracing, contract interaction analysis, MEV detection.
+  </Accordion>
+
+  <Accordion title="MinerRewards" icon="gem">
+    **Table**: `{chain}_miner_rewards`
+    **Selectors**: `date`, `miner`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    MinerRewardsRecord {
+      Block { Time, Number, Hash }
+      Reward {
+        Miner
+        TotalReward, TotalRewardInUSD
+        BurntFees, DynamicReward, StaticReward
+        TxFees, UncleReward
+      }
+    }
+    ```
+
+    **Use cases**: Validator/miner reward analysis, block reward trends, MEV revenue tracking.
+  </Accordion>
+
+  <Accordion title="DEXPoolSlippages" icon="chart-line">
+    **Table**: `{chain}_dex_pool_slippages`
+    **Selectors**: `date`, `poolAddress`
+    **Metrics**: `count`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    DEXPoolSlippagesRecord {
+      Block { Time }
       Price {
-        OpenState             # Float — open price
-        HighState             # Float — high price
-        LowState              # Float — low price
-        CloseState            # Float — close price
+        Pool { SmartContract, CurrencyA { ... }, CurrencyB { ... } }
+        AtoB, BtoA             # Current prices
+        AtoBMin, AtoBMax       # Price range
+        SlippageBasisPoints    # Slippage in basis points
+        Dex { ProtocolName }
       }
-      VolumeUSDState          # Float — USD volume in this interval
-      TradeCountState         # Int — number of trades
     }
     ```
 
-    **Use cases**: Candlestick charts, price history, volume analysis, technical indicators.
+    **Use cases**: Slippage monitoring, pool depth analysis, execution quality assessment.
   </Accordion>
 
-  <Accordion title="TokenTradeStats" icon="chart-bar">
-    **Table**: `{chain}_token_trade_stats`
-    **Selectors**: `tokenAddress`
+  <Accordion title="Uncles" icon="diagram-subtask">
+    **Table**: `{chain}_uncles`
+    **Selectors**: `date`, `miner`
+    **Metrics**: `count`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
-    TokenTradeStatsRecord {
-      TimeMinute               # DateTime — minute bucket
-      Token { Address }        # String — token address
-      TradeCountState          # Int — total trades
-      BuyCountState            # Int — buy trades
-      SellCountState           # Int — sell trades
-      VolumeUSDState           # Float — USD volume
-      UniqueBuyersState        # Int — unique buyer wallets
-      UniqueSellersState       # Int — unique seller wallets
-    }
-    ```
-
-    **Use cases**: Buy/sell pressure analysis, unique trader counts, volume trends, trading activity heatmaps.
-  </Accordion>
-
-  <Accordion title="PoolLiquiditySnapshots" icon="droplet">
-    **Table**: `{chain}_pool_liquidity_snapshots`
-    **Selectors**: `tokenAddress`
-
-    **Field Structure:**
-    ```graphql
-    PoolLiquiditySnapshotsRecord {
-      Pool {
-        Address             # String — pool address
-        ProgramAddress      # String — DEX program address
+    UnclesRecord {
+      Block { Time, Number }
+      Uncle {
+        Index, Hash, ParentHash
+        Miner, Difficulty, Number
+        GasLimit, GasUsed, Timestamp
       }
-      TokenA { Address }    # String — first token address
-      TokenB { Address }    # String — second token address
-      LiquidityUSDState     # Float — total liquidity in USD
-      EventCountState       # Int — number of events in period
-      LastSeenState         # DateTime — last activity timestamp
     }
     ```
 
-    **Use cases**: Pool liquidity rankings, historical liquidity tracking, DEX comparison.
+    **Use cases**: Uncle block analysis, network health monitoring (primarily Ethereum PoW historical data).
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## DWS — Summary Layer
+## Trading Cubes (Cross-chain)
 
-Summary Cubes provide **highly aggregated** data for quick lookups — current holder snapshots, cumulative PnL, and market cap data.
+These Cubes are in the **Trading** Chain Group. They aggregate data across all supported chains (`sol`, `eth`, `bsc`) and include a `chain` dimension for filtering.
 
 <AccordionGroup>
+  <Accordion title="Pairs (OHLC)" icon="chart-candlestick">
+    **Table**: Materialized views across chains (`{chain}_ohlc_mv`)
+    **Selectors**: `tokenAddress`, `chain`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    PairsRecord {
+      Token { Address }
+      Market { Network }       # Chain identifier (sol, eth, bsc)
+      Block { Time }
+      Interval { Time }        # Minute-bucket timestamp
+      Price {
+        Ohlc { Open, High, Low, Close }
+      }
+      Volume { Usd, Native }
+      Stats { TradeCount, BuyCount, SellCount }
+    }
+    ```
+
+    **Use cases**: Candlestick charts, price history, volume analysis, cross-chain price comparison.
+  </Accordion>
+
+  <Accordion title="Tokens (Trade Statistics)" icon="chart-bar">
+    **Table**: Materialized views across chains (`{chain}_token_trade_stats_mv`)
+    **Selectors**: `tokenAddress`, `chain`, `date`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`
+
+    **Key Fields:**
+    ```graphql
+    TokensRecord {
+      Token { Address }
+      Market { Network }           # Chain identifier
+      Block { Time }
+      Interval { Time }            # Minute-bucket timestamp
+      Volume { Usd, BuyVolumeUSD, SellVolumeUSD, Base }
+      Stats {
+        TradeCount, BuyCount, SellCount
+        UniqueBuyers, UniqueSellers
+      }
+    }
+    ```
+
+    **Use cases**: Buy/sell pressure analysis, unique trader counts, volume trends, cross-chain token comparison.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Summary Cubes (DWS)
+
+Summary Cubes provide **highly aggregated, snapshot-style** data for quick lookups.
+
+<AccordionGroup>
+  <Accordion title="DEXPools (Snapshot)" icon="water">
+    **Table**: `{chain}_dex_pools` (DWS layer)
+    **Selectors**: `poolAddress`, `tokenA`, `tokenB`
+    **Metrics**: `count`
+
+    **Key Fields:**
+    ```graphql
+    DEXPoolsRecord {
+      Pool {
+        Address
+        TokenAAddress, TokenBAddress
+        ProgramAddress
+        LiquidityUSD
+        PriceAtoB, PriceBtoA
+        LastUpdated
+      }
+    }
+    ```
+
+    **Use cases**: Pool discovery, current liquidity rankings, pool metadata lookup.
+
+    <Note>
+    This Cube does not support `dataset` switching or time-based filtering. It represents the latest snapshot of pool state.
+    </Note>
+  </Accordion>
+
   <Accordion title="TokenHolders" icon="users">
     **Table**: `{chain}_token_holders`
     **Selectors**: `tokenAddress`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
     TokenHoldersRecord {
-      Token { Address }       # String — token address
-      Holder { Address }      # String — holder wallet address
-      LatestBalance           # Float — current token balance
-      LatestBalanceUSD        # Float — current balance in USD
-      FirstSeen               # DateTime — first transaction time
-      LastSeen                # DateTime — most recent transaction time
+      Token { Address }
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
     }
     ```
 
-    **Use cases**: Top holders list, holder distribution analysis, whale tracking, holder count over time.
+    **Use cases**: Top holders list, holder distribution, whale tracking.
+
+    <Note>
+    This Cube does not support `dataset` switching.
+    </Note>
   </Accordion>
 
   <Accordion title="WalletTokenPnL" icon="chart-line">
     **Table**: `{chain}_wallet_token_pnl`
     **Selectors**: `walletAddress`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
     WalletTokenPnLRecord {
-      Wallet { Address }        # String — wallet address
-      Token { Address }         # String — token address
-      BuyVolumeUSDState         # Float — total USD spent buying
-      SellVolumeUSDState        # Float — total USD received selling
-      BuyCountState             # Int — number of buy trades
-      SellCountState            # Int — number of sell trades
-      FirstTradeState           # DateTime — first trade time
-      LastTradeState            # DateTime — most recent trade time
+      Wallet { Address }
+      Token { Address }
+      BuyVolumeUSDState, SellVolumeUSDState
+      BuyCountState, SellCountState
+      FirstTradeState, LastTradeState
     }
     ```
 
     **Use cases**: Wallet PnL per token, trading performance leaderboards, portfolio analysis.
-  </Accordion>
 
-  <Accordion title="TokenMarketCap" icon="chart-pie">
-    **Table**: `{chain}_token_market_cap`
-    **Selectors**: `tokenAddress`
-
-    **Field Structure:**
-    ```graphql
-    TokenMarketCapRecord {
-      Token { Address }         # String — token address
-      PriceUSDState             # Float — current price in USD
-      MarketCapUSDState         # Float — market capitalization
-      TotalSupplyState          # Float — total supply
-      FDVUSDState               # Float — fully diluted valuation
-      LastSeenState             # DateTime — last updated timestamp
-    }
-    ```
-
-    **Use cases**: Market cap rankings, price snapshots, FDV tracking, token screening.
+    <Note>
+    This Cube does not support `dataset` switching.
+    </Note>
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## DIM — Dimension Layer
+## Prediction Market Cubes
 
-Dimension Cubes are **reference / lookup tables** for entity metadata.
+These Cubes are available in the **EVM** Chain Group, primarily used on Polygon for prediction market protocols.
 
 <AccordionGroup>
-  <Accordion title="TokenSearch" icon="magnifying-glass">
-    **Table**: `{chain}_tokens`
-    **Selectors**: `tokenAddress`
+  <Accordion title="PredictionTrades" icon="chart-mixed">
+    **Table**: `{chain}_prediction_trades`
+    **Selectors**: `date`, `conditionId`, `questionId`, `marketplace`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
 
-    **Field Structure:**
+    **Key Fields:**
     ```graphql
-    TokenSearchRecord {
-      Token {
-        Address           # String — token mint address
-        Decimals          # Int — token decimals
-        PriceUSD          # Float — current price
-        MarketCapUSD      # Float — market cap
-        TotalTradeCount   # Int — all-time trade count
-        TotalVolumeUSD    # Float — all-time volume
-        HolderCount       # Int — number of holders
-        PoolCount         # Int — number of DEX pools
+    PredictionTradesRecord {
+      Block { Time }
+      Transaction { Hash }
+      Trade { Buyer, Seller, Amount, Price, Fee }
+      Prediction {
+        Condition { Id, Outcomes }
+        Question { Id }
+        Outcome, OutcomeToken
+        Marketplace { ProtocolName }
+        CollateralToken { SmartContract }
       }
     }
     ```
 
-    **Use cases**: Token metadata lookup, token screening by market cap or volume, discovering tokens by criteria.
+    **Use cases**: Prediction market trade history, outcome pricing, marketplace volume.
+
+    <Note>
+    Prediction Market Cubes do not support `dataset` switching.
+    </Note>
+  </Accordion>
+
+  <Accordion title="PredictionManagements" icon="gear">
+    **Table**: `{chain}_prediction_managements`
+    **Selectors**: `date`, `eventType`, `conditionId`, `questionId`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    PredictionManagementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Management {
+        EventType, Description, Group
+        Prediction { Condition { ... }, Question { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **Use cases**: Market creation/resolution tracking, condition management events.
+  </Accordion>
+
+  <Accordion title="PredictionSettlements" icon="flag-checkered">
+    **Table**: `{chain}_prediction_settlements`
+    **Selectors**: `date`, `eventType`, `conditionId`, `holder`
+    **Metrics**: `count`, `sum`, `avg`, `min`, `max`, `uniq`
+
+    **Key Fields:**
+    ```graphql
+    PredictionSettlementsRecord {
+      Block { Time }
+      Transaction { Hash }
+      Settlement {
+        EventType, Holder
+        OutcomeTokenIds, Amounts
+        Prediction { Condition { ... }, CollateralToken { ... }, Marketplace { ... } }
+      }
+    }
+    ```
+
+    **Use cases**: Settlement tracking, payout analysis, position redemption monitoring.
   </Accordion>
 </AccordionGroup>
 
@@ -410,23 +713,41 @@ Pick the most aggregated Cube that satisfies your query. DWM/DWS Cubes are order
 | Need | Recommended Cube | Layer |
 |:-----|:-----------------|:------|
 | Individual trade events | DEXTrades | DWD |
+| Per-token trade queries | DEXTradeByTokens | DWD |
 | Token transfer history | Transfers | DWD |
-| Candlestick / price charts | OHLC | DWM |
-| Trade volume over time | TokenTradeStats | DWM |
+| Candlestick / price charts | Pairs | DWM |
+| Trade volume over time | Tokens | DWM |
 | Current top holders | TokenHolders | DWS |
 | Wallet PnL breakdown | WalletTokenPnL | DWS |
-| Token metadata lookup | TokenSearch | DIM |
+| Pool current state | DEXPools | DWS |
+| Liquidity events | DEXPoolEvents | DWD |
+| Smart contract events (EVM) | Events | DWD |
+| Internal traces (EVM) | Calls | DWD |
+| Solana instructions | Instructions | DWD |
+| Prediction market trades | PredictionTrades | DWD |
+
+---
+
+## Dataset Compatibility
+
+Not all Cubes support the `dataset` parameter (realtime/archive/combined). The following Cubes always query the full table regardless of the `dataset` value:
+
+- `TokenHolders`, `WalletTokenPnL`, `DEXPools` (DWS layer — always latest snapshot)
+- `TransactionBalances`
+- `PredictionTrades`, `PredictionManagements`, `PredictionSettlements`
+
+See [Dataset & Aggregates](/en/graphql/schema/dataset-aggregates) for details.
 
 ---
 
 ## Next Steps
 
 <CardGroup cols={3}>
+  <Card title="Chain Groups" icon="layer-group" href="/en/graphql/schema/chain-groups">
+    Understand the EVM, Solana, and Trading Chain Groups.
+  </Card>
   <Card title="Filtering" icon="filter" href="/en/graphql/schema/filtering">
     Learn to filter with `where` and selector shortcuts.
-  </Card>
-  <Card title="Ordering & Pagination" icon="arrow-down-1-9" href="/en/graphql/schema/ordering-pagination">
-    Sort and paginate query results.
   </Card>
   <Card title="Metrics & Aggregation" icon="chart-simple" href="/en/graphql/schema/metrics-aggregation">
     Aggregate data with count, sum, avg, min, max, uniq.

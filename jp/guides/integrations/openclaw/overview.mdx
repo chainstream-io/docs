@@ -1,0 +1,74 @@
+---
+title: "OpenClaw統合"
+description: "ChainStreamのMCPツール、トークン分析、DEX実行機能でOpenClawエージェントにオンチェーンインテリジェンスを追加します。"
+---
+
+## 概要
+
+[OpenClaw](https://openclaw.ai)は、**GitHubスター30万以上**を獲得したオープンソースのAIエージェントフレームワークで、ツール、API、外部システムと連携する自律エージェントの構築に広く利用されています。
+
+ChainStreamは**オンチェーンインテリジェンスレイヤー**としてOpenClawと統合し、ブロックチェーンデータのクエリ、トークン分析、ウォレットプロファイリング、取引実行、リアルタイムアラートの受信をエージェントに提供します。すべて標準的なMCPプロトコルを通じて利用可能です。
+
+## エージェントができること
+
+ChainStreamを接続すると、OpenClawエージェントはオンチェーンツールキット全体にアクセスできます：
+
+| 機能 | 説明 | ツール例 |
+|------------|-------------|---------------|
+| **トークン分析** | 10チェーンにまたがるトークンの検索・分析・比較 | `tokens_search`, `tokens_analyze`, `tokens_compare` |
+| **ウォレットプロファイリング** | ウォレットの保有資産、損益、取引履歴のプロファイリング | `wallets_profile`, `wallets_activity` |
+| **DEX実行** | 分散型取引所での見積もり取得とスワップ実行 | `dex_quote`, `dex_swap` |
+| **コンプライアンススクリーニング** | トークンのセキュリティフラグ、ハニーポット検出、権限リスクのチェック | `tokens_analyze`（セキュリティフィールド） |
+| **リアルタイムアラート** | オンチェーンイベントのWebhookベース通知を設定 | `webhooks_manage` |
+| **マーケットディスカバリー** | トレンド、新規、卒業トークンの検索 | `market_trending`, `tokens_discover` |
+
+## 統合方法
+
+ChainStreamをOpenClawエージェントに接続するには2つの方法があります：
+
+<CardGroup cols={2}>
+  <Card title="ClawHub Skill" icon="puzzle-piece" href="/jp/guides/integrations/openclaw/skills-install">
+    ClawHubまたはクロスエージェント対応のVercel Skills CLIからChainStreamスキルをインストール。最速のセットアップ — 1分以内で完了。
+  </Card>
+  <Card title="MCP直接設定" icon="server" href="/jp/guides/integrations/openclaw/skills-install#method-3-direct-mcp-config">
+    クラウドMCPエンドポイントまたはローカルnpmパッケージ経由で接続。カスタムエージェント設定に最適。
+  </Card>
+</CardGroup>
+
+## アーキテクチャ
+
+```
+┌─────────────────┐     MCP Protocol     ┌──────────────────┐
+│                  │ ◄──────────────────► │                  │
+│  OpenClaw Agent  │     15 Tools         │  ChainStream MCP │
+│                  │     4 Prompts        │     Server       │
+│                  │     4 Resources      │                  │
+└─────────────────┘                       └────────┬─────────┘
+                                                   │
+                                          ┌────────▼─────────┐
+                                          │  ChainStream API  │
+                                          │  10 Chains        │
+                                          │  8+ DEXes         │
+                                          └──────────────────┘
+```
+
+OpenClawエージェントはMCPプロトコルを通じてChainStreamと通信します。ClawHubからインストールしても、セルフホストしても、エージェントからは同じ15のツール、4つのプロンプト、4つのリソースが利用可能です。
+
+## 前提条件
+
+統合をセットアップする前に以下をご確認ください：
+
+1. **ChainStream APIキー** -- [app.chainstream.io](https://app.chainstream.io)でサインアップしてAPIキーを作成
+2. **OpenClaw** -- 既存のOpenClawエージェントまたはプロジェクト（[OpenClawドキュメント](https://docs.openclaw.ai)）
+3. **Node.js 18以上** -- MCPサーバーとCLIツールに必要
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="インストール方法" icon="download" href="/jp/guides/integrations/openclaw/skills-install">
+    Vercel Skills CLI、ClawHub、MCP直接設定の3つのインストール方法。
+  </Card>
+  <Card title="セキュリティ" icon="shield" href="/jp/guides/integrations/openclaw/security">
+    本番利用のためのセキュリティに関する考慮事項とベストプラクティス。
+  </Card>
+</CardGroup>

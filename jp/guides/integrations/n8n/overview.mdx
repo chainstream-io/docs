@@ -1,0 +1,307 @@
+---
+title: "n8n統合"
+sidebarTitle: "Overview"
+description: "n8n-nodes-chainstreamコミュニティノードを使用して、ChainStreamをn8nワークフロー自動化に接続します。"
+icon: "arrows-split-up-and-left"
+---
+
+# n8n統合
+
+`n8n-nodes-chainstream`は、ChainStreamのオンチェーンデータを[n8n](https://n8n.io)ワークフロー自動化に直接取り込むコミュニティノードです。コードを書くことなく、トークンメタデータのクエリ、取引の監視、ウォレットアクティビティの追跡が可能です。
+
+<Info>
+  **パッケージ:** `n8n-nodes-chainstream` v0.0.92 | **公開バージョン数:** 63 | [n8n Creator Portal](https://n8n.io)に掲載
+</Info>
+
+## インストール
+
+1. n8nインスタンスを開きます。
+2. **Settings > Community Nodes**に移動します。
+3. **Install**をクリックし、以下を入力します：
+
+```
+n8n-nodes-chainstream
+```
+
+4. インストールを確認し、プロンプトが表示されたらn8nを再起動します。
+
+## 認証
+
+ノードはChainStreamダッシュボードから発行されたAPI資格情報で認証します。
+
+1. ChainStreamダッシュボードで**Settings > API Keys**に移動します。
+2. 新しいキーペアを作成します。以下が発行されます：
+   - **API Client ID**
+   - **API Client Secret**
+3. n8nで**Credentials > New Credential > ChainStream API**に移動します。
+4. Client IDとClient Secretを入力して保存します。
+
+```json
+{
+  "credentials": {
+    "chainstreamApi": {
+      "clientId": "cs_live_xxxxxxxxxxxxxxxx",
+      "clientSecret": "your_client_secret_here"
+    }
+  }
+}
+```
+
+## 対応リソースとオペレーション
+
+| リソース | オペレーション |
+| -------- | ---------- |
+| **Token** | メタデータ取得、価格取得、ホルダー一覧、流動性クエリ、セキュリティ監査実行、ミント/バーンイベント一覧 |
+| **Trade** | 取引一覧、アクティビティ取得、リーダーボード表示 |
+| **Wallet** | 残高クエリ、PnL取得、アクティビティ一覧 |
+
+## ノード設定
+
+以下はトークンメタデータをクエリするためのn8nノード設定のサンプルです：
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getMetadata",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112"
+      },
+      "name": "ChainStream",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+トークン価格データの取得：
+
+```json
+{
+  "parameters": {
+    "resource": "token",
+    "operation": "getPrice",
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "currency": "usd"
+  },
+  "name": "Get Token Price",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [450, 300]
+}
+```
+
+ウォレット残高のクエリ：
+
+```json
+{
+  "parameters": {
+    "resource": "wallet",
+    "operation": "getBalances",
+    "chain": "solana",
+    "walletAddress": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+  },
+  "name": "Get Wallet Balance",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [650, 300]
+}
+```
+
+## ワークフロー例
+
+### 1. 価格アラートボット
+
+トークン価格を監視し、閾値を超えた場合にTelegram通知を送信します。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getPrice",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112",
+        "currency": "usd"
+      },
+      "name": "Get SOL Price",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.price }}",
+              "operation": "largerEqual",
+              "value2": 200
+            }
+          ]
+        }
+      },
+      "name": "Price Threshold",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "SOL price alert: ${{ $json.price }}"
+      },
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "position": [850, 200]
+    }
+  ]
+}
+```
+
+### 2. ポートフォリオトラッカー
+
+スケジュール実行でウォレット残高を取得し、Google Sheetsに行を追加します。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getBalances",
+        "chain": "solana",
+        "walletAddress": "YOUR_WALLET_ADDRESS"
+      },
+      "name": "Fetch Balances",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_SHEET_ID",
+        "range": "Sheet1!A:D"
+      },
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 3. クジラウォッチャー
+
+大口ウォレットのアクティビティを検出し、Slack通知を送信します。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "solana",
+        "walletAddress": "WHALE_WALLET_ADDRESS"
+      },
+      "name": "Whale Activity",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#whale-alerts",
+        "text": "Whale movement detected: {{ $json.type }} of {{ $json.amount }} {{ $json.token }}"
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 4. コンプライアンススキャナー
+
+新しい入金が到着した際にKYT（Know Your Transaction）チェックを実行し、疑わしいアクティビティにフラグを付けます。
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "ethereum",
+        "walletAddress": "DEPOSIT_WALLET_ADDRESS",
+        "activityType": "deposit"
+      },
+      "name": "New Deposits",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "securityAudit",
+        "chain": "ethereum",
+        "tokenAddress": "={{ $json.tokenAddress }}"
+      },
+      "name": "KYT Check",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.flagged }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Flagged?",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="トリガーノード" icon="bolt" href="/jp/guides/integrations/n8n/trigger-node">
+    ChainStream Webhookを使用したリアルタイムのイベント駆動トリガーを設定。
+  </Card>
+  <Card title="APIリファレンス" icon="code" href="/api-reference">
+    このノードを動かすChainStream APIの全体をご覧ください。
+  </Card>
+</CardGroup>

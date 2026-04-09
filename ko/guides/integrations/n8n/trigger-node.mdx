@@ -1,0 +1,239 @@
+---
+title: "트리거 노드"
+sidebarTitle: "트리거 노드"
+description: "ChainStream 트리거 노드를 사용하여 n8n에서 실시간 온체인 이벤트를 수신합니다."
+icon: "bolt"
+---
+
+# ChainStream 트리거 노드
+
+`ChainstreamTrigger` 노드는 n8n에서 이벤트 기반 워크플로를 가능하게 합니다. 스케줄에 따라 변경 사항을 폴링하는 대신, 이 노드는 웹훅을 통해 ChainStream에서 실시간 이벤트를 수신하고 온체인에서 무언가 발생하는 순간 워크플로를 시작합니다.
+
+## 작동 방식
+
+```
+ChainStream Event ──webhook POST──> n8n Webhook URL ──> ChainstreamTrigger Node ──> Your Workflow
+```
+
+1. 트리거 노드가 활성화되면 n8n이 웹훅 엔드포인트를 노출합니다.
+2. 해당 엔드포인트를 ChainStream 대시보드에 등록합니다.
+3. 매칭되는 온체인 이벤트가 발생하면 ChainStream이 웹훅으로 POST 요청을 보냅니다.
+4. 트리거 노드가 페이로드를 파싱하고 워크플로를 시작합니다.
+
+## 설정
+
+### Step 1 -- 트리거 노드 추가
+
+n8n 워크플로 에디터에서:
+
+1. **Add Node**를 클릭하고 **ChainStream Trigger**를 검색합니다.
+2. 노드를 캔버스에 워크플로의 첫 번째 노드로 배치합니다.
+3. 수신할 **Event Type**을 선택합니다 (아래 테이블 참조).
+
+### Step 2 -- Webhook URL 복사
+
+트리거 노드를 배치한 후:
+
+1. 노드 설정을 엽니다.
+2. 상단에 표시된 **Webhook URL**을 복사합니다. 다음과 같은 형식입니다:
+
+```
+https://your-n8n-instance.com/webhook/chainstream-trigger/XXXXXXXX
+```
+
+<Warning>
+  프로덕션 모드에서는 워크플로 에디터가 닫혀 있을 때도 트리거가 활성 상태를 유지하도록 **Production URL**(테스트 URL이 아닌)을 사용하세요.
+</Warning>
+
+### Step 3 -- ChainStream에 Webhook 등록
+
+1. ChainStream 대시보드에서 **Settings > Webhooks**로 이동합니다.
+2. **Create Webhook**을 클릭합니다.
+3. n8n 웹훅 URL을 붙여넣습니다.
+4. 구독할 이벤트 유형을 선택합니다.
+5. 저장하고 활성화합니다.
+
+### Step 4 -- 연결 테스트
+
+1. n8n에서 트리거 노드의 **Listen for Test Event**를 클릭합니다.
+2. ChainStream에서 방금 생성한 웹훅의 **Send Test Event**를 클릭합니다.
+3. 트리거 노드가 페이로드를 수신하는지 확인합니다.
+
+## 지원 이벤트
+
+| 이벤트 | 설명 | 예시 페이로드 필드 |
+| ------ | ---- | ----------------- |
+| `token.price.change` | 토큰 가격이 설정된 임계값을 초과하여 변동 | `tokenAddress`, `price`, `changePercent` |
+| `token.transfer.large` | 이체 금액이 지정된 값을 초과 | `from`, `to`, `amount`, `tokenAddress` |
+| `token.new` | 모니터링 중인 체인에서 새 토큰이 감지됨 | `tokenAddress`, `chain`, `name`, `symbol` |
+| `trade.activity` | 모니터링 중인 페어 또는 지갑에서 거래 활동이 감지됨 | `tradeType`, `amount`, `wallet`, `pair` |
+
+## 노드 구성
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "event": "token.price.change",
+        "options": {
+          "chain": "solana",
+          "tokenAddress": "So11111111111111111111111111111111111111112",
+          "threshold": 5
+        }
+      },
+      "name": "ChainStream Trigger",
+      "type": "n8n-nodes-chainstream.chainstreamTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "chainstream-trigger",
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+## 이벤트 페이로드
+
+### token.price.change
+
+```json
+{
+  "event": "token.price.change",
+  "timestamp": "2026-03-26T12:00:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "So11111111111111111111111111111111111111112",
+    "symbol": "SOL",
+    "price": 185.42,
+    "previousPrice": 176.10,
+    "changePercent": 5.29,
+    "currency": "usd"
+  }
+}
+```
+
+### token.transfer.large
+
+```json
+{
+  "event": "token.transfer.large",
+  "timestamp": "2026-03-26T12:05:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "symbol": "USDC",
+    "from": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "to": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+    "amount": 2500000,
+    "txSignature": "5K4u...xQ7p"
+  }
+}
+```
+
+### token.new
+
+```json
+{
+  "event": "token.new",
+  "timestamp": "2026-03-26T12:10:00Z",
+  "data": {
+    "chain": "solana",
+    "tokenAddress": "NEW_TOKEN_MINT_ADDRESS",
+    "name": "Example Token",
+    "symbol": "EXT",
+    "decimals": 9,
+    "creator": "CREATOR_WALLET_ADDRESS"
+  }
+}
+```
+
+### trade.activity
+
+```json
+{
+  "event": "trade.activity",
+  "timestamp": "2026-03-26T12:15:00Z",
+  "data": {
+    "chain": "solana",
+    "tradeType": "buy",
+    "wallet": "TRADER_WALLET_ADDRESS",
+    "pair": "SOL/USDC",
+    "amount": 1500,
+    "price": 185.42,
+    "dex": "raydium",
+    "txSignature": "3Fj2...mN8k"
+  }
+}
+```
+
+## 예시: 대량 이체 Telegram 알림
+
+대량 USDC 이체가 감지되면 Telegram 메시지를 보내는 전체 워크플로입니다.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "event": "token.transfer.large",
+        "options": {
+          "chain": "solana",
+          "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "minAmount": 1000000
+        }
+      },
+      "name": "Large Transfer Trigger",
+      "type": "n8n-nodes-chainstream.chainstreamTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "large-transfer",
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "Large USDC transfer detected:\nFrom: {{ $json.data.from }}\nTo: {{ $json.data.to }}\nAmount: {{ $json.data.amount }} USDC\nTx: {{ $json.data.txSignature }}"
+      },
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Large Transfer Trigger": {
+      "main": [[{ "node": "Telegram", "type": "main", "index": 0 }]]
+    }
+  }
+}
+```
+
+## 문제 해결
+
+| 문제 | 해결 방법 |
+| ---- | --------- |
+| 트리거가 작동하지 않음 | ChainStream 대시보드에서 웹훅이 **활성** 상태인지, n8n에서 워크플로가 **활성화**되어 있는지(에디터에서 열기만 한 것이 아닌) 확인하세요. |
+| 테스트 이벤트는 작동하지만 실제 이벤트가 작동하지 않음 | 테스트 URL이 아닌 **프로덕션** 웹훅 URL을 사용하고 있는지 확인하세요. |
+| 중복 이벤트 | ChainStream은 타임아웃 시 재시도할 수 있습니다. n8n 인스턴스가 10초 이내에 응답하는지 확인하세요. `txSignature` 또는 이벤트 `timestamp`를 사용하여 중복을 제거하세요. |
+| 인증 오류 | n8n 자격 증명 저장소에 ChainStream API 자격 증명이 올바르게 구성되어 있는지 확인하세요. |
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="n8n 개요" icon="arrows-split-up-and-left" href="/ko/guides/integrations/n8n/overview">
+    ChainStream n8n 노드에서 사용 가능한 모든 리소스 및 작업을 살펴보세요.
+  </Card>
+  <Card title="Webhooks API" icon="webhook" href="/api-reference/webhooks">
+    ChainStream API를 통해 프로그래밍 방식으로 웹훅 구독을 관리합니다.
+  </Card>
+</CardGroup>

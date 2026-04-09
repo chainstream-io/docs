@@ -1,0 +1,195 @@
+---
+title: "쿼리 템플릿"
+description: "체인과 Cube별로 정리된 내장 쿼리 템플릿 — 일반적인 온체인 분석 쿼리를 불러오고, 커스터마이즈하고, 실행하세요"
+icon: "book-open"
+---
+
+## 쿼리 템플릿이란
+
+쿼리 템플릿은 Solana, Ethereum, BSC 전반에서 가장 일반적인 분석 사용 사례를 다루는 사전 작성된 GraphQL 쿼리입니다. 각 템플릿은 특정 Cube를 대상으로 하며, 올바른 쿼리 구조, 필드, 필터 인자가 미리 채워져 있어 플레이스홀더 값만 교체하면 바로 실행할 수 있습니다.
+
+템플릿의 장점:
+
+- 예제를 통해 **스키마 학습** — 필드, 필터, 정렬이 실제로 어떻게 작동하는지 확인
+- 쿼리를 처음부터 작성하지 않고 **빠르게 시작**
+- 몰랐던 **Cube 발견**
+
+---
+
+## 템플릿 접근
+
+<Steps>
+  <Step title="사이드바 열기">
+    사이드바 토글을 클릭하거나 **Ctrl/Cmd+B**를 눌러 왼쪽 패널을 엽니다.
+  </Step>
+  <Step title="Queries 탭 선택">
+    사이드바에는 두 개의 탭이 있습니다: **Queries** (템플릿)과 **Saved** (저장된 쿼리). **Queries**를 선택합니다.
+  </Step>
+  <Step title="체인과 Cube별로 탐색">
+    템플릿은 트리 구조로 정리되어 있습니다: **Chain** (Solana / Ethereum / BSC) → **Cube** (DEXTrades, Transfers 등) → **Template**.
+  </Step>
+  <Step title="클릭하여 불러오기">
+    템플릿을 클릭하면 쿼리 에디터에 로드됩니다. 플레이스홀더 값은 쉽게 교체할 수 있도록 강조 표시됩니다.
+  </Step>
+</Steps>
+
+---
+
+## 템플릿 구성
+
+템플릿은 2단계 계층 구조를 따릅니다:
+
+```
+Chain (Solana / Ethereum / BSC)
+ └── Cube
+      └── Template
+```
+
+각 체인에는 동일한 Cube와 템플릿 세트가 포함되어 있으며, 올바른 `network` 값(`sol`, `eth`, `bsc`)으로 미리 구성되어 있습니다.
+
+---
+
+## 템플릿 카탈로그
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | 템플릿 | 수 |
+|:--|:--|:--|
+| **DEXTrades** | Latest Trades · Token Trades · Pair Trades · Trades by DEX · Wallet Trades | 5 |
+| **Transfers** | Token Transfers · Wallet Transfers | 2 |
+| **BalanceUpdates** | Token Balance Updates · Wallet Balance Updates | 2 |
+| **DEXPools** | Pool Info · Token Pools · Liquidity Snapshots | 3 |
+| **TokenSupplyUpdates** | Mint & Burn Events · Market Cap (via TokenSupplyUpdates) | 2 |
+| **TokenHolders** | Top Holders | 1 |
+| **WalletTokenPnL** | Wallet PnL | 1 |
+| **Pairs** | Price Candles | 1 |
+| **Tokens** | Trade Statistics · Search Tokens (via token dimensions) | 2 |
+
+</div>
+
+<Info>
+가장 많이 사용되는 Cube에 걸쳐 **19개 템플릿**이 제공됩니다. 각 템플릿은 모든 지원 체인에서 사용할 수 있습니다.
+</Info>
+
+---
+
+## Cube별 템플릿 상세
+
+<AccordionGroup>
+  <Accordion title="DEXTrades (5개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Latest Trades** | 네트워크의 최근 DEX 트레이드 | — |
+    | **Token Trades** | 특정 토큰 관련 트레이드 | `TOKEN_ADDRESS` |
+    | **Pair Trades** | 특정 토큰 페어의 트레이드 | `TOKEN_ADDRESS` (×2) |
+    | **Trades by DEX** | DEX 프로토콜별 필터링된 트레이드 | — |
+    | **Wallet Trades** | 월렛이 실행한 모든 DEX 트레이드 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="Transfers (2개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Token Transfers** | 특정 토큰의 전송 이벤트 | `TOKEN_ADDRESS` |
+    | **Wallet Transfers** | 월렛이 보내거나 받은 모든 전송 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="BalanceUpdates (2개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Token Balance Updates** | 특정 토큰의 잔액 변동 이벤트 | `TOKEN_ADDRESS` |
+    | **Wallet Balance Updates** | 월렛의 모든 잔액 변동 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="DEXPools (3개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Pool Info** | 특정 풀의 메타데이터와 보유량 | `POOL_ADDRESS` |
+    | **Token Pools** | 토큰이 포함된 모든 유동성 풀 | `TOKEN_ADDRESS` |
+    | **Liquidity Snapshots** | 시간에 따른 풀의 과거 유동성 데이터 | `POOL_ADDRESS` |
+  </Accordion>
+  <Accordion title="TokenSupplyUpdates (2개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Mint & Burn Events** | 토큰 공급에 영향을 미치는 민트 및 번 이벤트 | `TOKEN_ADDRESS` |
+    | **Market Cap** | 토큰의 시가총액 스냅샷 | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="TokenHolders (1개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Top Holders** | 잔액 기준 특정 토큰의 최대 홀더 | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="WalletTokenPnL (1개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Wallet PnL** | 월렛-토큰 쌍의 실현 및 미실현 PnL | `WALLET_ADDRESS`, `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="Pairs (1개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Price Candles** | 설정 가능한 간격의 OHLC 캔들스틱 데이터 | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="Tokens (2개 템플릿)">
+    | 템플릿 | 설명 | 플레이스홀더 |
+    |:--|:--|:--|
+    | **Trade Statistics** | 집계된 거래량, 거래 수, 고유 트레이더 | `TOKEN_ADDRESS` |
+    | **Search Tokens** | 이름, 심볼, 주소로 토큰 전문 검색 | — |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 플레이스홀더
+
+템플릿은 대문자 플레이스홀더를 사용하여 실행 전에 실제 온체인 주소로 교체해야 할 값을 나타냅니다.
+
+| 플레이스홀더 | 설명 | 예시 |
+|:--|:--|:--|
+| `TOKEN_ADDRESS` | 토큰 컨트랙트/민트 주소 | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` (Solana USDC) |
+| `WALLET_ADDRESS` | 월렛 공개 주소 | `5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1` |
+| `POOL_ADDRESS` | DEX 유동성 풀 주소 | `58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2` |
+
+<Note>
+플레이스홀더는 쿼리에 리터럴 문자열로 나타납니다(예: `MintAddress: {is: "TOKEN_ADDRESS"}`). 따옴표를 포함한 전체 플레이스홀더 문자열을 실제 주소로 교체하세요.
+</Note>
+
+---
+
+## 예제: 템플릿 사용하기
+
+**DEXTrades → Latest Trades** 템플릿을 Solana에서 사용하는 방법:
+
+<Steps>
+  <Step title="사이드바에서 템플릿 선택">
+    **Solana → DEXTrades → Latest Trades**로 이동하여 클릭합니다.
+  </Step>
+  <Step title="로드된 쿼리 확인">
+    에디터에 다음이 채워집니다:
+    ```graphql
+    query {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time Slot }
+        Transaction { Hash }
+        Trade {
+          Buy {
+            Currency { MintAddress Symbol Name }
+            Amount
+            PriceInUSD
+          }
+          Sell {
+            Currency { MintAddress Symbol Name }
+            Amount
+          }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    ```
+  </Step>
+  <Step title="실행">
+    이 템플릿에는 플레이스홀더가 없습니다 — 최근 10건의 트레이드를 가져옵니다. **Ctrl/Cmd+Enter**를 눌러 실행하세요.
+  </Step>
+  <Step title="반복 수정">
+    쿼리를 수정하여 필터를 추가하거나, 제한을 변경하거나, 다른 필드를 선택하세요. 스키마 자동 완성이 사용 가능한 옵션을 발견하는 데 도움이 됩니다.
+  </Step>
+</Steps>

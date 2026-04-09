@@ -1,0 +1,525 @@
+---
+title: 'エラーコードリファレンス'
+description: 'ChainStream APIエラーコードの完全な一覧'
+icon: "triangle-exclamation"
+---
+
+## エラーレスポンス形式
+
+すべてのAPIエラーは統一されたレスポンス形式に従います：
+
+```json
+{
+  "code": 40001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Human readable error message",
+  "details": {
+    // Optional additional information
+  }
+}
+```
+
+## HTTPステータスコード
+
+| ステータス | 説明 | エラーコード範囲 |
+|--------|-------------|------------------|
+| 400 | Bad Request | 400, 40001-40040 |
+| 401 | Unauthorized | 401 |
+| 403 | Forbidden | 403, 40301 |
+| 404 | Not Found | 404, 40401-40406 |
+| 429 | Too Many Requests | 429, 42901-42902 |
+| 500 | Internal Server Error | 500, 50001-50036 |
+| 510 | Red Packet Error | 51000-51004 |
+| 520 | Webhook Error | 52000-52001 |
+
+---
+
+## クライアントエラー (400)
+
+### パラメータバリデーションエラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 400 | `BAD_REQUEST` | 不正なリクエスト | リクエスト形式を確認してください |
+| 40001 | `VALIDATION_ERROR` | リクエストパラメータが異常または不正 | パラメータの形式と値を確認してください |
+| 40002 | `INVALID_PARAMETER` | 無効なパラメータ | パラメータ値が要件を満たしているか確認してください |
+| 40003 | `INVALID_TOKEN` | 無効なアクセストークン | トークンの形式を確認してください |
+| 40004 | `MISSING_PARAMETER` | 必須パラメータが不足 | 不足している必須パラメータを追加してください |
+| 40005 | `INVALID_ADDRESS` | 無効なウォレットアドレス形式 | アドレス形式を確認してください |
+| 40027 | `INVALID_CURSOR` | 無効なカーソル | 有効なページネーションカーソルを使用してください |
+| 40031 | `INVALID_TIMESTAMP` | 無効なタイムスタンプ形式 | ISO 8601形式を使用してください |
+| 40032 | `INVALID_RESOLUTION` | 無効なresolutionパラメータ | サポートされているK線の期間を使用してください |
+| 40033 | `INVALID_NUMBER_FORMAT` | 無効な数値形式 | 正しい数値形式を使用してください |
+
+```json
+{
+  "code": 40002,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Invalid parameter",
+  "details": {
+    "parameter": "resolution",
+    "value": "2h",
+    "allowed_values": ["1s", "1m", "5m", "15m", "1h", "4h", "1d"]
+  }
+}
+```
+
+### トークン関連エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 40009 | `INVALID_TOKEN_ADDRESS` | 無効なトークンアドレス | トークンのコントラクトアドレスを確認してください |
+| 40028 | `TOKEN_ADDRESSES_LIMIT_EXCEEDED` | トークンアドレス数の上限超過 | 最大100アドレスまで |
+| 40034 | `TOKEN_ALREADY_CREATED` | トークンは既に作成済み | 重複作成がないか確認してください |
+
+### ウォレット関連エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 40029 | `WALLET_ADDRESSES_LIMIT_EXCEEDED` | ウォレットアドレス数の上限超過 | 最大100アドレスまで |
+
+### トランザクション関連エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 40010 | `TRANSACTION_FAILED` | トランザクションの実行に失敗 | パラメータと残高を確認してください |
+| 40011 | `TRANSACTION_REJECTED` | トランザクションが拒否された | 署名と権限を確認してください |
+| 40012 | `INVALID_TRANSACTION` | 無効なトランザクション | トランザクション構造を確認してください |
+| 40025 | `TRANSACTION_NOT_SIGNED` | トランザクションが署名されていない | シリアライズの前に署名してください |
+| 40026 | `TRANSACTION_SIGNATURE_MISSING` | トランザクション署名がない | トランザクション署名を追加してください |
+| 40039 | `TRANSACTION_SIZE_EXCEEDED` | トランザクションサイズの超過 | トランザクションの複雑さを軽減してください |
+
+### DEX取引エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 40006 | `LIQUIDITY_INSUFFICIENT` | 流動性が不足 | 取引量を減らしてください |
+| 40007 | `PRICE_IMPACT_TOO_HIGH` | 価格インパクトが大きすぎる | 量を減らすかスリッページを増やしてください |
+| 40008 | `SLIPPAGE_TOO_HIGH` | スリッページが大きすぎる | スリッページ設定を調整してください |
+| 40014 | `INVALID_AMOUNT` | 無効な金額 | 有効な数値を使用してください |
+| 40015 | `AMOUNT_TOO_SMALL` | 金額が小さすぎる | 取引量を増やしてください |
+| 40016 | `AMOUNT_TOO_LARGE` | 金額が大きすぎる | 金額が安全範囲を超えています |
+| 40017 | `SAME_TOKEN_SWAP` | 同一トークンのスワップ | 入力と出力は同じにできません |
+| 40018 | `INVALID_SLIPPAGE` | 無効なスリッページ値 | 有効なスリッページ値を使用してください |
+| 40019 | `SLIPPAGE_TOO_LOW` | スリッページが低すぎる | スリッページは0より大きくする必要があります |
+| 40020 | `POOL_NOT_SUPPORTED` | サポートされていないプール | サポートされているプールを使用してください |
+| 40021 | `UNSUPPORTED_SWAP_MODE` | サポートされていないスワップモード | サポートされているスワップモードを使用してください |
+| 40022 | `FEE_PARAMETER_ERROR` | 無効な手数料パラメータ | 手数料設定を確認してください |
+| 40023 | `ANTI_MEV_REJECTED` | Anti-MEV検証に失敗 | Anti-MEV設定を確認してください |
+| 40030 | `POOL_INPUT_MISMATCH` | プール入力の不一致 | 入力トークンがプールに一致しません |
+
+```json
+{
+  "code": 40006,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient liquidity",
+  "details": {
+    "requested_amount": "1000000000",
+    "available_liquidity": "500000000"
+  }
+}
+```
+
+### 注文関連エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 40035 | `INVALID_MARKET_PRICES` | 無効な市場価格 | 価格パラメータを確認してください |
+| 40036 | `INVALID_ORDER_PARAMETERS` | 無効な注文パラメータ | 注文設定を確認してください |
+
+### その他のクライアントエラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 40013 | `PARAMETER_ERROR` | パラメータエラー | totalまたはfixed amountを設定する必要があります |
+| 40024 | `NOT_IMPLEMENTED` | メソッドが未実装 | 実装済みのメソッドを使用してください |
+| 40037 | `UNSUPPORTED_VALUE_TYPE` | サポートされていない値の型 | サポートされている値の型を使用してください |
+| 40038 | `PARSE_ERROR` | パース失敗 | データ形式を確認してください |
+| 40040 | `INVALID_MIGRATE_TYPE` | 無効な移行タイプ | 有効な移行タイプを使用してください |
+
+---
+
+## 認証エラー (401)
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 401 | `UNAUTHORIZED` | 未認証。トークンがないか無効です | Authorizationヘッダーを確認してください |
+
+```json
+{
+  "code": 401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Unauthorized. Token is missing or invalid"
+}
+```
+
+**処理例**：
+
+```javascript
+if (error.code === 401) {
+  // Refresh token
+  const newToken = await getAccessToken();
+  // Retry request with new token
+}
+```
+
+---
+
+## 権限エラー (403)
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 403 | `FORBIDDEN` | アクセス禁止 | 以下の詳細を参照 |
+| 40301 | `INSUFFICIENT_PERMISSIONS` | 権限不足 | 必要な権限を取得してください |
+
+403エラーは以下の原因で発生する可能性があります：
+
+- **クォータ枯渇**：月間APIコールクォータが使い果たされた場合、プランのアップグレードまたは翌月のリセットを待ってください
+- **ブラックリスト**：IPまたはアカウントがブラックリストに登録されている
+- **ホワイトリスト未登録**：リクエスト元が許可されたホワイトリストに含まれていない
+
+<Note>
+APIクォータが枯渇すると、ゲートウェイは403を直接返します。これは429（レート制限）とは異なります：
+- **429**：短期的なレート制限（1秒/1分あたりのリクエスト数超過）
+- **403**：アカウントクォータ制限（月間使用量の枯渇）または権限の問題
+</Note>
+
+```json
+{
+  "code": 403,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Forbidden"
+}
+```
+
+```json
+{
+  "code": 40301,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient permissions",
+  "details": {
+    "required_scope": "kyt.write",
+    "current_scopes": ["kyt.read"]
+  }
+}
+```
+
+---
+
+## リソース未検出エラー (404)
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 404 | `NOT_FOUND` | リソースが見つからない | リソースの存在を確認してください |
+| 40401 | `POOL_NOT_FOUND` | 流動性プールが見つからない | プールアドレスとチェーンを確認してください |
+| 40402 | `MARKET_INFO_NOT_FOUND` | マーケット情報が見つからない | マーケットの存在を確認してください |
+| 40403 | `OPEN_ORDER_NOT_FOUND` | オープンオーダーアカウントが見つからない | 注文アカウントを確認してください |
+| 40404 | `ORDER_NOT_FOUND` | 注文が見つからない | 注文IDを確認してください |
+| 40405 | `CHAIN_NOT_FOUND` | チェーンが見つからない | サポートされているチェーン識別子を使用してください |
+| 40406 | `DEX_NOT_FOUND` | DEXが見つからない | サポートされているDEXを使用してください |
+
+```json
+{
+  "code": 40401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Liquidity pool not found",
+  "details": {
+    "chain": "sol",
+    "pool_address": "INVALID_ADDRESS"
+  }
+}
+```
+
+---
+
+## レート制限エラー (429)
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 429 | `RATE_LIMIT` | リクエストが多すぎます。レート制限に達しました | 待ってからリトライしてください |
+| 42901 | `API_USAGE_LIMIT_EXCEEDED` | API使用量の上限超過 | プランをアップグレードするかリセットを待ってください |
+| 42902 | `KYT_USAGE_LIMIT_EXCEEDED` | KYT API使用量の上限超過 | KYTプランをアップグレードしてください |
+
+```json
+{
+  "code": 429,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Too Many Requests. Rate limit reached",
+  "details": {
+    "limit": 100,
+    "remaining": 0,
+    "reset_at": 1706745600
+  }
+}
+```
+
+**処理例**：
+
+```javascript
+if (response.status === 429) {
+  const retryAfter = response.headers.get('Retry-After') || 1;
+  await sleep(retryAfter * 1000);
+  // Retry request
+}
+```
+
+---
+
+## サーバーエラー (500)
+
+### 一般的なサーバーエラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 500 | `INTERNAL_SERVER_ERROR` | 内部サーバーエラー | 後でリトライしてください |
+| 50001 | `UNKNOWN_ERROR` | 不明なエラー | サポートに連絡してください |
+| 50005 | `DATABASE_ERROR` | データ操作に失敗 | 後でリトライしてください |
+| 50007 | `EXTERNAL_SERVICE_ERROR` | 外部サービス呼び出しに失敗 | 後でリトライしてください |
+| 50029 | `EXTERNAL_API_ERROR` | 外部APIリクエストに失敗 | 後でリトライしてください |
+
+### ブロックチェーン関連エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 50002 | `CHAIN_CONNECTION_ERROR` | ブロックチェーン接続エラー | ネットワーク状態を確認してください |
+| 50003 | `CHAIN_SYNC_ERROR` | ブロックチェーン同期エラー | 同期の完了を待ってください |
+| 50004 | `TRANSACTION_TIMEOUT` | トランザクションタイムアウト | リトライするかタイムアウトを延長してください |
+| 50006 | `TRANSACTION_ERROR` | トランザクションエラー | トランザクションパラメータを確認してください |
+| 50008 | `CHAIN_NOT_SUPPORTED` | チェーンがサポートされていない | サポートされているチェーンを使用してください |
+| 50017 | `INSUFFICIENT_BALANCE` | 残高不足 | アカウント残高を確認してください |
+| 50026 | `TRANSACTION_SEND_FAILED` | トランザクション送信に失敗 | ネットワークとパラメータを確認してください |
+| 50027 | `TRANSACTION_CONFIRMATION_FAILED` | トランザクション確認に失敗 | トランザクションのステータスを確認してください |
+| 50028 | `TRANSACTION_SIGNATURE_EMPTY` | トランザクション署名が空 | 署名を追加してください |
+
+### DEX関連エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 50009 | `DEX_NOT_SUPPORTED` | DEXがサポートされていない | サポートされているDEXを使用してください |
+| 50010 | `DEX_ROUTE_BUILD_FAILED` | DEXルート構築に失敗 | トークンペアの流動性を確認してください |
+| 50011 | `DEX_SWAP_BUILD_FAILED` | DEXスワップ構築に失敗 | 取引パラメータを確認してください |
+| 50012 | `DEX_SWAP_SIMULATED_FAILED` | DEXスワップシミュレーションに失敗 | 取引パラメータを調整してください |
+| 50019 | `DEX_AGGREGATOR_NOT_FOUND` | DEXアグリゲーターが見つからない | サポートに連絡してください |
+| 50020 | `DEX_BUILDER_NOT_FOUND` | DEXビルダーが見つからない | サポートに連絡してください |
+| 50033 | `CURVE_CALCULATION_ERROR` | カーブ計算エラー | パラメータを確認してください |
+| 50034 | `LOOKUP_TABLE_ERROR` | アドレスルックアップテーブルエラー | 後でリトライしてください |
+| 50035 | `SWAP_ROUTE_ERROR` | スワップルート計算エラー | トークンペアを確認してください |
+
+### Jupiter APIエラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 50013 | `JUPITER_API_UNAUTHORIZED` | Jupiter API認証エラー | APIキーを確認してください |
+| 50014 | `JUPITER_API_RATE_LIMIT` | Jupiter APIレート制限 | 後でリトライしてください |
+| 50015 | `JUPITER_API_BAD_REQUEST` | Jupiter API不正リクエスト | パラメータを確認してください |
+| 50016 | `JUPITER_API_ERROR` | Jupiter APIエラー | 後でリトライしてください |
+
+### 設定と初期化エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 50018 | `PROVIDER_NOT_INITIALIZED` | プロバイダーが未初期化 | rpcUrlを設定してください |
+| 50021 | `ORDER_BUILDER_NOT_FOUND` | オーダービルダーが見つからない | サポートに連絡してください |
+| 50022 | `MARKET_EXPIRED` | マーケットが期限切れ | 有効なマーケットを使用してください |
+| 50023 | `CONFIG_NOT_FOUND` | 設定が見つからない | 設定を確認してください |
+| 50030 | `FEE_CONFIGURATION_REQUIRED` | 手数料設定が必要 | 手数料を設定してください |
+| 50036 | `METAFIELD_NOT_FOUND` | メタフィールドが見つからない | メタデータを確認してください |
+
+### ファイルアップロードエラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 50024 | `IPFS_UPLOAD_FAILED` | IPFSアップロードに失敗 | 後でリトライしてください |
+| 50025 | `SIGNED_URL_FAILED` | 署名付きURL作成に失敗 | 後でリトライしてください |
+
+### バンドル処理エラー
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 50031 | `BUNDLE_PROCESSING_FAILED` | バンドル処理に失敗 | バンドル設定を確認してください |
+| 50032 | `TIP_ACCOUNTS_NOT_AVAILABLE` | チップアカウントが利用不可 | 後でリトライしてください |
+
+```json
+{
+  "code": 50010,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "DEX route build failed",
+  "details": {
+    "input_token": "So11111111111111111111111111111111111111112",
+    "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "reason": "No valid route found"
+  }
+}
+```
+
+---
+
+## レッドパケットエラー (510)
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 51000 | `RED_PACKET_INVALID_PARAMETER_ERROR` | レッドパケットのパラメータエラー | レッドパケットIDまたはシェアIDを提供してください |
+| 51001 | `RED_PACKET_NOT_FOUND_ERROR` | レッドパケットが見つからない | レッドパケットIDを確認してください |
+| 51002 | `RED_PACKET_WITHDRAWN_ERROR` | レッドパケットが引き出し済み | レッドパケットは利用不可です |
+| 51003 | `RED_PACKET_ALREADY_CLAIMED_ERROR` | レッドパケットは受取済み | 各ユーザーは1回のみ受け取れます |
+| 51004 | `RED_PACKET_TRANSACTION_ERROR` | レッドパケットのトランザクションエラー | 後でリトライしてください |
+
+```json
+{
+  "code": 51003,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "You have already claimed this red packet"
+}
+```
+
+---
+
+## Webhookエラー (520)
+
+| Code | Name | 説明 | 解決方法 |
+|------|------|-------------|----------|
+| 52000 | `WEBHOOKS_APPLICATION_NOT_FOUND` | Webhookアプリケーションが見つからない | Webhook IDを確認してください |
+| 52001 | `WEBHOOKS_ENDPOINT_LIMIT_REACHED` | Webhookエンドポイント数の上限に達した | 使用していないエンドポイントを削除してください |
+
+```json
+{
+  "code": 52001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Webhooks endpoint limit reached",
+  "details": {
+    "current_count": 10,
+    "max_allowed": 10
+  }
+}
+```
+
+---
+
+## エラーハンドリングのベストプラクティス
+
+```javascript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient(process.env.CHAINSTREAM_ACCESS_TOKEN);
+
+async function safeApiCall(apiFunction) {
+  try {
+    return await apiFunction();
+  } catch (error) {
+    const { code, message, details } = error;
+    
+    // Handle errors by category
+    if (code === 401) {
+      // Authentication error: refresh token
+      await refreshToken();
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code === 429 || code === 42901 || code === 42902) {
+      // Rate limit: wait and retry
+      const retryAfter = details?.reset_at 
+        ? (details.reset_at * 1000 - Date.now()) 
+        : 1000;
+      await sleep(retryAfter);
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code >= 40000 && code < 41000) {
+      // Client parameter error: log and throw
+      console.error(`Parameter error: ${message}`, details);
+      throw new ValidationError(message, details);
+    }
+    
+    if (code >= 40400 && code < 40500) {
+      // Resource not found
+      console.warn(`Resource not found: ${message}`);
+      return null;
+    }
+    
+    if (code >= 50000) {
+      // Server error: log and retry
+      console.error(`Server error: ${message}`, details);
+      await sleep(1000);
+      return safeApiCall(apiFunction);
+    }
+    
+    // Unknown error
+    throw error;
+  }
+}
+
+// Usage example
+const tokenInfo = await safeApiCall(() => 
+  client.token.getToken('sol', 'TOKEN_ADDRESS')
+);
+```
+
+---
+
+## GraphQL APIエラー
+
+GraphQLクエリはエラーを標準の `errors` 配列で返します。クレジット消費は `extensions.credits` で報告されます：
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTradesRecord'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ],
+  "extensions": {
+    "credits": {
+      "total": 0,
+      "cubes": []
+    }
+  }
+}
+```
+
+| シナリオ | 動作 |
+|:---------|:---------|
+| 無効なクエリ（構文/バリデーションエラー） | `errors` 配列が設定され、`data` はnull、クレジットは消費されない |
+| 成功したクエリ | `data` が設定され、`extensions.credits.total` に消費されたCUが表示される |
+| クレジット制限超過 | 課金プランに応じてクエリが拒否される可能性あり — `extensions.credits` を確認 |
+
+[GraphQL課金とクレジット](/jp/graphql/billing/graphql-billing)で完全なクレジット計算式を参照してください。
+
+---
+
+## WebSocketエラー
+
+WebSocket接続はエンドポイント `wss://realtime-dex.chainstream.io/connection/websocket` を使用し、`?token=` で認証します。
+
+| シナリオ | 動作 |
+|:---------|:---------|
+| 無効なトークン | ハンドシェイク時に接続が拒否される |
+| トークンの期限切れ | 接続が切断される。新しいトークンで再接続してください |
+| ネットワーク中断 | クライアントはエクスポネンシャルバックオフによる自動再接続を実装すべき |
+| 無効なチャンネルへのサブスクリプション | WebSocketフレームでエラーメッセージが返される |
+
+<Tip>
+TypeScript SDK（`@chainstream-io/sdk`）はWebSocketの再接続を自動的に処理します。生のWebSocketクライアントを使用する場合は、切断時にエクスポネンシャルバックオフ（1秒、2秒、4秒、8秒...）を実装してください。
+</Tip>
+
+接続管理の詳細については、[WebSocket APIリファレンス](/jp/api-reference/endpoint/websocket/api)と[タイムアウトとハートビート](/jp/api-reference/endpoint/websocket/timeouts-and-heartbeats)を参照してください。
+
+---
+
+## ヘルプの取得
+
+解決できないエラーが発生した場合：
+
+<CardGroup cols={2}>
+  <Card title="テクニカルサポート" icon="envelope" href="mailto:support@chainstream.io">
+    エラーコードとタイムスタンプを添えてメールでお問い合わせください
+  </Card>
+  <Card title="Discordコミュニティ" icon="discord" href="https://discord.gg/quhPXEkJ">
+    コミュニティに参加してヘルプを受けましょう
+  </Card>
+</CardGroup>
+
+<Note>
+問題を報告する際は、完全なエラーレスポンス（`code`、`timestamp`、`message`、`details` を含む）を提供してください。迅速な問題の特定に役立ちます。
+</Note>

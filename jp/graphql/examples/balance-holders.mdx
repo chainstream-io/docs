@@ -1,0 +1,298 @@
+---
+title: "残高とホルダー"
+description: "ウォレット残高、残高履歴、トークンホルダーのクエリ例"
+icon: "wallet"
+---
+
+このページでは、ウォレットとホルダー分析のための4つのCubeを扱います：
+
+- **BalanceUpdates**（DWD） — ウォレットのイベント単位の残高変更
+- **TokenHolders**（DWS） — トークンの現在のホルダースナップショット
+- **WalletTokenPnL**（DWS） — ウォレットのトークン単位の損益
+
+<Note>
+以下のすべての例は`network: sol`（Solana）を使用しています。他の対応チェーンの場合は`eth`、`bsc`、`polygon`に置き換えてください。
+</Note>
+
+---
+
+## ウォレットのトークン残高を取得するには？
+
+ウォレットの現在のトークン残高を取得します。このクエリはウォレットが保有する各トークンの最新の残高更新イベントを返します。
+
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 50}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      Account { Owner }
+      PostBalance
+      PostBalanceInUSD
+    }
+    Block { Time }
+  }
+}
+```
+
+<Tip>
+[GraphQL IDEで開く](https://ide.chainstream.io) — 上記のクエリを貼り付けて、自動補完とスキーマ探索を使ってインタラクティブに実行できます。
+</Tip>
+
+<Tip>
+`WALLET_ADDRESS`を調査したいウォレットに置き換えてください。`ownerAddress`セレクターはウォレットオーナーで残高更新イベントをフィルタリングします。
+</Tip>
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `BalanceUpdate.Currency.MintAddress` | トークンアドレス |
+    | `BalanceUpdate.Account.Owner` | ウォレットオーナーアドレス |
+    | `BalanceUpdate.PostBalance` | 更新後のトークン残高 |
+    | `BalanceUpdate.PostBalanceInUSD` | USD建ての残高価値 |
+    | `Block.Time` | 残高更新のタイムスタンプ |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **リミットを増やす**: `count: 200`に設定して多くのトークンを保有するウォレットの全保有を取得
+    - **価値でフィルタ**: `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}`を追加してダスト残高を除外
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 残高変更履歴を取得するには？
+
+ウォレットの特定トークンの残高が時間とともにどのように変化するかを追跡します。
+
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 20}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+    orderBy: Block_Time_DESC
+  ) {
+    BalanceUpdate {
+      PreBalance
+      PostBalance
+      PostBalanceInUSD
+    }
+    Block { Time }
+    Transaction { Hash }
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `BalanceUpdate.PreBalance` | イベント前の残高 |
+    | `BalanceUpdate.PostBalance` | イベント後の残高 |
+    | `BalanceUpdate.PostBalanceInUSD` | イベント後の残高のUSD値 |
+    | `Block.Time` | 残高が変更された時刻 |
+    | `Transaction.Hash` | 変更の原因となったトランザクション |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **蓄積の検出**: `PreBalance`と`PostBalance`を比較 — `PostBalance > PreBalance`の場合、ウォレットが蓄積中
+    - **時間範囲**: `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}`を追加して特定期間に限定
+    - **より長い履歴**: `count`を最大`10000`に増やして包括的な残高履歴を取得
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+`PostBalance`と`PreBalance`の差がイベントごとの純変動を示します。正のデルタはトークンの流入を、負のデルタはトークンの流出を意味します。
+</Info>
+
+---
+
+## トークンのトップホルダーを取得するには？
+
+トークンのトップホルダーを残高順でランク付けして取得します。
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    limit: {count: 100}
+    tokenAddress: {is: "TOKEN_ADDRESS"}
+  ) {
+    Token { Address }
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Token.Address` | トークンアドレス |
+    | `Holder.Address` | ホルダーウォレットアドレス |
+    | `LatestBalance` | 現在のトークン残高 |
+    | `LatestBalanceUSD` | 現在の残高のUSD値 |
+    | `FirstSeen` | このホルダーがトークンを最初に取得した時期 |
+    | `LastSeen` | このトークンに関連する最新のトランザクション |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **クジラ閾値**: `where: {LatestBalanceUSD: {gt: 10000}}`を追加して大口ホルダーのみ表示
+    - **アクティブホルダー**: `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}`を追加して最近アクティブなホルダーにフィルタ
+    - **ホルダー数**: `count`メトリクスを使用してホルダーの総数を取得
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+**TokenHolders** CubeはDWS（サマリー）レイヤーテーブルです — 事前集計されており、個別の残高更新をスキャンするよりもはるかに高速にクエリできます。ホルダーランキングと分布分析に使用してください。
+</Tip>
+
+---
+
+## ウォレットの損益を取得するには？
+
+ウォレットのトークン単位の損益データを、売買出来高とトレード数を含めて取得します。
+
+```graphql
+query {
+  WalletTokenPnL(
+    network: sol
+    limit: {count: 20}
+    walletAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    Wallet { Address }
+    Token { Address }
+    BuyVolumeUSDState
+    SellVolumeUSDState
+    BuyCountState
+    SellCountState
+    FirstTradeState
+    LastTradeState
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="主要フィールド">
+    | フィールド | 説明 |
+    |:------|:------------|
+    | `Wallet.Address` | ウォレットアドレス |
+    | `Token.Address` | トークンアドレス |
+    | `BuyVolumeUSDState` | このトークンの購入に費やしたUSD合計 |
+    | `SellVolumeUSDState` | このトークンの売却で受け取ったUSD合計 |
+    | `BuyCountState` | 購入トレード数 |
+    | `SellCountState` | 売却トレード数 |
+    | `FirstTradeState` | 最初のトレードのタイムスタンプ |
+    | `LastTradeState` | 最新のトレードのタイムスタンプ |
+  </Accordion>
+  <Accordion title="カスタマイズのヒント">
+    - **PnLの計算**: `SellVolumeUSDState - BuyVolumeUSDState`で各トークンの実現PnLを算出
+    - **アクティブポジション**: `SellCountState < BuyCountState`のトークンをフィルタして、ウォレットがまだ保有しているトークンを検索
+    - **高アクティビティトークン**: `BuyCountState`または`SellCountState`でソートして最も頻繁に取引されたトークンを検索
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+**WalletTokenPnL** Cubeは`walletAddress`セレクターを使用します（`ownerAddress`ではありません）。累積的なトレーディングメトリクスを提供し、ポートフォリオ分析やパフォーマンスリーダーボードに最適です。
+</Info>
+
+---
+
+## マルチチェーンの例
+
+<Tabs>
+  <Tab title="Solana">
+```graphql
+query {
+  BalanceUpdates(
+    network: sol
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Ethereum">
+```graphql
+query {
+  BalanceUpdates(
+    network: eth
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="BSC">
+```graphql
+query {
+  BalanceUpdates(
+    network: bsc
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+  <Tab title="Polygon">
+```graphql
+query {
+  BalanceUpdates(
+    network: polygon
+    limit: {count: 10}
+    ownerAddress: {is: "WALLET_ADDRESS"}
+  ) {
+    BalanceUpdate {
+      Currency { MintAddress }
+      PostBalance
+      PostBalanceInUSD
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+---
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="DEXトレード" icon="arrow-right-arrow-left" href="/jp/graphql/examples/dex-trades">
+    DEXトレーディングデータのクエリ — トークントレード、ウォレットアクティビティ、トップトレーダー。
+  </Card>
+  <Card title="トランスファー" icon="paper-plane" href="/jp/graphql/examples/transfers">
+    ウォレット間のオンチェーントークントランスファーの追跡。
+  </Card>
+  <Card title="プールと流動性" icon="droplet" href="/jp/graphql/examples/pools-liquidity">
+    DEXプールと流動性データの探索。
+  </Card>
+  <Card title="OHLCと統計" icon="chart-candlestick" href="/jp/graphql/examples/ohlc-stats">
+    ローソク足データ、トレード統計、TokenSupplyUpdates、トークンメタデータの取得。
+  </Card>
+</CardGroup>

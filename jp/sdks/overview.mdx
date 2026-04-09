@@ -1,0 +1,163 @@
+---
+title: '概要'
+description: '最適なChainStream SDKを選択'
+icon: "code"
+---
+
+## 公式SDK
+
+ChainStreamは複数の言語で公式SDKを提供しており、一般的なAPI操作をラップしてより良い開発体験を実現します。
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/jp/sdks/typescript">
+    Node.jsおよびブラウザアプリケーション向け
+  </Card>
+  <Card title="Python" icon="python" href="/jp/sdks/python">
+    データ分析とバックエンドサービス向け
+  </Card>
+  <Card title="Go" icon="golang" href="/jp/sdks/go">
+    高性能バックエンドサービス向け
+  </Card>
+  <Card title="Rust" icon="rust" href="/jp/sdks/rust">
+    システムプログラミングとパフォーマンスクリティカルなアプリケーション向け
+  </Card>
+</CardGroup>
+
+## SDK機能
+
+すべてのSDKが提供する機能：
+
+- **REST APIクライアント**: すべてのChainStreamデータAPIを呼び出し
+- **WebSocketクライアント**: リアルタイムデータストリームの購読
+- **自動認証**: 自動トークン管理
+- **型安全**: 完全な型定義（TypeScript、Go、Rust）
+
+## インストール
+
+<Tabs>
+  <Tab title="TypeScript">
+```bash
+npm install @chainstream-io/sdk
+```
+  </Tab>
+  <Tab title="Python">
+```bash
+pip install chainstream-sdk
+```
+  </Tab>
+  <Tab title="Go">
+```bash
+go get github.com/chainstream-io/chainstream-go-sdk
+```
+  </Tab>
+  <Tab title="Rust">
+```toml
+# Cargo.tomlに追加
+[dependencies]
+chainstream-sdk = "0.1"
+```
+  </Tab>
+</Tabs>
+
+## クイック比較
+
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
+
+// REST API呼び出し
+const token = await client.token.getToken('sol', 'TOKEN_ADDRESS');
+
+// WebSocket購読
+client.stream.subscribeTokenCandles({
+  chain: 'sol',
+  tokenAddress: 'TOKEN_ADDRESS',
+  resolution: Resolution['1s'],
+  callback: (data) => console.log(data)
+});
+```
+  </Tab>
+  <Tab title="Python">
+```python
+from chainstream import ChainStreamClient
+from chainstream.stream import Resolution
+
+client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
+
+# REST API呼び出し
+token = await client.token.get_metadata('sol', 'TOKEN_ADDRESS')
+
+# WebSocket購読
+await client.stream.subscribe_token_candles(
+    chain='sol',
+    token_address='TOKEN_ADDRESS',
+    resolution=Resolution.S1,
+    callback=lambda data: print(data)
+)
+```
+  </Tab>
+  <Tab title="Go">
+```go
+import chainstream "github.com/chainstream-io/chainstream-go-sdk"
+
+client, _ := chainstream.NewChainStreamClient(accessToken, &chainstream.ChainStreamClientOptions{})
+
+// REST API呼び出し
+resp, _ := client.Token.GetToken(ctx, "sol", "TOKEN_ADDRESS")
+
+// WebSocket購読
+client.Stream.SubscribeTokenCandles("sol", "TOKEN_ADDRESS", token.N1s, func(data stream.TokenCandle) {
+    fmt.Println(data)
+}, "")
+```
+  </Tab>
+  <Tab title="Rust">
+```rust
+use chainstream_sdk::{ChainStreamClient, stream::{Resolution, TokenCandle}};
+
+let client = ChainStreamClient::new("YOUR_ACCESS_TOKEN", None);
+
+// WebSocket購読
+client.stream.subscribe_token_candles(
+    "sol",
+    "TOKEN_ADDRESS",
+    Resolution::X1s,
+    |candle: TokenCandle| {
+        println!("{:?}", candle);
+    },
+    None,
+).await?;
+```
+  </Tab>
+</Tabs>
+
+## SDK vs 直接API
+
+| 機能 | SDK | 直接API |
+|---------|-----|------------|
+| 型安全 | あり（TS/Go/Rust） | なし |
+| 認証管理 | 自動 | 手動 |
+| エラーハンドリング | ラップ済み | 生のHTTPエラー |
+| WebSocket | 組み込み | 手動実装 |
+| コード量 | 少ない | 多い |
+| 柔軟性 | 中 | 高 |
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="TypeScript SDK" icon="js" href="/jp/sdks/typescript">
+    TypeScriptドキュメントを見る
+  </Card>
+  <Card title="Python SDK" icon="python" href="/jp/sdks/python">
+    Pythonドキュメントを見る
+  </Card>
+  <Card title="Go SDK" icon="golang" href="/jp/sdks/go">
+    Goドキュメントを見る
+  </Card>
+  <Card title="Rust SDK" icon="rust" href="/jp/sdks/rust">
+    Rustドキュメントを見る
+  </Card>
+</CardGroup>

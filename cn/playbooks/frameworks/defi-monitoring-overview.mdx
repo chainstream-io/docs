@@ -5,6 +5,10 @@ icon: "landmark"
 tag: "Coming Soon"
 ---
 
+<Info>
+ChainStream 目前支持 **Solana**（`sol`）、**Ethereum**（`eth`）和 **BSC**（`bsc`）。支持的 DEX 包括 Jupiter、Raydium、PumpFun、Moonshot、Candy（Solana）以及 KyberSwap（Ethereum/BSC）。以下部分示例引用了其他协议用于概念说明，请查看[支持的链](/cn/guides/getting-started/supported-chains)了解当前覆盖范围。
+</Info>
+
 <Warning>
 **Coming Soon** - 此功能正在开发中，敬请期待！
 </Warning>
@@ -19,37 +23,16 @@ tag: "Coming Soon"
 
 | 协议 | 链 | 支持功能 |
 |------|-----|----------|
-| **Uniswap V2/V3** | Ethereum, Polygon, Arbitrum, Base | 交易、LP、池子数据 |
-| **PancakeSwap** | BSC | 交易、LP、池子数据 |
-| **SushiSwap** | Multi-chain | 交易、LP |
-| **Raydium** | Solana | 交易、LP |
 | **Jupiter** | Solana | 聚合交易 |
-| **Curve** | Ethereum, Multi-chain | 稳定币交易、LP |
+| **Raydium** | Solana | 交易、LP、池子数据 |
+| **PumpFun** | Solana | 发射/bonding、交易 |
+| **Moonshot** | Solana | 交易 |
+| **Candy** | Solana | 交易 |
+| **KyberSwap** | Ethereum、BSC | 交易、报价 |
 
-### 借贷协议
+### 其他 DeFi 方向
 
-| 协议 | 链 | 支持功能 |
-|------|-----|----------|
-| **Aave V3** | Ethereum, Polygon, Arbitrum | 借贷、清算、利率 |
-| **Compound V3** | Ethereum, Base | 借贷、清算 |
-| **Venus** | BSC | 借贷、清算 |
-| **Morpho** | Ethereum | 借贷优化 |
-
-### 收益聚合器
-
-| 协议 | 链 | 支持功能 |
-|------|-----|----------|
-| **Yearn Finance** | Ethereum | Vault 策略、收益 |
-| **Convex Finance** | Ethereum | Curve LP 增强 |
-| **Beefy Finance** | Multi-chain | 自动复投 |
-
-### 流动性质押
-
-| 协议 | 链 | 支持功能 |
-|------|-----|----------|
-| **Lido** | Ethereum | ETH 质押 |
-| **Rocket Pool** | Ethereum | ETH 质押 |
-| **Marinade** | Solana | SOL 质押 |
+借贷、收益聚合器与流动性质押是 DeFi 中常见的监控对象。ChainStream 当前已索引的互换与 DEX 分析能力主要覆盖上表中的协议，链为 **Solana**、**Ethereum**、**BSC**。在实现借贷或金库类告警前，请结合 API 参考与[支持的链](/cn/guides/getting-started/supported-chains)确认实际可用能力。
 
 ---
 
@@ -113,8 +96,8 @@ tag: "Coming Soon"
 ```typescript
 // 订阅 DEX 交易流
 ws.subscribe('defi_trades', {
-  protocol: 'uniswap_v3',
-  chain: 'ethereum',
+  protocol: 'kyberswap',
+  chain: 'eth',
   min_amount_usd: 10000
 }, (trade) => {
   console.log(`${trade.type}: ${trade.token_in} → ${trade.token_out}`);
@@ -197,7 +180,7 @@ ws.subscribe('defi_trades', {
 ```json
 {
   "alert_type": "liquidity_remove",
-  "protocol": "uniswap_v3",
+  "protocol": "kyberswap",
   "pool": "0x...",
   "threshold": {
     "type": "percentage",
@@ -229,7 +212,7 @@ flowchart TD
 
 ```typescript
 ws.subscribe('pool_created', {
-  chain: 'ethereum',
+  chain: 'sol',
   min_liquidity_usd: 10000
 }, async (pool) => {
   // 检查 Token 安全性
@@ -292,8 +275,8 @@ ws.subscribe('liquidity_remove', {
 const prices = {};
 
 ws.subscribe('token_price', { 
-  token: 'WETH',
-  dex: ['uniswap', 'sushiswap', 'curve']
+  token: 'SOL',
+  dex: ['jupiter', 'raydium', 'pumpfun']
 }, (data) => {
   prices[data.dex] = data.price;
   checkArbitrage(prices);
@@ -331,8 +314,9 @@ function checkArbitrage(prices) {
 
 ```typescript
 async function monitorLiquidationRisk(address: string) {
-  const position = await getDefiPosition(address, 'aave_v3');
-  
+  // 接入你方环境已开放的借贷 API（与 DEX 无关）
+  const position = await getLendingPosition(address);
+
   if (position.health_factor < 1.2) {
     urgentAlert(`🚨 清算风险！健康因子: ${position.health_factor}`);
   } else if (position.health_factor < 1.5) {

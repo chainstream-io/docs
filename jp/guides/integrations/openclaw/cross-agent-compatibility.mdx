@@ -1,0 +1,191 @@
+---
+title: "クロスエージェント互換性"
+description: "40以上のAIエージェントにChainStreamスキルをインストールするための互換性テーブルと設定詳細。"
+---
+
+## 概要
+
+ChainStreamスキルパッケージ（`chainstream-io/skills`）は[Vercel Skills CLI](https://skills.dev)を通じて配布されており、**40以上のAIエージェント**に対応しています。1つのコマンドで、選択したエージェントにChainStream MCPツールをインストール・設定できます。
+
+```bash
+npx skills add chainstream-io/skills
+```
+
+## 互換性テーブル
+
+以下のテーブルは、よく使用されるエージェントのインストールコマンドと設定ファイルの場所を示しています。
+
+| エージェント | インストールコマンド | 設定ファイルの場所 |
+|-------|----------------|-----------------|
+| OpenClaw | `npx skills add chainstream-io/skills -a openclaw` | `skills/` or `~/.openclaw/skills/` |
+| Claude Code | `npx skills add chainstream-io/skills -a claude-code` | `.claude.json` |
+| Cursor | `npx skills add chainstream-io/skills -a cursor` | Cursor MCP設定 |
+| Cline | `npx skills add chainstream-io/skills -a cline` | Cline設定 |
+| GitHub Copilot | `npx skills add chainstream-io/skills -a copilot` | `.github/copilot/` |
+| Codex | `npx skills add chainstream-io/skills -a codex` | Codex設定 |
+
+## エージェント別の詳細
+
+### OpenClaw
+
+Skills CLIはOpenClawのスキルディレクトリに設定を書き込みます：
+
+- **プロジェクトレベル**: `./skills/chainstream.yaml`
+- **ユーザーレベル**: `~/.openclaw/skills/chainstream.yaml`
+
+生成される設定：
+
+```yaml
+skills:
+  chainstream:
+    type: mcp
+    url: https://mcp.chainstream.io/mcp
+    env:
+      CHAINSTREAM_API_KEY: ${CHAINSTREAM_API_KEY}
+```
+
+エージェントを実行する前に環境変数を設定してください：
+
+```bash
+export CHAINSTREAM_API_KEY=your-key
+openclaw run
+```
+
+### Claude Code
+
+Skills CLIはプロジェクトルートの`.claude.json`にMCPサーバーエントリを追加します：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+手動でのClaude Codeセットアップについては[Stdioトランスポート](/jp/guides/ai-infrastructure/mcp-server/stdio-transport)もご覧ください。
+
+### Cursor
+
+Skills CLIはCursorの設定でMCPサーバーを設定します。設定は**Settings > Features > MCP Servers**に表示されます：
+
+| フィールド | 値 |
+|-------|-------|
+| Name | `chainstream` |
+| Type | `stdio` |
+| Command | `npx @chainstream-io/mcp` |
+
+プロジェクトレベルの設定として、CLIは`.cursor/mcp.json`に書き込みます：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### Cline
+
+Skills CLIはClineのMCP設定にサーバーを追加します：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### GitHub Copilot
+
+Skills CLIはリポジトリの`.github/copilot/mcp.json`に設定を書き込みます：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+### Codex
+
+Skills CLIはCodexエージェント設定にMCPサーバーを追加します：
+
+```json
+{
+  "mcpServers": {
+    "chainstream": {
+      "command": "npx",
+      "args": ["@chainstream-io/mcp"],
+      "env": {
+        "CHAINSTREAM_API_KEY": "your-key"
+      }
+    }
+  }
+}
+```
+
+## 自動検出
+
+`-a`フラグなしで`npx skills add chainstream-io/skills`を実行すると、CLIは以下をチェックして環境を自動検出します：
+
+1. カレントディレクトリ内のエージェント固有の設定ファイル
+2. グローバルにインストールされたエージェントCLIツール
+3. IDE固有のディレクトリと設定
+
+複数のエージェントが検出された場合、CLIは選択を求めるプロンプトを表示します。
+
+## アップデート
+
+ChainStreamスキルを最新バージョンにアップデートするには：
+
+```bash
+npx skills update chainstream-io/skills
+```
+
+## 削除
+
+ChainStreamスキルを削除するには：
+
+```bash
+npx skills remove chainstream-io/skills
+```
+
+これによりエージェントの設定ファイルから設定エントリが削除されますが、APIキーは削除されません。
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="ツールリファレンス" icon="wrench" href="/jp/guides/ai-infrastructure/mcp-server/overview">
+    インストール後に利用可能な15のMCPツールをすべてご覧ください。
+  </Card>
+  <Card title="セキュリティ" icon="shield" href="/jp/guides/integrations/openclaw/security">
+    ChainStream統合のセキュリティに関する考慮事項。
+  </Card>
+</CardGroup>

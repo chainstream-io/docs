@@ -1,0 +1,525 @@
+---
+title: '錯誤碼參考'
+description: 'ChainStream API 錯誤碼完整列表'
+icon: "triangle-exclamation"
+---
+
+## 錯誤響應格式
+
+所有 API 錯誤都遵循統一的響應格式：
+
+```json
+{
+  "code": 40001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Human readable error message",
+  "details": {
+    // 可选的额外信息
+  }
+}
+```
+
+## HTTP 狀態碼
+
+| 狀態碼 | 說明 | 錯誤碼範圍 |
+|--------|------|------------|
+| 400 | 錯誤請求 | 400, 40001-40040 |
+| 401 | 未授權 | 401 |
+| 403 | 禁止訪問 | 403, 40301 |
+| 404 | 未找到 | 404, 40401-40406 |
+| 429 | 請求過多 | 429, 42901-42902 |
+| 500 | 伺服器錯誤 | 500, 50001-50036 |
+| 510 | 紅包錯誤 | 51000-51004 |
+| 520 | Webhook 錯誤 | 52000-52001 |
+
+---
+
+## 客戶端錯誤 (400)
+
+### 引數驗證錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 400 | `BAD_REQUEST` | 錯誤請求 | 檢查請求格式 |
+| 40001 | `VALIDATION_ERROR` | 請求引數異常或不正確 | 檢查引數格式和取值 |
+| 40002 | `INVALID_PARAMETER` | 引數無效 | 檢查引數值是否符合要求 |
+| 40003 | `INVALID_TOKEN` | 訪問令牌無效 | 檢查 Token 格式 |
+| 40004 | `MISSING_PARAMETER` | 缺少必填引數 | 新增缺失的必填引數 |
+| 40005 | `INVALID_ADDRESS` | 錢包地址格式無效 | 檢查地址格式是否正確 |
+| 40027 | `INVALID_CURSOR` | 遊標無效 | 使用有效的分頁遊標 |
+| 40031 | `INVALID_TIMESTAMP` | 時間戳格式無效 | 使用 ISO 8601 格式 |
+| 40032 | `INVALID_RESOLUTION` | 解析度引數無效 | 使用支援的 K 線週期 |
+| 40033 | `INVALID_NUMBER_FORMAT` | 數字格式無效 | 使用正確的數字格式 |
+
+```json
+{
+  "code": 40002,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Invalid parameter",
+  "details": {
+    "parameter": "resolution",
+    "value": "2h",
+    "allowed_values": ["1s", "1m", "5m", "15m", "1h", "4h", "1d"]
+  }
+}
+```
+
+### 代幣相關錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 40009 | `INVALID_TOKEN_ADDRESS` | 代幣地址無效 | 檢查代幣合約地址 |
+| 40028 | `TOKEN_ADDRESSES_LIMIT_EXCEEDED` | 代幣地址數量超限 | 最多 100 個地址 |
+| 40034 | `TOKEN_ALREADY_CREATED` | 代幣已建立 | 檢查是否重複建立 |
+
+### 錢包相關錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 40029 | `WALLET_ADDRESSES_LIMIT_EXCEEDED` | 錢包地址數量超限 | 最多 100 個地址 |
+
+### 交易相關錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 40010 | `TRANSACTION_FAILED` | 交易執行失敗 | 檢查交易引數和餘額 |
+| 40011 | `TRANSACTION_REJECTED` | 交易被拒絕 | 檢查簽名和許可權 |
+| 40012 | `INVALID_TRANSACTION` | 交易無效 | 檢查交易結構 |
+| 40025 | `TRANSACTION_NOT_SIGNED` | 交易未簽名 | 序列化前需要簽名 |
+| 40026 | `TRANSACTION_SIGNATURE_MISSING` | 交易簽名缺失 | 新增交易簽名 |
+| 40039 | `TRANSACTION_SIZE_EXCEEDED` | 交易大小超限 | 減少交易複雜度 |
+
+### DEX 交易錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 40006 | `LIQUIDITY_INSUFFICIENT` | 流動性不足 | 減少交易金額 |
+| 40007 | `PRICE_IMPACT_TOO_HIGH` | 價格影響過大 | 減少金額或提高滑點 |
+| 40008 | `SLIPPAGE_TOO_HIGH` | 滑點過高 | 調整滑點設定 |
+| 40014 | `INVALID_AMOUNT` | 金額無效 | 使用有效的數字 |
+| 40015 | `AMOUNT_TOO_SMALL` | 金額過小 | 增加交易金額 |
+| 40016 | `AMOUNT_TOO_LARGE` | 金額過大 | 金額超出安全範圍 |
+| 40017 | `SAME_TOKEN_SWAP` | 相同代幣交換 | 輸入輸出代幣不能相同 |
+| 40018 | `INVALID_SLIPPAGE` | 滑點值無效 | 使用有效的滑點值 |
+| 40019 | `SLIPPAGE_TOO_LOW` | 滑點過低 | 滑點必須大於零 |
+| 40020 | `POOL_NOT_SUPPORTED` | 流動性池不支援 | 使用支援的交易池 |
+| 40021 | `UNSUPPORTED_SWAP_MODE` | 交換模式不支援 | 使用支援的交換模式 |
+| 40022 | `FEE_PARAMETER_ERROR` | 手續費引數錯誤 | 檢查手續費配置 |
+| 40023 | `ANTI_MEV_REJECTED` | Anti-MEV 驗證失敗 | 檢查 Anti-MEV 設定 |
+| 40030 | `POOL_INPUT_MISMATCH` | 池輸入不匹配 | 輸入代幣與池不匹配 |
+
+```json
+{
+  "code": 40006,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient liquidity",
+  "details": {
+    "requested_amount": "1000000000",
+    "available_liquidity": "500000000"
+  }
+}
+```
+
+### 訂單相關錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 40035 | `INVALID_MARKET_PRICES` | 市場價格無效 | 檢查價格引數 |
+| 40036 | `INVALID_ORDER_PARAMETERS` | 訂單引數無效 | 檢查訂單配置 |
+
+### 其他客戶端錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 40013 | `PARAMETER_ERROR` | 引數錯誤 | 必須設定總金額或固定金額 |
+| 40024 | `NOT_IMPLEMENTED` | 方法未實現 | 使用已實現的方法 |
+| 40037 | `UNSUPPORTED_VALUE_TYPE` | 值型別不支援 | 使用支援的值型別 |
+| 40038 | `PARSE_ERROR` | 解析失敗 | 檢查資料格式 |
+| 40040 | `INVALID_MIGRATE_TYPE` | 遷移型別無效 | 使用有效的遷移型別 |
+
+---
+
+## 認證錯誤 (401)
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 401 | `UNAUTHORIZED` | 未授權，Token 缺失或無效 | 檢查 Authorization 頭 |
+
+```json
+{
+  "code": 401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Unauthorized. Token is missing or invalid"
+}
+```
+
+**處理示例**：
+
+```javascript
+if (error.code === 401) {
+  // 重新获取 Token
+  const newToken = await getAccessToken();
+  // 使用新 Token 重试请求
+}
+```
+
+---
+
+## 許可權錯誤 (403)
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 403 | `FORBIDDEN` | 禁止訪問 | 見下方說明 |
+| 40301 | `INSUFFICIENT_PERMISSIONS` | 許可權不足 | 獲取必要的許可權 |
+
+403 錯誤可能由以下原因觸發：
+
+- **用量配額耗盡**：賬戶月度 API 呼叫配額已用完，需升級套餐或等待下月重置
+- **請求被黑名單**：IP 或賬戶被加入黑名單
+- **未在白名單**：請求來源未在允許的白名單中
+
+<Note>
+當 API 用量配額耗盡時，閘道器會直接返回 403 狀態碼。這與 429（速率限制）不同：
+- **429**：短期速率限制（每秒/每分鐘請求數超限）
+- **403**：賬戶配額限制（月度用量耗盡）或許可權問題
+</Note>
+
+```json
+{
+  "code": 403,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Forbidden"
+}
+```
+
+```json
+{
+  "code": 40301,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Insufficient permissions",
+  "details": {
+    "required_scope": "kyt.write",
+    "current_scopes": ["kyt.read"]
+  }
+}
+```
+
+---
+
+## 資源未找到錯誤 (404)
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 404 | `NOT_FOUND` | 資源未找到 | 檢查資源是否存在 |
+| 40401 | `POOL_NOT_FOUND` | 流動性池未找到 | 檢查池地址和鏈 |
+| 40402 | `MARKET_INFO_NOT_FOUND` | 市場資訊未找到 | 檢查市場是否存在 |
+| 40403 | `OPEN_ORDER_NOT_FOUND` | 開放訂單賬戶未找到 | 檢查訂單賬戶 |
+| 40404 | `ORDER_NOT_FOUND` | 訂單未找到 | 檢查訂單 ID |
+| 40405 | `CHAIN_NOT_FOUND` | 鏈未找到 | 使用支援的鏈標識 |
+| 40406 | `DEX_NOT_FOUND` | DEX 未找到 | 使用支援的 DEX |
+
+```json
+{
+  "code": 40401,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Liquidity pool not found",
+  "details": {
+    "chain": "sol",
+    "pool_address": "INVALID_ADDRESS"
+  }
+}
+```
+
+---
+
+## 速率限制錯誤 (429)
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 429 | `RATE_LIMIT` | 請求過多，達到速率限制 | 等待後重試 |
+| 42901 | `API_USAGE_LIMIT_EXCEEDED` | API 使用量超限 | 升級套餐或等待重置 |
+| 42902 | `KYT_USAGE_LIMIT_EXCEEDED` | KYT API 使用量超限 | 升級 KYT 套餐 |
+
+```json
+{
+  "code": 429,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Too Many Requests. Rate limit reached",
+  "details": {
+    "limit": 100,
+    "remaining": 0,
+    "reset_at": 1706745600
+  }
+}
+```
+
+**處理示例**：
+
+```javascript
+if (response.status === 429) {
+  const retryAfter = response.headers.get('Retry-After') || 1;
+  await sleep(retryAfter * 1000);
+  // 重试请求
+}
+```
+
+---
+
+## 伺服器錯誤 (500)
+
+### 通用伺服器錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 500 | `INTERNAL_SERVER_ERROR` | 內部伺服器錯誤 | 稍後重試 |
+| 50001 | `UNKNOWN_ERROR` | 未知錯誤 | 聯絡技術支援 |
+| 50005 | `DATABASE_ERROR` | 資料操作失敗 | 稍後重試 |
+| 50007 | `EXTERNAL_SERVICE_ERROR` | 外部服務呼叫失敗 | 稍後重試 |
+| 50029 | `EXTERNAL_API_ERROR` | 外部 API 請求失敗 | 稍後重試 |
+
+### 區塊鏈相關錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 50002 | `CHAIN_CONNECTION_ERROR` | 區塊鏈連線錯誤 | 檢查網路狀態 |
+| 50003 | `CHAIN_SYNC_ERROR` | 區塊鏈同步錯誤 | 等待同步完成 |
+| 50004 | `TRANSACTION_TIMEOUT` | 交易超時 | 重試或增加超時時間 |
+| 50006 | `TRANSACTION_ERROR` | 交易錯誤 | 檢查交易引數 |
+| 50008 | `CHAIN_NOT_SUPPORTED` | 鏈不支援 | 使用支援的鏈 |
+| 50017 | `INSUFFICIENT_BALANCE` | 餘額不足 | 檢查賬戶餘額 |
+| 50026 | `TRANSACTION_SEND_FAILED` | 交易傳送失敗 | 檢查網路和引數 |
+| 50027 | `TRANSACTION_CONFIRMATION_FAILED` | 交易確認失敗 | 檢查交易狀態 |
+| 50028 | `TRANSACTION_SIGNATURE_EMPTY` | 交易簽名為空 | 新增簽名 |
+
+### DEX 相關錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 50009 | `DEX_NOT_SUPPORTED` | DEX 不支援 | 使用支援的 DEX |
+| 50010 | `DEX_ROUTE_BUILD_FAILED` | DEX 路由構建失敗 | 檢查代幣對流動性 |
+| 50011 | `DEX_SWAP_BUILD_FAILED` | DEX 交換構建失敗 | 檢查交易引數 |
+| 50012 | `DEX_SWAP_SIMULATED_FAILED` | DEX 交換模擬失敗 | 調整交易引數 |
+| 50019 | `DEX_AGGREGATOR_NOT_FOUND` | DEX 聚合器未找到 | 聯絡技術支援 |
+| 50020 | `DEX_BUILDER_NOT_FOUND` | DEX 構建器未找到 | 聯絡技術支援 |
+| 50033 | `CURVE_CALCULATION_ERROR` | 曲線計算錯誤 | 檢查引數 |
+| 50034 | `LOOKUP_TABLE_ERROR` | 地址查詢表錯誤 | 稍後重試 |
+| 50035 | `SWAP_ROUTE_ERROR` | 交換路由計算錯誤 | 檢查代幣對 |
+
+### Jupiter API 錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 50013 | `JUPITER_API_UNAUTHORIZED` | Jupiter API 未授權 | 檢查 API 金鑰 |
+| 50014 | `JUPITER_API_RATE_LIMIT` | Jupiter API 速率限制 | 稍後重試 |
+| 50015 | `JUPITER_API_BAD_REQUEST` | Jupiter API 請求錯誤 | 檢查引數 |
+| 50016 | `JUPITER_API_ERROR` | Jupiter API 錯誤 | 稍後重試 |
+
+### 配置和初始化錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 50018 | `PROVIDER_NOT_INITIALIZED` | Provider 未初始化 | 配置 rpcUrl |
+| 50021 | `ORDER_BUILDER_NOT_FOUND` | 訂單構建器未找到 | 聯絡技術支援 |
+| 50022 | `MARKET_EXPIRED` | 市場已過期 | 使用有效市場 |
+| 50023 | `CONFIG_NOT_FOUND` | 配置未找到 | 檢查配置 |
+| 50030 | `FEE_CONFIGURATION_REQUIRED` | 需要手續費配置 | 配置手續費 |
+| 50036 | `METAFIELD_NOT_FOUND` | 元欄位未找到 | 檢查後設資料 |
+
+### 檔案上傳錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 50024 | `IPFS_UPLOAD_FAILED` | IPFS 上傳失敗 | 稍後重試 |
+| 50025 | `SIGNED_URL_FAILED` | 簽名 URL 建立失敗 | 稍後重試 |
+
+### Bundle 處理錯誤
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 50031 | `BUNDLE_PROCESSING_FAILED` | Bundle 處理失敗 | 檢查 Bundle 配置 |
+| 50032 | `TIP_ACCOUNTS_NOT_AVAILABLE` | Tip 賬戶不可用 | 稍後重試 |
+
+```json
+{
+  "code": 50010,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "DEX route build failed",
+  "details": {
+    "input_token": "So11111111111111111111111111111111111111112",
+    "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "reason": "No valid route found"
+  }
+}
+```
+
+---
+
+## 紅包錯誤 (510)
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 51000 | `RED_PACKET_INVALID_PARAMETER_ERROR` | 紅包引數錯誤 | 提供紅包 ID 或分享 ID |
+| 51001 | `RED_PACKET_NOT_FOUND_ERROR` | 紅包未找到 | 檢查紅包 ID |
+| 51002 | `RED_PACKET_WITHDRAWN_ERROR` | 紅包已撤回 | 紅包已不可用 |
+| 51003 | `RED_PACKET_ALREADY_CLAIMED_ERROR` | 已領取過紅包 | 每人只能領取一次 |
+| 51004 | `RED_PACKET_TRANSACTION_ERROR` | 紅包交易錯誤 | 稍後重試 |
+
+```json
+{
+  "code": 51003,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "You have already claimed this red packet"
+}
+```
+
+---
+
+## Webhook 錯誤 (520)
+
+| 錯誤碼 | 名稱 | 說明 | 解決方案 |
+|--------|------|------|----------|
+| 52000 | `WEBHOOKS_APPLICATION_NOT_FOUND` | Webhook 應用未找到 | 檢查 Webhook ID |
+| 52001 | `WEBHOOKS_ENDPOINT_LIMIT_REACHED` | Webhook 端點數量達到上限 | 刪除不需要的端點 |
+
+```json
+{
+  "code": 52001,
+  "timestamp": "2026-02-05T10:30:00.000Z",
+  "message": "Webhooks endpoint limit reached",
+  "details": {
+    "current_count": 10,
+    "max_allowed": 10
+  }
+}
+```
+
+---
+
+## 錯誤處理最佳實踐
+
+```javascript
+import { ChainStreamClient } from '@chainstream-io/sdk';
+
+const client = new ChainStreamClient(process.env.CHAINSTREAM_ACCESS_TOKEN);
+
+async function safeApiCall(apiFunction) {
+  try {
+    return await apiFunction();
+  } catch (error) {
+    const { code, message, details } = error;
+    
+    // 根据错误码分类处理
+    if (code === 401) {
+      // 认证错误：重新获取 Token
+      await refreshToken();
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code === 429 || code === 42901 || code === 42902) {
+      // 速率限制：等待后重试
+      const retryAfter = details?.reset_at 
+        ? (details.reset_at * 1000 - Date.now()) 
+        : 1000;
+      await sleep(retryAfter);
+      return safeApiCall(apiFunction);
+    }
+    
+    if (code >= 40000 && code < 41000) {
+      // 客户端参数错误：记录并抛出
+      console.error(`Parameter error: ${message}`, details);
+      throw new ValidationError(message, details);
+    }
+    
+    if (code >= 40400 && code < 40500) {
+      // 资源未找到
+      console.warn(`Resource not found: ${message}`);
+      return null;
+    }
+    
+    if (code >= 50000) {
+      // 服务器错误：记录并重试
+      console.error(`Server error: ${message}`, details);
+      await sleep(1000);
+      return safeApiCall(apiFunction);
+    }
+    
+    // 未知错误
+    throw error;
+  }
+}
+
+// 使用示例
+const tokenInfo = await safeApiCall(() => 
+  client.token.getToken('sol', 'TOKEN_ADDRESS')
+);
+```
+
+---
+
+## GraphQL API 錯誤
+
+GraphQL 查詢的錯誤透過標準 `errors` 陣列返回。Credit 消耗資訊在 `extensions.credits` 中報告：
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTradesRecord'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ],
+  "extensions": {
+    "credits": {
+      "total": 0,
+      "cubes": []
+    }
+  }
+}
+```
+
+| 場景 | 行為 |
+|:-----|:-----|
+| 無效查詢（語法/驗證錯誤） | `errors` 陣列填充，`data` 為 null，不扣費 |
+| 成功查詢 | `data` 填充，`extensions.credits.total` 顯示消耗的 CU |
+| Credit 額度超限 | 查詢可能被拒絕（取決於計費計劃），檢查 `extensions.credits` |
+
+詳見 [GraphQL 計費與額度](/zh-Hant/graphql/billing/graphql-billing)瞭解完整的 Credit 計算公式。
+
+---
+
+## WebSocket 錯誤
+
+WebSocket 連線使用端點 `wss://realtime-dex.chainstream.io/connection/websocket`，透過 `?token=` 引數認證。
+
+| 場景 | 行為 |
+|:-----|:-----|
+| 無效 token | 握手階段連線被拒絕 |
+| Token 過期 | 連線斷開；使用新 token 重連 |
+| 網路中斷 | 客戶端應實現指數退避自動重連 |
+| 訂閱無效頻道 | WebSocket 幀返回錯誤訊息 |
+
+<Tip>
+TypeScript SDK（`@chainstream-io/sdk`）會自動處理 WebSocket 重連。如果使用原生 WebSocket 客戶端，建議實現指數退避重連（1s、2s、4s、8s...）。
+</Tip>
+
+詳見 [WebSocket API 參考](/zh-Hant/api-reference/endpoint/websocket/api) 和 [超時與心跳](/zh-Hant/api-reference/endpoint/websocket/timeouts-and-heartbeats)瞭解連線管理詳情。
+
+---
+
+## 獲取幫助
+
+如果遇到無法解決的錯誤：
+
+<CardGroup cols={2}>
+  <Card title="技術支援" icon="envelope" href="mailto:support@chainstream.io">
+    傳送郵件並附上錯誤碼和時間戳
+  </Card>
+  <Card title="Discord 社群" icon="discord" href="https://discord.gg/quhPXEkJ">
+    加入社群獲取幫助
+  </Card>
+</CardGroup>
+
+<Note>
+報告問題時，請提供完整的錯誤響應（包括 `code`、`timestamp`、`message` 和 `details`）以便我們快速定位問題。
+</Note>

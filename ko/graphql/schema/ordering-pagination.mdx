@@ -1,0 +1,252 @@
+---
+title: "정렬 & 페이지네이션"
+description: "orderBy 열거형으로 쿼리 결과를 정렬하고 limit으로 페이지네이션 — 명명 규칙, 기본값, 오프셋 기반 페이지네이션"
+icon: "arrow-down-1-9"
+---
+
+## orderBy 열거형
+
+각 Cube는 모든 정렬 가능한 디멘션에 대해 ASC와 DESC 변형을 가진 `{Cube}OrderBy` 열거형을 생성합니다. 명명 규칙은 디멘션 경로를 언더스코어로 연결합니다:
+
+```
+{DimensionGroup}_{DimensionField}_ASC
+{DimensionGroup}_{DimensionField}_DESC
+```
+
+중첩된 디멘션의 경우 각 레벨이 연결됩니다:
+
+```
+Trade_Buy_Amount_ASC
+Trade_Buy_PriceInUSD_DESC
+Block_Time_ASC
+```
+
+### 주요 orderBy 값
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| 열거형 값 | Cube | 설명 |
+|:-----------|:--------|:------------|
+| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 오래된 순 |
+| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 최신 순 |
+| `Interval_Time_Start_ASC` | Pairs, Tokens | 오래된 순 (인터벌 시작 시간) |
+| `Interval_Time_Start_DESC` | Pairs, Tokens | 최신 순 (인터벌 시작 시간) |
+| `Trade_Buy_Amount_DESC` | DEXTrades | 최대 매수 금액 순 |
+| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | 최고 USD 가격 순 |
+| `Transfer_AmountInUSD_DESC` | Transfers | 최대 USD 전송 순 |
+| `LatestBalanceUSD_DESC` | TokenHolders | 최대 홀더 순 |
+| `BuyVolumeUSDState_DESC` | WalletTokenPnL | 최대 매수 거래량 순 |
+
+</div>
+
+<Tip>
+[GraphQL IDE](https://ide.chainstream.io) 자동 완성을 사용하여 Cube에 사용 가능한 모든 `orderBy` 값을 확인하세요 — `orderBy:`를 입력하면 IDE가 전체 열거형을 표시합니다.
+</Tip>
+
+### 사용법
+
+`orderBy` 인자에 단일 열거형 값을 전달합니다:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade { Buy { Amount PriceInUSD } }
+  }
+}
+```
+
+<Note>
+`orderBy`는 **단일** 열거형 값을 받습니다. 다중 컬럼 정렬은 지원되지 않습니다 — 쿼리는 한 번에 하나의 디멘션으로 정렬됩니다.
+</Note>
+
+---
+
+## limit 인자
+
+`limit` 인자는 반환되는 행 수를 제어하고 오프셋 기반 페이지네이션을 지원합니다:
+
+```graphql
+input LimitInput {
+  count: Int   # 반환할 행 수
+  offset: Int  # 건너뛸 행 수
+}
+```
+
+### 기본값 및 최대값
+
+각 Cube에는 `limit` 인자를 생략할 때 적용되는 **기본** 제한과 **최대** 상한이 있습니다:
+
+| Cube | 기본 `count` | 최대 `count` |
+|:-----|:----------------|:----------------|
+| DEXTrades | 25 | 10,000 |
+| Transfers | 25 | 10,000 |
+| BalanceUpdates | 25 | 10,000 |
+| DEXPools | 25 | 10,000 |
+| TokenSupplyUpdates | 25 | 10,000 |
+| Pairs | 25 | 10,000 |
+| Tokens | 25 | 10,000 |
+| DEXPoolEvents | 25 | 10,000 |
+| TokenHolders | 25 | 10,000 |
+| WalletTokenPnL | 25 | 10,000 |
+
+<Info>
+최대값을 초과하는 `count`를 요청하면 서버가 자동으로 최대값으로 제한합니다.
+</Info>
+
+---
+
+## 오프셋 기반 페이지네이션
+
+`offset`을 사용하여 결과 세트를 페이지네이션합니다. 패턴은 간단합니다:
+
+- **1 페이지**: `limit: { count: 50, offset: 0 }`
+- **2 페이지**: `limit: { count: 50, offset: 50 }`
+- **3 페이지**: `limit: { count: 50, offset: 100 }`
+
+### 예제: 토큰 홀더 페이지네이션
+
+<Tabs>
+  <Tab title="1 페이지">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 0 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+  <Tab title="2 페이지">
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 20, offset: 20 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### 페이지네이션 팁
+
+<AccordionGroup>
+  <Accordion title="페이지네이션 시 항상 orderBy 사용">
+    안정적인 정렬 순서 없이는 행이 페이지 간에 이동할 수 있습니다. 결정론적 순서를 생성하는 `orderBy`와 항상 `limit`을 함께 사용하세요.
+  </Accordion>
+  <Accordion title="깊은 오프셋 피하기">
+    큰 `offset` 값(예: 50,000+)은 데이터베이스가 행을 스캔하고 건너뛰어야 하므로 성능이 저하될 수 있습니다. 매우 큰 데이터셋의 경우 깊은 페이지네이션 대신 `where` 필터로 쿼리를 좁히세요.
+  </Accordion>
+  <Accordion title="count로 결과 끝 감지">
+    한 페이지가 요청한 `count`보다 적은 행을 반환하면 데이터셋의 끝에 도달한 것입니다. 또는 `count` 메트릭 필드를 사용하여 전체 행 수를 먼저 확인할 수 있습니다.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 실용 예제
+
+### 최근 대규모 트레이드
+
+매수 가치가 $10,000를 초과하는 Solana의 최근 DEX 트레이드 10건 조회:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    where: {
+      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
+    }
+    orderBy: Block_Time_DESC
+    limit: { count: 10 }
+  ) {
+    Block { Time }
+    Trade {
+      Buy {
+        Currency { MintAddress }
+        Amount
+        PriceInUSD
+      }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+### OHLC 캔들 — 최근 60분
+
+토큰의 1분 캔들을 시간순으로 정렬하여 조회:
+
+```graphql
+query {
+  Trading {
+    Pairs(
+      where: {
+        Token: { Address: { is: "So11111111111111111111111111111111111111112" } }
+        Market: { Network: { is: "sol" } }
+        Block: { Time: { after: "2025-03-27T09:00:00Z" } }
+      }
+      orderBy: Block_Time_ASC
+      limit: { count: 60 }
+    ) {
+      Block { Time }
+      Price {
+        Ohlc { Open High Low Close }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
+    }
+  }
+}
+```
+
+### 상위 50 토큰 홀더
+
+USD 잔액 기준 상위 50 홀더 조회:
+
+```graphql
+query {
+  TokenHolders(
+    network: sol
+    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+    orderBy: LatestBalanceUSD_DESC
+    limit: { count: 50 }
+  ) {
+    Holder { Address }
+    LatestBalance
+    LatestBalanceUSD
+    FirstSeen
+    LastSeen
+  }
+}
+```
+
+---
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="필터링" icon="filter" href="/ko/graphql/schema/filtering">
+    정렬과 필터를 결합하여 정밀한 분석 쿼리를 구축하세요.
+  </Card>
+  <Card title="메트릭 & 집계" icon="chart-simple" href="/ko/graphql/schema/metrics-aggregation">
+    정렬된 데이터를 count, sum, avg, min, max, uniq로 집계하세요.
+  </Card>
+</CardGroup>

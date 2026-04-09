@@ -1,0 +1,398 @@
+---
+title: "MCP 工具參考"
+description: "ChainStream MCP Server 所有 17 個 MCP 工具的完整參考。"
+icon: "wrench"
+---
+
+ChainStream MCP Server 暴露 **17 個工具**，涵蓋代幣分析、錢包畫像、DEX 交易、市場趨勢和區塊鏈操作。無論使用**雲端端點**（`https://mcp.chainstream.io/mcp`）還是 **npm 包**（`@chainstream-io/mcp`），均為同一套 17 個工具。
+
+---
+
+## 工具（17）
+
+### 代幣工具（5）
+
+#### `tokens_search`
+
+按名稱、符號或合約地址在所有支援鏈上搜尋代幣。返回排名靠前的匹配項，含名稱、符號、鏈、價格、24 小時漲跌與市值。使用者僅提到代幣名稱時，應優先使用本工具。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `query` | string | 是 | — | 搜尋詞：代幣名稱、符號或合約地址 |
+| `chain` | string | 否 | — | 按鏈篩選（省略則搜全鏈） |
+| `limit` | number | 否 | `10` | 最大條數（1–50） |
+
+#### `tokens_analyze`
+
+綜合代幣分析：價格、成交量、持倉分佈、安全評估與流動性深度。評估任意代幣時的首選工具 —— 當使用者問「講講代幣 X」或「這個幣安全嗎」時使用。價格圖表請改用 `tokens_price_history`。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `address` | string | 是 | — | 代幣合約地址 |
+| `sections` | array | 否 | `["overview","metrics","holders","security"]` | 要包含的資料段。取值：`overview`、`metrics`、`holders`、`security`、`liquidity` |
+
+<Info>
+  此工具將多個 REST API 呼叫（代幣詳情、統計、市場資料、Top 持有者、安全審計）聚合為單次響應。
+</Info>
+
+#### `tokens_price_history`
+
+獲取用於圖表與技術分析的 OHLCV K 線資料。最多返回 100 根 K 線（開高低收、成交量）。日內分析可用 `1h` 或 `4h` 解析度，更長週期可用 `1d`。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `address` | string | 是 | — | 代幣合約地址 |
+| `resolution` | enum | 否 | `"1h"` | K 線週期：`1m`、`5m`、`15m`、`1h`、`4h`、`1d` |
+| `limit` | number | 否 | `50` | K 線數量（1–100） |
+
+#### `tokens_discover`
+
+按鏈上指標發現代幣。用於查詢滿足條件的代幣，例如「Solana 上高成交量代幣」或「漲幅最大的代幣」。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `sort_by` | enum | 否 | `"volume"` | 排序指標：`volume`、`price_change`、`trades`、`market_cap` |
+| `time_frame` | enum | 否 | `"24h"` | 時間視窗：`1h`、`4h`、`24h` |
+| `min_volume_usd` | number | 否 | — | 最低美元成交量 |
+| `limit` | number | 否 | `20` | 最大條數（1–50） |
+
+#### `tokens_compare`
+
+最多並排對比 5 個代幣。返回統一指標：價格、成交量、市值、持幣人數、24 小時漲跌。適用於使用者問「哪個更好」或需要對比選項時。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `tokens` | array | 是 | — | `{ chain, address }` 物件陣列（2–5 項） |
+
+---
+
+### 錢包工具（2）
+
+#### `wallets_profile`
+
+完整錢包畫像：當前代幣持倉與估值、已實現/未實現盈虧、總淨資產。當使用者問「這個錢包持有什麼」或「這錢包盈利如何」時使用。近期交易請改用 `wallets_activity`。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `address` | string | 是 | — | 錢包地址 |
+| `include` | array | 否 | `["holdings","pnl"]` | 資料段：`holdings`（代幣餘額）、`pnl`（盈虧）、`net_worth`（總價值） |
+
+<Info>
+  等同於託管端點上的 `wallet_get_balance` + `wallet_get_pnl` + `wallet_get_net_worth`。
+</Info>
+
+#### `wallets_activity`
+
+近期錢包活動：代幣轉賬與交易歷史。用於排查「這個錢包最近在做什麼」或可疑行為。組合與盈虧資料請用 `wallets_profile`。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `address` | string | 是 | — | 錢包地址 |
+| `limit` | number | 否 | `20` | 轉賬條數（1–50） |
+
+---
+
+### 市場工具（1）
+
+#### `market_trending`
+
+按分類獲取熱門代幣。`hot` = 成交最活躍，`new` = 新建立，`migrated` = 已從 launchpad 遷移到 DEX，`graduating` = 接近遷移閾值，`stocks` = 股票相關 meme 幣。預設鏈為 solana。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 否 | `"solana"` | 查詢的鏈 |
+| `category` | enum | 否 | `"hot"` | 熱門分類：`hot`、`new`、`migrated`、`graduating`、`stocks` |
+| `limit` | number | 否 | `20` | 最大條數（1–50） |
+
+---
+
+### DEX 工具（3）
+
+#### `dex_quote`
+
+獲取換幣報價：預計輸出數量、價格衝擊與手續費。只讀 —— 不會動賬。在呼叫 `dex_swap` 之前務必先呼叫本工具，向使用者展示將收到的數量並在執行前確認。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `dex` | string | 是 | — | DEX 協議（jupiter、raydium、pumpfun 等） |
+| `inputMint` | string | 是 | — | 輸入代幣地址 |
+| `outputMint` | string | 是 | — | 輸出代幣地址 |
+| `amount` | string | 是 | — | 輸入數量（最小單位） |
+| `slippage` | number | 是 | — | 滑點容忍度，百分比（0–100） |
+
+#### `dex_swap`
+
+在 DEX 上執行代幣兌換。**高風險** —— 會產生真實鏈上交易並轉移資金。務必先呼叫 `dex_quote` 並向使用者展示報價。僅在使用者明確確認後再呼叫本工具。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `dex` | string | 是 | — | DEX 協議 |
+| `userAddress` | string | 是 | — | 使用者錢包地址 |
+| `inputMint` | string | 是 | — | 輸入代幣地址 |
+| `outputMint` | string | 是 | — | 輸出代幣地址 |
+| `amount` | string | 是 | — | 輸入數量（最小單位） |
+| `slippage` | number | 是 | — | 滑點容忍度，百分比（0–100） |
+| `swapMode` | enum | 否 | `"ExactIn"` | 兌換模式：`ExactIn`、`ExactOut` |
+| `poolAddress` | string | 否 | — | 指定池地址 |
+| `priorityFee` | string | 否 | — | Solana 優先費 |
+
+<Warning>
+  會執行真實鏈上交易。MCP 客戶端應要求使用者明確確認。
+</Warning>
+
+#### `dex_create_token`
+
+在 launchpad 類 DEX（PumpFun、Raydium、Moonshot 等）上建立新代幣。**高風險** —— 會部署真實代幣合約。需要使用者確認。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `dex` | enum | 是 | — | Launchpad DEX：`raydium`、`pumpfun`、`moonshot`、`candy`、`launchpad` |
+| `userAddress` | string | 是 | — | 建立者錢包地址 |
+| `name` | string | 是 | — | 代幣名稱（最多 32 字元） |
+| `symbol` | string | 是 | — | 代幣符號（最多 10 字元） |
+| `uri` | string | 否 | — | 代幣後設資料 URI |
+| `image` | string | 否 | — | 代幣圖片 URL |
+| `priorityFee` | string | 否 | — | Solana 優先費 |
+
+<Warning>
+  會建立真實鏈上代幣。必須要求使用者明確確認。
+</Warning>
+
+---
+
+### 交易工具（2）
+
+#### `trading_backtest`
+
+用歷史資料回測交易策略。返回盈虧曲線、夏普比率、最大回撤與成交明細。當前開發中 —— 有結果時將透過進度通知推送。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `token` | string | 是 | — | 代幣地址 |
+| `strategy` | string | 是 | — | 策略描述或程式碼 |
+| `startTime` | number | 是 | — | 開始時間戳（Unix 秒） |
+| `endTime` | number | 是 | — | 結束時間戳（Unix 秒） |
+| `initialCapital` | number | 否 | `10000` | 起始資金（美元） |
+
+<Note>
+  本工具仍在開發中，當前返回包含所提交引數的佔位響應。
+</Note>
+
+#### `trading_execute`
+
+根據交易訊號在 DEX 上執行交易。**高風險** —— 會動用真實資金。需要使用者明確確認。若需更細控制兌換引數，可考慮直接使用 `dex_swap`。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `action` | enum | 是 | — | 交易動作：`buy`、`sell` |
+| `token` | string | 是 | — | 代幣地址 |
+| `amount` | string | 是 | — | 交易數量 |
+| `maxSlippage` | number | 否 | `3.0` | 最大滑點（百分比） |
+| `userAddress` | string | 是 | — | 使用者錢包地址 |
+
+<Warning>
+  會執行真實鏈上交易。MCP 客戶端應要求使用者明確確認。
+</Warning>
+
+<Note>
+  本工具仍在開發中，當前返回佔位響應。
+</Note>
+
+---
+
+### 成交工具（1）
+
+#### `trades_recent`
+
+獲取近期鏈上成交，可按代幣或錢包篩選。返回價格、數量、買賣雙方與時間戳等明細。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `tokenAddress` | string | 否 | — | 僅某代幣的成交 |
+| `walletAddress` | string | 否 | — | 僅某錢包相關成交 |
+| `limit` | number | 否 | `20` | 成交條數（1–50） |
+
+---
+
+### 基礎設施工具（3）
+
+#### `webhooks_manage`
+
+管理用於實時事件通知的 Webhook 端點。用 `list` 檢視已有 Webhook，`create` 新建訂閱，`delete` 刪除端點。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `action` | enum | 是 | — | 動作：`list`、`create`、`delete` |
+| `endpoint_id` | string | 否 | — | `delete` 時必填 |
+| `url` | string | 否 | — | Webhook URL（`create` 時必填） |
+| `events` | array | 否 | — | 訂閱的事件型別（`create` 時必填） |
+
+#### `blockchain_info`
+
+查詢支援的區塊鏈與可用 DEX 協議。當智慧體需要知道可用鏈或 DEX 時使用。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 否 | — | 指定鏈（省略則返回全部鏈） |
+
+#### `transaction_send`
+
+向區塊鏈廣播已簽名交易。**高風險** —— 提交後無法撤銷的真實交易。交易須已由使用者錢包完成簽名。
+
+| 引數 | 型別 | 必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `chain` | string | 是 | — | 區塊鏈標識 |
+| `signedTransaction` | string | 是 | — | 已簽名交易資料（base64 或 hex） |
+
+<Warning>
+  鏈上交易不可撤銷。請確保簽名與稽核流程正確。
+</Warning>
+
+---
+
+## REST API 覆蓋
+
+17 個 MCP 工具將多個 REST API 端點聚合為更高層級的操作。以下為底層 REST API 的對映參考。
+
+### Token（17 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `token_search` | 按名稱/符號/地址搜尋代幣 |
+| `token_get` | 代幣詳細資訊 |
+| `token_get_metadata` | 代幣後設資料（名稱、符號、Logo） |
+| `token_get_stats` | 交易統計 |
+| `token_get_price` | 當前價格 |
+| `token_get_prices` | 歷史價格 |
+| `token_get_candles` | K 線資料 |
+| `token_get_holders` | 持幣人數 |
+| `token_get_top_holders` | 大戶列表 |
+| `token_get_pools` | 流動性池 |
+| `token_get_security` | 安全/審計檢查 |
+| `token_get_creation` | 建立資訊（部署者、交易、時間） |
+| `token_get_mint_and_burn` | 鑄造/銷燬歷史 |
+| `token_list` | 帶篩選的分頁代幣列表 |
+| `token_get_traders_tag` | 交易者型別分佈 |
+| `token_get_liquidity_snapshots` | 歷史流動性 |
+| `token_dev_get_tokens` | 某開發者發行的全部代幣 |
+
+### Wallet（5 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `wallet_get_balance` | 代幣餘額 |
+| `wallet_get_balance_updates` | 餘額變動歷史 |
+| `wallet_get_pnl` | 盈虧指標 |
+| `wallet_calculate_pnl` | 指定區間盈虧 |
+| `wallet_get_stats` | 交易模式與活躍度 |
+
+### Trade（3 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `trade_get` | 成交記錄 |
+| `trade_get_activities` | 交易活動流 |
+| `trade_get_top_traders` | 頭部交易者 |
+
+### DexPool（2 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `dexpool_get` | 池資訊 |
+| `dexpool_get_snapshots` | 歷史池狀態 |
+
+### Ranking（5 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `ranking_get_hot_tokens` | 熱門代幣 |
+| `ranking_get_new_tokens` | 新建立代幣 |
+| `ranking_get_stocks` | 聯合曲線代幣 |
+| `ranking_get_final_stretch` | 臨近畢業代幣 |
+| `ranking_get_migrated` | 近期已畢業代幣 |
+
+### Blockchain（2 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `blockchain_list` | 支援的區塊鏈 |
+| `blockchain_get_latest_block` | 當前區塊資訊 |
+
+### DEX（5 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `dex_list` | 支援的 DEX |
+| `dex_get_quote` | 兌換報價 |
+| `dex_get_route` | 最優路徑 |
+| `dex_swap` | 執行兌換 |
+| `dex_create` | 建立未簽名兌換交易 |
+
+### DeFi / 代幣建立（3 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `pumpfun_create` | 在 Pump.fun 建立代幣 |
+| `moonshot_create` | 在 Moonshot 建立代幣 |
+| `moonshot_submit_create_token` | 提交 Moonshot 建立交易 |
+
+### Transaction（3 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `transaction_send` | 傳送已簽名交易 |
+| `transaction_get_gas_price` | 當前 Gas 價格 |
+| `transaction_estimate_gas_limit` | Gas 估算 |
+
+### RedPacket（4 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `redpacket_create` | 建立紅包 |
+| `redpacket_claim` | 領取獎勵 |
+| `redpacket_get` | 紅包詳情 |
+| `redpacket_get_claims` | 領取記錄 |
+
+### KYT 合規（7 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `kyt_register_transfer` | 登記交易以供風險評估 |
+| `kyt_get_transfer_summary` | 交易風險摘要 |
+| `kyt_get_transfer_exposures` | 交易中的風險實體 |
+| `kyt_get_transfer_alerts` | 風險告警 |
+| `kyt_register_withdrawal` | 登記提幣以供篩查 |
+| `kyt_register_address` | 登記地址以供監控 |
+| `kyt_get_address_risk` | 地址風險評估 |
+
+### Webhook（6 個工具）
+
+| 工具 | 說明 |
+|---|---|
+| `webhook_list_endpoints` | 列出端點 |
+| `webhook_create_endpoint` | 建立訂閱 |
+| `webhook_update_endpoint` | 修改配置 |
+| `webhook_delete_endpoint` | 刪除端點 |
+| `webhook_get_secret` | 獲取簽名金鑰 |
+| `webhook_rotate_secret` | 輪換金鑰 |
+
+---
+
+## 連線方式
+
+| 方式 | 端點 | 說明 |
+|------|------|------|
+| **雲端** | `https://mcp.chainstream.io/mcp` | 零安裝，同一套 17 個工具 |
+| **npm stdio** | `npx @chainstream-io/mcp` | 本地程序，適合 IDE 整合 |
+| **npm HTTP** | `chainstream-mcp --transport http` | 團隊伺服器、雲端部署 |

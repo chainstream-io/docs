@@ -1,0 +1,307 @@
+---
+title: "n8n 통합"
+sidebarTitle: "개요"
+description: "n8n-nodes-chainstream 커뮤니티 노드로 ChainStream을 n8n 워크플로 자동화에 연결합니다."
+icon: "arrows-split-up-and-left"
+---
+
+# n8n 통합
+
+`n8n-nodes-chainstream`은 ChainStream의 온체인 데이터를 [n8n](https://n8n.io) 워크플로 자동화에 직접 연결하는 커뮤니티 노드입니다. 코드를 작성하지 않고도 토큰 메타데이터를 조회하고, 거래를 모니터링하고, 지갑 활동을 추적할 수 있습니다.
+
+<Info>
+  **패키지:** `n8n-nodes-chainstream` v0.0.92 | **게시된 버전:** 63 | [n8n Creator Portal](https://n8n.io)에 등재
+</Info>
+
+## 설치
+
+1. n8n 인스턴스를 엽니다.
+2. **Settings > Community Nodes**로 이동합니다.
+3. **Install**을 클릭하고 다음을 입력합니다:
+
+```
+n8n-nodes-chainstream
+```
+
+4. 설치를 확인하고 필요시 n8n을 재시작합니다.
+
+## 인증
+
+이 노드는 ChainStream 대시보드에서 발급된 API 자격 증명으로 인증합니다.
+
+1. ChainStream 대시보드에서 **Settings > API Keys**로 이동합니다.
+2. 새 키 쌍을 생성합니다. 다음을 받게 됩니다:
+   - **API Client ID**
+   - **API Client Secret**
+3. n8n에서 **Credentials > New Credential > ChainStream API**로 이동합니다.
+4. Client ID와 Client Secret을 입력하고 저장합니다.
+
+```json
+{
+  "credentials": {
+    "chainstreamApi": {
+      "clientId": "cs_live_xxxxxxxxxxxxxxxx",
+      "clientSecret": "your_client_secret_here"
+    }
+  }
+}
+```
+
+## 지원 리소스 및 작업
+
+| 리소스 | 작업 |
+| ------ | ---- |
+| **Token** | 메타데이터 조회, 가격 조회, 보유자 목록, 유동성 조회, 보안 감사 실행, 발행/소각 이벤트 조회 |
+| **Trade** | 거래 목록, 활동 조회, 리더보드 조회 |
+| **Wallet** | 잔액 조회, PnL 조회, 활동 목록 |
+
+## 노드 구성
+
+아래는 토큰 메타데이터를 조회하는 n8n 노드 구성 예시입니다:
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getMetadata",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112"
+      },
+      "name": "ChainStream",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "chainstreamApi": {
+          "id": "1",
+          "name": "ChainStream API"
+        }
+      }
+    }
+  ]
+}
+```
+
+토큰 가격 데이터 조회:
+
+```json
+{
+  "parameters": {
+    "resource": "token",
+    "operation": "getPrice",
+    "chain": "solana",
+    "tokenAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "currency": "usd"
+  },
+  "name": "Get Token Price",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [450, 300]
+}
+```
+
+지갑 잔액 조회:
+
+```json
+{
+  "parameters": {
+    "resource": "wallet",
+    "operation": "getBalances",
+    "chain": "solana",
+    "walletAddress": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+  },
+  "name": "Get Wallet Balance",
+  "type": "n8n-nodes-chainstream.chainstream",
+  "typeVersion": 1,
+  "position": [650, 300]
+}
+```
+
+## 예시 워크플로
+
+### 1. 가격 알림 봇
+
+토큰 가격을 모니터링하고 임계값을 넘으면 Telegram 알림을 보냅니다.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "getPrice",
+        "chain": "solana",
+        "tokenAddress": "So11111111111111111111111111111111111111112",
+        "currency": "usd"
+      },
+      "name": "Get SOL Price",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.price }}",
+              "operation": "largerEqual",
+              "value2": 200
+            }
+          ]
+        }
+      },
+      "name": "Price Threshold",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "-100XXXXXXXXXX",
+        "text": "SOL price alert: ${{ $json.price }}"
+      },
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "position": [850, 200]
+    }
+  ]
+}
+```
+
+### 2. 포트폴리오 트래커
+
+스케줄에 따라 지갑 잔액을 조회하고 Google 스프레드시트에 행을 추가합니다.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getBalances",
+        "chain": "solana",
+        "walletAddress": "YOUR_WALLET_ADDRESS"
+      },
+      "name": "Fetch Balances",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_SHEET_ID",
+        "range": "Sheet1!A:D"
+      },
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 3. 고래 감시기
+
+대규모 지갑 활동을 감지하고 Slack 알림을 보냅니다.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "solana",
+        "walletAddress": "WHALE_WALLET_ADDRESS"
+      },
+      "name": "Whale Activity",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#whale-alerts",
+        "text": "Whale movement detected: {{ $json.type }} of {{ $json.amount }} {{ $json.token }}"
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+### 4. 컴플라이언스 스캐너
+
+새 입금이 도착하면 KYT(Know Your Transaction) 검사를 실행하고 의심스러운 활동을 플래그합니다.
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "wallet",
+        "operation": "getActivity",
+        "chain": "ethereum",
+        "walletAddress": "DEPOSIT_WALLET_ADDRESS",
+        "activityType": "deposit"
+      },
+      "name": "New Deposits",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "securityAudit",
+        "chain": "ethereum",
+        "tokenAddress": "={{ $json.tokenAddress }}"
+      },
+      "name": "KYT Check",
+      "type": "n8n-nodes-chainstream.chainstream",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.flagged }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Flagged?",
+      "type": "n8n-nodes-base.if",
+      "position": [650, 300]
+    }
+  ]
+}
+```
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="트리거 노드" icon="bolt" href="/ko/guides/integrations/n8n/trigger-node">
+    ChainStream 웹훅을 사용한 실시간 이벤트 기반 트리거를 설정합니다.
+  </Card>
+  <Card title="API 레퍼런스" icon="code" href="/api-reference">
+    이 노드를 구동하는 전체 ChainStream API를 살펴보세요.
+  </Card>
+</CardGroup>

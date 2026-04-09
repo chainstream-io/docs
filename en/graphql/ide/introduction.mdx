@@ -5,7 +5,7 @@ icon: "code"
 ---
 
 <Info>
-The ChainStream GraphQL IDE is a browser-based development environment purpose-built for writing, testing, and sharing GraphQL analytical queries across Solana, Ethereum, and BSC. No installation required — open the URL and start querying.
+The ChainStream GraphQL IDE is a browser-based development environment purpose-built for writing, testing, and sharing GraphQL analytical queries across Solana, Ethereum, BSC, and Polygon. No installation required — open the URL and start querying.
 </Info>
 
 <Card title="Open GraphQL IDE" icon="arrow-up-right-from-square" href="https://ide.chainstream.io">
@@ -20,14 +20,23 @@ The ChainStream GraphQL IDE is a browser-based development environment purpose-b
   <Card title="Monaco Editor" icon="pen-to-square">
     Full-featured code editor with GraphQL syntax highlighting, schema-driven autocomplete, and real-time error detection.
   </Card>
-  <Card title="Query Templates" icon="book-open">
-    19 built-in templates organized by chain and Cube — load, customize, and execute in seconds.
+  <Card title="Query Builder" icon="diagram-project">
+    Visual schema browser in the sidebar — explore Chain Groups, Cubes, fields, and filters without writing introspection queries.
   </Card>
-  <Card title="Save Queries" icon="bookmark">
-    Save frequently used queries locally with titles and tags for quick access later.
+  <Card title="Query Templates" icon="book-open">
+    Built-in templates organized by chain and Cube — load, customize, and execute in seconds.
+  </Card>
+  <Card title="Save & Multi-Tab" icon="bookmark">
+    Save queries locally with titles. Work on multiple queries in parallel with tabbed editing.
   </Card>
   <Card title="Code Export" icon="file-export">
-    Export your query as a ready-to-use code snippet in 8 languages: cURL, Python, JavaScript, Go, Rust, Ruby, PHP, and WebSocket.
+    Export your query as a ready-to-use code snippet in 7 languages: cURL, Python, JavaScript, Go, Rust, Ruby, and PHP.
+  </Card>
+  <Card title="AI Assistant" icon="wand-magic-sparkles">
+    Built-in AI assistant that can generate GraphQL queries from natural language descriptions and explain query results. Requires sign-in.
+  </Card>
+  <Card title="Share Queries" icon="share-nodes">
+    Generate a shareable URL for any query. Recipients can open it in the IDE with the query pre-loaded.
   </Card>
   <Card title="Status Bar" icon="chart-simple">
     Real-time feedback on request state, latency (ms), response size, and Credit Units consumed per query.
@@ -41,34 +50,38 @@ The ChainStream GraphQL IDE is a browser-based development environment purpose-b
 
 ## IDE Layout
 
-The IDE is organized into five regions:
+The IDE is organized into the following regions:
 
 ```
-┌──────────────────────────────────────────────────┐
-│  Toolbar  [▶ Execute] [Prettify] [Copy] [Merge]  │
-│           [Save Query] [Export Code]              │
-├────────────┬─────────────────────────────────────┤
-│            │                                     │
-│  Sidebar   │         Query Editor                │
-│            │                                     │
-│ ┌────────┐ │─────────────────────────────────────│
-│ │Queries │ │  Variables  │  Headers              │
-│ │Saved   │ │─────────────────────────────────────│
-│ └────────┘ │                                     │
-│            │         Results Panel               │
-│            │                                     │
-├────────────┴─────────────────────────────────────┤
-│  Status: Ready  │  120ms  │  2.4 KB  │  8 CU     │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  Toolbar  [▶ Execute] [Prettify] [Save] [Export] [Share] │
+│           [Endpoint URL input]                           │
+├──────┬─────────────────────────────────────┬─────────────┤
+│      │  Tab Bar [Query 1] [Query 2] [+]   │             │
+│      │─────────────────────────────────────│             │
+│      │                                     │     AI      │
+│ Side │         Query Editor                │  Assistant  │
+│ bar  │                                     │    Panel    │
+│      │─────────────────────────────────────│             │
+│ ┌──┐ │  Variables  │  Headers              │             │
+│ │Q │ │─────────────────────────────────────│             │
+│ │S │ │                                     │             │
+│ └──┘ │         Results Panel               │             │
+│      │                                     │             │
+├──────┴─────────────────────────────────────┴─────────────┤
+│  Status: Ready  │  120ms  │  2.4 KB  │  8 CU             │
+└──────────────────────────────────────────────────────────┘
 ```
 
 | Region | Description |
 |:--|:--|
-| **Toolbar** | Execute, Prettify, Copy, Merge, Save Query, and Export Code buttons |
-| **Sidebar** | Two tabs — **Queries** (built-in templates by chain → Cube) and **Saved** (your locally saved queries) |
+| **Toolbar** | Execute, Prettify, Save/Fork, Export Code, Share, and endpoint URL input |
+| **Sidebar** | **Query Builder** — visual schema tree (Chain Groups → Cubes → fields); **Queries** — built-in templates by chain; **Saved** — your locally saved queries |
+| **Tab Bar** | Multi-tab query editing — each tab maintains its own query, variables, and headers |
 | **Query Editor** | Monaco-powered GraphQL editor with autocomplete and error markers |
 | **Variables / Headers** | Bottom panels for JSON variables and HTTP headers (Headers shown by default with `X-API-KEY`) |
 | **Results Panel** | Syntax-highlighted JSON response from the GraphQL endpoint |
+| **AI Assistant** | Right-side panel for natural language query generation and result explanation (requires sign-in) |
 | **Status Bar** | Request state, latency, response size, and Credit Units (CU) consumed |
 
 ---
@@ -80,12 +93,17 @@ The IDE is organized into five regions:
     Navigate to [ide.chainstream.io](https://ide.chainstream.io) in your browser.
   </Step>
   <Step title="Set your API Key">
-    Click the **Headers** panel at the bottom of the editor and enter your API Key:
+    You can set your API key in two ways:
+
+    **Option A — Manual entry**: Click the **Headers** panel at the bottom of the editor and enter:
     ```json
     {
       "X-API-KEY": "your_api_key"
     }
     ```
+
+    **Option B — Sign in**: Click **Sign In** in the top bar and log in with your ChainStream account. Your API keys will be automatically loaded and selectable from the key dropdown.
+
     <Tip>
     Don't have a key yet? Create one in the [ChainStream Dashboard](https://www.chainstream.io/dashboard) → **Applications** → **Create New App**.
     </Tip>
@@ -103,6 +121,37 @@ The IDE is organized into five regions:
 
 ---
 
+## Query Builder (Schema Browser)
+
+The sidebar includes a visual **Query Builder** that replaces the standard GraphiQL documentation panel. It displays the full schema as an interactive tree:
+
+- **Chain Groups** (EVM, Solana, Trading) at the top level
+- **Cubes** within each group
+- **Fields**, **filters**, and **ordering options** for each Cube
+
+Click any field to insert it into your query. This is powered by the backend's `/ide/builder-schema` endpoint, which provides a structured representation of the entire schema.
+
+---
+
+## AI Assistant
+
+The AI Assistant panel (right side) helps you:
+
+- **Generate queries** from natural language descriptions (e.g., "Get the top 10 Solana DEX trades by volume today")
+- **Explain results** — paste a response and get a plain-language summary
+
+<Note>
+The AI Assistant requires signing in with your ChainStream account. It uses the same API key as your current IDE session.
+</Note>
+
+---
+
+## Share Queries
+
+Generate a shareable URL for any query by clicking the **Share** button in the toolbar. The URL encodes the query, variables, and network selection using a `#q=` fragment. Recipients can open the link to see the query pre-loaded in their IDE.
+
+---
+
 ## Learn More
 
 <CardGroup cols={2}>
@@ -110,12 +159,12 @@ The IDE is organized into five regions:
     Explore the Monaco editor, panels, toolbar, keyboard shortcuts, and status bar.
   </Card>
   <Card title="Query Templates" icon="book-open" href="/en/graphql/ide/query-templates">
-    Browse the full catalog of 19 built-in templates across 12 Cubes.
+    Browse the full catalog of built-in templates across all Cubes.
   </Card>
   <Card title="Saved Queries" icon="bookmark" href="/en/graphql/ide/saved-queries">
     Save, organize, and manage your frequently used queries.
   </Card>
   <Card title="Code Export" icon="file-export" href="/en/graphql/ide/code-export">
-    Generate ready-to-use code snippets in 8 programming languages.
+    Generate ready-to-use code snippets in 7 programming languages.
   </Card>
 </CardGroup>

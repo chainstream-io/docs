@@ -1,0 +1,185 @@
+---
+title: "Dataset 与 Aggregates"
+description: "使用 dataset 和 aggregates 参数控制数据源范围与预聚合行为"
+icon: "database"
+---
+
+## 概述
+
+ChainStream GraphQL 中每个 Chain Group 都接受两个可选参数，控制**查询底层命中哪些表**。你可以据此在数据新鲜度、查询速度与数据完整性之间做出权衡。
+
+---
+
+## Dataset 参数
+
+`dataset` 参数控制查询的**数据时间范围**。它决定查询是命中实时表、归档表、还是二者兼查。
+
+| 值 | 说明 | 典型使用场景 |
+|:---|:-----|:-------------|
+| `combined` | 同时查询实时和归档数据 **（默认）** | 需要全量范围的通用查询 |
+| `realtime` | 仅近期数据（约最近 24 小时） | 监控仪表盘、最新成交、实时告警 |
+| `archive` | 仅历史数据（至保留期限 TTL） | 历史分析、数据回灌、趋势研究 |
+
+### 用法
+
+```graphql
+query {
+  Solana(dataset: realtime) {
+    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+      Block { Time }
+      Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
+    }
+  }
+}
+```
+
+```graphql
+query {
+  EVM(network: eth, dataset: archive) {
+    Transfers(
+      where: { Block: { Time: { after: "2026-01-01T00:00:00Z", before: "2026-02-01T00:00:00Z" } } }
+      limit: {count: 100}
+    ) {
+      Block { Time }
+      Transfer { Currency { MintAddress } Amount AmountInUSD }
+    }
+  }
+}
+```
+
+### 历史数据回灌
+
+在构建数据管道或从停机中恢复时，可使用 `dataset: archive` 配合时间范围过滤来回灌历史数据：
+
+1. 记录最后处理的时间戳或区块高度
+2. 以 `dataset: archive` 查询从上次断点到当前时间的数据
+3. 处理回灌数据
+4. 切换到 `dataset: realtime` 进行持续监控
+
+```graphql
+query BackfillTrades {
+  Solana(dataset: archive) {
+    DEXTrades(
+      where: {
+        Block: {
+          Time: {
+            after: "2026-04-01T00:00:00Z"
+            before: "2026-04-02T00:00:00Z"
+          }
+        }
+      }
+      limit: {count: 10000}
+      orderBy: Block_Time_ASC
+    ) {
+      Block { Time Slot }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+      }
+    }
+  }
+}
+```
+
+### 不支持 Dataset 的表
+
+部分 Cube 无论 `dataset` 取何值都查询同一张表，包括：
+
+- **DWS Cube**：`TokenHolders`、`WalletTokenPnL`、`DEXPools` — 这些代表当前状态快照
+- **特殊表**：`TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
+
+对这些 Cube，`dataset` 会被静默忽略。
+
+---
+
+## Aggregates 参数
+
+`aggregates` 参数控制查询是否使用**预聚合物化视图**（DWM 层）替代原始明细表（DWD 层）。预聚合表包含预计算的 rollup（通常按分钟），查询速度显著更快。
+
+| 值 | 说明 | 典型使用场景 |
+|:---|:-----|:-------------|
+| `yes` | 优先使用预聚合表 **（默认行为）** | 大多数分析查询 |
+| `no` | 仅使用原始明细表 | 需要逐事件粒度时 |
+| `only` | 仅使用预聚合表 | 最高查询速度，接受有限字段集 |
+
+### 用法
+
+```graphql
+query {
+  EVM(network: eth, aggregates: only) {
+    Pairs(
+      where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
+      limit: {count: 100}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Price { Ohlc { Open High Low Close } }
+      Volume { Usd }
+    }
+  }
+}
+```
+
+### 各模式适用场景
+
+| 场景 | 推荐值 | 原因 |
+|:-----|:-------|:-----|
+| 构建 OHLC K 线图 | `aggregates: only` | 预计算 K 线数据，最快响应 |
+| 随时间的成交量趋势 | `aggregates: yes` | 利用预聚合成交量统计 |
+| 单笔成交分析 | `aggregates: no` | 需要 rollup 无法提供的逐事件细节 |
+| 统计独立交易者数 | `aggregates: yes` | 预计算的独立计数可用 |
+
+---
+
+## 组合使用
+
+可以同时使用 `dataset` 和 `aggregates`：
+
+```graphql
+query {
+  Trading(dataset: realtime, aggregates: yes) {
+    Tokens(
+      where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
+      limit: {count: 60}
+      orderBy: Block_Time_DESC
+    ) {
+      Interval { Time }
+      Volume { Usd BuyVolumeUSD SellVolumeUSD }
+      Stats { TradeCount UniqueBuyers UniqueSellers }
+    }
+  }
+}
+```
+
+该查询使用实时数据与预聚合表，以最高速度获取最近约 60 分钟的跨链代币成交统计。
+
+---
+
+## 性能考量
+
+<CardGroup cols={2}>
+  <Card title="仪表盘用 realtime" icon="gauge-high">
+    `dataset: realtime` 查询更小的表分区，在监控场景下可获得更快的响应时间。
+  </Card>
+  <Card title="分析用 aggregates" icon="chart-line">
+    `aggregates: yes` 或 `only` 利用预计算 rollup，比扫描原始事件表快数个量级。
+  </Card>
+</CardGroup>
+
+<Tip>
+要获得最快的 OHLC 或成交量查询，组合使用 `dataset: realtime` 与 `aggregates: only`，命中最小、最优化的数据切片。
+</Tip>
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="Schema 概览" icon="sitemap" href="/cn/graphql/schema/schema-overview">
+    了解 dataset 和 aggregates 如何融入整体查询结构。
+  </Card>
+  <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
+    查看哪些 Cube 支持 dataset 切换。
+  </Card>
+</CardGroup>

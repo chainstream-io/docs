@@ -1,0 +1,578 @@
+---
+title: "計費與配額"
+description: "瞭解 ChainStream 的計費模型和配額管理"
+icon: "credit-card"
+---
+
+## 概述
+
+ChainStream 採用 **Unit 計費模型**。不同 API 消耗不同數量的 Unit，你可以選擇適合業務需求的套餐。
+
+---
+
+## 計費模型
+
+### 套餐型別
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="gift">
+    **$0 / 月**
+
+    - 30K Units/月
+    - 無超量
+    - 適用於開發、POC
+  </Card>
+
+  <Card title="Starter" icon="rocket">
+    **$199 / 月**
+
+    - 10M Units/月
+    - 超量：$12.9/百萬
+    - 適用於小型專案、MVP
+  </Card>
+
+  <Card title="Pro" icon="bolt">
+    **$699 / 月**
+
+    - 50M Units/月
+    - 超量：$9.9/百萬
+    - 適用於生產環境、中等流量
+  </Card>
+
+  <Card title="Enterprise" icon="building">
+    **$1,699 / 月**
+
+    - 200M Units/月
+    - 超量：$6.9/百萬
+    - 適用於大型企業、高併發
+  </Card>
+
+  <Card title="Custom" icon="handshake">
+    **定製價格**
+
+    - 自定義 Units 配額
+    - 自定義超量費率
+    - 私有部署、專屬 SLA
+  </Card>
+</CardGroup>
+
+<Tip>
+所有套餐在配額耗盡時將被阻止（返回 403 錯誤）。付費套餐使用者可在 Dashboard 購買額外配額以恢復服務。
+</Tip>
+
+### 套餐選擇指南
+
+<AccordionGroup>
+  <Accordion title="Free — 適用於開發與測試">
+    **使用場景：**
+    - 本地開發與除錯
+    - 功能驗證與演示
+    - 學習和評估 ChainStream API
+
+    **典型用量估算：**
+    - 每天 300 次價格查詢 → 約 9,000 Units/月
+
+    **限制：**
+    - 資料可能有 1-2 秒延遲
+    - 無 SLA 保證
+    - 配額耗盡後無法繼續呼叫
+  </Accordion>
+
+  <Accordion title="Starter — 適用於小型專案">
+    **使用場景：**
+    - 個人開發者的小型 dApp
+    - 交易機器人原型
+    - 小型行情展示網站
+
+    **典型用量估算：**
+    - 行情看板（10 個代幣，每分鐘重新整理）→ 約 43,200 Units/月
+    - 小型交易機器人（每秒 1 次查詢）→ 約 86,400 Units/月（單代幣）
+
+    **示例場景：**
+    構建一個 Solana 代幣行情網站，展示 20 個熱門代幣，每 30 秒重新整理：
+    ```
+    20 代币 × 2 次/分 × 60 分 × 24 小时 × 30 天 = 1,728,000 请求
+    按 1 Unit/请求 = 1,728,000 Units/月
+    ```
+    此場景推薦 Pro 套餐。
+  </Accordion>
+
+  <Accordion title="Pro — 適用於生產環境">
+    **使用場景：**
+    - 中小型交易所或錢包的資料需求
+    - 專業交易工具
+    - 需要 KYT/KYA 風控的業務
+
+    **典型用量估算：**
+    - 中型行情平臺（100 個代幣，實時 WebSocket）→ 約 500,000 Units/月
+    - 充值風控（每天 1000 次 KYT 檢查）→ 約 150,000 Units/月
+
+    **示例場景：**
+    運營一個小型交易所，需要：
+    - 行情資料：50 個交易對，WebSocket 實時推送
+    - 充值風控：每天 500 筆充值，每筆做 KYT 檢查
+    ```
+    WebSocket: 50 × 0.1 Unit/消息 × 86400 秒 × 30 天 ≈ 12,960,000 消息 = 1,296,000 Units
+    KYT: 500 × 5 Units × 30 天 = 75,000 Units
+    合计：约 1,371,000 Units/月
+    ```
+    此場景推薦 Pro 套餐 + 超量預算，或聯絡銷售獲取 Enterprise 報價。
+  </Accordion>
+
+  <Accordion title="Enterprise — 適用於大型企業">
+    **使用場景：**
+    - 大型交易所
+    - 機構量化交易
+    - 私有部署或定製 SLA 需求
+
+    **包含：**
+    - 無限 API 呼叫
+    - 專屬技術支援
+    - 定製 SLA（99.99%+）
+    - 可選私有部署
+
+    聯絡銷售獲取報價。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Unit 計算
+
+### 什麼是 Unit
+
+Unit 是 ChainStream 的計費單位。不同 API 消耗不同數量的 Unit — 越複雜的 API 消耗越多。
+
+### Data API 消耗
+
+Unit 成本按計算複雜度分層。簡單查詢成本較低；聚合密集型和鏈上執行端點成本較高。
+
+<Tabs>
+  <Tab title="Token API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 代幣搜尋 | 0.25 | `GET /v2/token/search` |
+    | 代幣詳情 | 1.00 | `GET /v2/token/{chain}/{tokenAddress}` |
+    | 批次詳情 | 0.75 | `GET /v2/token/{chain}/multi` |
+    | 代幣後設資料 | 0.05 | `GET /v2/token/{chain}/{tokenAddress}/metadata` |
+    | 批次後設資料 | 0.05 | `GET /v2/token/{chain}/metadata/multi` |
+    | 代幣價格 | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/price` |
+    | 歷史價格 | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/prices` |
+    | 市場資料 | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/marketData` |
+    | 批次市場資料 | 0.10 | `GET /v2/token/{chain}/marketData/multi` |
+    | 代幣統計 | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/stats` |
+    | 批次統計 | 2.50 | `GET /v2/token/{chain}/stats/multi` |
+    | K 線 (OHLCV) | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/candles` |
+    | 交易對 K 線 | 0.25 | `GET /v2/token/{chain}/pair/{pair}/candles` |
+    | 池子 K 線 | 0.25 | `GET /v2/token/{chain}/pool/{poolAddress}/candles` |
+    | 持有者 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders` |
+    | 批次持有者 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/holders/multi` |
+    | Top 持有者 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/topHolders` |
+    | 流動性池 | 2.50 | `GET /v2/token/{chain}/{tokenAddress}/pools` |
+    | 安全審計 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/security` |
+    | 建立資訊 | 0.10 | `GET /v2/token/{chain}/{tokenAddress}/creation` |
+    | 鑄造/銷燬 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/mintAndBurn` |
+    | 按標籤交易者 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/traders/{tag}` |
+    | 流動性快照 | 0.50 | `GET /v2/token/{chain}/{tokenAddress}/liquiditySnapshots` |
+    | 代幣列表 | 0.05 | `GET /v2/token/{chain}/list` |
+    | 開發者代幣 | 0.50 | `GET /v2/token/{chain}/dev/{devAddress}/tokens` |
+    | 轉賬總計 | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfer-total` |
+    | 轉賬記錄 | 0.25 | `GET /v2/token/{chain}/{tokenAddress}/transfers` |
+  </Tab>
+  <Tab title="Wallet API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 代幣餘額 | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/tokens-balance` |
+    | 餘額變動 | 0.50 | `GET /v2/wallet/{chain}/{walletAddress}/balance-updates` |
+    | 盈虧 (PnL) | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl` |
+    | 按代幣盈虧 | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-by-token` |
+    | 盈虧詳情 | 1.50 | `GET /v2/wallet/{chain}/{walletAddress}/pnl-details` |
+    | 計算盈虧 | 1.50 | `POST /v2/wallet/{chain}/{walletAddress}/calculate-pnl` |
+    | 淨值 | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth` |
+    | 淨值圖表 | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-chart` |
+    | 淨值詳情 | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth-details` |
+    | 淨值代幣 | 1.00 | `GET /v2/wallet/{chain}/{walletAddress}/net-worth/tokens` |
+    | 轉賬記錄 | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfers` |
+    | 轉賬總計 | 0.25 | `GET /v2/wallet/{chain}/{walletAddress}/transfer-total` |
+    | 首筆交易 | 0.10 | `GET /v2/wallet/{chain}/first-tx` |
+    | 淨值彙總 | 1.00 | `GET /v2/wallet/{chain}/net-worth-summary` |
+    | 按錢包盈虧 | 1.00 | `GET /v2/wallet/{chain}/pnl-by-wallet` |
+    | 新增關注 | 0.05 | `POST /v2/watchlist/{chain}/{walletAddress}` |
+  </Tab>
+  <Tab title="Trade API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 交易記錄 | 0.25 | `GET /v2/trade/{chain}` |
+    | 交易活動 | 0.25 | `GET /v2/trade/{chain}/activities` |
+    | Top 交易者 | 0.50 | `GET /v2/trade/{chain}/top-traders` |
+    | 盈虧排行 | 0.50 | `GET /v2/trade/{chain}/trader-gainers-losers` |
+  </Tab>
+  <Tab title="Pool API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 池子資訊 | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}` |
+    | 池子快照 | 0.50 | `GET /v2/dexpools/{chain}/{poolAddress}/snapshots` |
+  </Tab>
+  <Tab title="Ranking API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 熱門代幣 | 0.25 | `GET /v2/ranking/{chain}/hotTokens/{duration}` |
+    | 新代幣 | 0.25 | `GET /v2/ranking/{chain}/newTokens` |
+    | 已遷移代幣 | 0.25 | `GET /v2/ranking/{chain}/migrated` |
+    | 即將畢業 | 0.25 | `GET /v2/ranking/{chain}/finalStretch` |
+    | 股票代幣 | 0.25 | `GET /v2/ranking/{chain}/stocks` |
+  </Tab>
+  <Tab title="DEX / DeFi API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 支援的 DEX | 0.05 | `GET /v2/dex` |
+    | 報價 | 0.25 | `GET /v2/dex/{chain}/quote` |
+    | 路由 | 0.25 | `POST /v2/dex/{chain}/route` |
+    | 建立代幣 | 5.00 | `POST /v2/dex/{chain}/create` |
+    | 執行兌換 | 5.00 | `POST /v2/dex/{chain}/swap` |
+    | 任務狀態 | 0.05 | `GET /v2/job/{id}` |
+    | 任務流式 | 0.05 | `GET /v2/job/{id}/streaming` |
+  </Tab>
+  <Tab title="Blockchain / Tx API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 支援的鏈 | 0.05 | `GET /v2/blockchain` |
+    | 最新區塊 | 0.05 | `GET /v2/blockchain/{chain}/latest_block` |
+    | Gas 價格 | 0.10 | `GET /v2/transaction/{chain}/gas-price` |
+    | Gas 估算 | 0.25 | `POST /v2/transaction/{chain}/estimate-gas-limit` |
+    | 傳送交易 | 5.00 | `POST /v2/transaction/{chain}/send` |
+  </Tab>
+  <Tab title="Webhook API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 列出端點 | 0.05 | `GET /v2/webhook/endpoint` |
+    | 建立端點 | 0.05 | `POST /v2/webhook/endpoint` |
+    | 獲取端點 | 0.05 | `GET /v2/webhook/endpoint/{id}` |
+    | 更新端點 | 0.05 | `PATCH /v2/webhook/endpoint` |
+    | 刪除端點 | 0.05 | `DELETE /v2/webhook/endpoint/{id}` |
+    | 獲取金鑰 | 0.05 | `GET /v2/webhook/endpoint/{id}/secret` |
+    | 輪換金鑰 | 0.10 | `POST /v2/webhook/endpoint/{id}/secret/rotate` |
+  </Tab>
+  <Tab title="RedPacket API">
+    | API | CU | 端點 |
+    |:--|:--|:--|
+    | 列出紅包 | 0.05 | `GET /v2/redpacket` |
+    | 獲取紅包 | 0.05 | `GET /v2/redpacket/{id}` |
+    | 領取記錄 | 0.05 | `GET /v2/redpacket/{id}/claims` |
+    | 錢包領取 | 0.05 | `GET /v2/redpacket/wallet/{address}/claims` |
+    | 錢包紅包 | 0.05 | `GET /v2/redpacket/wallet/{address}/redpackets` |
+    | 建立紅包 | 5.00 | `POST /v2/redpacket/{chain}/create` |
+    | 領取紅包 | 5.00 | `POST /v2/redpacket/{chain}/claim` |
+    | 傳送紅包 | 5.00 | `POST /v2/redpacket/{chain}/send` |
+  </Tab>
+</Tabs>
+
+### CU 定價層級
+
+| 層級 | CU 成本 | 說明 | 示例 |
+|:--|:--|:--|:--|
+| Tier 1 | 0.05 | 後設資料、列表、簡單查詢 | 代幣列表、鏈資訊、Webhook CRUD、任務狀態 |
+| Tier 2 | 0.10 | 單欄位查詢 | 價格、市場資料、建立資訊、Gas 價格 |
+| Tier 3 | 0.25 | 搜尋、交易、排行、K 線 | 代幣搜尋、OHLCV、交易活動、排行榜 |
+| Tier 4 | 0.50 | 持有者、安全、快照 | 持有者、安全審計、池子快照、Top 交易者 |
+| Tier 5 | 1.00 | 完整畫像、盈虧、淨值 | 代幣詳情、錢包盈虧、淨值 |
+| Tier 6 | 1.50 | 計算密集型分析 | 盈虧詳情、計算盈虧 |
+| Tier 7 | 2.50 | 聚合密集型 | 代幣統計、流動性池（多源聚合） |
+| Tier 8 | 5.00 | 鏈上執行 | 兌換、建立代幣、傳送交易 |
+
+---
+
+## WebSocket 實時訂閱計費
+
+WebSocket 實時資料訂閱單獨計費，按資料位元組收費：
+
+| 專案 | 費率 | 說明 |
+|:--|:--|:--|
+| WebSocket 資料 | **0.005 Unit/位元組** | 按推送資料位元組收費 |
+| WebSocket 連線 | 免費 | 建立連線不收費 |
+| 心跳訊息 | 免費 | 心跳包不收費 |
+
+### 支援的訂閱頻道
+
+<Tabs>
+  <Tab title="K 線">
+    | 頻道 | 說明 |
+    |:--|:--|
+    | `dex-candle:{chain}_{tokenAddress}_{resolution}` | 實時 K 線資料 |
+  </Tab>
+  <Tab title="代幣資料">
+    | 頻道 | 說明 |
+    |:--|:--|
+    | `dex-token-stats:{chain}_{tokenAddress}` | 代幣統計 |
+    | `dex-token-holding:{chain}_{tokenAddress}` | 持有者統計 |
+    | `dex-token-supply:{chain}_{tokenAddress}` | 供應量與市值 |
+    | `dex-token-general-stat-num:{chain}_{tokenAddress}` | 流動性統計 |
+    | `dex-new-token:{chain}` | 新代幣資訊 |
+    | `dex-new-tokens-metadata:{chain}` | 新代幣後設資料 |
+  </Tab>
+  <Tab title="排行資料">
+    | 頻道 | 說明 |
+    |:--|:--|
+    | `dex-ranking-list:{chain}_{ranking_type}` | 排行代幣列表 |
+    | `dex-ranking-token-stats-list:{chain}_{channelType}` | 排行代幣統計 |
+    | `dex-ranking-token-holding-list:{chain}_{channelType}` | 排行持有者統計 |
+    | `dex-ranking-token-supply-list:{chain}_{channelType}` | 排行供應量 |
+  </Tab>
+  <Tab title="錢包資料">
+    | 頻道 | 說明 |
+    |:--|:--|
+    | `dex-wallet-balance:{chain}_{walletAddress}` | 錢包餘額 |
+    | `dex-wallet-token-pnl:{chain}_{walletAddress}` | 代幣級盈虧 |
+    | `dex-wallet-pnl-list:{chain}_{walletAddress}` | 錢包級盈虧 |
+  </Tab>
+  <Tab title="交易資料">
+    | 頻道 | 說明 |
+    |:--|:--|
+    | `dex-trade:{chain}_{tokenAddress}` | 代幣交易 |
+    | `dex-wallet-trade:{chain}_{walletAddress}` | 錢包交易 |
+  </Tab>
+  <Tab title="池子資料">
+    | 頻道 | 說明 |
+    |:--|:--|
+    | `dex-pool-balance:{chain}_{poolAddress}` | 池子餘額 |
+  </Tab>
+</Tabs>
+
+### WebSocket 用量估算示例
+
+```
+场景：监控 10 个代币的实时 K 线（1 分钟分辨率）
+
+计算：
+- 每条 K 线消息约 200 字节
+- 每个代币每分钟约 1 条 K 线消息
+- 10 代币 × 1 条/分 × 60 分 × 24 小时 × 30 天 = 432,000 条消息
+- 总数据量：432,000 × 200 = 86,400,000 字节
+- 月费：86,400,000 × 0.005 = 432,000 Units
+
+场景：监控 50 个代币的统计数据（实时，约每秒 1 次更新）
+
+计算：
+- 代币统计消息约 500 字节
+- 50 代币 × 1 条/秒 × 86,400 秒 × 30 天 = 129,600,000 条消息
+- 总数据量：129,600,000 × 500 = 64,800,000,000 字节（约 64.8 GB）
+- 月费：64,800,000,000 × 0.005 = 324,000,000 Units（约 324M）
+```
+
+<Note>
+批次 API 通常有折扣。具體消耗請參考 API 參考文件。WebSocket 訊息頻率取決於市場活躍度；高波動時期訊息量會增加。
+</Note>
+
+---
+
+## KYT/KYA 服務計費
+
+<Warning>
+KYT/KYA API **不消耗套餐 Unit**。它們從獨立的 KYT 賬戶餘額（美元）中扣費。請在 Dashboard → KYT 服務中充值。
+</Warning>
+
+| API | 費用 | 端點 |
+|:--|:--|:--|
+| 註冊轉賬 | $0.25/次 | `POST /v2/kyt/transfer` |
+| 註冊提現 | $0.25/次 | `POST /v2/kyt/withdrawal` |
+| 註冊地址 | $1.25/次 | `POST /v2/kyt/address` |
+| 查詢風險/告警/暴露 | 已包含 | `GET /v2/kyt/addresses/*/risk`、`GET /v2/kyt/transfers/*/summary` 等 |
+
+---
+
+### 費用估算示例
+
+<Tabs>
+  <Tab title="行情展示應用">
+    **場景：** 一個 DeFi 行情網站展示 50 個代幣價格，每 10 秒重新整理
+    ```
+    计算：
+    - 请求频率：50 代币 × 6 次/分 = 300 请求/分
+    - 月请求量：300 × 60 × 24 × 30 = 12,960,000 请求
+    - 每次请求 CU：0.10（代币价格端点）
+    - 月 CU：12,960,000 × 0.10 = 1,296,000 CU
+
+    推荐：Starter 套餐（10M CU）
+    ```
+  </Tab>
+  <Tab title="交易機器人">
+    **場景：** 一個套利機器人監控 5 個交易對，每秒查詢價格
+    ```
+    REST 方式：
+    - 5 × 1/秒 × 86,400 × 30 = 12,960,000 请求
+    - CU：12,960,000 × 0.10 = 1,296,000 CU
+
+    WebSocket 方式（推荐）：
+    - 5 对 × 约 200 字节/消息 × 1 条/秒 × 86,400 × 30
+    - = 2,592,000,000 字节 × 0.005 CU/字节 = 12,960,000 CU
+
+    推荐：REST 用 Pro 套餐；WebSocket 用 Starter
+    ```
+  </Tab>
+  <Tab title="交易所風控">
+    **場景：** 小型交易所，每天 1000 筆充值需要 KYT 檢查
+    ```
+    计算：
+    - 每天：1,000 次 KYT 转账注册
+    - 每月：1,000 × 30 = 30,000 次调用
+    - 费用：30,000 × $0.25 = $7,500/月（KYT 单独以美元计费）
+
+    注意：KYT 不消耗套餐 CU。请单独充值 KYT 余额。
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 配額管理
+
+### 在 Dashboard 檢視用量
+
+<Steps>
+  <Step title="登入 Dashboard">
+    訪問 [ChainStream Dashboard](https://www.chainstream.io/dashboard)
+  </Step>
+  <Step title="檢視用量">
+    在用量頁面檢視當月使用量、剩餘配額和歷史趨勢
+  </Step>
+</Steps>
+
+### 配額告警設定
+
+你可以設定配額告警，在用量達到閾值時收到通知：
+
+| 告警級別 | 觸發條件 | 通知方式 |
+|:--|:--|:--|
+| 提醒 | 使用 50% | 郵件 |
+| 警告 | 使用 80% | 郵件 + Dashboard 告警 |
+| 嚴重 | 使用 100% | 郵件 + Dashboard 告警 |
+
+<Tip>
+建議至少開啟 80% 告警，避免意外的服務中斷。
+</Tip>
+
+---
+
+## 配額耗盡處理
+
+### 配額用完會怎樣
+
+當月配額耗盡時，API 將返回 403 錯誤，無法繼續呼叫。付費套餐使用者可手動購買額外配額以恢復服務。
+
+| 套餐 | 處理方式 |
+|:--|:--|
+| Free | API 返回 403 錯誤，等待下月配額重置 |
+| Starter / Pro / Enterprise | API 返回 403 錯誤，可購買額外配額恢復服務 |
+| Custom | 按合同條款 |
+
+### 購買額外配額
+
+付費套餐使用者可在 Dashboard 購買額外配額，按套餐的超量費率定價：
+
+| 套餐 | 額外配額價格 |
+|:--|:--|
+| Starter | $12.9 / 百萬 Units |
+| Pro | $9.9 / 百萬 Units |
+| Enterprise | $6.9 / 百萬 Units |
+
+<Warning>
+配額耗盡時服務立即中斷（返回 403 錯誤）。建議設定 80% 用量告警並提前購買額外配額，避免影響業務。
+</Warning>
+
+---
+
+## 支付方式
+
+### 支援的支付方式
+
+| 方式 | 說明 | 適用套餐 |
+|:--|:--|:--|
+| 信用卡 | Visa、MasterCard、AMEX | 所有套餐 |
+| 加密貨幣 | USDT、USDC（ERC-20 / TRC-20） | Starter 及以上 |
+| 銀行轉賬 | 聯絡銷售 | Enterprise |
+
+### 計費週期
+
+- **月付套餐：** 每月 1 日生成上月賬單
+- **年付套餐：** 免 2 個月（相當於 16.7% 折扣）
+
+---
+
+## AI Agent 支付（x402 / MPP）
+
+對於需要程式設計訪問而無需 Dashboard 註冊的 AI Agent，ChainStream 支援兩種鏈上支付協議：
+
+### x402（Base / Solana USDC）
+
+[x402 協議](https://www.x402.org/) 實現 HTTP 原生微支付。當 API 呼叫返回 402 時，Agent 的錢包簽名 USDC 轉賬並重試 — 無需註冊賬號。
+
+| 屬性 | 值 |
+|------|-----|
+| 網路 | Base（鏈 ID 8453）、Solana |
+| 貨幣 | USDC |
+| 標準 | EIP-3009（Base）、原生轉賬（Solana） |
+| Gas 費 | **免費** — ChainStream 的 facilitator 代付所有 gas 費用 |
+
+<Tip>
+你只需支付 USDC 訂閱費用。ChainStream 運營自有的 x402 facilitator，負責提交鏈上交易並代付 gas 費 — Agent 錢包無需持有 ETH 或 SOL 來支付 gas。
+</Tip>
+
+### MPP（Tempo USDC.e）
+
+MPP 使用 Tempo 網路進行支付。Gas 直接用 USDC.e 支付 — 無需 ETH。
+
+| 屬性 | 值 |
+|------|-----|
+| 網路 | Tempo（鏈 ID 4217） |
+| 貨幣 | USDC.e |
+
+### 工作原理
+
+1. Agent 呼叫任意 ChainStream API
+2. 伺服器返回 402（無有效訂閱）
+3. Agent 從 `/x402/pricing` 獲取可用套餐
+4. Agent 透過 x402 或 MPP 購買套餐
+5. 伺服器返回 **API Key** — Agent 儲存用於後續所有呼叫
+
+<Card title="x402 支付指南" icon="credit-card" href="/zh-Hant/guides/cli/x402-payment">
+  x402 和 MPP 支付流程的完整詳情
+</Card>
+
+---
+
+## 常見問題
+
+<AccordionGroup>
+  <Accordion title="如何選擇合適的套餐？">
+    建議先使用 Free 套餐評估實際用量，然後根據月消耗選擇：
+    - &lt; 30K Units：Free
+    - 30K - 10M Units：Starter
+    - 10M - 50M Units：Pro
+    - &gt; 50M Units：Enterprise
+  </Accordion>
+  <Accordion title="可以隨時升級/降級嗎？">
+    可以。升級立即生效，按比例收費。降級在下個計費週期生效。
+  </Accordion>
+  <Accordion title="未使用的配額會累積嗎？">
+    不會。月度配額在每月底重置，不會累積到下月。
+  </Accordion>
+  <Accordion title="如何獲取發票？">
+    在 Dashboard → 計費 → 發票中下載歷史發票。Enterprise 客戶可聯絡銷售獲取定製發票。
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 下一步
+
+<CardGroup cols={3}>
+  <Card title="常見問題" icon="circle-question" href="/zh-Hant/guides/getting-started/faq">
+    常見問題解答
+  </Card>
+  <Card title="API 安全" icon="shield-halved" href="/zh-Hant/guides/data-concepts/api-security">
+    瞭解 API 安全配置
+  </Card>
+  <Card title="API 參考" icon="book" href="/zh-Hant/api-reference/authentication/authenticate">
+    開始呼叫 API
+  </Card>
+</CardGroup>

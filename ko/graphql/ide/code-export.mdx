@@ -1,0 +1,237 @@
+---
+title: "코드 내보내기"
+description: "GraphQL 쿼리로부터 7가지 프로그래밍 언어의 바로 사용 가능한 코드 스니펫 생성"
+icon: "file-export"
+---
+
+## 개요
+
+코드 내보내기 기능은 현재 GraphQL 쿼리를 선택한 언어의 바로 사용 가능한 코드 스니펫으로 변환합니다. 생성된 코드에는 전체 HTTP 요청 설정이 포함됩니다 — 엔드포인트 URL, 인증 헤더, 쿼리 본문, 변수 — 프로젝트에 바로 복사하여 사용할 수 있습니다.
+
+---
+
+## 지원 언어
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| 언어 | 형식 | 사용 사례 |
+|:--|:--|:--|
+| **cURL** | Shell 명령 | 빠른 터미널 테스트, CI/CD 스크립트 |
+| **Python** | `requests` 라이브러리 | 백엔드 서비스, 데이터 파이프라인, Jupyter 노트북 |
+| **JavaScript** | `fetch` API | 브라우저 앱, Node.js 서비스 |
+| **Go** | `net/http` | 백엔드 마이크로서비스, CLI 도구 |
+| **Rust** | `reqwest` 크레이트 | 고성능 서비스 |
+| **Ruby** | `net/http` | Rails 애플리케이션, 스크립트 |
+| **PHP** | `cURL` 확장 | PHP 백엔드, WordPress 플러그인 |
+
+</div>
+
+---
+
+## 내보내기 방법
+
+<Steps>
+  <Step title="쿼리 작성">
+    에디터에 쿼리를 입력하거나 불러옵니다. 내보내기 전에 성공적으로 실행되는지 확인하세요.
+  </Step>
+  <Step title="Export Code 클릭">
+    툴바에서 **Export Code** 버튼을 클릭합니다. 언어 선택기와 생성된 스니펫이 포함된 모달이 열립니다.
+  </Step>
+  <Step title="언어 선택">
+    드롭다운에서 대상 언어를 선택합니다. 스니펫이 즉시 업데이트됩니다.
+  </Step>
+  <Step title="스니펫 복사">
+    **Copy** 버튼을 클릭하여 생성된 코드를 클립보드에 복사합니다.
+  </Step>
+</Steps>
+
+<Tip>
+내보낸 코드는 현재 IDE 구성의 GraphQL 엔드포인트와 API Key를 사용합니다. 커스텀 엔드포인트나 헤더를 설정한 경우 생성된 스니펫에 반영됩니다.
+</Tip>
+
+---
+
+## 예제 스니펫
+
+다음 예제는 간단한 DEXTrades 쿼리를 내보냅니다 — 최근 Solana DEX 트레이드 10건 조회:
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST "https://graphql.chainstream.io/graphql" \
+      -H "Content-Type: application/json" \
+      -H "X-API-KEY: your_api_key" \
+      -d '{
+        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    url = "https://graphql.chainstream.io/graphql"
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    }
+    query = """
+    {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Transaction { Hash }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    """
+
+    response = requests.post(url, json={"query": query}, headers=headers)
+    data = response.json()
+    print(data)
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch("https://graphql.chainstream.io/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+      },
+      body: JSON.stringify({
+        query: `{
+          DEXTrades(
+            network: sol
+            limit: {count: 10}
+            orderBy: Block_Time_DESC
+          ) {
+            Block { Time }
+            Transaction { Hash }
+            Trade {
+              Buy { Currency { MintAddress } Amount PriceInUSD }
+              Sell { Currency { MintAddress } Amount }
+              Dex { ProtocolName }
+            }
+          }
+        }`,
+      }),
+    });
+
+    const data = await response.json();
+    console.log(data);
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+    )
+
+    func main() {
+        payload := map[string]string{
+            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+        }
+        body, _ := json.Marshal(payload)
+
+        req, _ := http.NewRequest("POST", "https://graphql.chainstream.io/graphql", bytes.NewBuffer(body))
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("X-API-KEY", "your_api_key")
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            panic(err)
+        }
+        defer resp.Body.Close()
+
+        result, _ := io.ReadAll(resp.Body)
+        fmt.Println(string(result))
+    }
+    ```
+  </Tab>
+  <Tab title="Rust">
+    ```rust
+    use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+    use serde_json::json;
+
+    #[tokio::main]
+    async fn main() -> Result<(), reqwest::Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
+
+        let body = json!({
+            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+        });
+
+        let client = reqwest::Client::new();
+        let res = client
+            .post("https://graphql.chainstream.io/graphql")
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
+
+        println!("{}", res.text().await?);
+        Ok(())
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 내보낸 코드에 포함되는 항목
+
+모든 생성된 스니펫에는 다음이 포함됩니다:
+
+| 구성 요소 | 설명 |
+|:--|:--|
+| **엔드포인트 URL** | `https://graphql.chainstream.io/graphql` |
+| **인증** | IDE 헤더 패널의 `X-API-KEY` 헤더 |
+| **Content-Type** | `application/json` |
+| **쿼리 본문** | 에디터의 전체 GraphQL 쿼리 |
+| **변수** | 변수 패널에 값이 있는 경우 포함 |
+
+<Note>
+내보낸 코드를 실행하기 전에 `your_api_key`를 실제 API Key로 교체하세요. IDE는 보안을 위해 내보낸 스니펫에 실제 키를 포함하지 않습니다.
+</Note>
+
+---
+
+## 팁
+
+- **내보내기 전에 테스트** — IDE에서 먼저 쿼리를 실행하여 작동하는지 확인하세요. 내보낸 코드는 쿼리를 그대로 복사합니다.
+- **변수로 매개변수화** — 하드코딩된 값 대신 GraphQL 변수를 사용하세요. 내보낸 코드에 쿼리와 함께 `variables` JSON이 포함됩니다.
+- **의존성 확인** — Python 스니펫은 `requests`, Rust는 `reqwest`, Go는 표준 라이브러리를 사용합니다. 프로젝트에 필요한 패키지가 설치되어 있는지 확인하세요.

@@ -1,0 +1,195 @@
+---
+title: "查詢模板"
+description: "按鏈與 Cube 組織的內建查詢模板 — 載入、自定義並執行常見鏈上分析查詢"
+icon: "book-open"
+---
+
+## 什麼是查詢模板
+
+查詢模板是預寫好的 GraphQL 查詢，覆蓋 Solana、Ethereum 與 BSC 上最常見的分析場景。每個模板針對特定 Cube，已帶好正確的查詢結構、欄位與篩選引數 — 替換佔位值後即可執行。
+
+模板幫助你：
+
+- **透過示例學習 schema** — 瞭解欄位、篩選與排序在實際中如何配合
+- **快速上手** — 無需從零編寫查詢
+- **發現** 你可能尚未了解的 **Cube**
+
+---
+
+## 如何訪問模板
+
+<Steps>
+  <Step title="開啟側邊欄">
+    點選側邊欄開關或按 **Ctrl/Cmd+B** 開啟左側面板。
+  </Step>
+  <Step title="選擇 Queries 標籤">
+    側邊欄有兩個標籤：**Queries**（模板）與 **Saved**（已儲存查詢）。選擇 **Queries**。
+  </Step>
+  <Step title="按鏈與 Cube 瀏覽">
+    模板以樹形組織：**鏈**（Solana / Ethereum / BSC）→ **Cube**（DEXTrades、Transfers 等）→ **模板**。
+  </Step>
+  <Step title="點選載入">
+    點選任意模板即可載入查詢編輯器。佔位值會高亮，便於替換。
+  </Step>
+</Steps>
+
+---
+
+## 模板組織方式
+
+模板採用兩級層級：
+
+```
+Chain (Solana / Ethereum / BSC)
+ └── Cube
+      └── Template
+```
+
+每條鏈包含同一組 Cube 與模板，並已配置正確的 `network` 值（`sol`、`eth` 或 `bsc`）。
+
+---
+
+## 模板目錄
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| Cube | 模板 | 數量 |
+|:--|:--|:--|
+| **DEXTrades** | Latest Trades · Token Trades · Pair Trades · Trades by DEX · Wallet Trades | 5 |
+| **Transfers** | Token Transfers · Wallet Transfers | 2 |
+| **BalanceUpdates** | Token Balance Updates · Wallet Balance Updates | 2 |
+| **DEXPools** | Pool Info · Token Pools · Liquidity Snapshots | 3 |
+| **TokenSupplyUpdates** | Mint & Burn Events · Market Cap（透過 TokenSupplyUpdates） | 2 |
+| **TokenHolders** | Top Holders | 1 |
+| **WalletTokenPnL** | Wallet PnL | 1 |
+| **Pairs** | Price Candles | 1 |
+| **Tokens** | Trade Statistics · Search Tokens（透過 token 維度） | 2 |
+
+</div>
+
+<Info>
+最常用的 Cube 由 **19** 個模板覆蓋。每個模板在所有支援的鏈上均可用。
+</Info>
+
+---
+
+## 按 Cube 的模板說明
+
+<AccordionGroup>
+  <Accordion title="DEXTrades（5 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Latest Trades** | 網路上最近的 DEX 成交 | — |
+    | **Token Trades** | 涉及某一代幣的成交 | `TOKEN_ADDRESS` |
+    | **Pair Trades** | 某一代幣對的成交 | `TOKEN_ADDRESS`（×2） |
+    | **Trades by DEX** | 按 DEX 協議名篩選的成交 | — |
+    | **Wallet Trades** | 某錢包執行的全部 DEX 成交 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="Transfers（2 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Token Transfers** | 某代幣的轉賬事件 | `TOKEN_ADDRESS` |
+    | **Wallet Transfers** | 某錢包發出或收到的全部轉賬 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="BalanceUpdates（2 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Token Balance Updates** | 某代幣的餘額變動事件 | `TOKEN_ADDRESS` |
+    | **Wallet Balance Updates** | 某錢包的全部餘額變動 | `WALLET_ADDRESS` |
+  </Accordion>
+  <Accordion title="DEXPools（3 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Pool Info** | 某流動性池的後設資料與儲備 | `POOL_ADDRESS` |
+    | **Token Pools** | 包含某代幣的全部流動性池 | `TOKEN_ADDRESS` |
+    | **Liquidity Snapshots** | 某池隨時間的歷史流動性資料 | `POOL_ADDRESS` |
+  </Accordion>
+  <Accordion title="TokenSupplyUpdates（2 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Mint & Burn Events** | 影響代幣供應的鑄造與銷燬事件 | `TOKEN_ADDRESS` |
+    | **Market Cap** | 某代幣的市值快照 | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="TokenHolders（1 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Top Holders** | 按持倉排序的某代幣最大持有者 | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="WalletTokenPnL（1 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Wallet PnL** | 某錢包-代幣對的已實現與未實現 PnL | `WALLET_ADDRESS`、`TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="Pairs（1 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Price Candles** | 可配置間隔的 OHLC K 線資料 | `TOKEN_ADDRESS` |
+  </Accordion>
+  <Accordion title="Tokens（2 個模板）">
+    | 模板 | 說明 | 佔位符 |
+    |:--|:--|:--|
+    | **Trade Statistics** | 聚合成交量、筆數與獨立交易者數 | `TOKEN_ADDRESS` |
+    | **Search Tokens** | 按名稱、符號或地址的全文代幣搜尋 | — |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 佔位符
+
+模板用大寫佔位符標出執行前需替換為真實鏈上地址的值。
+
+| 佔位符 | 說明 | 示例 |
+|:--|:--|:--|
+| `TOKEN_ADDRESS` | 代幣合約 / mint 地址 | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`（Solana 上 USDC） |
+| `WALLET_ADDRESS` | 錢包公鑰地址 | `5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1` |
+| `POOL_ADDRESS` | DEX 流動性池地址 | `58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2` |
+
+<Note>
+佔位符在查詢中以字面字串出現（例如 `MintAddress: {is: "TOKEN_ADDRESS"}`）。請將整段佔位字串（含引號）替換為你的真實地址。
+</Note>
+
+---
+
+## 示例：使用模板
+
+以下演示如何在 Solana 上使用 **DEXTrades → Latest Trades** 模板：
+
+<Steps>
+  <Step title="開啟側邊欄並選擇模板">
+    進入 **Solana → DEXTrades → Latest Trades** 並點選載入。
+  </Step>
+  <Step title="檢查載入的查詢">
+    編輯器會填入：
+    ```graphql
+    query {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time Slot }
+        Transaction { Hash }
+        Trade {
+          Buy {
+            Currency { MintAddress Symbol Name }
+            Amount
+            PriceInUSD
+          }
+          Sell {
+            Currency { MintAddress Symbol Name }
+            Amount
+          }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    ```
+  </Step>
+  <Step title="執行">
+    該模板無佔位符 — 會拉取最近 10 筆成交。按 **Ctrl/Cmd+Enter** 執行。
+  </Step>
+  <Step title="迭代">
+    可修改查詢以增加篩選、調整 limit 或選擇不同欄位。schema 自動補全有助於發現可用選項。
+  </Step>
+</Steps>

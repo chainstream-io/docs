@@ -1,0 +1,189 @@
+---
+title: 'スキルのインストール'
+description: 'Cursor、Claude Code、ClawHub などで ChainStream エージェントスキルを導入する'
+icon: "download"
+---
+
+## インストール方法
+
+使用するエージェントのプラットフォームに応じて、ChainStream スキルは複数の経路からインストールできます。
+
+| プラットフォーム | 方法 | 所要時間の目安 |
+|----------|--------|------------|
+| [ClawHub](#clawhub) | マーケットプレイスからインストール | 約 30 秒 |
+| [Cursor](#cursor) | プラグインの自動検出 | 約 1 分 |
+| [Claude Code](#claude-code) | プラグインインストール | 約 30 秒 |
+| [Codex](#codex) | Git クローン | 約 1 分 |
+| [OpenCode](#opencode) | Git クローン | 約 1 分 |
+| [Gemini CLI](#gemini-cli) | 拡張機能インストール | 約 30 秒 |
+
+---
+
+## ClawHub
+
+ChainStream スキルは OpenClaw のスキルマーケットプレイス [ClawHub](https://clawhub.ai) で公開されています。
+
+| スキル | ClawHub URL | バージョン |
+|-------|------------|---------|
+| chainstream-data | [clawhub.ai/chainstream-data](https://clawhub.ai/chainstream-data) | 最新 |
+| chainstream-defi | [clawhub.ai/chainstream-defi](https://clawhub.ai/chainstream-defi) | 最新 |
+
+```bash
+# Install via ClawHub CLI
+openclaw skills install chainstream-data
+openclaw skills install chainstream-defi
+```
+
+または ClawHub の Web UI から、スキルページの **Install** をクリックし、表示に従ってインストールしてください。
+
+---
+
+## Cursor
+
+スキルリポジトリに含まれる `.cursor-plugin/plugin.json` の設定により、スキルは自動的に検出されます。
+
+<Steps>
+  <Step title="スキルリポジトリをクローンする">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git
+    ```
+  </Step>
+  <Step title="Cursor で開く">
+    クローンした `skills/` ディレクトリを Cursor で開きます。`.cursor-plugin/plugin.json` により Cursor がスキルを自動読み込みします。
+  </Step>
+  <Step title="API Key を設定する">
+    CLI と MCP 用に API Key を設定します：
+    ```bash
+    npx @chainstream-io/cli config set --key apiKey --value <your-api-key>
+    ```
+  </Step>
+  <Step title="利用を開始する">
+    AI アシスタントに例えば次のように依頼します：
+    ```
+    search for meme tokens on Solana
+    is <token_address> safe to buy?
+    swap 0.1 SOL for <token_address>
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Cursor でも ChainStream をマーケットプレイスプラグインとして公開予定です。利用可能になれば、Cursor の設定 > 拡張機能から直接インストールできます。
+</Note>
+
+---
+
+## Claude Code
+
+```bash
+/plugin install chainstream
+```
+
+スキルリポジトリ内の `.claude-plugin/plugin.json` が Claude Code 向けのプラグインメタデータを提供します。
+
+<Note>
+Claude Code のマーケットプレイスプラグインは近日公開予定です。公開後は Claude Code のプラグインストアから直接インストールできます。
+</Note>
+
+---
+
+## Codex
+
+<Steps>
+  <Step title="リポジトリをクローンする">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git ~/.agents/skills/chainstream
+    ```
+  </Step>
+  <Step title="セットアップ手順に従う">
+    クローンしたリポジトリ内の `.codex/INSTALL.md` の手順を参照してください。
+  </Step>
+</Steps>
+
+---
+
+## OpenCode
+
+<Steps>
+  <Step title="リポジトリをクローンする">
+    ```bash
+    git clone https://github.com/chainstream-io/skills.git ~/.agents/skills/chainstream
+    ```
+  </Step>
+  <Step title="セットアップ手順に従う">
+    クローンしたリポジトリ内の `.opencode/INSTALL.md` の手順を参照してください。
+  </Step>
+</Steps>
+
+---
+
+## Gemini CLI
+
+```bash
+gemini extensions install https://github.com/chainstream-io/skills
+```
+
+リポジトリルートの `gemini-extension.json` が Gemini CLI にコンテキストファイルの読み込みを指示します。
+
+---
+
+## MCP サーバーの設定
+
+ChainStream MCP サーバーと組み合わせるとスキルは最も効果的です。MCP クライアントの設定に次を追加してください。
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    `~/Library/Application Support/Claude/claude_desktop_config.json`（macOS）または `%APPDATA%\Claude\claude_desktop_config.json`（Windows）に追加：
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+API Key は [ChainStream Dashboard](https://app.chainstream.io) から取得するか、[x402 / MPP 決済](/jp/guides/getting-started/x402-payments) 経由で取得できます。
+</Note>
+
+---
+
+## インストールの確認
+
+インストール後、簡単なクエリで動作を確認してください。
+
+```bash
+# Via CLI
+npx @chainstream-io/cli token search --keyword PUMP --chain sol
+
+# Via AI assistant (if skills are loaded)
+# Ask: "search for PUMP tokens on Solana"
+```
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="chainstream-data" icon="magnifying-glass" href="/jp/guides/ai-infrastructure/agent-skills/chainstream-data">
+    データクエリ機能：トークン、市場、ウォレット
+  </Card>
+  <Card title="chainstream-defi" icon="right-left" href="/jp/guides/ai-infrastructure/agent-skills/chainstream-defi">
+    DeFi 実行：スワップ、ローンチパッド、トランザクション
+  </Card>
+</CardGroup>

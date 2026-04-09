@@ -27,18 +27,15 @@ Block_Time_ASC
 
 | Enum Value | Cube(s) | Description |
 |:-----------|:--------|:------------|
-| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | Oldest first |
-| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates | Newest first |
+| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | Oldest first |
+| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | Newest first |
+| `Interval_Time_Start_ASC` | Pairs, Tokens | Oldest first (interval start time) |
+| `Interval_Time_Start_DESC` | Pairs, Tokens | Newest first (interval start time) |
 | `Trade_Buy_Amount_DESC` | DEXTrades | Largest buy amount first |
 | `Trade_Buy_PriceInUSD_DESC` | DEXTrades | Highest USD price first |
 | `Transfer_AmountInUSD_DESC` | Transfers | Largest USD transfer first |
-| `TimeMinute_ASC` | OHLC, TokenTradeStats | Chronological order |
-| `TimeMinute_DESC` | OHLC, TokenTradeStats | Reverse chronological |
 | `LatestBalanceUSD_DESC` | TokenHolders | Largest holder first |
 | `BuyVolumeUSDState_DESC` | WalletTokenPnL | Highest buy volume first |
-| `MarketCapUSDState_DESC` | TokenMarketCap | Highest market cap first |
-| `Token_PriceUSD_DESC` | TokenSearch | Highest price first |
-| `Token_MarketCapUSD_DESC` | TokenSearch | Highest market cap first |
 
 </div>
 
@@ -91,13 +88,11 @@ Each Cube has a **default** limit applied when you omit the `limit` argument, an
 | BalanceUpdates | 25 | 10,000 |
 | DEXPools | 25 | 10,000 |
 | TokenSupplyUpdates | 25 | 10,000 |
-| OHLC | 25 | 10,000 |
-| TokenTradeStats | 25 | 10,000 |
-| PoolLiquiditySnapshots | 25 | 10,000 |
+| Pairs | 25 | 10,000 |
+| Tokens | 25 | 10,000 |
+| DEXPoolEvents | 25 | 10,000 |
 | TokenHolders | 25 | 10,000 |
 | WalletTokenPnL | 25 | 10,000 |
-| TokenMarketCap | 25 | 10,000 |
-| TokenSearch | 25 | 10,000 |
 
 <Info>
 If you request a `count` exceeding the maximum, the server silently caps it at the maximum value.
@@ -201,19 +196,23 @@ Fetch 1-minute candles for a token, sorted chronologically:
 
 ```graphql
 query {
-  OHLC(
-    network: sol
-    tokenAddress: "So11111111111111111111111111111111111111112"
-    orderBy: TimeMinute_ASC
-    limit: { count: 60 }
-    where: {
-      TimeMinute: { after: "2025-03-27T09:00:00Z" }
+  Trading {
+    Pairs(
+      where: {
+        Token: { Address: { is: "So11111111111111111111111111111111111111112" } }
+        Market: { Network: { is: "sol" } }
+        Block: { Time: { after: "2025-03-27T09:00:00Z" } }
+      }
+      orderBy: Block_Time_ASC
+      limit: { count: 60 }
+    ) {
+      Block { Time }
+      Price {
+        Ohlc { Open High Low Close }
+      }
+      Volume { Usd }
+      Stats { TradeCount }
     }
-  ) {
-    TimeMinute
-    Price { OpenState HighState LowState CloseState }
-    VolumeUSDState
-    TradeCountState
   }
 }
 ```

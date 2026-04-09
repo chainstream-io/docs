@@ -1,0 +1,150 @@
+---
+title: 'Rust'
+description: 'ChainStream Rust SDK'
+icon: 'rust'
+---
+
+## 설치
+
+`Cargo.toml`에 추가:
+
+```toml
+[dependencies]
+chainstream-sdk = "0.1"
+tokio = { version = "1", features = ["full"] }
+```
+
+## 빠른 시작
+
+```rust
+use chainstream_sdk::ChainStreamClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = ChainStreamClient::new("YOUR_ACCESS_TOKEN", None);
+    
+    // 클라이언트 사용...
+    
+    Ok(())
+}
+```
+
+## REST API 예시
+
+토큰 메타데이터 조회:
+
+```rust
+use chainstream_sdk::{openapi, CHAINSTREAM_BASE_URL};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+
+// 요청에 Bearer 토큰을 추가하는 미들웨어
+struct BearerAuthMiddleware {
+    token: String,
+}
+
+#[async_trait::async_trait]
+impl reqwest_middleware::Middleware for BearerAuthMiddleware {
+    async fn handle(
+        &self,
+        mut req: reqwest::Request,
+        extensions: &mut http::Extensions,
+        next: reqwest_middleware::Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        req.headers_mut().insert(
+            reqwest::header::AUTHORIZATION,
+            format!("Bearer {}", self.token).parse().unwrap(),
+        );
+        next.run(req, extensions).await
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let access_token = "YOUR_ACCESS_TOKEN";
+
+    // Bearer 토큰 미들웨어가 포함된 HTTP 클라이언트 생성
+    let http_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(BearerAuthMiddleware {
+            token: access_token.to_string(),
+        })
+        .build();
+
+    // OpenAPI 클라이언트 생성
+    let client = openapi::Client::new_with_client(CHAINSTREAM_BASE_URL, http_client);
+
+    // API 호출
+    let result = client.get_supported_blockchains().send().await?;
+    let blockchains = result.into_inner();
+    
+    println!("지원 블록체인: {:#?}", blockchains);
+    
+    Ok(())
+}
+```
+
+## WebSocket 예시
+
+실시간 토큰 캔들 데이터 구독:
+
+```rust
+use chainstream_sdk::{
+    stream::{Resolution, TokenCandle},
+    ChainStreamClient,
+};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use tokio::signal;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let access_token = "YOUR_ACCESS_TOKEN";
+    let client = ChainStreamClient::new(&access_token, None);
+
+    let chain = "sol";
+    let token_address = "So11111111111111111111111111111111111111112"; // SOL
+    let resolution = Resolution::X1s;
+
+    println!("토큰 캔들 구독: {}/{}", chain, token_address);
+    println!("Ctrl+C로 종료...\n");
+
+    let message_count = Arc::new(AtomicUsize::new(0));
+    let message_count_clone = message_count.clone();
+
+    // 토큰 캔들 구독
+    let _unsub = client
+        .stream
+        .subscribe_token_candles(
+            chain,
+            token_address,
+            resolution,
+            move |candle: TokenCandle| {
+                let count = message_count_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                println!(
+                    "[{}] open={}, close={}, high={}, low={}, volume={}",
+                    count, candle.open, candle.close, candle.high, candle.low, candle.volume
+                );
+            },
+            None,
+        )
+        .await?;
+
+    // Ctrl+C 대기
+    signal::ctrl_c().await?;
+
+    println!("\n{}개 메시지 수신", message_count.load(Ordering::SeqCst));
+    client.close().await;
+    
+    Ok(())
+}
+```
+
+## 리소스
+
+<CardGroup cols={2}>
+  <Card title="GitHub" icon="github" href="https://github.com/chainstream-io/chainstream-sdk/tree/main/rust">
+    소스 코드 보기
+  </Card>
+  <Card title="crates.io" icon="rust" href="https://crates.io/crates/chainstream-sdk">
+    패키지 레지스트리
+  </Card>
+</CardGroup>

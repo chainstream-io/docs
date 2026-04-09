@@ -1,0 +1,105 @@
+---
+title: "儲存的查詢"
+description: "在 IDE 中本地儲存、整理並管理常用 GraphQL 查詢"
+icon: "bookmark"
+---
+
+## 概述
+
+GraphQL IDE 支援將查詢儲存到瀏覽器，便於日後快速訪問。儲存的查詢在瀏覽器會話之間仍然保留，並顯示在側邊欄 **Saved** 標籤中，形成個人常用查詢庫，無需藉助外部工具。
+
+---
+
+## 儲存查詢
+
+<Steps>
+  <Step title="編寫或載入查詢">
+    在編輯器中輸入查詢，或從[模板](/zh-Hant/graphql/ide/query-templates)載入。
+  </Step>
+  <Step title="點選 Save Query">
+    點選工具欄中的 **Save Query** 按鈕。彈出對話方塊包含兩個欄位：
+    - **Title**（必填）— 查詢的描述性名稱
+    - **Tags**（可選）— 用於分類的逗號分隔標籤（例如 `solana, dex, monitoring`）
+  </Step>
+  <Step title="確認">
+    點選 **Save**。查詢儲存在本地並立即出現在側邊欄 **Saved** 標籤中。
+  </Step>
+</Steps>
+
+<Tip>
+建議使用包含鏈與 Cube 名稱的描述性標題，例如「Solana — Latest Raydium Trades」或「ETH — USDC Top Holders」，這樣在查詢增多時更容易查詢。
+</Tip>
+
+---
+
+## 載入已儲存查詢
+
+1. 開啟側邊欄（**Ctrl/Cmd+B**）
+2. 切換到 **Saved** 標籤
+3. 點選任意已儲存查詢即可載入編輯器
+
+查詢正文、variables 與 headers 會恢復為儲存時的狀態。
+
+---
+
+## 刪除已儲存查詢
+
+刪除步驟：
+
+1. 開啟側邊欄並切換到 **Saved** 標籤
+2. 將滑鼠懸停在要移除的查詢上 — 會出現 **delete** 圖示
+3. 點選刪除圖示移除該查詢
+
+<Note>
+刪除不可恢復。沒有撤銷 — 一旦刪除，查詢無法找回。
+</Note>
+
+---
+
+## 儲存說明
+
+| 屬性 | 說明 |
+|:--|:--|
+| **儲存機制** | 瀏覽器 `localStorage` |
+| **永續性** | 頁面重新整理與重啟瀏覽器後仍存在 |
+| **範圍** | 按瀏覽器、按源（同一域名） |
+| **同步** | 不在裝置或瀏覽器之間同步 |
+| **清理** | 清除瀏覽器資料或 `localStorage` 會移除全部已儲存查詢 |
+
+<Info>
+已儲存查詢完全存放在瀏覽器的 `localStorage` 中，**不會**上傳到任何伺服器，其他裝置也無法訪問。若需分享查詢，請使用[程式碼匯出](/zh-Hant/graphql/ide/code-export)生成可攜帶的程式碼片段。
+</Info>
+
+---
+
+## 用標籤整理
+
+標籤有助於在查詢變多時分類與篩選。可參考以下策略：
+
+<AccordionGroup>
+  <Accordion title="按鏈">
+    使用鏈相關標籤如 `solana`、`ethereum`、`bsc`，快速篩選某網路的查詢。
+  </Accordion>
+  <Accordion title="按 Cube">
+    用 Cube 名稱打標籤：`dextrades`、`transfers`、`ohlc`、`holders` 等。
+  </Accordion>
+  <Accordion title="按使用場景">
+    功能標籤如 `monitoring`、`analysis`、`debug`、`dashboard` 標明查詢用途。
+  </Accordion>
+  <Accordion title="按代幣或專案">
+    用具體專案名或代幣符號：`usdc`、`bonk`、`raydium`、`uniswap`。
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+每條查詢的標籤數量沒有上限。可組合多個維度 — 例如 `solana, dextrades, raydium, monitoring` — 以提高可檢索性。
+</Tip>
+
+---
+
+## 最佳實踐
+
+- **迭代儲存** — 在打磨查詢過程中儲存可用版本。必要時使用帶版本號的標題，如「OHLC v1」「OHLC v2」。
+- **定期清理** — 刪除不再使用的查詢，保持側邊欄簡潔。
+- **清理前匯出** — 若計劃清除瀏覽器資料，請先用[程式碼匯出](/zh-Hant/graphql/ide/code-export)匯出重要查詢。
+- **一查詢一職責** — 避免儲存職責過多的巨型查詢。更小、更聚焦的查詢更易複用與組合。

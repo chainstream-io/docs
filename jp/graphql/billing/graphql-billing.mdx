@@ -1,0 +1,160 @@
+---
+title: "課金とクレジット"
+description: "GraphQL APIクエリがクレジットユニットシステムでどのように課金されるかを理解"
+icon: "credit-card"
+---
+
+## 概要
+
+すべてのGraphQLクエリは、クエリされたCube、リクエストされた行数、集計の複雑さに基づいて**クレジットユニット（CU）**を消費します。クレジットはREST APIと同じ課金プランから差し引かれます — APIキーは両方で共通です。
+
+<Info>
+GraphQL APIはREST Data APIと同じAPIキーと課金プランを共有します。GraphQLクエリで消費されたクレジットは全体の使用量にカウントされます。
+</Info>
+
+---
+
+## クレジット計算式
+
+クレジットは以下の式でCubeごとに計算されます：
+
+```
+Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+```
+
+| ファクター | 計算 | 説明 |
+|:-------|:-----------|:------------|
+| **BaseCost** | Cubeごとの基本価格（下表参照） | Cubeの複雑さにより異なる固定コスト |
+| **LimitFactor** | `ceil(limit / 100)`、最小1 | リクエストされた行数に応じてスケール |
+| **AggregationFactor** | 1.0（なし）、1.5（GROUP BY）、2.0（HAVING） | 集計やHAVINGフィルタを使用するクエリではより高い |
+| **MetricFactor** | `1.0 + (metric_count × 0.2)` | 追加のメトリクス（count、sumなど）ごとに増加 |
+
+<Tip>
+デフォルトリミット（25行）で集計なしのシンプルなクエリは基本コストのみ支払います。より多くの行をリクエストしたり集計メトリクスを追加すると、クレジットが増加します。
+</Tip>
+
+### 計算例
+
+<AccordionGroup>
+  <Accordion title="シンプルなクエリ：DEXTrades 10行">
+    ```
+    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ```
+  </Accordion>
+  <Accordion title="大きなクエリ：DEXTrades 500行">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ```
+  </Accordion>
+  <Accordion title="集計クエリ：500行 + GROUP BY + メトリクス2個">
+    ```
+    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
+    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Cubeごとの基本コスト
+
+| Cube | 基本コスト（CU） | 備考 |
+|:-----|:---------------|:------|
+| **DEXTrades** | 50 | 最大のテーブル、最も多くのディメンション |
+| **DEXTradeByTokens** | 50 | DEXTradesと同じ基盤データ |
+| **DEXPoolEvents** | 30 | 流動性イベント |
+| **Pairs** | 30 | OHLCローソク足データ（Tradingグループ） |
+| **Tokens** | 30 | トークントレード統計（Tradingグループ） |
+| **WalletTokenPnL** | 25 | DWSサマリー |
+| **Transfers** | 15 | |
+| **BalanceUpdates** | 10 | |
+| **Events**、**Calls** | 20 | EVM専用トレース/イベントデータ |
+| **Instructions** | 20 | Solana専用 |
+| **PredictionTrades** | 20 | 予測市場データ |
+| その他すべてのCube | 20 | デフォルト基本コスト |
+
+<Note>
+基本コストはクエリの複雑さと各Cubeの基盤データ量を反映しています。`extensions.credits`で報告される実際のCube名はサーバーによって決定されます — 常にレスポンス値を正式な課金リファレンスとしてください。
+</Note>
+
+---
+
+## レスポンス：`extensions.credits`
+
+すべてのGraphQLレスポンスには`extensions`フィールドにクレジット消費の詳細が含まれます：
+
+```json
+{
+  "data": {
+    "DEXTrades": [ ... ]
+  },
+  "extensions": {
+    "credits": {
+      "total": 50,
+      "cubes": [
+        {
+          "cube": "DEXTrades",
+          "credits": 50,
+          "row_count": 10
+        }
+      ]
+    }
+  }
+}
+```
+
+| フィールド | 型 | 説明 |
+|:------|:-----|:------------|
+| `total` | `Int` | クエリ全体で消費された合計クレジット |
+| `cubes` | `Array` | Cubeごとの内訳 |
+| `cubes[].cube` | `String` | Cube名 |
+| `cubes[].credits` | `Int` | このCubeに請求されたクレジット |
+| `cubes[].row_count` | `Int` | 返された行数 |
+
+<Note>
+`extensions.credits`フィールドはクレジットが消費された場合（つまり`total > 0`）に存在します。0行を返すクエリでも基本コストは発生します。
+</Note>
+
+---
+
+## IDEでの使用量モニタリング
+
+[GraphQL IDE](https://ide.chainstream.io)のステータスバーは各クエリ後にクレジット消費を表示します：
+
+- **CUインジケータ**: 消費されたCU合計を表示（例：`50 CU`）
+- **Latency**: リクエスト所要時間（ミリ秒）
+- **Response size**: ペイロードサイズ
+
+---
+
+## クレジット使用量の最適化ヒント
+
+<CardGroup cols={3}>
+  <Card title="フィールドを減らす" icon="minimize">
+    必要なディメンションのみをリクエスト。フィールドが少ないほど処理データも少なくなります。
+  </Card>
+  <Card title="適切なリミットを使用" icon="gauge">
+    `limit.count`を実用的な範囲で低く保つ。クレジットは`ceil(limit / 100)`に応じてスケールします。
+  </Card>
+  <Card title="事前集計Cubeを使用" icon="layer-group">
+    集計データにはDWD Cube（DEXTrades）でメトリクスを実行するより、DWM/DWS Cube（Pairs、Tokens、TokenHolders）を優先してください。
+  </Card>
+</CardGroup>
+
+---
+
+## 関連ドキュメント
+
+<CardGroup cols={2}>
+  <Card title="一般的な課金とユニット" icon="receipt" href="/jp/guides/getting-started/billing-and-units">
+    ChainStreamの課金プラン、ユニットクォータ、支払い方法の概要。
+  </Card>
+  <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
+    集計メトリクスがクエリクレジットにどう影響するかを学習。
+  </Card>
+</CardGroup>

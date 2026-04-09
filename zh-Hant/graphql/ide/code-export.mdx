@@ -1,0 +1,237 @@
+---
+title: "程式碼匯出"
+description: "將 GraphQL 查詢匯出為 7 種程式語言的即用程式碼片段"
+icon: "file-export"
+---
+
+## 概述
+
+程式碼匯出功能將當前 GraphQL 查詢轉換為你所選語言的即用程式碼片段。生成程式碼包含完整 HTTP 請求設定 — 端點 URL、鑑權請求頭、查詢 body 與 variables — 可直接複製到專案中使用。
+
+---
+
+## 支援的語言
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+
+| 語言 | 格式 | 適用場景 |
+|:--|:--|:--|
+| **cURL** | Shell 命令 | 終端快速驗證、CI/CD 指令碼 |
+| **Python** | `requests` 庫 | 後端服務、資料管道、Jupyter notebook |
+| **JavaScript** | `fetch` API | 瀏覽器應用、Node.js 服務 |
+| **Go** | `net/http` | 後端微服務、CLI 工具 |
+| **Rust** | `reqwest` crate | 高效能服務 |
+| **Ruby** | `net/http` | Rails 應用、指令碼 |
+| **PHP** | `cURL` 擴充套件 | PHP 後端、WordPress 外掛 |
+
+</div>
+
+---
+
+## 如何匯出
+
+<Steps>
+  <Step title="編寫查詢">
+    在編輯器中輸入或載入查詢。匯出前請確保能成功執行。
+  </Step>
+  <Step title="點選 Export Code">
+    點選工具欄中的 **Export Code** 按鈕。彈出視窗包含語言選擇與生成的片段。
+  </Step>
+  <Step title="選擇語言">
+    在下拉框中選擇目標語言。片段會立即更新。
+  </Step>
+  <Step title="複製片段">
+    點選 **Copy** 將生成程式碼複製到剪貼簿。
+  </Step>
+</Steps>
+
+<Tip>
+匯出程式碼會使用當前 IDE 配置中的 GraphQL 端點與 API key。若你設定了自定義端點或 headers，生成片段中會體現這些配置。
+</Tip>
+
+---
+
+## 示例片段
+
+以下示例匯出一條簡單的 DEXTrades 查詢 — 獲取 Solana 上最近 10 筆 DEX 成交：
+
+```graphql
+query {
+  DEXTrades(
+    network: sol
+    limit: {count: 10}
+    orderBy: Block_Time_DESC
+  ) {
+    Block { Time }
+    Transaction { Hash }
+    Trade {
+      Buy { Currency { MintAddress } Amount PriceInUSD }
+      Sell { Currency { MintAddress } Amount }
+      Dex { ProtocolName }
+    }
+  }
+}
+```
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST "https://graphql.chainstream.io/graphql" \
+      -H "Content-Type: application/json" \
+      -H "X-API-KEY: your_api_key" \
+      -d '{
+        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    url = "https://graphql.chainstream.io/graphql"
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+    }
+    query = """
+    {
+      DEXTrades(
+        network: sol
+        limit: {count: 10}
+        orderBy: Block_Time_DESC
+      ) {
+        Block { Time }
+        Transaction { Hash }
+        Trade {
+          Buy { Currency { MintAddress } Amount PriceInUSD }
+          Sell { Currency { MintAddress } Amount }
+          Dex { ProtocolName }
+        }
+      }
+    }
+    """
+
+    response = requests.post(url, json={"query": query}, headers=headers)
+    data = response.json()
+    print(data)
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch("https://graphql.chainstream.io/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": "your_api_key",
+      },
+      body: JSON.stringify({
+        query: `{
+          DEXTrades(
+            network: sol
+            limit: {count: 10}
+            orderBy: Block_Time_DESC
+          ) {
+            Block { Time }
+            Transaction { Hash }
+            Trade {
+              Buy { Currency { MintAddress } Amount PriceInUSD }
+              Sell { Currency { MintAddress } Amount }
+              Dex { ProtocolName }
+            }
+          }
+        }`,
+      }),
+    });
+
+    const data = await response.json();
+    console.log(data);
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+    )
+
+    func main() {
+        payload := map[string]string{
+            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+        }
+        body, _ := json.Marshal(payload)
+
+        req, _ := http.NewRequest("POST", "https://graphql.chainstream.io/graphql", bytes.NewBuffer(body))
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("X-API-KEY", "your_api_key")
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            panic(err)
+        }
+        defer resp.Body.Close()
+
+        result, _ := io.ReadAll(resp.Body)
+        fmt.Println(string(result))
+    }
+    ```
+  </Tab>
+  <Tab title="Rust">
+    ```rust
+    use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+    use serde_json::json;
+
+    #[tokio::main]
+    async fn main() -> Result<(), reqwest::Error> {
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
+
+        let body = json!({
+            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+        });
+
+        let client = reqwest::Client::new();
+        let res = client
+            .post("https://graphql.chainstream.io/graphql")
+            .headers(headers)
+            .json(&body)
+            .send()
+            .await?;
+
+        println!("{}", res.text().await?);
+        Ok(())
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## 匯出程式碼包含的內容
+
+每個生成片段均包含：
+
+| 組成部分 | 說明 |
+|:--|:--|
+| **Endpoint URL** | `https://graphql.chainstream.io/graphql` |
+| **Authentication** | 來自 IDE Headers 面板的 `X-API-KEY` |
+| **Content-Type** | `application/json` |
+| **Query body** | 編輯器中的完整 GraphQL 查詢 |
+| **Variables** | 若 Variables 面板有值則一併包含 |
+
+<Note>
+執行匯出程式碼前，請將 `your_api_key` 替換為你的真實 API key。出於安全考慮，IDE 不會在匯出片段中嵌入真實 key。
+</Note>
+
+---
+
+## 提示
+
+- **先測再匯出** — 先在 IDE 中執行查詢確認可用。匯出程式碼會原樣複製查詢。
+- **用 variables 引數化** — 使用 GraphQL variables 替代硬編碼值。匯出程式碼會同時包含 `variables` JSON 與查詢。
+- **檢查依賴** — Python 片段使用 `requests`，Rust 使用 `reqwest`，Go 使用標準庫。請確保專案中已安裝所需包。

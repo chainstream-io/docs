@@ -456,6 +456,57 @@ const tokenInfo = await safeApiCall(() =>
 
 ---
 
+## GraphQL API 错误
+
+GraphQL 查询的错误通过标准 `errors` 数组返回。Credit 消耗信息在 `extensions.credits` 中报告：
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unknown field 'InvalidField' on type 'DEXTradesRecord'",
+      "locations": [{ "line": 3, "column": 5 }]
+    }
+  ],
+  "extensions": {
+    "credits": {
+      "total": 0,
+      "cubes": []
+    }
+  }
+}
+```
+
+| 场景 | 行为 |
+|:-----|:-----|
+| 无效查询（语法/验证错误） | `errors` 数组填充，`data` 为 null，不扣费 |
+| 成功查询 | `data` 填充，`extensions.credits.total` 显示消耗的 CU |
+| Credit 额度超限 | 查询可能被拒绝（取决于计费计划），检查 `extensions.credits` |
+
+详见 [GraphQL 计费与额度](/cn/graphql/billing/graphql-billing)了解完整的 Credit 计算公式。
+
+---
+
+## WebSocket 错误
+
+WebSocket 连接使用端点 `wss://realtime-dex.chainstream.io/connection/websocket`，通过 `?token=` 参数认证。
+
+| 场景 | 行为 |
+|:-----|:-----|
+| 无效 token | 握手阶段连接被拒绝 |
+| Token 过期 | 连接断开；使用新 token 重连 |
+| 网络中断 | 客户端应实现指数退避自动重连 |
+| 订阅无效频道 | WebSocket 帧返回错误消息 |
+
+<Tip>
+TypeScript SDK（`@chainstream-io/sdk`）会自动处理 WebSocket 重连。如果使用原生 WebSocket 客户端，建议实现指数退避重连（1s、2s、4s、8s...）。
+</Tip>
+
+详见 [WebSocket API 参考](/cn/api-reference/endpoint/websocket/api) 和 [超时与心跳](/cn/api-reference/endpoint/websocket/timeouts-and-heartbeats)了解连接管理详情。
+
+---
+
 ## 获取帮助
 
 如果遇到无法解决的错误：

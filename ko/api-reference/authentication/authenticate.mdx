@@ -1,39 +1,39 @@
 ---
-title: 'Authentication'
-description: 'How to sign API requests with authentication'
+title: '인증'
+description: '인증을 사용한 API 요청 서명 방법'
 icon: "key"
 ---
 
-## Signing Requests
+## 요청 서명
 
-ChainStream uses API keys to authenticate all API calls. The **Base API URL** will be one of the following depending on your workspace environment type:
+ChainStream은 모든 API 호출의 인증에 API 키를 사용합니다. **기본 API URL**은 워크스페이스 환경 유형에 따라 다음 중 하나입니다:
 
-* Mainnet: `https://api.chainstream.io/`
+* 메인넷: `https://api.chainstream.io/`
 
-Each API request must include the following headers:
+각 API 요청에는 다음 헤더를 포함해야 합니다:
 
-* `Authorization` - This value should be set to `Bearer <Access Token>`. The access token is a Base64 encoded JSON Web Token (JWT).
+* `Authorization` - 이 값은 `Bearer <Access Token>`으로 설정해야 합니다. 액세스 토큰은 Base64로 인코딩된 JSON Web Token(JWT)입니다.
 
-## Generating JWT Token
+## JWT 토큰 생성
 
-You can generate a JWT token using the following code. The `scope` parameter is optional and controls access permissions for specific API modules.
+다음 코드를 사용하여 JWT 토큰을 생성할 수 있습니다. `scope` 매개변수는 선택 사항이며 특정 API 모듈에 대한 접근 권한을 제어합니다.
 
-### Available Scopes
+### 사용 가능한 스코프
 
-The following scopes are currently supported:
+현재 다음 스코프가 지원됩니다:
 
-- `webhook.read` - Read access to Webhook API endpoints
-- `webhook.write` - Write access to Webhook API endpoints  
-- `kyt.read` - Read access to KYT (Know Your Transaction) API endpoints
-- `kyt.write` - Write access to KYT API endpoints
+- `webhook.read` - Webhook API 엔드포인트에 대한 읽기 접근
+- `webhook.write` - Webhook API 엔드포인트에 대한 쓰기 접근
+- `kyt.read` - KYT(Know Your Transaction) API 엔드포인트에 대한 읽기 접근
+- `kyt.write` - KYT API 엔드포인트에 대한 쓰기 접근
 
 <Note>
-If no scope is specified, the token will have access to all general API endpoints. Scopes are only required when accessing protected Webhook or KYT endpoints.
+스코프를 지정하지 않으면 토큰은 모든 일반 API 엔드포인트에 접근할 수 있습니다. 스코프는 보호된 Webhook 또는 KYT 엔드포인트에 접근할 때만 필요합니다.
 </Note>
 
 ### JavaScript
 
-**Example 1: Without scope (general API access)**
+**예제 1: 스코프 없음 (일반 API 접근)**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -51,7 +51,7 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-**Example 2: With Webhook access**
+**예제 2: Webhook 접근 포함**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -70,7 +70,7 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-**Example 3: With KYT access**
+**예제 3: KYT 접근 포함**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -89,7 +89,7 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-**Example 4: With multiple scopes**
+**예제 4: 여러 스코프 포함**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -108,9 +108,9 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-## Using SDKs
+## SDK 사용
 
-After generating the JWT token, you can use it to initialize the SDK:
+JWT 토큰을 생성한 후, 이를 사용하여 SDK를 초기화할 수 있습니다:
 
 ### JavaScript SDK
 
@@ -122,5 +122,5 @@ const dex = new ChainStreamClient("your-jwt-token");
 ```
 
 <Note>
-Make sure to replace the placeholder values with your actual API credentials.
+플레이스홀더 값을 실제 API 자격 증명으로 교체하세요.
 </Note>

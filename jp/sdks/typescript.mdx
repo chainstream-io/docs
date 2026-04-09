@@ -28,9 +28,9 @@ import { ChainStreamClient } from '@chainstream-io/sdk';
 const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 ```
 
-## REST APIの例
+## REST API の例
 
-トークン情報の照会：
+トークン情報を取得する：
 
 ```typescript
 import { ChainStreamClient } from '@chainstream-io/sdk';
@@ -38,31 +38,31 @@ import { ChainStreamClient } from '@chainstream-io/sdk';
 const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
 
 async function main() {
-  // SDKクライアントを初期化
+  // SDK クライアントを初期化
   const client = new ChainStreamClient(ACCESS_TOKEN);
 
   const chain = 'sol';
   const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
 
-  console.log(`トークン照会: ${chain}/${tokenAddress}`);
+  console.log(`Querying Token: ${chain}/${tokenAddress}`);
 
   try {
-    // SDK経由でAPIを呼び出し
+    // SDK 経由で API を呼び出す
     const result = await client.token.getToken(chain, tokenAddress);
     
-    console.log('結果:');
+    console.log('Result:');
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error('API呼び出し失敗:', error);
+    console.error('API call failed:', error);
   }
 }
 
 main();
 ```
 
-## WebSocketの例
+## WebSocket の例
 
-リアルタイムのトークンキャンドルデータを購読：
+リアルタイムのトークンローソク足データを購読する：
 
 ```typescript
 import { ChainStreamClient, Resolution } from '@chainstream-io/sdk';
@@ -77,10 +77,10 @@ async function main() {
   const chain = 'sol';
   const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
 
-  console.log(`トークンキャンドルを購読: ${chain}/${tokenAddress}`);
-  console.log('リッスン中... (Ctrl+Cで停止)\n');
+  console.log(`Subscribing to Token Candles: ${chain}/${tokenAddress}`);
+  console.log('Listening... (Press Ctrl+C to stop)\n');
 
-  // SDK経由でWebSocketを購読
+  // SDK 経由で WebSocket を購読
   client.stream.subscribeTokenCandles({
     chain,
     tokenAddress,
@@ -92,7 +92,7 @@ async function main() {
 
   // プロセスを維持
   process.on('SIGINT', () => {
-    console.log('\n接続を閉じています...');
+    console.log('\nClosing connection...');
     process.exit(0);
   });
 
@@ -101,23 +101,23 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error('テスト失敗:', error.message);
+  console.error('Test failed:', error.message);
   process.exit(1);
 });
 ```
 
 ## その他の例
 
-### トークン検索
+### トークンを検索
 
 ```typescript
 const results = await client.token.searchToken('bonk');
 console.log(results);
 ```
 
-完全なパラメータは[トークン - 検索](/jp/api-reference/endpoint/data/token/v2/token-search-get)をご覧ください。
+全パラメータは [Token - Search](/jp/api-reference/endpoint/data/token/v2/token-search-get) を参照してください。
 
-### 取引リストの取得
+### 取引リストを取得
 
 ```typescript
 const trades = await client.trade.getTrades('sol', {
@@ -127,18 +127,18 @@ const trades = await client.trade.getTrades('sol', {
 console.log(trades);
 ```
 
-完全なパラメータは[取引 - リスト](/jp/api-reference/endpoint/data/trade/v2/trade-chain-get)をご覧ください。
+全パラメータは [Trade - List](/jp/api-reference/endpoint/data/trade/v2/trade-chain-get) を参照してください。
 
-### ウォレットPnLの取得
+### ウォレットの損益（PnL）を取得
 
 ```typescript
 const pnl = await client.wallet.getPnl('sol', 'WALLET_ADDRESS');
-console.log(`総PnL: ${pnl.totalPnlUsd}`);
+console.log(`Total PnL: ${pnl.totalPnlUsd}`);
 ```
 
-完全なパラメータは[ウォレット - PnL](/jp/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-pnl-get)をご覧ください。
+全パラメータは [Wallet - PnL](/jp/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-pnl-get) を参照してください。
 
-### トークンキャンドル（K線）の取得
+### トークンのローソク足（K線）を取得
 
 ```typescript
 const candles = await client.token.getCandles('sol', 'TOKEN_ADDRESS', {
@@ -150,9 +150,9 @@ for (const c of candles) {
 }
 ```
 
-完全なパラメータは[トークン - キャンドル](/jp/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get)をご覧ください。
+全パラメータは [Token - Candles](/jp/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get) を参照してください。
 
-### 新規トークンの取得（ランキング）
+### 新着トークンランキングを取得
 
 ```typescript
 const newTokens = await client.ranking.getNewTokens('sol');
@@ -161,7 +161,7 @@ for (const token of newTokens) {
 }
 ```
 
-完全なパラメータは[ランキング - 新規トークン](/jp/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get)をご覧ください。
+全パラメータは [Ranking - New Tokens](/jp/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get) を参照してください。
 
 ---
 
@@ -174,15 +174,15 @@ try {
   const token = await client.token.getToken('sol', 'INVALID_ADDRESS');
 } catch (error) {
   if (error instanceof ChainStreamError) {
-    console.error(`エラーコード: ${error.code}`);
-    console.error(`エラーメッセージ: ${error.message}`);
+    console.error(`Error code: ${error.code}`);
+    console.error(`Error message: ${error.message}`);
   }
 }
 ```
 
-### エクスポネンシャルバックオフによるリトライ
+### 指数バックオフによるリトライ
 
-レート制限されたリクエスト（HTTP 429）にはリトライロジックを実装：
+レート制限（HTTP 429）が発生した場合のリトライロジック：
 
 ```typescript
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {

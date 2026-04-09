@@ -1,0 +1,761 @@
+openapi: 3.1.0
+paths:
+  /v2/dex/{chain}/swap:
+    post:
+      description: 入力トークン、出力トークン、数量、スリッページを含むスワップパラメータ
+      operationId: swap
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapReply'
+      security:
+        - bearer: []
+      summary: Dex - スワップ
+      tags:
+        - Dex
+  /v2/dex/{chain}/route:
+    post:
+      description: 価格インパクトと手数料を考慮してトークンスワップの最適ルートを算出。最適パスと準備済みトランザクションを返します
+      operationId: route
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapRouteInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRouteResponse'
+      security:
+        - bearer: []
+      summary: Dex - ルート
+      tags:
+        - Dex
+  /v2/dex/{chain}/quote:
+    get:
+      description: DEX 取引の見積り情報を取得
+      operationId: quote
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+        - name: dex
+          required: true
+          in: query
+          description: DEX プロトコルタイプ
+          schema:
+            example: raydium
+            enum:
+              - raydium
+              - pumpfun
+            type: string
+        - name: amount
+          required: true
+          in: query
+          description: 取引数量
+          schema:
+            example: 1000000000
+            type: string
+        - name: inputMint
+          required: true
+          in: query
+          description: 入力トークンアドレス
+          schema:
+            example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+            type: string
+        - name: outputMint
+          required: true
+          in: query
+          description: 出力トークンアドレス
+          schema:
+            example: So11111111111111111111111111111111111111112
+            type: string
+        - name: exactIn
+          required: true
+          in: query
+          description: 入力確定モード
+          schema:
+            default: true
+            example: true
+            type: boolean
+        - name: slippage
+          required: true
+          in: query
+          description: スリッページ許容率
+          schema:
+            format: int64
+            example: 10
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DexQuoteResponse'
+      security:
+        - bearer: []
+      summary: Dex - 見積り取得
+      tags:
+        - Dex
+  /v2/dex/{chain}/create:
+    post:
+      description: 指定された DEX 上に新しいトークンを作成
+      operationId: create.token
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        description: Token creation parameters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTokenReply'
+      security:
+        - bearer: []
+      summary: Dex - トークン作成
+      tags:
+        - Dex
+  /v2/transaction/{chain}/send:
+    post:
+      description: 署名済みトランザクションをブロックチェーンに送信
+      operationId: send
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            enum:
+              - sol
+              - bsc
+              - eth
+            type: string
+      requestBody:
+        required: true
+        description: トランザクションパラメータ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTxInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTxResponse'
+      security:
+        - bearer: []
+      summary: トランザクション - 送信
+      tags:
+        - Transaction
+  /v2/transaction/{chain}/gas-price:
+    get:
+      description: EVM チェーンの現在の Gas 価格を取得
+      operationId: get.gasPrice
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            enum:
+              - bsc
+              - eth
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GasPriceResponse'
+      security:
+        - bearer: []
+      summary: トランザクション - Gas 価格
+      tags:
+        - Transaction
+  /v2/transaction/{chain}/estimate-gas-limit:
+    post:
+      description: EVM トランザクションの Gas Limit を推定
+      operationId: get.gasLimit
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          schema:
+            enum:
+              - bsc
+              - eth
+            type: string
+      requestBody:
+        required: true
+        description: Gas 推定パラメータ
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasLimitInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateGasLimitResponse'
+      security:
+        - bearer: []
+      summary: トランザクション - Gas Limit 推定
+      tags:
+        - Transaction
+  /v2/job/{id}:
+    get:
+      description: ジョブ ID で現在のステータスと結果を取得
+      operationId: get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: ジョブ識別子
+          schema:
+            example: '12345'
+            type: string
+      responses:
+        '200':
+          description: ジョブステータスの取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDTO'
+      security:
+        - bearer: []
+      summary: ジョブ - 取得
+      tags:
+        - Job
+  /v2/job/{id}/streaming:
+    get:
+      description: Server-Sent Events (SSE) を通じてリアルタイムのジョブステータス更新を購読。ジョブが完了するかエラーが発生するまで接続が維持されます
+      operationId: streaming
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: ジョブ識別子
+          schema:
+            example: '12345'
+            type: string
+      responses:
+        '200':
+          description: SSE ストリームの確立に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStreamingDTO'
+      security:
+        - bearer: []
+      summary: ジョブ - ストリーミング
+      tags:
+        - Job
+info:
+  title: Defi Services API
+  description: Defi Services API ⚡️
+  version: '1.0'
+  contact:
+    name: AI
+    url: https://github.com/chainstream-io/defi-service
+    email: ai@sx.ai
+tags:
+  - name: Endpoints
+    description: ''
+servers:
+  - url: https://api.chainstream.io
+    description: Chainstream Production
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    ChainSymbol:
+      type: string
+      enum:
+        - sol
+        - bsc
+        - eth
+    SwapInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 取引用の DEX 識別子
+          example: jupiter
+          enum:
+            - jupiter
+            - kyberswap
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: トランザクションを開始するウォレットの公開鍵
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: トランザクション処理速度を上げるための優先手数料（SOL 単位）
+          example: '1000'
+        poolAddress:
+          type: string
+          description: DEX プールアドレス
+          example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
+        amount:
+          type: string
+          description: スワップ数量。全残高の場合は "auto"、割合指定の場合は "50%" のように指定
+          example: '1000000000'
+        swapMode:
+          type: string
+          description: スワップ方向モード
+          enum:
+            - ExactIn
+            - ExactOut
+          example: ExactIn
+        slippage:
+          type: integer
+          description: スリッページ許容率
+          example: 10
+          default: 10
+          minimum: 0
+          maximum: 100
+          format: int64
+        inputMint:
+          type: string
+          description: 入力トークンのミントアドレス
+        outputMint:
+          type: string
+          description: 出力トークンのミントアドレス
+      required:
+        - dex
+        - userAddress
+        - amount
+        - swapMode
+        - slippage
+    SwapReply:
+      type: object
+      properties:
+        serializedTx:
+          type: string
+          description: Base64 エンコードされたトランザクション
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        elapsedTime:
+          type: integer
+          description: リクエスト処理にかかった時間（ミリ秒）
+          example: 245
+          format: int64
+      required:
+        - serializedTx
+        - elapsedTime
+    SwapRouteInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 取引用の DEX 識別子
+          example: jupiter
+          enum:
+            - jupiter
+            - kyberswap
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: トランザクションを開始するウォレットの公開鍵
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: トランザクション処理速度を上げるための優先手数料（SOL 単位）
+          example: '1000'
+        amount:
+          type: string
+          description: スワップ数量。全残高の場合は "auto"、割合指定の場合は "50%" のように指定
+          example: '1000000000'
+        swapMode:
+          type: string
+          description: スワップ方向モード
+          enum:
+            - ExactIn
+            - ExactOut
+          example: ExactIn
+        slippage:
+          type: integer
+          description: スリッページ許容率
+          example: 5
+          default: 5
+          minimum: 0
+          maximum: 100
+          format: int64
+        inputMint:
+          type: string
+          description: 入力トークンのミントアドレス
+          example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        outputMint:
+          type: string
+          description: 出力トークンのミントアドレス
+          example: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+        recipientAddress:
+          type: string
+          description: スワップの受取先ウォレットアドレス
+          example: '0x0000000000000000000000000000000000000001'
+        permit:
+          type: string
+          description: スワップ用の Permit データ
+          example: 66c85d1637257e890e581f724f69f4d4fc17eee156c0619c4719ed0c66eed0e9
+        deadline:
+          type: integer
+          description: スワップの有効期限タイムスタンプ
+          example: 1716806400000
+          format: int64
+        tipFee:
+          type: string
+          description: トランザクション処理速度を上げるためのチップ手数料（SOL 単位）
+          example: '1000000'
+        isAntiMev:
+          type: boolean
+          description: アンチ MEV 保護を有効にするかどうか
+          example: true
+          default: false
+        maxFeePerGas:
+          type: string
+          description: Gas 単位あたりの最大手数料（EIP-1559）（wei 単位）
+          example: '50000000000'
+        maxPriorityFeePerGas:
+          type: string
+          description: Gas 単位あたりの最大優先手数料（EIP-1559）（wei 単位）
+          example: '2000000000'
+        gasPrice:
+          type: string
+          description: Gas 価格（wei 単位、レガシートランザクション）
+          example: '50000000000'
+        gasLimit:
+          type: string
+          description: トランザクションの Gas Limit
+          example: '300000'
+      required:
+        - dex
+        - userAddress
+        - amount
+        - swapMode
+        - slippage
+    SwapRouteResponse:
+      type: object
+      properties:
+        args:
+          description: 元のスワップリクエストパラメータ
+          allOf:
+            - $ref: '#/components/schemas/SwapRouteInput'
+        serializedTx:
+          type: string
+          description: Base64 エンコードされたトランザクション
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        routeInfo:
+          type: object
+          description: 詳細なルーティング情報
+          example:
+            inAmount: '1000000000'
+            outAmount: '985000000'
+            priceImpact: '0.15'
+            route:
+              - USDC
+              - SOL
+        elapsedTime:
+          type: integer
+          description: リクエスト処理にかかった時間（ミリ秒）
+          example: 245
+          format: int64
+      required:
+        - args
+        - serializedTx
+        - routeInfo
+        - elapsedTime
+    DexQuoteResponse:
+      type: object
+      properties:
+        amountOut:
+          type: string
+          description: 出力数量
+          example: '1000000000'
+        minAmountOut:
+          type: string
+          description: 最小出力数量
+        currentPrice:
+          type: string
+          description: 現在の価格
+        executionPrice:
+          type: string
+          description: 約定価格
+        priceImpact:
+          type: string
+          description: プライスインパクト
+          example: '10.5'
+        fee:
+          type: string
+          description: 取引手数料
+          example: '1000000000'
+    CreateTokenInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 取引用の DEX 識別子
+          example: raydium
+          enum:
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: トランザクションを開始するウォレットの公開鍵
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: トランザクション処理速度を上げるための優先手数料（SOL 単位）
+          example: '1000'
+        name:
+          type: string
+          description: 作成するトークンの名前
+          example: Candy Token
+          minLength: 1
+          maxLength: 32
+        symbol:
+          type: string
+          description: トークンシンボル/ティッカー
+          example: CANDY
+          minLength: 1
+          maxLength: 10
+        uri:
+          type: string
+          description: トークンメタデータ URI（通常は画像または JSON を参照）
+          example: https://assets.candyproject.com/token/icon.png
+        image:
+          type: string
+          description: トークン画像 URL（Base64 または HTTPS）
+          example: https://assets.candyproject.com/token/icon.png
+        extra:
+          type: object
+          description: 作成されたトークンの追加メタデータ
+          example:
+            decimals: 6
+            migrateType: amm
+            slippage: 100
+            buyAmount: 0
+            supply: 1000000000000000
+            totalSellA: 793100000000000
+            totalFundRaisingB: 85000000000
+            totalLockedAmount: 0
+            cliffPeriod: 0
+            unlockPeriod: 0
+            shareFeeReceiver: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+            shareFeeRate: 1000
+      required:
+        - dex
+        - userAddress
+        - name
+        - symbol
+    CreateTokenReply:
+      type: object
+      properties:
+        serializedTx:
+          type: string
+          description: トークン作成用の Base64 エンコードされたトランザクション
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        mintAddress:
+          type: string
+          description: トランザクション署名が必要なトークンミントアドレス
+          example: So11111111111111111111111111111111111111112
+      required:
+        - serializedTx
+        - mintAddress
+    SendTxInput:
+      type: object
+      properties:
+        signedTx:
+          type: string
+          description: Base64 エンコードされた署名済みトランザクション
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        submitType:
+          type: string
+          description: トランザクション送信方法
+          example: default
+          enum:
+            - default
+            - priority
+        options:
+          type: object
+          description: jito | direct
+          example:
+            isAntiMev: true
+      required:
+        - signedTx
+    SendTxResponse:
+      type: object
+      properties:
+        signature:
+          type: string
+          description: トランザクション署名/ハッシュ
+          example: 37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F
+        elapsedTime:
+          type: integer
+          description: トランザクション処理時間（ミリ秒）
+          example: 1500
+          format: int64
+        jobId:
+          type: string
+          description: ジョブ ID
+          example: '1234567890'
+      required:
+        - signature
+        - elapsedTime
+        - jobId
+    GasPriceResponse:
+      type: object
+      properties:
+        gasPrice:
+          type: string
+          description: Current gas price in wei (hex string)
+          example: '0x5d21dba00'
+        chain:
+          type: string
+          description: Chain symbol
+          example: ethereum
+      required:
+        - gasPrice
+        - chain
+    EstimateGasLimitInput:
+      type: object
+      properties:
+        from:
+          type: string
+          description: From address
+          example: '0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8'
+        to:
+          type: string
+          description: To address
+          example: '0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8'
+        data:
+          type: string
+          description: Transaction data (hex)
+          example: '0xa9059cbb000000000000000000000000742d35cc6634c0532925a3b8d8c9c4b8a8d4c8b80000000000000000000000000000000000000000000000000de0b6b3a7640000'
+        value:
+          type: string
+          description: Value to send (in wei, hex string)
+          example: '0x0'
+      required:
+        - from
+        - to
+        - data
+    EstimateGasLimitResponse:
+      type: object
+      properties:
+        gasLimit:
+          type: string
+          description: Estimated gas limit (hex string)
+          example: '0x5208'
+        chain:
+          type: string
+          description: Chain symbol
+          example: ethereum
+      required:
+        - gasLimit
+        - chain
+    JobDTO:
+      type: object
+      properties:
+        state:
+          type: string
+          description: ジョブ状態
+          example: completed
+        result:
+          type: object
+          description: ジョブ結果
+          example:
+            success: true
+            data:
+              message: Job completed successfully
+      required:
+        - state
+        - result
+    JobStreamingDTO:
+      type: object
+      properties:
+        id:
+          type: number
+          description: ストリーミングジョブ ID
+          example: 1
+        data:
+          type: object
+          description: ストリーミングデータ
+          example:
+            id: 5rKfmXQyMhz7F2zRE6SpWWx3YkSxtA4gFqZD8CwGRYMx5YLTB8NhbiM9xEHG9jruiWdUyUz7Fpz8jmB8SKcjsLqe
+            status: completed
+            result:
+              success: true
+              data:
+                message: Job completed successfully
+      required:
+        - id
+        - data

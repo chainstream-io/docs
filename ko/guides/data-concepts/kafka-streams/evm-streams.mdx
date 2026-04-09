@@ -1,12 +1,12 @@
 ---
 title: "EVM Streams"
-description: "Ethereum, BSC, Base, Polygon, Optimism 및 기타 EVM 체인의 Protobuf 데이터 스트림"
+description: "Ethereum, BSC, Base, Polygon, Optimism 등 EVM 체인의 Protobuf 데이터 스트림"
 icon: "ethereum"
 ---
 
-EVM 체인은 네트워크에 따라 다른 블록 간격을 가지며 (Ethereum 메인넷 ~12초/블록), Ethereum, BSC, Base, Polygon (Matic), Optimism 등의 네트워크를 지원하고 통합된 Protobuf 스키마를 공유합니다.
+EVM 체인은 네트워크에 따라 블록 간격이 다릅니다 (Ethereum 메인넷 약 12초/블록). Ethereum, BSC, Base, Polygon (Matic), Optimism 등의 네트워크를 지원하며, 통합 Protobuf Schema를 공유합니다.
 
-**스키마 리포지토리**: [github.com/chainstream-io/streaming_protobuf/evm](https://github.com/chainstream-io/streaming_protobuf/tree/main/evm)
+**Schema 저장소**: [github.com/chainstream-io/streaming_protobuf/evm](https://github.com/chainstream-io/streaming_protobuf/tree/main/evm)
 
 ---
 
@@ -18,49 +18,49 @@ EVM Streams는 다음 메시지 유형을 제공합니다:
 |:---|:---|:---|
 | TradeEvents | DEX 거래 이벤트 | `{chain}.dex.trades` |
 | TokenEvents | 토큰 이벤트 | `{chain}.tokens` |
-| BalanceEvents | 잔액 변경 이벤트 | `{chain}.balances` |
+| BalanceEvents | 잔고 변동 이벤트 | `{chain}.balances` |
 | DexPoolEvents | 유동성 풀 이벤트 | `{chain}.dex.pools` |
 | TransfersMessage | 전송 메시지 | `{chain}.v1.transfers.proto` |
 | CandlestickEvents | 캔들스틱 데이터 | `{chain}.candlesticks` |
 
 ---
 
-## 블록 수준 데이터
+## 블록 레벨 데이터
 
-각 블록은 핵심 필드가 포함된 `BlockHeader`를 가집니다:
+각 블록에는 `BlockHeader`가 포함되며, 핵심 필드는 다음과 같습니다:
 
-| 필드 | 타입 | 설명 |
+| 필드 | 유형 | 설명 |
 |:---|:---|:---|
 | `Number` | uint64 | 블록 번호 |
 | `Hash` | bytes | 블록 해시 |
 | `ParentHash` | bytes | 부모 블록 해시 |
 | `Timestamp` | Timestamp | 블록 시간 |
 | `BaseFeePerGas` | uint64 | EIP-1559 기본 수수료 |
-| `GasUsed` | uint64 | 블록 가스 소비량 |
-| `GasLimit` | uint64 | 블록 가스 한도 |
+| `GasUsed` | uint64 | 블록 Gas 소비량 |
+| `GasLimit` | uint64 | 블록 Gas 한도 |
 
 `BlockMessage`에는 다음도 포함됩니다:
 
 | 필드 | 설명 |
 |:---|:---|
 | `Transactions` | 블록 내 모든 트랜잭션 |
-| `Withdrawals` | 검증자 출금 (Shanghai 업그레이드 이후) |
-| `BlobGasUsed` | Blob 가스 소비량 (EIP-4844) |
+| `Withdrawals` | 검증자 인출 (Shanghai 업그레이드 이후) |
+| `BlobGasUsed` | Blob Gas 소비량 (EIP-4844) |
 
 ---
 
-## 트랜잭션 수준 데이터
+## 트랜잭션 레벨 데이터
 
 ### TransactionHeader — 핵심 트랜잭션 메타데이터
 
-| 필드 | 타입 | 설명 |
+| 필드 | 유형 | 설명 |
 |:---|:---|:---|
 | `Hash` | bytes | 트랜잭션 해시 |
 | `Index` | uint32 | 블록 내 인덱스 |
 | `From` | bytes | 발신자 주소 |
 | `To` | bytes | 수신자 주소 |
 | `Value` | BigInt | 전송 금액 (wei) |
-| `Nonce` | uint64 | 발신자 논스 |
+| `Nonce` | uint64 | 발신자 nonce |
 | `Type` | uint32 | 트랜잭션 유형 (0/1/2) |
 
 ### ReceiptHeader — 실행 결과
@@ -68,8 +68,8 @@ EVM Streams는 다음 메시지 유형을 제공합니다:
 | 필드 | 설명 |
 |:---|:---|
 | `Status` | 실행 상태 (1=성공, 0=실패) |
-| `GasUsed` | 실제 가스 소비량 |
-| `CumulativeGasUsed` | 누적 가스 소비량 |
+| `GasUsed` | 실제 Gas 소비량 |
+| `CumulativeGasUsed` | 누적 Gas 소비량 |
 | `ContractAddress` | 생성된 컨트랙트 주소 (있는 경우) |
 
 ### TransactionFee — 수수료 상세
@@ -77,44 +77,44 @@ EVM Streams는 다음 메시지 유형을 제공합니다:
 | 필드 | 설명 |
 |:---|:---|
 | `SenderFee` | 발신자가 지불한 총 수수료 |
-| `MinerReward` | 채굴자/검증자 보상 |
-| `Burnt` | EIP-1559 소각 부분 |
-| `Savings` | 절약된 가스 수수료 |
+| `MinerReward` | 마이너/검증자 보상 |
+| `Burnt` | EIP-1559 소각분 |
+| `Savings` | 절약된 Gas 수수료 |
 
-### Calls — 내부 호출 추적
+### Calls — 내부 호출 트레이스s
 
-모든 중첩 컨트랙트 호출을 포함하며, 각 호출에는:
+모든 중첩된 컨트랙트 호출을 포함하며, 각 call에는 다음이 포함됩니다:
 
 - `From`, `To`: 호출자와 피호출자
-- `Input`, `Output`: 입력 및 출력 데이터
-- `GasUsed`: 가스 소비량
-- `Opcode`: 작업 코드 (CALL/DELEGATECALL/STATICCALL)
-- `Signature`: 함수 서명
+- `Input`, `Output`: 입출력 데이터
+- `GasUsed`: Gas 소비량
+- `Opcode`: 연산 코드 (CALL/DELEGATECALL/STATICCALL)
+- `Signature`: 함수 시그니처
 - `Logs`: 이벤트 로그
 - `StateChanges`: 상태 변경
 - `ReturnValues`: 반환 값
 
-### 잔액 업데이트
+### Balance Updates
 
 <Tabs>
-  <Tab title="토큰 잔액 업데이트">
-    ERC-20/721/1155 토큰 잔액 변경:
+  <Tab title="Token Balance Updates">
+    ERC-20/721/1155 토큰 잔고 변동:
 
     | 필드 | 설명 |
     |:---|:---|
-    | `Token` | 토큰 정보 (주소, 대체 가능성, 소수점, 총 공급량) |
+    | `Token` | 토큰 정보 (주소, 대체 가능 여부, 소수점 자릿수, 총 공급량) |
     | `Wallet` | 지갑 주소 |
-    | `PostBalance` | 트랜잭션 후 잔액 |
+    | `PostBalance` | 트랜잭션 후 잔고 |
   </Tab>
-  <Tab title="네이티브 잔액 업데이트">
-    네이티브 통화 (예: ETH) 잔액 변경:
+  <Tab title="Native Balance Updates">
+    네이티브 통화 (예: ETH) 잔고 변동:
 
     | 필드 | 설명 |
     |:---|:---|
     | `Address` | 주소 |
-    | `PreBalance` | 트랜잭션 전 잔액 |
-    | `PostBalance` | 트랜잭션 후 잔액 |
-    | `ReasonCode` | 변경 사유 코드 |
+    | `PreBalance` | 트랜잭션 전 잔고 |
+    | `PostBalance` | 트랜잭션 후 잔고 |
+    | `ReasonCode` | 변동 사유 코드 |
   </Tab>
 </Tabs>
 
@@ -131,13 +131,13 @@ message TransfersMessage {
   Chain Chain = 1;
   BlockHeader Header = 2;
   repeated Transfer Transfers = 5;
-  optional BlockHeader L1Header = 6;  // L2 체인에 포함
+  optional BlockHeader L1Header = 6;  // Included for L2 chains
 }
 ```
 
 ### Transfer 구조
 
-| 필드 | 타입 | 설명 |
+| 필드 | 유형 | 설명 |
 |:---|:---|:---|
 | `CallIndex` | uint64 | 호출 인덱스 |
 | `LogIndex` | uint64 | 로그 인덱스 |
@@ -153,7 +153,7 @@ message TransfersMessage {
 
 ### TokenInfo 구조
 
-| 필드 | 타입 | 설명 |
+| 필드 | 유형 | 설명 |
 |:---|:---|:---|
 | `SmartContract` | string | 컨트랙트 주소 |
 | `Delegated` | bool | 위임 여부 |
@@ -166,12 +166,12 @@ message TransfersMessage {
 | `Fungible` | bool | 대체 가능 여부 |
 | `AssetId` | string | 자산 ID |
 
-### 지원 토큰 표준
+### 지원하는 토큰 표준
 
 | 표준 | 설명 |
 |:---|:---|
 | ERC-20 | 대체 가능 토큰 |
-| ERC-721 | 대체 불가 토큰 (NFT) |
+| ERC-721 | 대체 불가능 토큰 (NFT) |
 | ERC-1155 | 멀티 자산 토큰 |
 
 ---
@@ -190,7 +190,7 @@ message TradeEvent {
   DApp d_app = 4;
   Trade trade = 100;
   BondingCurve bonding_curve = 110;
-  TradeProcessed trade_processed = 200;  // processed topic에 포함
+  TradeProcessed trade_processed = 200;  // included in processed topic
 }
 ```
 
@@ -198,18 +198,18 @@ message TradeEvent {
 
 | 필드 | 설명 |
 |:---|:---|
-| `token_a_address` / `token_b_address` | 거래쌍 토큰 주소 |
+| `token_a_address` / `token_b_address` | 거래 쌍 토큰 주소 |
 | `token_a_decimals` / `token_b_decimals` | 토큰 소수점 자릿수 |
-| `user_a_amount` / `user_b_amount` | 사용자 거래 금액 |
-| `user_a_pre_amount` / `user_a_post_amount` | 사용자 거래 전/후 잔액 |
+| `user_a_amount` / `user_b_amount` | 사용자 거래 수량 |
+| `user_a_pre_amount` / `user_a_post_amount` | 사용자 거래 전후 잔고 |
 | `pool_address` | 풀 주소 |
-| `vault_a` / `vault_b` | 풀 볼트 주소 |
-| `vault_a_amount` / `vault_b_amount` | 볼트 금액 |
-| `vault_a_pre_amount` / `vault_a_post_amount` | 볼트 거래 전/후 잔액 |
+| `vault_a` / `vault_b` | 풀 Vault 주소 |
+| `vault_a_amount` / `vault_b_amount` | Vault 수량 |
+| `vault_a_pre_amount` / `vault_a_post_amount` | Vault 거래 전후 잔고 |
 | `was_original_direction` | 원래 방향 여부 |
-| `pool_config_address` | 풀 설정 주소 |
+| `pool_config_address` | 풀 구성 주소 |
 
-### TradeProcessed 보강 필드
+### TradeProcessed 확장 필드
 
 `.processed` topic에는 추가 필드가 포함됩니다:
 
@@ -218,7 +218,7 @@ message TradeEvent {
 | `token_a_price_in_usd` / `token_b_price_in_usd` | USD 가격 |
 | `token_a_price_in_native` / `token_b_price_in_native` | 네이티브 통화 가격 |
 | `is_token_a_price_in_usd_suspect` | 가격 의심 여부 |
-| `is_token_a_price_in_usd_suspect_reason` | 의심 사유 (예: 가격 변동성, 소액 거래) |
+| `is_token_a_price_in_usd_suspect_reason` | 의심 사유 (예: 가격 변동, 소액 거래) |
 
 ### DexPoolEvent - 유동성 풀
 
@@ -229,8 +229,8 @@ message TradeEvent {
 | `type` | 이벤트 유형 (INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP) |
 | `address` | 풀 주소 |
 | `token_a_address` / `token_b_address` | 토큰 주소 |
-| `token_a_vault_address` / `token_b_vault_address` | 볼트 주소 |
-| `token_a_amount` / `token_b_amount` | 토큰 금액 |
+| `token_a_vault_address` / `token_b_vault_address` | Vault 주소 |
+| `token_a_amount` / `token_b_amount` | 토큰 수량 |
 | `lp_wallet` | LP 지갑 주소 |
 
 ---
@@ -239,19 +239,19 @@ message TradeEvent {
 
 ### Gas 및 EIP-1559 수수료 모델
 
-EVM은 Gas 메커니즘으로 연산 리소스를 측정합니다. EIP-1559는 동적 BaseFee 조정과 수수료 소각을 도입했으며, 트랜잭션 수수료는 다음으로 분할됩니다:
+EVM은 Gas 메커니즘을 사용하여 계산 리소스를 측정합니다. EIP-1559는 동적 BaseFee 조정과 수수료 소각을 도입했으며, 트랜잭션 수수료는 다음으로 나뉩니다:
 - **검증자 보상**: `MinerReward`
-- **소각 부분**: `Burnt`
+- **소각분**: `Burnt`
 
 ### Layer 2 지원
 
-EVM Streams는 L2 체인에 전용 필드를 제공합니다:
+EVM Streams는 L2 체인을 위한 전용 필드를 제공합니다:
 
 | 필드 | 설명 | 적용 체인 |
 |:---|:---|:---|
 | `L1Header` | 해당 L1 블록 정보 | 모든 L2 |
 | `SequenceNumber` | 시퀀스 번호 | Optimism |
-| `BatcherAddr` | 배처 주소 | Optimism |
+| `BatcherAddr` | Batcher 주소 | Optimism |
 | `L1FeeOverhead` | L1 수수료 오버헤드 | Optimism |
 | `GasL1` | L1 데이터 비용 | Arbitrum |
 
@@ -259,33 +259,33 @@ EVM Streams는 L2 체인에 전용 필드를 제공합니다:
 
 ## Topic → 메시지 유형 매핑
 
-| Topic | Proto 파일 | 메시지 유형 | 설명 |
+| Topic | Proto File | 메시지 유형 | 설명 |
 |:---|:---|:---|:---|
 | `{chain}.dex.trades` | trade_event.proto | TradeEvents | DEX 거래 이벤트 |
 | `{chain}.dex.trades.processed` | trade_event.proto | TradeEvents | USD 가격, 의심 플래그 포함 |
 | `{chain}.tokens` | token_event.proto | TokenEvents | 토큰 이벤트 |
-| `{chain}.tokens.processed` | token_event.proto | TokenEvents | 설명, 이미지, 소셜 링크 포함 |
-| `{chain}.balances` | balance_event.proto | BalanceEvents | 잔액 변경 이벤트 |
+| `{chain}.tokens.processed` | token_event.proto | TokenEvents | 설명, 이미지, SNS 링크 포함 |
+| `{chain}.balances` | balance_event.proto | BalanceEvents | 잔고 변동 이벤트 |
 | `{chain}.balances.processed` | balance_event.proto | BalanceEvents | USD 가치 포함 |
 | `{chain}.dex.pools` | dex_pool_event.proto | DexPoolEvents | 유동성 풀 이벤트 |
 | `{chain}.v1.transfers.proto` | transfers_message.proto | TransfersMessage | EVM 전송 메시지 |
 | `{chain}.candlesticks` | candlestick.proto | CandlestickEvents | 캔들스틱 데이터 |
 
 <Note>
-`{chain}`을 `eth` 또는 `bsc`로 대체하세요. 예: `eth.dex.trades`, `bsc.tokens.processed`.
+`{chain}`을 `eth` 또는 `bsc`로 교체하세요. 예: `eth.dex.trades`, `bsc.tokens.processed`.
 </Note>
 
 ---
 
-## 코드 예시
+## 코드 예제
 
-### Python 예시: DEX 거래 데이터 소비
+### Python 예제: DEX 거래 데이터 소비
 
 ```python
 from kafka import KafkaConsumer
-from common import trade_event_pb2  # streaming_protobuf 리포지토리에서 가져오기
+from common import trade_event_pb2  # Get from streaming_protobuf repository
 
-# 컨슈머 생성
+# Create consumer
 consumer = KafkaConsumer(
     'eth.dex.trades',
     bootstrap_servers=['<your_broker_address>'],
@@ -298,13 +298,13 @@ consumer = KafkaConsumer(
     group_id='my-dex-consumer'
 )
 
-# 메시지 소비 및 파싱
+# Consume and parse messages
 for message in consumer:
-    # protobuf 메시지 파싱
+    # Parse protobuf message
     trade_events = trade_event_pb2.TradeEvents()
     trade_events.ParseFromString(message.value)
     
-    # DEX 거래 반복
+    # Iterate DEX trades
     for event in trade_events.events:
         print(f"Pool: {event.trade.pool_address}")
         print(f"Token A: {event.trade.token_a_address}")
@@ -315,7 +315,7 @@ for message in consumer:
         print("---")
 ```
 
-### JavaScript 예시
+### JavaScript 예제
 
 ```javascript
 const { Kafka } = require('kafkajs');
@@ -335,7 +335,7 @@ const kafka = new Kafka({
 const consumer = kafka.consumer({ groupId: 'my-dex-consumer' });
 
 async function run() {
-  // protobuf 정의 로드
+  // Load protobuf definitions
   const root = await protobuf.load('common/trade_event.proto');
   const TradeEvents = root.lookupType('io.chainstream.v1.dex.trade.TradeEvents');
 

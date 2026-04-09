@@ -1,32 +1,32 @@
 ---
 title: 'WebSocket API'
-description: 'WebSocket API Real-time Data Subscription Service'
+description: 'WebSocket API リアルタイムデータサブスクリプションサービス'
 ---
 
-## Overview
+## 概要
 
-ChainStream DEX WebSocket API provides real-time data subscription services, supporting the following data types:
-- Candle Data 
-- Token Series
-- Wallet Series
-- Ranking Series
-- Trade Series
-- DexPool Series
+ChainStream DEX WebSocket APIは、以下のデータタイプをサポートするリアルタイムデータサブスクリプションサービスを提供します：
+- ローソク足データ (Candles)
+- トークン関連 (Token Series)
+- ウォレット関連 (Wallet Series)
+- ランキング関連 (Ranking Series)
+- 取引関連 (Trade Series)
+- DEXプール関連 (DexPool Series)
 
-**Base URL**
+**ベースURL**
 ```bash
 wss://realtime-dex.chainstream.io/connection/websocket
 ```
 
-## Quick Start
+## クイックスタート
 
-### 1. Establish Connection
+### 1. 接続の確立
 
-First, create a WebSocket connection. WebSocket connections require the `token` query parameter in the URL for authentication.
+まず、WebSocket接続を作成します。WebSocket接続はURL内の`token`クエリパラメータによる認証が必要です。
 
 <Tabs>
-  <Tab title="Using SDK (Recommended)">
-    If using the Go or JavaScript SDK, authentication is handled automatically:
+  <Tab title="SDK使用（推奨）">
+    GoまたはJavaScript SDKを使用する場合、認証は自動的に処理されます：
 
     ```typescript
     import { ChainStreamClient } from '@chainstream-io/sdk';
@@ -34,53 +34,53 @@ First, create a WebSocket connection. WebSocket connections require the `token` 
 
     const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-    // Just subscribe directly, SDK handles WebSocket connection and authentication automatically
+    // 直接サブスクライブするだけで、SDKがWebSocket接続と認証を自動処理
     client.stream.subscribeTokenCandles({
       chain: 'sol',
       tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
       resolution: Resolution._1m,
       callback: (data) => {
-        console.log('Received data:', data);
+        console.log('受信データ:', data);
       }
     });
     ```
 
     <Note>
-    When calling `subscribeXXX` methods, SDK automatically checks connection status and establishes connection if not connected. No need to manually call `connect()`.
+    `subscribeXXX`メソッドを呼び出す際、SDKは自動的に接続状態を確認し、未接続の場合は自動的に接続を確立します。手動で`connect()`を呼び出す必要はありません。
     </Note>
 
-    SDK Installation:
+    SDKインストール：
     - **TypeScript/JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
     - **Python**: `pip install chainstream-sdk` ([PyPI](https://pypi.org/project/chainstream-sdk))
     - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
-    - **Rust**: Add `chainstream-sdk` to your `Cargo.toml` ([crates.io](https://crates.io/crates/chainstream-sdk))
+    - **Rust**: `Cargo.toml`に`chainstream-sdk`を追加 ([crates.io](https://crates.io/crates/chainstream-sdk))
   </Tab>
-  <Tab title="Using Native WebSocket">
-    When using browser native WebSocket or other WebSocket libraries, append the `token` parameter to the URL:
+  <Tab title="ネイティブWebSocket使用">
+    ブラウザネイティブWebSocketまたはその他のWebSocketライブラリを使用する場合、URLに`token`パラメータを追加します：
 
     ```typescript
-    // Works in both browser and Node.js
+    // ブラウザとNode.jsの両方で使用可能
     const token = 'YOUR_ACCESS_TOKEN';
     const ws = new WebSocket(
       `wss://realtime-dex.chainstream.io/connection/websocket?token=${token}`
     );
 
     ws.onopen = () => {
-      console.log('Connection established');
+      console.log('接続確立');
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received data:', data);
+      console.log('受信データ:', data);
     };
     ```
 
     <Note>
-    By passing the token via URL parameter, both browser native WebSocket and various third-party libraries can be used without special header handling.
+    URLパラメータでtokenを渡すことで、ブラウザネイティブWebSocketや各種サードパーティライブラリを、ヘッダーの特別な処理なしに使用できます。
     </Note>
   </Tab>
-  <Tab title="Command Line Testing">
-    Using `wscat` for testing:
+  <Tab title="コマンドラインテスト">
+    `wscat`を使用したテスト：
 
     ```bash
     $ wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
@@ -88,61 +88,61 @@ First, create a WebSocket connection. WebSocket connections require the `token` 
   </Tab>
 </Tabs>
 
-### 2. Subscribe to Data
+### 2. データのサブスクライブ
 
-Choose the data type you want to subscribe to:
+サブスクライブしたいデータタイプを選択します：
 
 ```typescript
-// Example of subscribing to candle data
+// ローソク足データのサブスクライブ例
 ws.send(JSON.stringify({
   type: "subscribe",
   channel: "dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
 }));
 ```
 
-### 3. Handle Data
+### 3. データの処理
 
 ```typescript
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log('Received data:', data);
+  console.log('受信データ:', data);
 };
 ```
 
-## Data Subscriptions
+## データサブスクリプション
 
-### Candles
+### ローソク足
 
-#### Candles Data
+#### ローソク足データ
 
-Get real-time price movement data for tokens.
+トークンの価格推移データをリアルタイムで取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-candle:{chain}_{tokenAddress}_{resolution}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  トークンコントラクトアドレス、例：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="resolution" type="string" required>
-  Candle period, supports: 1m, 5m, 15m, 1h, 4h, 1d
+  ローソク足期間、対応：1m, 5m, 15m, 1h, 4h, 1d
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: volume > 1000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：volume > 1000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -174,34 +174,34 @@ dex-candle:{chain}_{tokenAddress}_{resolution}
   </Tab>
 </Tabs>
 
-### Token Series
+### トークン関連
 
-#### Token Stats
+#### トークン統計
 
-Get real-time market statistics for tokens.
+トークンのリアルタイム市場統計データを取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-token-stats:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  トークンコントラクトアドレス、例：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: price > 0.01
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：price > 0.01
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -351,32 +351,32 @@ dex-token-stats:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Holders Statistics
+#### トークン保有者統計
 
-Get real-time token holder statistics.
+トークン保有者のリアルタイム統計情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-token-holding:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  トークンコントラクトアドレス、例：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: holders > 200
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：holders > 200
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -418,28 +418,28 @@ dex-token-holding:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### New Token Metadata
+#### 新規トークンメタデータ
 
-Get real-time metadata for newly listed tokens.
+新規上場トークンのリアルタイムメタデータを取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-new-tokens-metadata:{chain}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: name == "USDC"
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：name == "USDC"
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -503,24 +503,24 @@ dex-new-tokens-metadata:{chain}
   </Tab>
 </Tabs>
 
-#### New Token
+#### 新規トークン
 
-Get information about newly created token.
+新しく作成されたトークンの情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-new-token:{chain}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -558,32 +558,32 @@ dex-new-token:{chain}
   </Tab>
 </Tabs>
 
-#### Token Supply
+#### トークン供給量
 
-Get real-time token supply and market cap information.
+トークンの供給量と時価総額のリアルタイム情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-token-supply:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  トークンコントラクトアドレス、例：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: supply > 1000000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：supply > 1000000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -609,32 +609,32 @@ dex-token-supply:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Liquidity
+#### トークン流動性
 
-Get real-time token liquidity statistics.
+トークンのリアルタイム流動性統計を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-token-general-stat-num:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address
+  トークンコントラクトアドレス
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: value > 1000000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：value > 1000000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -660,32 +660,32 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Max Liquidity
+#### トークン最大流動性
 
-Get real-time max liquidity info of a token in a single pool.
+単一プール内のトークンのリアルタイム最大流動性情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-token-liquidity:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address
+  トークンコントラクトアドレス
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: liquidityInUsd > 10000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：liquidityInUsd > 10000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -713,32 +713,32 @@ dex-token-liquidity:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Total Liquidity
+#### トークン合計流動性
 
-Get real-time total liquidity info of a token across all pools.
+全プールにわたるトークンのリアルタイム合計流動性情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-token-total-liquidity:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address
+  トークンコントラクトアドレス
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: liquidityInUsd > 50000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：liquidityInUsd > 50000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -766,30 +766,30 @@ dex-token-total-liquidity:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-### Ranking Series
+### ランキング関連
 
-#### Ranking Token Statistics
+#### ランキングトークン統計
 
-Get real-time market statistics for ranking tokens.
+ランキングトークンのリアルタイム市場統計データを取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-ranking-token-stats-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  チャンネルタイプ、対応：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -943,28 +943,28 @@ dex-ranking-token-stats-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token Holders Statistics
+#### ランキングトークン保有者統計
 
-Get real-time token holder statistics for ranking tokens.
+ランキングトークンのリアルタイム保有者統計情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-ranking-token-holding-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  チャンネルタイプ、対応：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1004,28 +1004,28 @@ dex-ranking-token-holding-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token Supply Data
+#### ランキングトークン供給量データ
 
-Get real-time supply and market cap information for ranking tokens.
+ランキングトークンの供給量と時価総額のリアルタイム情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-ranking-token-supply-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  チャンネルタイプ、対応：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1055,28 +1055,28 @@ dex-ranking-token-supply-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token Liquidity Data
+#### ランキングトークン流動性データ
 
-Get real-time liquidity statistics for ranking tokens.
+ランキングトークンのリアルタイム流動性統計を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-ranking-token-general_stat_num-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  チャンネルタイプ、対応：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1106,34 +1106,34 @@ dex-ranking-token-general_stat_num-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token List
+#### ランキングトークンリスト
 
-Get real-time complete information list for ranking tokens, including metadata, holder statistics, supply and market data.
+ランキングトークンの完全な情報リストをリアルタイムで取得します。メタデータ、保有者統計、供給量、市場データを含みます。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-ranking-list:{chain}_{ranking_type}
-# Or specify DEX
+# またはDEXを指定
 dex-ranking-list:{chain}_{ranking_type}_{dex}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="ranking_type" type="string" required>
-  Ranking type, support：new、trending、us_stocks、completed、graduated
+  ランキングタイプ、対応：new、trending、us_stocks、completed、graduated
 </ParamField>
 
 <ParamField query="dex" type="string" required={false}>
-  Optional DEX platform, support：pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
+  オプションのDEXプラットフォーム、対応：pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1413,24 +1413,24 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
   </Tab>
 </Tabs>
 
-#### Ranking Tokens Bonding Curve
+#### ランキングトークンボンディングカーブ
 
-Get real-time bonding curve progress for newly listed tokens.
+新規上場トークンのリアルタイムボンディングカーブ進捗を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-ranking-token-bounding-curve-list:{chain}_new
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1456,34 +1456,34 @@ dex-ranking-token-bounding-curve-list:{chain}_new
   </Tab>
 </Tabs>
 
-### Wallet Series
+### ウォレット関連
 
-#### Wallet Balance
+#### ウォレット残高
 
-Get real-time wallet balance information.
+ウォレットのリアルタイム残高情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-wallet-balance:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Wallet address, e.g., HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+  ウォレットアドレス、例：HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: balance > 1000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：balance > 1000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1515,32 +1515,32 @@ dex-wallet-balance:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-#### Wallet PnL Data (Token Level)
+#### ウォレットPnLデータ（トークンレベル）
 
-Get real-time wallet profit and loss (PnL) statistics.
+ウォレットのリアルタイム損益（PnL）統計を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-wallet-token-pnl:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Wallet address
+  ウォレットアドレス
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: buyAmount > 1000
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：buyAmount > 1000
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1610,28 +1610,28 @@ dex-wallet-token-pnl:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-#### Wallet PnL Data (Wallet Level)
+#### ウォレットPnLデータ（ウォレットレベル）
 
-Get real-time wallet overall profit and loss statistics.
+ウォレットのリアルタイム全体損益統計を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-wallet-pnl-list:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Wallet address
+  ウォレットアドレス
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1687,33 +1687,33 @@ dex-wallet-pnl-list:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-### Trade Series
-#### Token Trade
+### 取引関連
+#### トークン取引
 
-Get real-time token trading events.
+トークンのリアルタイム取引イベントを取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-trade:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  トークンコントラクトアドレス、例：6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: buyAmount > 100
+  オプションのフィルター条件。Google Common Expression Language（CEL）構文を使用。例：buyAmount > 100
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1763,28 +1763,28 @@ dex-trade:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Wallet Trade
+#### ウォレット取引
 
-Get real-time wallet trading event.
+ウォレットのリアルタイム取引イベントを取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-wallet-trade:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Token contract address, e.g., GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
+  ウォレットアドレス、例：GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1820,30 +1820,30 @@ dex-wallet-trade:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-### DexPool Series
+### DEXプール関連
 
-#### DEX Pool Balance
+#### DEXプール残高
 
-Get real-time DEX pool balance information.
+DEXプールのリアルタイム残高情報を取得します。
 
-**Subscription Format**
+**サブスクリプション形式**
 ```text
 dex-pool-balance:{chain}_{poolAddress}
 ```
 
-**Parameters**
+**パラメータ**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  ブロックチェーン名、例：sol
 </ParamField>
 
 <ParamField query="poolAddress" type="string" required>
-  Pool address
+  プールアドレス
 </ParamField>
 
-**Response Data Format**
+**レスポンスデータ形式**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket APIは転送効率を最適化するために短縮フィールド名を返し、SDKはコードの可読性を向上させるために完全なフィールド名を返します。
 </Tip>
 
 <Tabs>
@@ -1871,7 +1871,7 @@ dex-pool-balance:{chain}_{poolAddress}
   </Tab>
 </Tabs>
 
-## Usage Examples
+## 使用例
 
 ```typescript
 import { ChainStreamClient } from '@chainstream-io/sdk';
@@ -1879,29 +1879,29 @@ import { Resolution } from '@chainstream-io/sdk/openapi';
 
 const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-// Just subscribe directly, SDK auto-detects connection status and connects if needed
+// 直接サブスクライブするだけで、SDKが接続状態を自動検出し必要に応じて接続
 client.stream.subscribeTokenCandles({
   chain: 'sol',
   tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
   resolution: Resolution._1m,
   callback: (data) => {
-    console.log('Candle data:', data);
+    console.log('ローソク足データ:', data);
   }
 });
 
-// Subscribe to wallet balance
+// ウォレット残高のサブスクライブ
 client.stream.subscribeWalletBalance({
   chain: 'sol',
   walletAddress: 'YOUR_WALLET_ADDRESS',
   callback: (data) => {
-    console.log('Wallet balance:', data);
+    console.log('ウォレット残高:', data);
   }
 });
 ```
 
-### Reconnection Strategy
+### 再接続戦略
 
-Recommended to use exponential backoff for reconnection:
+指数バックオフによる再接続を推奨します：
 
 ```typescript
 function reconnect(attempt) {
@@ -1912,64 +1912,64 @@ function reconnect(attempt) {
 }
 ```
 
-## Usage Limits
+## 使用制限
 
-| Limit | Value | Description |
-|-------|-------|-------------|
-| Maximum Subscriptions | 100/connection | Excess will be rejected |
-| Message Size | 100KB | Excess will be truncated |
-| Heartbeat Interval | 30 seconds | Regular heartbeat required |
+| 制限項目 | 制限値 | 説明 |
+|----------|--------|------|
+| 最大サブスクリプション数 | 100/接続 | 超過分は拒否されます |
+| メッセージサイズ | 100KB | 超過分は切り捨てられます |
+| ハートビート間隔 | 30秒 | 定期的なハートビートが必要です |
 
-## Best Practices
+## ベストプラクティス
 
-1. **Connection Management**
-   - Maintain a single WebSocket connection
-   - Implement automatic reconnection
-   - Send regular heartbeats
+1. **接続管理**
+   - 単一のWebSocket接続を維持
+   - 自動再接続を実装
+   - 定期的なハートビートの送信
 
-2. **Error Handling**
-   - Implement complete error handling
-   - Log detailed error information
-   - Use exponential backoff for reconnection
+2. **エラーハンドリング**
+   - 完全なエラー処理を実装
+   - 詳細なエラー情報をログに記録
+   - 指数バックオフによる再接続を使用
 
-3. **Performance Optimization**
-   - Control subscription quantity
-   - Implement message queue mechanism
-   - Clean up unused subscriptions
+3. **パフォーマンス最適化**
+   - サブスクリプション数を制御
+   - メッセージキューメカニズムを実装
+   - 使用していないサブスクリプションをクリーンアップ
 
-## Complete Example
+## 完全な例
 
 <Tabs>
-  <Tab title="Using SDK (Recommended)">
+  <Tab title="SDK使用（推奨）">
     ```typescript
     import { ChainStreamClient } from '@chainstream-io/sdk';
     import { Resolution } from '@chainstream-io/sdk/openapi';
 
     const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-    // Just subscribe directly, SDK auto-detects connection status and connects if needed
+    // 直接サブスクライブするだけで、SDKが接続状態を自動検出し必要に応じて接続
     const subscription = client.stream.subscribeTokenCandles({
       chain: 'sol',
       tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
       resolution: Resolution._1m,
       callback: (data) => {
-        console.log('Candle data:', data);
+        console.log('ローソク足データ:', data);
       }
     });
 
-    // Unsubscribe
+    // サブスクリプション解除
     subscription.unsubscribe();
     ```
 
     <Note>
-    When using the SDK, authentication, reconnection, heartbeat, etc. are all handled automatically. Recommended for production environments.
+    SDKを使用する場合、認証、再接続、ハートビートなどはすべて自動的に処理されます。本番環境での使用を推奨します。
     - **TypeScript/JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
     - **Python SDK**: [chainstream-sdk](https://pypi.org/project/chainstream-sdk)
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
     - **Rust SDK**: [chainstream-sdk](https://crates.io/crates/chainstream-sdk)
     </Note>
   </Tab>
-  <Tab title="Native WebSocket">
+  <Tab title="ネイティブWebSocket">
     ```typescript
     class DexWebSocket {
       private ws: WebSocket;

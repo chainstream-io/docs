@@ -1,39 +1,39 @@
 ---
-title: 'Authentication'
-description: 'How to sign API requests with authentication'
+title: '認証'
+description: '認証付きAPIリクエストの署名方法'
 icon: "key"
 ---
 
-## Signing Requests
+## リクエストの署名
 
-ChainStream uses API keys to authenticate all API calls. The **Base API URL** will be one of the following depending on your workspace environment type:
+ChainStreamは、すべてのAPI呼び出しの認証にAPIキーを使用します。**ベースAPI URL**は、ワークスペース環境のタイプに応じて以下のいずれかになります：
 
-* Mainnet: `https://api.chainstream.io/`
+* メインネット: `https://api.chainstream.io/`
 
-Each API request must include the following headers:
+各APIリクエストには、以下のヘッダーを含める必要があります：
 
-* `Authorization` - This value should be set to `Bearer <Access Token>`. The access token is a Base64 encoded JSON Web Token (JWT).
+* `Authorization` - この値は `Bearer <Access Token>` に設定する必要があります。アクセストークンはBase64エンコードされたJSON Web Token（JWT）です。
 
-## Generating JWT Token
+## JWTトークンの生成
 
-You can generate a JWT token using the following code. The `scope` parameter is optional and controls access permissions for specific API modules.
+以下のコードを使用してJWTトークンを生成できます。`scope`パラメータはオプションで、特定のAPIモジュールへのアクセス権限を制御します。
 
-### Available Scopes
+### 利用可能なスコープ
 
-The following scopes are currently supported:
+現在、以下のスコープがサポートされています：
 
-- `webhook.read` - Read access to Webhook API endpoints
-- `webhook.write` - Write access to Webhook API endpoints  
-- `kyt.read` - Read access to KYT (Know Your Transaction) API endpoints
-- `kyt.write` - Write access to KYT API endpoints
+- `webhook.read` - Webhook APIエンドポイントへの読み取りアクセス
+- `webhook.write` - Webhook APIエンドポイントへの書き込みアクセス
+- `kyt.read` - KYT（Know Your Transaction）APIエンドポイントへの読み取りアクセス
+- `kyt.write` - KYT APIエンドポイントへの書き込みアクセス
 
 <Note>
-If no scope is specified, the token will have access to all general API endpoints. Scopes are only required when accessing protected Webhook or KYT endpoints.
+スコープを指定しない場合、トークンはすべての一般APIエンドポイントにアクセスできます。スコープは、保護されたWebhookまたはKYTエンドポイントにアクセスする場合にのみ必要です。
 </Note>
 
 ### JavaScript
 
-**Example 1: Without scope (general API access)**
+**例1: スコープなし（一般APIアクセス）**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -51,7 +51,7 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-**Example 2: With Webhook access**
+**例2: Webhookアクセス付き**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -70,7 +70,7 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-**Example 3: With KYT access**
+**例3: KYTアクセス付き**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -89,7 +89,7 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-**Example 4: With multiple scopes**
+**例4: 複数スコープ付き**
 
 ```javascript
 import { AuthenticationClient } from 'auth0';
@@ -108,9 +108,9 @@ const response = await auth0Client.oauth.clientCredentialsGrant({
 return response.data.access_token;
 ```
 
-## Using SDKs
+## SDKの使用
 
-After generating the JWT token, you can use it to initialize the SDK:
+JWTトークンを生成した後、それを使用してSDKを初期化できます：
 
 ### JavaScript SDK
 
@@ -122,5 +122,5 @@ const dex = new ChainStreamClient("your-jwt-token");
 ```
 
 <Note>
-Make sure to replace the placeholder values with your actual API credentials.
+プレースホルダーの値を実際のAPI認証情報に置き換えてください。
 </Note>

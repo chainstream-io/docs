@@ -1,0 +1,761 @@
+openapi: 3.1.0
+paths:
+  /v2/dex/{chain}/swap:
+    post:
+      description: 입력 토큰, 출력 토큰, 수량 및 슬리피지를 포함한 스왑 파라미터
+      operationId: swap
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapReply'
+      security:
+        - bearer: []
+      summary: DEX - 스왑
+      tags:
+        - Dex
+  /v2/dex/{chain}/route:
+    post:
+      description: 가격 영향과 수수료를 고려한 토큰 스왑 최적 경로 계산. 최적 경로와 준비된 트랜잭션을 반환합니다.
+      operationId: route
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapRouteInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRouteResponse'
+      security:
+        - bearer: []
+      summary: DEX - 라우트
+      tags:
+        - Dex
+  /v2/dex/{chain}/quote:
+    get:
+      description: DEX 거래 견적 정보 조회
+      operationId: quote
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+        - name: dex
+          required: true
+          in: query
+          description: DEX 프로토콜 유형
+          schema:
+            example: raydium
+            enum:
+              - raydium
+              - pumpfun
+            type: string
+        - name: amount
+          required: true
+          in: query
+          description: 거래 수량
+          schema:
+            example: 1000000000
+            type: string
+        - name: inputMint
+          required: true
+          in: query
+          description: 입력 토큰 주소
+          schema:
+            example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+            type: string
+        - name: outputMint
+          required: true
+          in: query
+          description: 출력 토큰 주소
+          schema:
+            example: So11111111111111111111111111111111111111112
+            type: string
+        - name: exactIn
+          required: true
+          in: query
+          description: 정확한 입력 모드
+          schema:
+            default: true
+            example: true
+            type: boolean
+        - name: slippage
+          required: true
+          in: query
+          description: 슬리피지 허용치
+          schema:
+            format: int64
+            example: 10
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DexQuoteResponse'
+      security:
+        - bearer: []
+      summary: DEX - 견적 조회
+      tags:
+        - Dex
+  /v2/dex/{chain}/create:
+    post:
+      description: 지정된 DEX에 새 토큰 생성
+      operationId: create.token
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        description: Token creation parameters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTokenReply'
+      security:
+        - bearer: []
+      summary: DEX - 토큰 생성
+      tags:
+        - Dex
+  /v2/transaction/{chain}/send:
+    post:
+      description: 서명된 트랜잭션을 블록체인에 제출
+      operationId: send
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            enum:
+              - sol
+              - bsc
+              - eth
+            type: string
+      requestBody:
+        required: true
+        description: 트랜잭션 파라미터
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTxInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTxResponse'
+      security:
+        - bearer: []
+      summary: 트랜잭션 - 전송
+      tags:
+        - Transaction
+  /v2/transaction/{chain}/gas-price:
+    get:
+      description: EVM 체인의 현재 가스 가격 조회
+      operationId: get.gasPrice
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            enum:
+              - bsc
+              - eth
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GasPriceResponse'
+      security:
+        - bearer: []
+      summary: 트랜잭션 - 가스 가격
+      tags:
+        - Transaction
+  /v2/transaction/{chain}/estimate-gas-limit:
+    post:
+      description: EVM 트랜잭션의 가스 한도 추정
+      operationId: get.gasLimit
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 지원되는 네트워크에 나열된 체인 이름
+          schema:
+            enum:
+              - bsc
+              - eth
+            type: string
+      requestBody:
+        required: true
+        description: 가스 추정 파라미터
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasLimitInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateGasLimitResponse'
+      security:
+        - bearer: []
+      summary: 트랜잭션 - 가스 한도 추정
+      tags:
+        - Transaction
+  /v2/job/{id}:
+    get:
+      description: 작업 ID로 현재 상태 및 결과 조회
+      operationId: get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: 작업 식별자
+          schema:
+            example: '12345'
+            type: string
+      responses:
+        '200':
+          description: 작업 상태 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDTO'
+      security:
+        - bearer: []
+      summary: 작업 - 조회
+      tags:
+        - Job
+  /v2/job/{id}/streaming:
+    get:
+      description: Server-Sent Events (SSE)를 통한 실시간 작업 상태 업데이트 구독. 작업 완료 또는 오류 발생 시까지 연결이 유지됩니다
+      operationId: streaming
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: 작업 식별자
+          schema:
+            example: '12345'
+            type: string
+      responses:
+        '200':
+          description: SSE 스트림 연결 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStreamingDTO'
+      security:
+        - bearer: []
+      summary: 작업 - 스트리밍
+      tags:
+        - Job
+info:
+  title: Defi Services API
+  description: Defi Services API ⚡️
+  version: '1.0'
+  contact:
+    name: AI
+    url: https://github.com/chainstream-io/defi-service
+    email: ai@sx.ai
+tags:
+  - name: Endpoints
+    description: ''
+servers:
+  - url: https://api.chainstream.io
+    description: Chainstream Production
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    ChainSymbol:
+      type: string
+      enum:
+        - sol
+        - bsc
+        - eth
+    SwapInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 거래의 DEX 식별자
+          example: jupiter
+          enum:
+            - jupiter
+            - kyberswap
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: 트랜잭션을 시작하는 지갑의 공개 키
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: 트랜잭션 처리 속도를 높이기 위한 우선 수수료 (SOL 단위)
+          example: '1000'
+        poolAddress:
+          type: string
+          description: DEX 풀 주소
+          example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
+        amount:
+          type: string
+          description: 스왑 수량. 전액은 "auto", 비율은 "50%"와 같이 사용
+          example: '1000000000'
+        swapMode:
+          type: string
+          description: 스왑 방향 모드
+          enum:
+            - ExactIn
+            - ExactOut
+          example: ExactIn
+        slippage:
+          type: integer
+          description: 슬리피지 허용 비율
+          example: 10
+          default: 10
+          minimum: 0
+          maximum: 100
+          format: int64
+        inputMint:
+          type: string
+          description: 입력 토큰 Mint 주소
+        outputMint:
+          type: string
+          description: 출력 토큰 Mint 주소
+      required:
+        - dex
+        - userAddress
+        - amount
+        - swapMode
+        - slippage
+    SwapReply:
+      type: object
+      properties:
+        serializedTx:
+          type: string
+          description: Base64 인코딩된 트랜잭션
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        elapsedTime:
+          type: integer
+          description: 요청 처리 소요 시간 (밀리초)
+          example: 245
+          format: int64
+      required:
+        - serializedTx
+        - elapsedTime
+    SwapRouteInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 거래의 DEX 식별자
+          example: jupiter
+          enum:
+            - jupiter
+            - kyberswap
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: 트랜잭션을 시작하는 지갑의 공개 키
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: 트랜잭션 처리 속도를 높이기 위한 우선 수수료 (SOL 단위)
+          example: '1000'
+        amount:
+          type: string
+          description: 스왑 수량. 전액은 "auto", 비율은 "50%"와 같이 사용
+          example: '1000000000'
+        swapMode:
+          type: string
+          description: 스왑 방향 모드
+          enum:
+            - ExactIn
+            - ExactOut
+          example: ExactIn
+        slippage:
+          type: integer
+          description: 슬리피지 허용 비율
+          example: 5
+          default: 5
+          minimum: 0
+          maximum: 100
+          format: int64
+        inputMint:
+          type: string
+          description: 입력 토큰 Mint 주소
+          example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        outputMint:
+          type: string
+          description: 출력 토큰 Mint 주소
+          example: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+        recipientAddress:
+          type: string
+          description: 스왑 수신 지갑 주소
+          example: '0x0000000000000000000000000000000000000001'
+        permit:
+          type: string
+          description: 스왑 Permit 데이터
+          example: 66c85d1637257e890e581f724f69f4d4fc17eee156c0619c4719ed0c66eed0e9
+        deadline:
+          type: integer
+          description: 스왑 마감 타임스탬프
+          example: 1716806400000
+          format: int64
+        tipFee:
+          type: string
+          description: 트랜잭션 처리 속도를 높이기 위한 팁 수수료 (SOL 단위)
+          example: '1000000'
+        isAntiMev:
+          type: boolean
+          description: Anti-MEV 보호 활성화 여부
+          example: true
+          default: false
+        maxFeePerGas:
+          type: string
+          description: 가스당 최대 수수료 (EIP-1559, wei 단위)
+          example: '50000000000'
+        maxPriorityFeePerGas:
+          type: string
+          description: 가스당 최대 우선 수수료 (EIP-1559, wei 단위)
+          example: '2000000000'
+        gasPrice:
+          type: string
+          description: 가스 가격 (레거시 트랜잭션, wei 단위)
+          example: '50000000000'
+        gasLimit:
+          type: string
+          description: 트랜잭션 가스 한도
+          example: '300000'
+      required:
+        - dex
+        - userAddress
+        - amount
+        - swapMode
+        - slippage
+    SwapRouteResponse:
+      type: object
+      properties:
+        args:
+          description: 원본 스왑 요청 파라미터
+          allOf:
+            - $ref: '#/components/schemas/SwapRouteInput'
+        serializedTx:
+          type: string
+          description: Base64 인코딩된 트랜잭션
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        routeInfo:
+          type: object
+          description: 상세 라우팅 정보
+          example:
+            inAmount: '1000000000'
+            outAmount: '985000000'
+            priceImpact: '0.15'
+            route:
+              - USDC
+              - SOL
+        elapsedTime:
+          type: integer
+          description: 요청 처리 소요 시간 (밀리초)
+          example: 245
+          format: int64
+      required:
+        - args
+        - serializedTx
+        - routeInfo
+        - elapsedTime
+    DexQuoteResponse:
+      type: object
+      properties:
+        amountOut:
+          type: string
+          description: 출력 수량
+          example: '1000000000'
+        minAmountOut:
+          type: string
+          description: 최소 출력 수량
+        currentPrice:
+          type: string
+          description: 현재 가격
+        executionPrice:
+          type: string
+          description: 체결 가격
+        priceImpact:
+          type: string
+          description: 가격 영향
+          example: '10.5'
+        fee:
+          type: string
+          description: 거래 수수료
+          example: '1000000000'
+    CreateTokenInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 거래의 DEX 식별자
+          example: raydium
+          enum:
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: 트랜잭션을 시작하는 지갑의 공개 키
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: 트랜잭션 처리 속도를 높이기 위한 우선 수수료 (SOL 단위)
+          example: '1000'
+        name:
+          type: string
+          description: 생성할 토큰 이름
+          example: Candy Token
+          minLength: 1
+          maxLength: 32
+        symbol:
+          type: string
+          description: 토큰 심볼/티커
+          example: CANDY
+          minLength: 1
+          maxLength: 10
+        uri:
+          type: string
+          description: 토큰 메타데이터 URI (일반적으로 이미지 또는 JSON을 가리킴)
+          example: https://assets.candyproject.com/token/icon.png
+        image:
+          type: string
+          description: 토큰 이미지 URL (Base64 또는 HTTPS)
+          example: https://assets.candyproject.com/token/icon.png
+        extra:
+          type: object
+          description: 생성된 토큰에 대한 추가 메타데이터
+          example:
+            decimals: 6
+            migrateType: amm
+            slippage: 100
+            buyAmount: 0
+            supply: 1000000000000000
+            totalSellA: 793100000000000
+            totalFundRaisingB: 85000000000
+            totalLockedAmount: 0
+            cliffPeriod: 0
+            unlockPeriod: 0
+            shareFeeReceiver: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+            shareFeeRate: 1000
+      required:
+        - dex
+        - userAddress
+        - name
+        - symbol
+    CreateTokenReply:
+      type: object
+      properties:
+        serializedTx:
+          type: string
+          description: 토큰 생성을 위한 Base64 인코딩된 트랜잭션
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        mintAddress:
+          type: string
+          description: 트랜잭션 서명이 필요한 토큰 Mint 주소
+          example: So11111111111111111111111111111111111111112
+      required:
+        - serializedTx
+        - mintAddress
+    SendTxInput:
+      type: object
+      properties:
+        signedTx:
+          type: string
+          description: Base64 인코딩된 서명 트랜잭션
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        submitType:
+          type: string
+          description: 트랜잭션 제출 방식
+          example: default
+          enum:
+            - default
+            - priority
+        options:
+          type: object
+          description: jito | direct
+          example:
+            isAntiMev: true
+      required:
+        - signedTx
+    SendTxResponse:
+      type: object
+      properties:
+        signature:
+          type: string
+          description: 트랜잭션 서명/해시
+          example: 37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F
+        elapsedTime:
+          type: integer
+          description: 트랜잭션 처리 시간 (밀리초)
+          example: 1500
+          format: int64
+        jobId:
+          type: string
+          description: 작업 ID
+          example: '1234567890'
+      required:
+        - signature
+        - elapsedTime
+        - jobId
+    GasPriceResponse:
+      type: object
+      properties:
+        gasPrice:
+          type: string
+          description: Current gas price in wei (hex string)
+          example: '0x5d21dba00'
+        chain:
+          type: string
+          description: Chain symbol
+          example: ethereum
+      required:
+        - gasPrice
+        - chain
+    EstimateGasLimitInput:
+      type: object
+      properties:
+        from:
+          type: string
+          description: From address
+          example: '0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8'
+        to:
+          type: string
+          description: To address
+          example: '0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8'
+        data:
+          type: string
+          description: Transaction data (hex)
+          example: '0xa9059cbb000000000000000000000000742d35cc6634c0532925a3b8d8c9c4b8a8d4c8b80000000000000000000000000000000000000000000000000de0b6b3a7640000'
+        value:
+          type: string
+          description: Value to send (in wei, hex string)
+          example: '0x0'
+      required:
+        - from
+        - to
+        - data
+    EstimateGasLimitResponse:
+      type: object
+      properties:
+        gasLimit:
+          type: string
+          description: Estimated gas limit (hex string)
+          example: '0x5208'
+        chain:
+          type: string
+          description: Chain symbol
+          example: ethereum
+      required:
+        - gasLimit
+        - chain
+    JobDTO:
+      type: object
+      properties:
+        state:
+          type: string
+          description: 작업 상태
+          example: completed
+        result:
+          type: object
+          description: 작업 결과
+          example:
+            success: true
+            data:
+              message: Job completed successfully
+      required:
+        - state
+        - result
+    JobStreamingDTO:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 스트리밍 작업 ID
+          example: 1
+        data:
+          type: object
+          description: 스트리밍 데이터
+          example:
+            id: 5rKfmXQyMhz7F2zRE6SpWWx3YkSxtA4gFqZD8CwGRYMx5YLTB8NhbiM9xEHG9jruiWdUyUz7Fpz8jmB8SKcjsLqe
+            status: completed
+            result:
+              success: true
+              data:
+                message: Job completed successfully
+      required:
+        - id
+        - data

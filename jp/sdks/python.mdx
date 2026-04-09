@@ -18,9 +18,9 @@ from chainstream import ChainStreamClient
 client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
 ```
 
-## REST APIの例
+## REST API の例
 
-トークンメタデータの照会：
+トークンメタデータを取得する：
 
 ```python
 import asyncio
@@ -32,20 +32,20 @@ ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
 BASE_URL = 'https://api.chainstream.io'
 
 async def main():
-    # APIクライアントを設定
+    # API クライアントを設定
     config = Configuration(
         host=BASE_URL,
         access_token=ACCESS_TOKEN,
     )
     
     async with ApiClient(config) as api_client:
-        # トークンAPIインスタンスを作成
+        # Token API インスタンスを作成
         token_api = TokenApi(api_client)
         
         chain = ChainSymbol.SOL
         token_address = 'So11111111111111111111111111111111111111112'  # SOL
         
-        print(f'トークン照会: {chain.value}/{token_address}')
+        print(f'Querying Token: {chain.value}/{token_address}')
         
         # トークンメタデータを取得
         result = await token_api.get_metadata(
@@ -53,18 +53,18 @@ async def main():
             token_address=token_address,
         )
         
-        print('トークンメタデータ:')
-        print(f'  名前: {result.name}')
-        print(f'  シンボル: {result.symbol}')
-        print(f'  小数点桁数: {result.decimals}')
+        print('Token Metadata:')
+        print(f'  Name: {result.name}')
+        print(f'  Symbol: {result.symbol}')
+        print(f'  Decimals: {result.decimals}')
 
 if __name__ == '__main__':
     asyncio.run(main())
 ```
 
-## WebSocketの例
+## WebSocket の例
 
-リアルタイムのトークンキャンドルデータを購読：
+リアルタイムのトークンローソク足データを購読する：
 
 ```python
 import asyncio
@@ -81,8 +81,8 @@ async def main():
     token_address = 'So11111111111111111111111111111111111111112'  # SOL
     resolution = Resolution.S1
 
-    print(f'トークンキャンドルを購読: {chain}/{token_address}')
-    print('リッスン中... (Ctrl+Cで停止)\n')
+    print(f'Subscribing to Token Candles: {chain}/{token_address}')
+    print('Listening... (Press Ctrl+C to stop)\n')
 
     message_count = 0
 
@@ -101,12 +101,12 @@ async def main():
         callback=on_candle,
     )
 
-    # Ctrl+Cを待つためのイベントを作成
+    # Ctrl+C を待つためのイベントを作成
     stop_event = asyncio.Event()
 
     def signal_handler(sig, frame):
-        print(f'\n{message_count}件のメッセージを受信')
-        print('接続を閉じています...')
+        print(f'\nReceived {message_count} messages')
+        print('Closing connection...')
         stop_event.set()
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
 ## その他の例
 
-### トークン検索
+### トークンを検索
 
 ```python
 results = await token_api.search_token(keyword='bonk')
@@ -131,7 +131,7 @@ for t in results:
     print(f'{t.symbol}: {t.address}')
 ```
 
-### ウォレットPnLの取得
+### ウォレットの損益（PnL）を取得
 
 ```python
 from chainstream.openapi_client.api.wallet_api import WalletApi
@@ -142,10 +142,10 @@ async with ApiClient(config) as api_client:
         chain=ChainSymbol.SOL,
         wallet_address='WALLET_ADDRESS',
     )
-    print(f'総PnL: {pnl.total_pnl_usd}')
+    print(f'Total PnL: {pnl.total_pnl_usd}')
 ```
 
-### 取引リストの取得
+### 取引リストを取得
 
 ```python
 from chainstream.openapi_client.api.trade_api import TradeApi
@@ -163,7 +163,7 @@ async with ApiClient(config) as api_client:
 
 ---
 
-## Pandas統合
+## Pandas との連携
 
 ```python
 import pandas as pd
@@ -183,7 +183,7 @@ from chainstream.openapi_client.exceptions import ApiException
 try:
     result = await token_api.get_token(chain=ChainSymbol.SOL, token_address='INVALID')
 except ApiException as e:
-    print(f'APIエラー {e.status}: {e.reason}')
+    print(f'API error {e.status}: {e.reason}')
     if e.status == 429:
         import asyncio
         await asyncio.sleep(2)

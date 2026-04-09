@@ -6,7 +6,7 @@ icon: 'rust'
 
 ## インストール
 
-`Cargo.toml`に追加：
+`Cargo.toml` に以下を追加してください：
 
 ```toml
 [dependencies]
@@ -29,15 +29,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## REST APIの例
+## REST API の例
 
-トークンメタデータの照会：
+トークンメタデータを取得する：
 
 ```rust
 use chainstream_sdk::{openapi, CHAINSTREAM_BASE_URL};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 
-// リクエストにBearerトークンを追加するミドルウェア
+// リクエストに Bearer トークンを付与するミドルウェア
 struct BearerAuthMiddleware {
     token: String,
 }
@@ -62,29 +62,29 @@ impl reqwest_middleware::Middleware for BearerAuthMiddleware {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let access_token = "YOUR_ACCESS_TOKEN";
 
-    // Bearerトークンミドルウェア付きHTTPクライアントを作成
+    // Bearer トークンミドルウェア付きの HTTP クライアントを作成
     let http_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
         .with(BearerAuthMiddleware {
             token: access_token.to_string(),
         })
         .build();
 
-    // OpenAPIクライアントを作成
+    // OpenAPI クライアントを作成
     let client = openapi::Client::new_with_client(CHAINSTREAM_BASE_URL, http_client);
 
-    // APIを呼び出し
+    // API を呼び出す
     let result = client.get_supported_blockchains().send().await?;
     let blockchains = result.into_inner();
     
-    println!("サポートされるブロックチェーン: {:#?}", blockchains);
+    println!("Supported blockchains: {:#?}", blockchains);
     
     Ok(())
 }
 ```
 
-## WebSocketの例
+## WebSocket の例
 
-リアルタイムのトークンキャンドルデータを購読：
+リアルタイムのトークンローソク足データを購読する：
 
 ```rust
 use chainstream_sdk::{
@@ -104,13 +104,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token_address = "So11111111111111111111111111111111111111112"; // SOL
     let resolution = Resolution::X1s;
 
-    println!("トークンキャンドルを購読: {}/{}", chain, token_address);
-    println!("Ctrl+Cで終了...\n");
+    println!("Subscribing to token candles: {}/{}", chain, token_address);
+    println!("Press Ctrl+C to exit...\n");
 
     let message_count = Arc::new(AtomicUsize::new(0));
     let message_count_clone = message_count.clone();
 
-    // トークンキャンドルを購読
+    // トークンのローソク足を購読
     let _unsub = client
         .stream
         .subscribe_token_candles(
@@ -128,10 +128,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
-    // Ctrl+Cを待つ
+    // Ctrl+C を待機
     signal::ctrl_c().await?;
 
-    println!("\n{}件のメッセージを受信", message_count.load(Ordering::SeqCst));
+    println!("\nReceived {} messages", message_count.load(Ordering::SeqCst));
     client.close().await;
     
     Ok(())

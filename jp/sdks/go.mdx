@@ -22,9 +22,9 @@ if err != nil {
 defer client.Close()
 ```
 
-## REST APIの例
+## REST API の例
 
-トークン情報の照会：
+トークン情報を取得する：
 
 ```go
 package main
@@ -43,46 +43,46 @@ import (
 const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
 
 func main() {
-	fmt.Println("API経由でトークンを照会...")
+	fmt.Println("Querying Token via API...")
 
-	// SDKクライアントを初期化
+	// SDK クライアントを初期化
 	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{})
 	if err != nil {
-		log.Fatalf("クライアント作成失敗: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.Close()
 
 	chain := token.Sol
 	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
 
-	fmt.Printf("照会: %s/%s\n", chain, tokenAddress)
+	fmt.Printf("Querying: %s/%s\n", chain, tokenAddress)
 
-	// SDK経由でAPIを呼び出し
+	// SDK 経由で API を呼び出す
 	resp, err := client.Token.GetToken(context.Background(), chain, tokenAddress)
 	if err != nil {
-		log.Fatalf("API呼び出し失敗: %v", err)
+		log.Fatalf("API call failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("レスポンス読み取り失敗: %v", err)
+		log.Fatalf("Failed to read response: %v", err)
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		log.Fatalf("JSONパース失敗: %v", err)
+		log.Fatalf("Failed to parse JSON: %v", err)
 	}
 
-	fmt.Println("\n結果:")
+	fmt.Println("\nResult:")
 	prettyJSON, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Println(string(prettyJSON))
 }
 ```
 
-## WebSocketの例
+## WebSocket の例
 
-リアルタイムのトークンキャンドルデータを購読：
+リアルタイムのトークンローソク足データを購読する：
 
 ```go
 package main
@@ -101,14 +101,14 @@ import (
 const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
 
 func main() {
-	fmt.Println("WebSocket購読を開始...")
+	fmt.Println("Starting WebSocket subscription...")
 
-	// ChainStreamClientを作成（購読時にWebSocketが自動接続）
+	// ChainStreamClient を作成（購読時に WebSocket が自動接続）
 	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{
 		StreamURL: "wss://realtime-dex.chainstream.io/connection/websocket",
 	})
 	if err != nil {
-		fmt.Printf("クライアント作成失敗: %v\n", err)
+		fmt.Printf("Failed to create client: %v\n", err)
 		os.Exit(1)
 	}
 	defer client.Close()
@@ -116,10 +116,10 @@ func main() {
 	chain := "sol"
 	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
 
-	fmt.Printf("トークンキャンドルを購読: %s/%s\n", chain, tokenAddress)
-	fmt.Println("リッスン中... (Ctrl+Cで停止)")
+	fmt.Printf("Subscribing to Token Candles: %s/%s\n", chain, tokenAddress)
+	fmt.Println("Listening... (Press Ctrl+C to stop)")
 
-	// トークンキャンドルを購読（WebSocketが自動接続）
+	// トークンのローソク足を購読（WebSocket 自動接続）
 	messageCount := 0
 	unsubscribe := client.Stream.SubscribeTokenCandles(chain, tokenAddress, token.N1s, func(data stream.TokenCandle) {
 		messageCount++
@@ -138,10 +138,10 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	// 割り込みシグナルを待つ
+	// 割り込みシグナルを待機
 	<-interrupt
-	fmt.Println("\n割り込みを受信、接続を閉じています...")
-	fmt.Printf("受信メッセージ総数: %d\n", messageCount)
+	fmt.Println("\nReceived interrupt, closing connection...")
+	fmt.Printf("Total messages received: %d\n", messageCount)
 }
 ```
 

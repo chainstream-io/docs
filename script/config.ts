@@ -42,8 +42,14 @@ export const EXCLUDED_TAGS: string[] = ['Job'];
 
 export const ROOT_DIR = path.resolve(__dirname, '..');
 
+export const OPENAPI_SOURCE_DIR = path.resolve(ROOT_DIR, '..', 'chainstream-sdk');
+
 export function getOpenapiFileName(service: ServiceConfig, langCode: string): string {
-  return `${service.openapiFilePrefix}-${langCode}.json`;
+  return `${service.openapiFilePrefix}-${langCode}.yaml`;
+}
+
+export function getOpenapiSourcePath(service: ServiceConfig): string {
+  return path.join(OPENAPI_SOURCE_DIR, `${service.openapiFilePrefix}.yaml`);
 }
 
 export function getOpenapiPath(service: ServiceConfig, lang: Language): string {

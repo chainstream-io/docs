@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import YAML from 'yaml';
 import {
   SUPPORTED_LANGUAGES,
   EXCLUDED_TAGS,
@@ -47,7 +48,7 @@ async function generateDocs() {
         let openapi: OpenAPIObject;
         try {
           const openapiContent = await fs.readFile(getOpenapiPath(service, language), 'utf-8');
-          openapi = JSON.parse(openapiContent);
+          openapi = YAML.parse(openapiContent);
         } catch (error) {
           console.error(`[${service.name}] Cannot find ${language.code} openapi file`);
           console.error('Expected path:', getOpenapiPath(service, language));

@@ -6,7 +6,7 @@ icon: 'rust'
 
 ## 설치
 
-`Cargo.toml`에 추가:
+`Cargo.toml`에 다음을 추가하세요:
 
 ```toml
 [dependencies]
@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## REST API 예시
+## REST API 예제
 
 토큰 메타데이터 조회:
 
@@ -76,13 +76,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = client.get_supported_blockchains().send().await?;
     let blockchains = result.into_inner();
     
-    println!("지원 블록체인: {:#?}", blockchains);
+    println!("Supported blockchains: {:#?}", blockchains);
     
     Ok(())
 }
 ```
 
-## WebSocket 예시
+## WebSocket 예제
 
 실시간 토큰 캔들 데이터 구독:
 
@@ -104,8 +104,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token_address = "So11111111111111111111111111111111111111112"; // SOL
     let resolution = Resolution::X1s;
 
-    println!("토큰 캔들 구독: {}/{}", chain, token_address);
-    println!("Ctrl+C로 종료...\n");
+    println!("Subscribing to token candles: {}/{}", chain, token_address);
+    println!("Press Ctrl+C to exit...\n");
 
     let message_count = Arc::new(AtomicUsize::new(0));
     let message_count_clone = message_count.clone();
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Ctrl+C 대기
     signal::ctrl_c().await?;
 
-    println!("\n{}개 메시지 수신", message_count.load(Ordering::SeqCst));
+    println!("\nReceived {} messages", message_count.load(Ordering::SeqCst));
     client.close().await;
     
     Ok(())

@@ -28,7 +28,7 @@ import { ChainStreamClient } from '@chainstream-io/sdk';
 const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 ```
 
-## REST API 예시
+## REST API 예제
 
 토큰 정보 조회:
 
@@ -44,23 +44,23 @@ async function main() {
   const chain = 'sol';
   const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
 
-  console.log(`토큰 조회: ${chain}/${tokenAddress}`);
+  console.log(`Querying Token: ${chain}/${tokenAddress}`);
 
   try {
     // SDK를 통해 API 호출
     const result = await client.token.getToken(chain, tokenAddress);
     
-    console.log('결과:');
+    console.log('Result:');
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error('API 호출 실패:', error);
+    console.error('API call failed:', error);
   }
 }
 
 main();
 ```
 
-## WebSocket 예시
+## WebSocket 예제
 
 실시간 토큰 캔들 데이터 구독:
 
@@ -77,8 +77,8 @@ async function main() {
   const chain = 'sol';
   const tokenAddress = 'So11111111111111111111111111111111111111112'; // SOL
 
-  console.log(`토큰 캔들 구독: ${chain}/${tokenAddress}`);
-  console.log('리스닝 중... (Ctrl+C로 중지)\n');
+  console.log(`Subscribing to Token Candles: ${chain}/${tokenAddress}`);
+  console.log('Listening... (Press Ctrl+C to stop)\n');
 
   // SDK를 통해 WebSocket 구독
   client.stream.subscribeTokenCandles({
@@ -92,21 +92,21 @@ async function main() {
 
   // 프로세스 유지
   process.on('SIGINT', () => {
-    console.log('\n연결 종료 중...');
+    console.log('\nClosing connection...');
     process.exit(0);
   });
 
-  // 실행 계속
+  // 계속 실행
   await new Promise(() => {});
 }
 
 main().catch(error => {
-  console.error('테스트 실패:', error.message);
+  console.error('Test failed:', error.message);
   process.exit(1);
 });
 ```
 
-## 추가 예시
+## 추가 예제
 
 ### 토큰 검색
 
@@ -115,7 +115,7 @@ const results = await client.token.searchToken('bonk');
 console.log(results);
 ```
 
-전체 파라미터는 [토큰 - 검색](/ko/api-reference/endpoint/data/token/v2/token-search-get)을 참조하세요.
+전체 파라미터는 [Token - Search](/ko/api-reference/endpoint/data/token/v2/token-search-get)를 참조하세요.
 
 ### 거래 목록 조회
 
@@ -127,16 +127,16 @@ const trades = await client.trade.getTrades('sol', {
 console.log(trades);
 ```
 
-전체 파라미터는 [거래 - 목록](/ko/api-reference/endpoint/data/trade/v2/trade-chain-get)을 참조하세요.
+전체 파라미터는 [Trade - List](/ko/api-reference/endpoint/data/trade/v2/trade-chain-get)를 참조하세요.
 
-### 지갑 PnL 조회
+### 지갑 손익(PnL) 조회
 
 ```typescript
 const pnl = await client.wallet.getPnl('sol', 'WALLET_ADDRESS');
-console.log(`총 PnL: ${pnl.totalPnlUsd}`);
+console.log(`Total PnL: ${pnl.totalPnlUsd}`);
 ```
 
-전체 파라미터는 [지갑 - PnL](/ko/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-pnl-get)을 참조하세요.
+전체 파라미터는 [Wallet - PnL](/ko/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-pnl-get)를 참조하세요.
 
 ### 토큰 캔들(K선) 조회
 
@@ -150,9 +150,9 @@ for (const c of candles) {
 }
 ```
 
-전체 파라미터는 [토큰 - 캔들](/ko/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get)을 참조하세요.
+전체 파라미터는 [Token - Candles](/ko/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-candles-get)를 참조하세요.
 
-### 신규 토큰 조회 (랭킹)
+### 신규 토큰 랭킹 조회
 
 ```typescript
 const newTokens = await client.ranking.getNewTokens('sol');
@@ -161,11 +161,11 @@ for (const token of newTokens) {
 }
 ```
 
-전체 파라미터는 [랭킹 - 신규 토큰](/ko/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get)을 참조하세요.
+전체 파라미터는 [Ranking - New Tokens](/ko/api-reference/endpoint/data/ranking/v2/ranking-chain-newtokens-get)를 참조하세요.
 
 ---
 
-## 에러 핸들링
+## 오류 처리
 
 ```typescript
 import { ChainStreamClient, ChainStreamError } from '@chainstream-io/sdk';
@@ -174,15 +174,15 @@ try {
   const token = await client.token.getToken('sol', 'INVALID_ADDRESS');
 } catch (error) {
   if (error instanceof ChainStreamError) {
-    console.error(`에러 코드: ${error.code}`);
-    console.error(`에러 메시지: ${error.message}`);
+    console.error(`Error code: ${error.code}`);
+    console.error(`Error message: ${error.message}`);
   }
 }
 ```
 
 ### 지수 백오프 재시도
 
-속도 제한된 요청(HTTP 429)에 대한 재시도 로직 구현:
+레이트 제한(HTTP 429) 발생 시 재시도 로직:
 
 ```typescript
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {

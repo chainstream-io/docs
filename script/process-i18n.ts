@@ -1,8 +1,10 @@
 import * as fs from 'fs/promises';
+import YAML from 'yaml';
 import {
   SUPPORTED_LANGUAGES,
   getSelectedServices,
   getOpenapiPath,
+  getOpenapiSourcePath,
   getI18nPath,
   type Language,
   type ServiceConfig,
@@ -41,11 +43,11 @@ async function parseI18nKeyFile(filePath: string): Promise<I18nKeys> {
   }
 }
 
-async function processDescription(obj: any, i18nKeys: I18nKeys): Promise<void> {
+function processDescription(obj: any, i18nKeys: I18nKeys): void {
   if (obj && typeof obj === 'object') {
     for (const key in obj) {
       if (typeof obj[key] === 'object') {
-        await processDescription(obj[key], i18nKeys);
+        processDescription(obj[key], i18nKeys);
       } else if ((key === 'description' || key === 'summary') && typeof obj[key] === 'string') {
         const translationKey = obj[key];
         const isValidKey = /^[A-Z0-9._]+$/.test(translationKey);
@@ -63,16 +65,29 @@ async function processDescription(obj: any, i18nKeys: I18nKeys): Promise<void> {
 async function processService(service: ServiceConfig, language: Language) {
   const i18nKeyPath = getI18nPath(service, language);
   const openapiPath = getOpenapiPath(service, language);
+  const sourcePath = getOpenapiSourcePath(service);
 
   try {
+    // Copy source YAML to language directory if it doesn't exist or needs refresh
+    try {
+      await fs.copyFile(sourcePath, openapiPath);
+    } catch (copyError) {
+      console.error(`[${service.name}] Cannot copy source file from ${sourcePath}:`, copyError);
+      return;
+    }
+
     const i18nKeys = await parseI18nKeyFile(i18nKeyPath);
 
     const openapiContent = await fs.readFile(openapiPath, 'utf-8');
-    const openapi = JSON.parse(openapiContent);
+    const openapi = YAML.parse(openapiContent);
 
-    await processDescription(openapi, i18nKeys);
+    processDescription(openapi, i18nKeys);
 
-    await fs.writeFile(openapiPath, JSON.stringify(openapi, null, 2));
+    const yamlOutput = YAML.stringify(openapi, {
+      lineWidth: 0,
+      singleQuote: true,
+    });
+    await fs.writeFile(openapiPath, yamlOutput);
 
     console.log(`[${service.name}] Successfully processed ${language.code} translations`);
   } catch (error) {

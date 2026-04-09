@@ -1,32 +1,32 @@
 ---
 title: 'WebSocket API'
-description: 'WebSocket API Real-time Data Subscription Service'
+description: 'WebSocket API 실시간 데이터 구독 서비스'
 ---
 
-## Overview
+## 개요
 
-ChainStream DEX WebSocket API provides real-time data subscription services, supporting the following data types:
-- Candle Data 
-- Token Series
-- Wallet Series
-- Ranking Series
-- Trade Series
-- DexPool Series
+ChainStream DEX WebSocket API는 다음 데이터 유형을 지원하는 실시간 데이터 구독 서비스를 제공합니다:
+- 캔들 데이터 (Candles)
+- 토큰 관련 (Token Series)
+- 지갑 관련 (Wallet Series)
+- 랭킹 관련 (Ranking Series)
+- 거래 관련 (Trade Series)
+- DEX 풀 관련 (DexPool Series)
 
-**Base URL**
+**기본 URL**
 ```bash
 wss://realtime-dex.chainstream.io/connection/websocket
 ```
 
-## Quick Start
+## 빠른 시작
 
-### 1. Establish Connection
+### 1. 연결 설정
 
-First, create a WebSocket connection. WebSocket connections require the `token` query parameter in the URL for authentication.
+먼저 WebSocket 연결을 생성합니다. WebSocket 연결은 URL의 `token` 쿼리 매개변수를 통한 인증이 필요합니다.
 
 <Tabs>
-  <Tab title="Using SDK (Recommended)">
-    If using the Go or JavaScript SDK, authentication is handled automatically:
+  <Tab title="SDK 사용 (권장)">
+    Go 또는 JavaScript SDK를 사용하는 경우, 인증이 자동으로 처리됩니다:
 
     ```typescript
     import { ChainStreamClient } from '@chainstream-io/sdk';
@@ -34,53 +34,53 @@ First, create a WebSocket connection. WebSocket connections require the `token` 
 
     const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-    // Just subscribe directly, SDK handles WebSocket connection and authentication automatically
+    // 바로 구독하면 됩니다. SDK가 WebSocket 연결과 인증을 자동 처리합니다
     client.stream.subscribeTokenCandles({
       chain: 'sol',
       tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
       resolution: Resolution._1m,
       callback: (data) => {
-        console.log('Received data:', data);
+        console.log('수신 데이터:', data);
       }
     });
     ```
 
     <Note>
-    When calling `subscribeXXX` methods, SDK automatically checks connection status and establishes connection if not connected. No need to manually call `connect()`.
+    `subscribeXXX` 메서드를 호출할 때, SDK는 자동으로 연결 상태를 확인하고 연결되지 않은 경우 자동으로 연결을 설정합니다. 수동으로 `connect()`를 호출할 필요가 없습니다.
     </Note>
 
-    SDK Installation:
+    SDK 설치:
     - **TypeScript/JavaScript**: `npm install @chainstream-io/sdk` ([npm](https://www.npmjs.com/package/@chainstream-io/sdk))
     - **Python**: `pip install chainstream-sdk` ([PyPI](https://pypi.org/project/chainstream-sdk))
     - **Go**: `go get github.com/chainstream-io/chainstream-go-sdk` ([GitHub](https://github.com/chainstream-io/chainstream-go-sdk))
-    - **Rust**: Add `chainstream-sdk` to your `Cargo.toml` ([crates.io](https://crates.io/crates/chainstream-sdk))
+    - **Rust**: `Cargo.toml`에 `chainstream-sdk` 추가 ([crates.io](https://crates.io/crates/chainstream-sdk))
   </Tab>
-  <Tab title="Using Native WebSocket">
-    When using browser native WebSocket or other WebSocket libraries, append the `token` parameter to the URL:
+  <Tab title="네이티브 WebSocket 사용">
+    브라우저 네이티브 WebSocket 또는 기타 WebSocket 라이브러리를 사용할 때, URL에 `token` 매개변수를 추가합니다:
 
     ```typescript
-    // Works in both browser and Node.js
+    // 브라우저와 Node.js 모두에서 사용 가능
     const token = 'YOUR_ACCESS_TOKEN';
     const ws = new WebSocket(
       `wss://realtime-dex.chainstream.io/connection/websocket?token=${token}`
     );
 
     ws.onopen = () => {
-      console.log('Connection established');
+      console.log('연결 성공');
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received data:', data);
+      console.log('수신 데이터:', data);
     };
     ```
 
     <Note>
-    By passing the token via URL parameter, both browser native WebSocket and various third-party libraries can be used without special header handling.
+    URL 매개변수로 token을 전달하면, 브라우저 네이티브 WebSocket과 다양한 서드파티 라이브러리를 특별한 헤더 처리 없이 사용할 수 있습니다.
     </Note>
   </Tab>
-  <Tab title="Command Line Testing">
-    Using `wscat` for testing:
+  <Tab title="커맨드 라인 테스트">
+    `wscat`을 사용한 테스트:
 
     ```bash
     $ wscat -c "wss://realtime-dex.chainstream.io/connection/websocket?token=YOUR_ACCESS_TOKEN"
@@ -88,61 +88,61 @@ First, create a WebSocket connection. WebSocket connections require the `token` 
   </Tab>
 </Tabs>
 
-### 2. Subscribe to Data
+### 2. 데이터 구독
 
-Choose the data type you want to subscribe to:
+구독할 데이터 유형을 선택합니다:
 
 ```typescript
-// Example of subscribing to candle data
+// 캔들 데이터 구독 예제
 ws.send(JSON.stringify({
   type: "subscribe",
   channel: "dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
 }));
 ```
 
-### 3. Handle Data
+### 3. 데이터 처리
 
 ```typescript
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log('Received data:', data);
+  console.log('수신 데이터:', data);
 };
 ```
 
-## Data Subscriptions
+## 데이터 구독
 
-### Candles
+### 캔들
 
-#### Candles Data
+#### 캔들 데이터
 
-Get real-time price movement data for tokens.
+토큰의 가격 변동 데이터를 실시간으로 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-candle:{chain}_{tokenAddress}_{resolution}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  토큰 컨트랙트 주소, 예: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="resolution" type="string" required>
-  Candle period, supports: 1m, 5m, 15m, 1h, 4h, 1d
+  캔들 주기, 지원: 1m, 5m, 15m, 1h, 4h, 1d
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: volume > 1000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: volume > 1000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -174,34 +174,34 @@ dex-candle:{chain}_{tokenAddress}_{resolution}
   </Tab>
 </Tabs>
 
-### Token Series
+### 토큰 관련
 
-#### Token Stats
+#### 토큰 통계
 
-Get real-time market statistics for tokens.
+토큰의 실시간 시장 통계 데이터를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-token-stats:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  토큰 컨트랙트 주소, 예: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: price > 0.01
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: price > 0.01
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -351,32 +351,32 @@ dex-token-stats:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Holders Statistics
+#### 토큰 보유자 통계
 
-Get real-time token holder statistics.
+토큰 보유자의 실시간 통계 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-token-holding:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  토큰 컨트랙트 주소, 예: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: holders > 200
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: holders > 200
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -418,28 +418,28 @@ dex-token-holding:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### New Token Metadata
+#### 신규 토큰 메타데이터
 
-Get real-time metadata for newly listed tokens.
+신규 상장 토큰의 실시간 메타데이터를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-new-tokens-metadata:{chain}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: name == "USDC"
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: name == "USDC"
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -503,24 +503,24 @@ dex-new-tokens-metadata:{chain}
   </Tab>
 </Tabs>
 
-#### New Token
+#### 신규 토큰
 
-Get information about newly created token.
+새로 생성된 토큰의 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-new-token:{chain}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -558,32 +558,32 @@ dex-new-token:{chain}
   </Tab>
 </Tabs>
 
-#### Token Supply
+#### 토큰 공급량
 
-Get real-time token supply and market cap information.
+토큰의 공급량과 시가총액 실시간 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-token-supply:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  토큰 컨트랙트 주소, 예: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: supply > 1000000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: supply > 1000000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -609,32 +609,32 @@ dex-token-supply:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Liquidity
+#### 토큰 유동성
 
-Get real-time token liquidity statistics.
+토큰의 실시간 유동성 통계를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-token-general-stat-num:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address
+  토큰 컨트랙트 주소
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: value > 1000000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: value > 1000000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -660,32 +660,32 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Max Liquidity
+#### 토큰 최대 유동성
 
-Get real-time max liquidity info of a token in a single pool.
+단일 풀에서의 토큰 실시간 최대 유동성 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-token-liquidity:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address
+  토큰 컨트랙트 주소
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: liquidityInUsd > 10000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: liquidityInUsd > 10000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -713,32 +713,32 @@ dex-token-liquidity:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Token Total Liquidity
+#### 토큰 총 유동성
 
-Get real-time total liquidity info of a token across all pools.
+모든 풀에 걸친 토큰의 실시간 총 유동성 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-token-total-liquidity:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address
+  토큰 컨트랙트 주소
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: liquidityInUsd > 50000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: liquidityInUsd > 50000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -766,30 +766,30 @@ dex-token-total-liquidity:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-### Ranking Series
+### 랭킹 관련
 
-#### Ranking Token Statistics
+#### 랭킹 토큰 통계
 
-Get real-time market statistics for ranking tokens.
+랭킹 토큰의 실시간 시장 통계 데이터를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-ranking-token-stats-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  채널 유형, 지원: new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -943,28 +943,28 @@ dex-ranking-token-stats-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token Holders Statistics
+#### 랭킹 토큰 보유자 통계
 
-Get real-time token holder statistics for ranking tokens.
+랭킹 토큰의 실시간 보유자 통계 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-ranking-token-holding-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  채널 유형, 지원: new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1004,28 +1004,28 @@ dex-ranking-token-holding-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token Supply Data
+#### 랭킹 토큰 공급량 데이터
 
-Get real-time supply and market cap information for ranking tokens.
+랭킹 토큰의 공급량과 시가총액 실시간 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-ranking-token-supply-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  채널 유형, 지원: new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1055,28 +1055,28 @@ dex-ranking-token-supply-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token Liquidity Data
+#### 랭킹 토큰 유동성 데이터
 
-Get real-time liquidity statistics for ranking tokens.
+랭킹 토큰의 실시간 유동성 통계를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-ranking-token-general_stat_num-list:{chain}_{channelType}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  Channel type, support：new、trending、us_stocks、completed、graduated
+  채널 유형, 지원: new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1106,34 +1106,34 @@ dex-ranking-token-general_stat_num-list:{chain}_{channelType}
   </Tab>
 </Tabs>
 
-#### Ranking Token List
+#### 랭킹 토큰 리스트
 
-Get real-time complete information list for ranking tokens, including metadata, holder statistics, supply and market data.
+랭킹 토큰의 메타데이터, 보유자 통계, 공급량, 시장 데이터를 포함한 완전한 정보 목록을 실시간으로 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-ranking-list:{chain}_{ranking_type}
-# Or specify DEX
+# 또는 DEX 지정
 dex-ranking-list:{chain}_{ranking_type}_{dex}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="ranking_type" type="string" required>
-  Ranking type, support：new、trending、us_stocks、completed、graduated
+  랭킹 유형, 지원: new、trending、us_stocks、completed、graduated
 </ParamField>
 
 <ParamField query="dex" type="string" required={false}>
-  Optional DEX platform, support：pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
+  선택적 DEX 플랫폼, 지원: pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1413,24 +1413,24 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
   </Tab>
 </Tabs>
 
-#### Ranking Tokens Bonding Curve
+#### 랭킹 토큰 본딩 커브
 
-Get real-time bonding curve progress for newly listed tokens.
+신규 상장 토큰의 실시간 본딩 커브 진행률을 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-ranking-token-bounding-curve-list:{chain}_new
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1456,34 +1456,34 @@ dex-ranking-token-bounding-curve-list:{chain}_new
   </Tab>
 </Tabs>
 
-### Wallet Series
+### 지갑 관련
 
-#### Wallet Balance
+#### 지갑 잔액
 
-Get real-time wallet balance information.
+지갑의 실시간 잔액 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-wallet-balance:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Wallet address, e.g., HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
+  지갑 주소, 예: HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: balance > 1000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: balance > 1000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1515,32 +1515,32 @@ dex-wallet-balance:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-#### Wallet PnL Data (Token Level)
+#### 지갑 PnL 데이터 (토큰 레벨)
 
-Get real-time wallet profit and loss (PnL) statistics.
+지갑의 실시간 손익(PnL) 통계를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-wallet-token-pnl:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Wallet address
+  지갑 주소
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: buyAmount > 1000
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: buyAmount > 1000
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1610,28 +1610,28 @@ dex-wallet-token-pnl:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-#### Wallet PnL Data (Wallet Level)
+#### 지갑 PnL 데이터 (지갑 레벨)
 
-Get real-time wallet overall profit and loss statistics.
+지갑의 실시간 전체 손익 통계를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-wallet-pnl-list:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Wallet address
+  지갑 주소
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1687,33 +1687,33 @@ dex-wallet-pnl-list:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-### Trade Series
-#### Token Trade
+### 거래 관련
+#### 토큰 거래
 
-Get real-time token trading events.
+토큰의 실시간 거래 이벤트를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-trade:{chain}_{tokenAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="tokenAddress" type="string" required>
-  Token contract address, e.g., 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+  토큰 컨트랙트 주소, 예: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  Optional filter condition using Google Common Expression Language (CEL) syntax. Example: buyAmount > 100
+  선택적 필터 조건. Google Common Expression Language(CEL) 구문 사용. 예: buyAmount > 100
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1763,28 +1763,28 @@ dex-trade:{chain}_{tokenAddress}
   </Tab>
 </Tabs>
 
-#### Wallet Trade
+#### 지갑 거래
 
-Get real-time wallet trading event.
+지갑의 실시간 거래 이벤트를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-wallet-trade:{chain}_{walletAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="walletAddress" type="string" required>
-  Token contract address, e.g., GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
+  지갑 주소, 예: GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names to improve code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1820,30 +1820,30 @@ dex-wallet-trade:{chain}_{walletAddress}
   </Tab>
 </Tabs>
 
-### DexPool Series
+### DEX 풀 관련
 
-#### DEX Pool Balance
+#### DEX 풀 잔액
 
-Get real-time DEX pool balance information.
+DEX 풀의 실시간 잔액 정보를 가져옵니다.
 
-**Subscription Format**
+**구독 형식**
 ```text
 dex-pool-balance:{chain}_{poolAddress}
 ```
 
-**Parameters**
+**매개변수**
 <ParamField query="chain" type="string" required>
-  Blockchain name, e.g., sol
+  블록체인 이름, 예: sol
 </ParamField>
 
 <ParamField query="poolAddress" type="string" required>
-  Pool address
+  풀 주소
 </ParamField>
 
-**Response Data Format**
+**응답 데이터 형식**
 
 <Tip>
-  WebSocket API returns shortened field names to optimize transmission efficiency, while SDK returns full field names for better code readability.
+  WebSocket API는 전송 효율을 최적화하기 위해 단축 필드명을 반환하고, SDK는 코드 가독성을 높이기 위해 전체 필드명을 반환합니다.
 </Tip>
 
 <Tabs>
@@ -1871,7 +1871,7 @@ dex-pool-balance:{chain}_{poolAddress}
   </Tab>
 </Tabs>
 
-## Usage Examples
+## 사용 예제
 
 ```typescript
 import { ChainStreamClient } from '@chainstream-io/sdk';
@@ -1879,29 +1879,29 @@ import { Resolution } from '@chainstream-io/sdk/openapi';
 
 const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-// Just subscribe directly, SDK auto-detects connection status and connects if needed
+// 바로 구독하면 됩니다. SDK가 연결 상태를 자동 감지하고 필요시 연결합니다
 client.stream.subscribeTokenCandles({
   chain: 'sol',
   tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
   resolution: Resolution._1m,
   callback: (data) => {
-    console.log('Candle data:', data);
+    console.log('캔들 데이터:', data);
   }
 });
 
-// Subscribe to wallet balance
+// 지갑 잔액 구독
 client.stream.subscribeWalletBalance({
   chain: 'sol',
   walletAddress: 'YOUR_WALLET_ADDRESS',
   callback: (data) => {
-    console.log('Wallet balance:', data);
+    console.log('지갑 잔액:', data);
   }
 });
 ```
 
-### Reconnection Strategy
+### 재연결 전략
 
-Recommended to use exponential backoff for reconnection:
+지수 백오프를 사용한 재연결을 권장합니다:
 
 ```typescript
 function reconnect(attempt) {
@@ -1912,64 +1912,64 @@ function reconnect(attempt) {
 }
 ```
 
-## Usage Limits
+## 사용 제한
 
-| Limit | Value | Description |
-|-------|-------|-------------|
-| Maximum Subscriptions | 100/connection | Excess will be rejected |
-| Message Size | 100KB | Excess will be truncated |
-| Heartbeat Interval | 30 seconds | Regular heartbeat required |
+| 제한 항목 | 제한 값 | 설명 |
+|-----------|---------|------|
+| 최대 구독 수 | 100/연결 | 초과 시 거부됨 |
+| 메시지 크기 | 100KB | 초과 시 잘림 |
+| 하트비트 간격 | 30초 | 정기적 전송 필요 |
 
-## Best Practices
+## 모범 사례
 
-1. **Connection Management**
-   - Maintain a single WebSocket connection
-   - Implement automatic reconnection
-   - Send regular heartbeats
+1. **연결 관리**
+   - 단일 WebSocket 연결 유지
+   - 자동 재연결 구현
+   - 정기적 하트비트 전송
 
-2. **Error Handling**
-   - Implement complete error handling
-   - Log detailed error information
-   - Use exponential backoff for reconnection
+2. **오류 처리**
+   - 완전한 오류 처리 구현
+   - 상세한 오류 정보 로깅
+   - 지수 백오프를 사용한 재연결
 
-3. **Performance Optimization**
-   - Control subscription quantity
-   - Implement message queue mechanism
-   - Clean up unused subscriptions
+3. **성능 최적화**
+   - 구독 수 제어
+   - 메시지 큐 메커니즘 구현
+   - 미사용 구독 정리
 
-## Complete Example
+## 전체 예제
 
 <Tabs>
-  <Tab title="Using SDK (Recommended)">
+  <Tab title="SDK 사용 (권장)">
     ```typescript
     import { ChainStreamClient } from '@chainstream-io/sdk';
     import { Resolution } from '@chainstream-io/sdk/openapi';
 
     const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-    // Just subscribe directly, SDK auto-detects connection status and connects if needed
+    // 바로 구독하면 됩니다. SDK가 연결 상태를 자동 감지하고 필요시 연결합니다
     const subscription = client.stream.subscribeTokenCandles({
       chain: 'sol',
       tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
       resolution: Resolution._1m,
       callback: (data) => {
-        console.log('Candle data:', data);
+        console.log('캔들 데이터:', data);
       }
     });
 
-    // Unsubscribe
+    // 구독 해제
     subscription.unsubscribe();
     ```
 
     <Note>
-    When using the SDK, authentication, reconnection, heartbeat, etc. are all handled automatically. Recommended for production environments.
+    SDK를 사용하면 인증, 재연결, 하트비트 등이 모두 자동으로 처리됩니다. 프로덕션 환경에서 사용을 권장합니다.
     - **TypeScript/JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
     - **Python SDK**: [chainstream-sdk](https://pypi.org/project/chainstream-sdk)
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
     - **Rust SDK**: [chainstream-sdk](https://crates.io/crates/chainstream-sdk)
     </Note>
   </Tab>
-  <Tab title="Native WebSocket">
+  <Tab title="네이티브 WebSocket">
     ```typescript
     class DexWebSocket {
       private ws: WebSocket;

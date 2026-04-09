@@ -22,7 +22,7 @@ if err != nil {
 defer client.Close()
 ```
 
-## REST API 예시
+## REST API 예제
 
 토큰 정보 조회:
 
@@ -43,44 +43,44 @@ import (
 const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
 
 func main() {
-	fmt.Println("API를 통해 토큰 조회...")
+	fmt.Println("Querying Token via API...")
 
 	// SDK 클라이언트 초기화
 	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{})
 	if err != nil {
-		log.Fatalf("클라이언트 생성 실패: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.Close()
 
 	chain := token.Sol
 	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
 
-	fmt.Printf("조회: %s/%s\n", chain, tokenAddress)
+	fmt.Printf("Querying: %s/%s\n", chain, tokenAddress)
 
 	// SDK를 통해 API 호출
 	resp, err := client.Token.GetToken(context.Background(), chain, tokenAddress)
 	if err != nil {
-		log.Fatalf("API 호출 실패: %v", err)
+		log.Fatalf("API call failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("응답 읽기 실패: %v", err)
+		log.Fatalf("Failed to read response: %v", err)
 	}
 
 	var result interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		log.Fatalf("JSON 파싱 실패: %v", err)
+		log.Fatalf("Failed to parse JSON: %v", err)
 	}
 
-	fmt.Println("\n결과:")
+	fmt.Println("\nResult:")
 	prettyJSON, _ := json.MarshalIndent(result, "", "  ")
 	fmt.Println(string(prettyJSON))
 }
 ```
 
-## WebSocket 예시
+## WebSocket 예제
 
 실시간 토큰 캔들 데이터 구독:
 
@@ -101,14 +101,14 @@ import (
 const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
 
 func main() {
-	fmt.Println("WebSocket 구독 시작...")
+	fmt.Println("Starting WebSocket subscription...")
 
 	// ChainStreamClient 생성 (구독 시 WebSocket 자동 연결)
 	client, err := chainstream.NewChainStreamClient(ACCESS_TOKEN, &chainstream.ChainStreamClientOptions{
 		StreamURL: "wss://realtime-dex.chainstream.io/connection/websocket",
 	})
 	if err != nil {
-		fmt.Printf("클라이언트 생성 실패: %v\n", err)
+		fmt.Printf("Failed to create client: %v\n", err)
 		os.Exit(1)
 	}
 	defer client.Close()
@@ -116,8 +116,8 @@ func main() {
 	chain := "sol"
 	tokenAddress := "So11111111111111111111111111111111111111112" // SOL
 
-	fmt.Printf("토큰 캔들 구독: %s/%s\n", chain, tokenAddress)
-	fmt.Println("리스닝 중... (Ctrl+C로 중지)")
+	fmt.Printf("Subscribing to Token Candles: %s/%s\n", chain, tokenAddress)
+	fmt.Println("Listening... (Press Ctrl+C to stop)")
 
 	// 토큰 캔들 구독 (WebSocket 자동 연결)
 	messageCount := 0
@@ -140,8 +140,8 @@ func main() {
 
 	// 인터럽트 시그널 대기
 	<-interrupt
-	fmt.Println("\n인터럽트 수신, 연결 종료 중...")
-	fmt.Printf("수신 메시지 총수: %d\n", messageCount)
+	fmt.Println("\nReceived interrupt, closing connection...")
+	fmt.Printf("Total messages received: %d\n", messageCount)
 }
 ```
 

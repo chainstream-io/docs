@@ -1,0 +1,261 @@
+// ============================================================
+// GLOBAL
+// ============================================================
+
+GLOBAL.CHAIN.NAME='chain'
+GLOBAL.CHAIN.DESCRIPTION='サポートされているネットワークに記載されているチェーン名'
+GLOBAL.USERADDRESS.NAME='userAddress'
+GLOBAL.USERADDRESS.DESCRIPTION='ユーザーのアドレス'
+
+// ============================================================
+// CONTROLLERS - Legacy (v1)
+// ============================================================
+
+// DEX CONTROLLER
+CONTROLLER.DEX.SWAP.SUMMARY='Dex - スワップ'
+CONTROLLER.DEX.SWAP.DESCRIPTION='入力トークン、出力トークン、数量、スリッページを含むスワップパラメータ'
+CONTROLLER.DEX.ROUTE.SUMMARY='Dex - ルート'
+CONTROLLER.DEX.ROUTE.DESCRIPTION='価格インパクトと手数料を考慮してトークンスワップの最適ルートを算出。最適パスと準備済みトランザクションを返します'
+CONTROLLER.DEX.QUOTE.SUMMARY='Dex - 見積り取得'
+CONTROLLER.DEX.QUOTE.DESCRIPTION='DEX 取引の見積り情報を取得'
+CONTROLLER.DEX.CREATE.SUMMARY='Dex - トークン作成'
+CONTROLLER.DEX.CREATE.DESCRIPTION='指定された DEX 上に新しいトークンを作成'
+
+// TRANSACTION CONTROLLER
+CONTROLLER.TRANSACTION.SEND.SUMMARY='トランザクション - 送信'
+CONTROLLER.TRANSACTION.SEND.DESCRIPTION='署名済みトランザクションをブロックチェーンに送信'
+CONTROLLER.TRANSACTION.SEND.BODY='トランザクションパラメータ'
+CONTROLLER.TRANSACTION.GET_GAS_PRICE.SUMMARY='トランザクション - Gas 価格'
+CONTROLLER.TRANSACTION.GET_GAS_PRICE.DESCRIPTION='EVM チェーンの現在の Gas 価格を取得'
+CONTROLLER.TRANSACTION.ESTIMATE_GAS_LIMIT.SUMMARY='トランザクション - Gas Limit 推定'
+CONTROLLER.TRANSACTION.ESTIMATE_GAS_LIMIT.DESCRIPTION='EVM トランザクションの Gas Limit を推定'
+CONTROLLER.TRANSACTION.ESTIMATE_GAS_LIMIT.BODY='Gas 推定パラメータ'
+
+// JOB CONTROLLER
+CONTROLLER.JOB.GET.SUMMARY='ジョブ - 取得'
+CONTROLLER.JOB.GET.DESCRIPTION='ジョブ ID で現在のステータスと結果を取得'
+CONTROLLER.JOB.GET.ID='ジョブ識別子'
+CONTROLLER.JOB.GET.RESPONSE='ジョブステータスの取得に成功'
+CONTROLLER.JOB.STREAMING.SUMMARY='ジョブ - ストリーミング'
+CONTROLLER.JOB.STREAMING.DESCRIPTION='Server-Sent Events (SSE) を通じてリアルタイムのジョブステータス更新を購読。ジョブが完了するかエラーが発生するまで接続が維持されます'
+CONTROLLER.JOB.STREAMING.RESPONSE='SSE ストリームの確立に成功'
+
+// ============================================================
+// CONTROLLERS - v2
+// ============================================================
+
+// SWAP AGGREGATOR CONTROLLER (defi/v2/swap-aggregator)
+CONTROLLER.SWAP_AGGREGATOR.CHAINS.SUMMARY='スワップアグリゲーター - 対応チェーン'
+CONTROLLER.SWAP_AGGREGATOR.CHAINS.DESCRIPTION='スワップアグリゲータープロバイダーの対応チェーンリストを取得'
+CONTROLLER.SWAP_AGGREGATOR.TOKENS.SUMMARY='スワップアグリゲーター - 対応トークン'
+CONTROLLER.SWAP_AGGREGATOR.TOKENS.DESCRIPTION='スワップアグリゲータープロバイダーの対応トークンリストを取得'
+CONTROLLER.SWAP_AGGREGATOR.DEXES.SUMMARY='スワップアグリゲーター - 対応 DEX'
+CONTROLLER.SWAP_AGGREGATOR.DEXES.DESCRIPTION='スワップアグリゲータープロバイダーの対応 DEX リストを取得'
+CONTROLLER.SWAP_AGGREGATOR.QUOTE.SUMMARY='スワップアグリゲーター - 見積り'
+CONTROLLER.SWAP_AGGREGATOR.QUOTE.DESCRIPTION='アグリゲーター経由のトークンスワップ見積りを取得'
+CONTROLLER.SWAP_AGGREGATOR.SWAP.SUMMARY='スワップアグリゲーター - スワップ'
+CONTROLLER.SWAP_AGGREGATOR.SWAP.DESCRIPTION='アグリゲーター経由でトークンスワップを実行'
+
+// SWAP CONTROLLER (defi/v2/swap)
+CONTROLLER.SWAP.CHAINS.SUMMARY='スワップ - 対応チェーン'
+CONTROLLER.SWAP.CHAINS.DESCRIPTION='スワッププロバイダーの対応チェーンリストを取得'
+CONTROLLER.SWAP.TOKENS.SUMMARY='スワップ - 対応トークン'
+CONTROLLER.SWAP.TOKENS.DESCRIPTION='スワッププロバイダーの対応トークンリストを取得'
+CONTROLLER.SWAP.QUOTE.SUMMARY='スワップ - 見積り'
+CONTROLLER.SWAP.QUOTE.DESCRIPTION='DEX 直接スワップの見積りを取得'
+CONTROLLER.SWAP.SWAP.SUMMARY='スワップ - 実行'
+CONTROLLER.SWAP.SWAP.DESCRIPTION='DEX 直接スワップを実行'
+
+// BRIDGE CONTROLLER (defi/v2/bridge)
+CONTROLLER.BRIDGE.CHAINS.SUMMARY='ブリッジ - 対応チェーン'
+CONTROLLER.BRIDGE.CHAINS.DESCRIPTION='ブリッジの対応チェーンリストを取得'
+CONTROLLER.BRIDGE.TOKENS.SUMMARY='ブリッジ - 対応トークン'
+CONTROLLER.BRIDGE.TOKENS.DESCRIPTION='ブリッジの対応トークンリストを取得'
+CONTROLLER.BRIDGE.QUOTE.SUMMARY='ブリッジ - 見積り'
+CONTROLLER.BRIDGE.QUOTE.DESCRIPTION='クロスチェーンブリッジの見積りを取得'
+CONTROLLER.BRIDGE.SWAP_AND_BRIDGE.SUMMARY='ブリッジ - スワップ＆ブリッジ'
+CONTROLLER.BRIDGE.SWAP_AND_BRIDGE.DESCRIPTION='スワップとブリッジ操作を実行'
+
+// BRIDGE AGGREGATOR CONTROLLER (defi/v2/bridge-aggregator)
+CONTROLLER.BRIDGE_AGGREGATOR.CHAINS.SUMMARY='ブリッジアグリゲーター - 対応チェーン'
+CONTROLLER.BRIDGE_AGGREGATOR.CHAINS.DESCRIPTION='ブリッジアグリゲーターの対応チェーンリストを取得'
+CONTROLLER.BRIDGE_AGGREGATOR.TOKENS.SUMMARY='ブリッジアグリゲーター - 対応トークン'
+CONTROLLER.BRIDGE_AGGREGATOR.TOKENS.DESCRIPTION='ブリッジアグリゲーターの対応トークンリストを取得'
+CONTROLLER.BRIDGE_AGGREGATOR.ROUTE.SUMMARY='ブリッジアグリゲーター - ルート'
+CONTROLLER.BRIDGE_AGGREGATOR.ROUTE.DESCRIPTION='クロスチェーンブリッジの最適ルートを取得'
+CONTROLLER.BRIDGE_AGGREGATOR.QUOTE.SUMMARY='ブリッジアグリゲーター - 見積り'
+CONTROLLER.BRIDGE_AGGREGATOR.QUOTE.DESCRIPTION='アグリゲーター経由のクロスチェーンブリッジ見積りを取得'
+
+// LAUNCHPAD CONTROLLER (defi/v2/launchpad)
+CONTROLLER.LAUNCHPAD.QUOTE.SUMMARY='ローンチパッド - 見積り'
+CONTROLLER.LAUNCHPAD.QUOTE.DESCRIPTION='ローンチパッドトークンスワップの見積りを取得'
+CONTROLLER.LAUNCHPAD.SWAP.SUMMARY='ローンチパッド - スワップ'
+CONTROLLER.LAUNCHPAD.SWAP.DESCRIPTION='ローンチパッドトークンスワップを実行'
+CONTROLLER.LAUNCHPAD.CREATE_AND_BUY.SUMMARY='ローンチパッド - 作成＆購入'
+CONTROLLER.LAUNCHPAD.CREATE_AND_BUY.DESCRIPTION='ローンチパッドで新しいトークンを作成し初回購入を実行'
+
+// TX RELAY CONTROLLER (defi/v2/tx-relay)
+CONTROLLER.TX_RELAY.ESTIMATE.SUMMARY='Tx Relay - Gas 推定'
+CONTROLLER.TX_RELAY.ESTIMATE.DESCRIPTION='トランザクションの Gas コストを推定'
+CONTROLLER.TX_RELAY.SEND.SUMMARY='Tx Relay - トランザクション送信'
+CONTROLLER.TX_RELAY.SEND.DESCRIPTION='リレー経由で署名済みトランザクションを送信'
+
+// ============================================================
+// DTOs - Legacy (v1)
+// ============================================================
+
+// DEX DTO
+DTO.DEX.IDENTIFIER='取引用の DEX 識別子'
+DTO.DEX.WALLET='トランザクションを開始するウォレットの公開鍵'
+DTO.DEX.PROGRAM_ADDRESS='DEX プログラムアドレス'
+DTO.DEX.NAME='DEX 名'
+DTO.DEX.CHAIN='ブロックチェーン'
+DTO.DEX.IMAGE='DEX ロゴ画像 URL'
+DTO.DEX.PROTOCOL_FAMILY='DEX プロトコルファミリー'
+
+// DEX SWAP DTO
+DTO.DEX.SWAP.INPUT_MINT='入力トークンのミントアドレス'
+DTO.DEX.SWAP.OUTPUT_MINT='出力トークンのミントアドレス'
+DTO.DEX.SWAP.AMOUNT='スワップ数量。全残高の場合は "auto"、割合指定の場合は "50%" のように指定'
+DTO.DEX.SWAP.MODE='スワップ方向モード'
+DTO.DEX.SWAP.SLIPPAGE='スリッページ許容率'
+DTO.DEX.SWAP.POOL_ADDRESS='DEX プールアドレス'
+DTO.DEX.SWAP.SERIALIZED_TX='Base64 エンコードされたトランザクション'
+DTO.DEX.SWAP.ELAPSED_TIME='リクエスト処理にかかった時間（ミリ秒）'
+DTO.DEX.SWAP.ARGS='元のスワップリクエストパラメータ'
+DTO.DEX.SWAP.ROUTE_INFO='詳細なルーティング情報'
+DTO.DEX.SWAP.RECIPIENT_ADDRESS='スワップの受取先ウォレットアドレス'
+DTO.DEX.SWAP.PERMIT='スワップ用の Permit データ'
+DTO.DEX.SWAP.DEADLINE='スワップの有効期限タイムスタンプ'
+DTO.DEX.SWAP.MAX_FEE_PER_GAS='Gas 単位あたりの最大手数料（EIP-1559）（wei 単位）'
+DTO.DEX.SWAP.MAX_PRIORITY_FEE_PER_GAS='Gas 単位あたりの最大優先手数料（EIP-1559）（wei 単位）'
+DTO.DEX.SWAP.GAS_PRICE='Gas 価格（wei 単位、レガシートランザクション）'
+DTO.DEX.SWAP.GAS_LIMIT='トランザクションの Gas Limit'
+
+// DEX SWAP ROUTE INFO DTO
+DTO.DEX.SWAP.ROUTE.CHAIN='スワップのブロックチェーンネットワーク'
+DTO.DEX.SWAP.ROUTE.DEX='スワップの DEX 識別子'
+DTO.DEX.SWAP.ROUTE.SLIPPAGE='スリッページ許容率'
+DTO.DEX.SWAP.ROUTE.INPUT_MINT='入力トークンのミントアドレス'
+DTO.DEX.SWAP.ROUTE.OUTPUT_MINT='出力トークンのミントアドレス'
+DTO.DEX.SWAP.ROUTE.AMOUNT='スワップ数量'
+DTO.DEX.SWAP.ROUTE.SWAP_MODE='スワップ方向モード（ExactIn または ExactOut）'
+
+// DEX MINT DTO
+DTO.DEX.MINT.NAME='作成するトークンの名前'
+DTO.DEX.MINT.SYMBOL='トークンシンボル/ティッカー'
+DTO.DEX.MINT.ADDRESS='トランザクション署名が必要なトークンミントアドレス'
+DTO.DEX.MINT.URI='トークンメタデータ URI（通常は画像または JSON を参照）'
+DTO.DEX.MINT.IMAGE='トークン画像 URL（Base64 または HTTPS）'
+DTO.DEX.MINT.SERIALIZED_TX='Base64 エンコードされたトランザクション'
+DTO.DEX.MINT.ELAPSED_TIME='リクエスト処理にかかった時間（ミリ秒）'
+DTO.DEX.MINT.EXTRA='作成されたトークンの追加メタデータ'
+DTO.DEX.MINT.MINT_ADDRESS='トランザクション署名が必要なトークンミントアドレス'
+
+// DEX BASE DTO
+DTO.DEX.BASE.PRIORITY_FEE='トランザクション処理速度を上げるための優先手数料（SOL 単位）'
+DTO.DEX.BASE.IS_ANTI_MEV='アンチ MEV 保護を有効にするかどうか'
+DTO.DEX.BASE.IS_ANTE_MEV='true'
+DTO.DEX.BASE.TIP_FEE='トランザクション処理速度を上げるためのチップ手数料（SOL 単位）'
+
+// DEX QUOTE DTO
+DTO.DEX.QUOTE.DEX='DEX プロトコルタイプ'
+DTO.DEX.QUOTE.AMOUNT='取引数量'
+DTO.DEX.QUOTE.INPUT_MINT='入力トークンアドレス'
+DTO.DEX.QUOTE.OUTPUT_MINT='出力トークンアドレス'
+DTO.DEX.QUOTE.EXACT_IN='入力確定モード'
+DTO.DEX.QUOTE.SLIPPAGE='スリッページ許容率'
+DTO.DEX.QUOTE.AMOUNT_OUT='出力数量'
+DTO.DEX.QUOTE.MIN_AMOUNT_OUT='最小出力数量'
+DTO.DEX.QUOTE.CURRENT_PRICE='現在の価格'
+DTO.DEX.QUOTE.EXECUTION_PRICE='約定価格'
+DTO.DEX.QUOTE.PRICE_IMPACT='プライスインパクト'
+DTO.DEX.QUOTE.FEE='取引手数料'
+
+// DEX CREATE TOKEN DTO
+DTO.DEX.CREATE_TOKEN.SERIALIZED_TX='トークン作成用の Base64 エンコードされたトランザクション'
+DTO.DEX.CREATE_TOKEN.MINT_ADDRESS='トランザクション署名が必要なトークンミントアドレス'
+
+// TRANSACTION DTO
+DTO.TRANSACTION.SEND.SIGNED_TX='Base64 エンコードされた署名済みトランザクション'
+DTO.TRANSACTION.SEND.SUBMIT_TYPE='トランザクション送信方法'
+DTO.TRANSACTION.SEND.SIGNATURE='トランザクション署名/ハッシュ'
+DTO.TRANSACTION.SEND.ELAPSED_TIME='トランザクション処理時間（ミリ秒）'
+DTO.TRANSACTION.SEND.JOB_ID='ジョブ ID'
+DTO.TRANSACTION.SEND.OPTIONS='jito | direct'
+
+// JOB DTO
+DTO.JOB.STATE='ジョブ状態'
+DTO.JOB.RESULT='ジョブ結果'
+DTO.JOB.STREAMING.ID='ストリーミングジョブ ID'
+DTO.JOB.STREAMING.DATA='ストリーミングデータ'
+
+// ============================================================
+// DTOs - v2
+// ============================================================
+
+// SWAP AGGREGATOR DTO
+DTO.SWAP_AGGREGATOR.PROVIDER_ID='スワップアグリゲータープロバイダー識別子'
+DTO.SWAP_AGGREGATOR.CHAIN_FAMILY='チェーンファミリー（evm または svm）'
+DTO.SWAP_AGGREGATOR.CHAIN_ID='EVM チェーンのチェーン ID'
+DTO.SWAP_AGGREGATOR.IN_TOKEN='入力トークンアドレス'
+DTO.SWAP_AGGREGATOR.OUT_TOKEN='出力トークンアドレス'
+DTO.SWAP_AGGREGATOR.AMOUNT='スワップ数量'
+DTO.SWAP_AGGREGATOR.SLIPPAGE_BPS='スリッページ許容値（ベーシスポイント）'
+DTO.SWAP_AGGREGATOR.SWAP_MODE='スワップ方向モード'
+DTO.SWAP_AGGREGATOR.ROUTE_INFO='見積りからのルート情報'
+DTO.SWAP_AGGREGATOR.USER_PUBLIC_KEY='SVM 用ユーザー公開鍵'
+DTO.SWAP_AGGREGATOR.ACCOUNT='ユーザーアカウントアドレス'
+DTO.SWAP_AGGREGATOR.GAS_PRICE='EVM 用 Gas 価格'
+DTO.SWAP_AGGREGATOR.EXTRA='追加パラメータ'
+
+// SWAP DTO
+DTO.SWAP.PROVIDER_ID='スワッププロバイダー識別子'
+DTO.SWAP.CHAIN='チェーン参照'
+DTO.SWAP.IN_TOKEN='入力トークンアドレス'
+DTO.SWAP.OUT_TOKEN='出力トークンアドレス'
+DTO.SWAP.AMOUNT='スワップ数量'
+DTO.SWAP.SLIPPAGE_BPS='スリッページ許容値（ベーシスポイント）'
+DTO.SWAP.ACCOUNT='ユーザーアカウントアドレス'
+
+// BRIDGE DTO
+DTO.BRIDGE.PROVIDER_ID='ブリッジプロバイダー識別子'
+DTO.BRIDGE.FROM_CHAIN='ソースチェーン'
+DTO.BRIDGE.TO_CHAIN='宛先チェーン'
+DTO.BRIDGE.FROM_TOKEN='ソーストークンアドレス'
+DTO.BRIDGE.TO_TOKEN='宛先トークンアドレス'
+DTO.BRIDGE.FROM_ADDRESS='送信者アドレス'
+DTO.BRIDGE.FROM_AMOUNT='ブリッジ数量'
+DTO.BRIDGE.TO_ADDRESS='受取者アドレス'
+DTO.BRIDGE.SLIPPAGE_BPS='スリッページ許容値（ベーシスポイント）'
+
+// BRIDGE AGGREGATOR DTO
+DTO.BRIDGE_AGGREGATOR.PROVIDER_ID='ブリッジアグリゲータープロバイダー識別子'
+DTO.BRIDGE_AGGREGATOR.FROM_CHAIN_ID='ソースチェーン ID'
+DTO.BRIDGE_AGGREGATOR.TO_CHAIN_ID='宛先チェーン ID'
+DTO.BRIDGE_AGGREGATOR.FROM_TOKEN='ソーストークンアドレス'
+DTO.BRIDGE_AGGREGATOR.TO_TOKEN='宛先トークンアドレス'
+DTO.BRIDGE_AGGREGATOR.FROM_ADDRESS='送信者アドレス'
+DTO.BRIDGE_AGGREGATOR.FROM_AMOUNT='ブリッジ数量'
+DTO.BRIDGE_AGGREGATOR.TO_ADDRESS='受取者アドレス'
+DTO.BRIDGE_AGGREGATOR.SLIPPAGE_BPS='スリッページ許容値（ベーシスポイント）'
+DTO.BRIDGE_AGGREGATOR.INTEGRATOR='インテグレーター識別子'
+
+// LAUNCHPAD DTO
+DTO.LAUNCHPAD.PROVIDER_ID='ローンチパッドプロバイダー識別子'
+DTO.LAUNCHPAD.IN_TOKEN='入力トークンアドレス'
+DTO.LAUNCHPAD.OUT_TOKEN='出力トークンアドレス'
+DTO.LAUNCHPAD.AMOUNT='スワップ数量'
+DTO.LAUNCHPAD.SLIPPAGE_BPS='スリッページ許容値（ベーシスポイント）'
+DTO.LAUNCHPAD.SWAP_MODE='スワップ方向モード'
+DTO.LAUNCHPAD.ACCOUNT='ユーザーアカウントアドレス'
+DTO.LAUNCHPAD.MINT_ADDRESS='トークンミントアドレス'
+DTO.LAUNCHPAD.NAME='トークン名'
+DTO.LAUNCHPAD.SYMBOL='トークンシンボル'
+DTO.LAUNCHPAD.URI='トークンメタデータ URI'
+
+// TX RELAY DTO
+DTO.TX_RELAY.CHAIN='チェーン参照'
+DTO.TX_RELAY.EVM_TRANSACTION='EVM トランザクションデータ'
+DTO.TX_RELAY.SVM_TRANSACTION='SVM トランザクションデータ'
+DTO.TX_RELAY.SIGNED_TRANSACTION='署名済みトランザクションデータ'

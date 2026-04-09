@@ -1,0 +1,761 @@
+openapi: 3.1.0
+paths:
+  /v2/dex/{chain}/swap:
+    post:
+      description: 兌換參數，包括輸入代幣、輸出代幣、數量和滑點
+      operationId: swap
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapReply'
+      security:
+        - bearer: []
+      summary: Dex - 兌換
+      tags:
+        - Dex
+  /v2/dex/{chain}/route:
+    post:
+      description: 計算代幣兌換的最佳路由，考慮價格影響和手續費。回傳最優路徑和準備好的交易
+      operationId: route
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapRouteInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapRouteResponse'
+      security:
+        - bearer: []
+      summary: Dex - 路由
+      tags:
+        - Dex
+  /v2/dex/{chain}/quote:
+    get:
+      description: 取得 DEX 交易報價資訊
+      operationId: quote
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+        - name: dex
+          required: true
+          in: query
+          description: DEX 協議類型
+          schema:
+            example: raydium
+            enum:
+              - raydium
+              - pumpfun
+            type: string
+        - name: amount
+          required: true
+          in: query
+          description: 交易數量
+          schema:
+            example: 1000000000
+            type: string
+        - name: inputMint
+          required: true
+          in: query
+          description: 輸入代幣地址
+          schema:
+            example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+            type: string
+        - name: outputMint
+          required: true
+          in: query
+          description: 輸出代幣地址
+          schema:
+            example: So11111111111111111111111111111111111111112
+            type: string
+        - name: exactIn
+          required: true
+          in: query
+          description: 精確輸入模式
+          schema:
+            default: true
+            example: true
+            type: boolean
+        - name: slippage
+          required: true
+          in: query
+          description: 滑點容忍度
+          schema:
+            format: int64
+            example: 10
+            type: integer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DexQuoteResponse'
+      security:
+        - bearer: []
+      summary: Dex - 取得報價
+      tags:
+        - Dex
+  /v2/dex/{chain}/create:
+    post:
+      description: 在指定 DEX 上建立新代幣
+      operationId: create.token
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+      requestBody:
+        required: true
+        description: Token creation parameters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTokenReply'
+      security:
+        - bearer: []
+      summary: Dex - 建立代幣
+      tags:
+        - Dex
+  /v2/transaction/{chain}/send:
+    post:
+      description: 將已簽名的交易提交到區塊鏈
+      operationId: send
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            enum:
+              - sol
+              - bsc
+              - eth
+            type: string
+      requestBody:
+        required: true
+        description: 交易參數
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTxInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendTxResponse'
+      security:
+        - bearer: []
+      summary: 交易 - 發送
+      tags:
+        - Transaction
+  /v2/transaction/{chain}/gas-price:
+    get:
+      description: 取得 EVM 鏈的目前 Gas 價格
+      operationId: get.gasPrice
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            enum:
+              - bsc
+              - eth
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GasPriceResponse'
+      security:
+        - bearer: []
+      summary: 交易 - Gas 價格
+      tags:
+        - Transaction
+  /v2/transaction/{chain}/estimate-gas-limit:
+    post:
+      description: 估算 EVM 交易的 Gas Limit
+      operationId: get.gasLimit
+      parameters:
+        - name: chain
+          required: true
+          in: path
+          description: 支援網路列表中的鏈名稱
+          schema:
+            enum:
+              - bsc
+              - eth
+            type: string
+      requestBody:
+        required: true
+        description: Gas 估算參數
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateGasLimitInput'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateGasLimitResponse'
+      security:
+        - bearer: []
+      summary: 交易 - 估算 Gas Limit
+      tags:
+        - Transaction
+  /v2/job/{id}:
+    get:
+      description: 透過任務 ID 取得目前狀態和結果
+      operationId: get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: 任務標識符
+          schema:
+            example: '12345'
+            type: string
+      responses:
+        '200':
+          description: 成功取得任務狀態
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDTO'
+      security:
+        - bearer: []
+      summary: 任務 - 取得
+      tags:
+        - Job
+  /v2/job/{id}/streaming:
+    get:
+      description: 透過 Server-Sent Events (SSE) 訂閱即時任務狀態更新。連線將保持開啟直到任務完成或發生錯誤
+      operationId: streaming
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: 任務標識符
+          schema:
+            example: '12345'
+            type: string
+      responses:
+        '200':
+          description: SSE 串流建立成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStreamingDTO'
+      security:
+        - bearer: []
+      summary: 任務 - 串流推送
+      tags:
+        - Job
+info:
+  title: Defi Services API
+  description: Defi Services API ⚡️
+  version: '1.0'
+  contact:
+    name: AI
+    url: https://github.com/chainstream-io/defi-service
+    email: ai@sx.ai
+tags:
+  - name: Endpoints
+    description: ''
+servers:
+  - url: https://api.chainstream.io
+    description: Chainstream Production
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    ChainSymbol:
+      type: string
+      enum:
+        - sol
+        - bsc
+        - eth
+    SwapInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 交易所使用的 DEX 標識符
+          example: jupiter
+          enum:
+            - jupiter
+            - kyberswap
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: 發起交易的錢包公鑰
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: 優先費（SOL），用於提高交易處理速度
+          example: '1000'
+        poolAddress:
+          type: string
+          description: DEX 池子地址
+          example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
+        amount:
+          type: string
+          description: 兌換數量。使用 "auto" 表示全部餘額，或使用百分比如 "50%"
+          example: '1000000000'
+        swapMode:
+          type: string
+          description: 兌換方向模式
+          enum:
+            - ExactIn
+            - ExactOut
+          example: ExactIn
+        slippage:
+          type: integer
+          description: 滑點容忍百分比
+          example: 10
+          default: 10
+          minimum: 0
+          maximum: 100
+          format: int64
+        inputMint:
+          type: string
+          description: 輸入代幣鑄造地址
+        outputMint:
+          type: string
+          description: 輸出代幣鑄造地址
+      required:
+        - dex
+        - userAddress
+        - amount
+        - swapMode
+        - slippage
+    SwapReply:
+      type: object
+      properties:
+        serializedTx:
+          type: string
+          description: Base64 編碼的交易
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        elapsedTime:
+          type: integer
+          description: 請求處理耗時（毫秒）
+          example: 245
+          format: int64
+      required:
+        - serializedTx
+        - elapsedTime
+    SwapRouteInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 交易所使用的 DEX 標識符
+          example: jupiter
+          enum:
+            - jupiter
+            - kyberswap
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: 發起交易的錢包公鑰
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: 優先費（SOL），用於提高交易處理速度
+          example: '1000'
+        amount:
+          type: string
+          description: 兌換數量。使用 "auto" 表示全部餘額，或使用百分比如 "50%"
+          example: '1000000000'
+        swapMode:
+          type: string
+          description: 兌換方向模式
+          enum:
+            - ExactIn
+            - ExactOut
+          example: ExactIn
+        slippage:
+          type: integer
+          description: 滑點容忍百分比
+          example: 5
+          default: 5
+          minimum: 0
+          maximum: 100
+          format: int64
+        inputMint:
+          type: string
+          description: 輸入代幣鑄造地址
+          example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        outputMint:
+          type: string
+          description: 輸出代幣鑄造地址
+          example: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+        recipientAddress:
+          type: string
+          description: 兌換的接收錢包地址
+          example: '0x0000000000000000000000000000000000000001'
+        permit:
+          type: string
+          description: 兌換的 Permit 資料
+          example: 66c85d1637257e890e581f724f69f4d4fc17eee156c0619c4719ed0c66eed0e9
+        deadline:
+          type: integer
+          description: 兌換截止時間戳
+          example: 1716806400000
+          format: int64
+        tipFee:
+          type: string
+          description: 小費（SOL），用於提高交易處理速度
+          example: '1000000'
+        isAntiMev:
+          type: boolean
+          description: 是否啟用防 MEV 保護
+          example: true
+          default: false
+        maxFeePerGas:
+          type: string
+          description: 每 Gas 單位最大費用（EIP-1559），單位為 wei
+          example: '50000000000'
+        maxPriorityFeePerGas:
+          type: string
+          description: 每 Gas 單位最大優先費（EIP-1559），單位為 wei
+          example: '2000000000'
+        gasPrice:
+          type: string
+          description: Gas 價格，單位為 wei（傳統交易）
+          example: '50000000000'
+        gasLimit:
+          type: string
+          description: 交易 Gas 上限
+          example: '300000'
+      required:
+        - dex
+        - userAddress
+        - amount
+        - swapMode
+        - slippage
+    SwapRouteResponse:
+      type: object
+      properties:
+        args:
+          description: 原始兌換請求參數
+          allOf:
+            - $ref: '#/components/schemas/SwapRouteInput'
+        serializedTx:
+          type: string
+          description: Base64 編碼的交易
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        routeInfo:
+          type: object
+          description: 詳細路由資訊
+          example:
+            inAmount: '1000000000'
+            outAmount: '985000000'
+            priceImpact: '0.15'
+            route:
+              - USDC
+              - SOL
+        elapsedTime:
+          type: integer
+          description: 請求處理耗時（毫秒）
+          example: 245
+          format: int64
+      required:
+        - args
+        - serializedTx
+        - routeInfo
+        - elapsedTime
+    DexQuoteResponse:
+      type: object
+      properties:
+        amountOut:
+          type: string
+          description: 輸出數量
+          example: '1000000000'
+        minAmountOut:
+          type: string
+          description: 最小輸出數量
+        currentPrice:
+          type: string
+          description: 目前價格
+        executionPrice:
+          type: string
+          description: 執行價格
+        priceImpact:
+          type: string
+          description: 價格影響
+          example: '10.5'
+        fee:
+          type: string
+          description: 交易手續費
+          example: '1000000000'
+    CreateTokenInput:
+      type: object
+      properties:
+        dex:
+          type: string
+          description: 交易所使用的 DEX 標識符
+          example: raydium
+          enum:
+            - raydium
+            - pumpfun
+            - moonshot
+            - candy
+            - launchpad
+        userAddress:
+          type: string
+          description: 發起交易的錢包公鑰
+          example: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+          minLength: 8
+          maxLength: 64
+        priorityFee:
+          type: string
+          description: 優先費（SOL），用於提高交易處理速度
+          example: '1000'
+        name:
+          type: string
+          description: 要建立的代幣名稱
+          example: Candy Token
+          minLength: 1
+          maxLength: 32
+        symbol:
+          type: string
+          description: 代幣符號/簡稱
+          example: CANDY
+          minLength: 1
+          maxLength: 10
+        uri:
+          type: string
+          description: 代幣元資料 URI（通常指向圖片或 JSON）
+          example: https://assets.candyproject.com/token/icon.png
+        image:
+          type: string
+          description: 代幣圖片 URL（Base64 或 HTTPS）
+          example: https://assets.candyproject.com/token/icon.png
+        extra:
+          type: object
+          description: 已建立代幣的附加元資料
+          example:
+            decimals: 6
+            migrateType: amm
+            slippage: 100
+            buyAmount: 0
+            supply: 1000000000000000
+            totalSellA: 793100000000000
+            totalFundRaisingB: 85000000000
+            totalLockedAmount: 0
+            cliffPeriod: 0
+            unlockPeriod: 0
+            shareFeeReceiver: oQPnhXAbLbMuKHESaGrbXT17CyvWCpLyERSJA9HCYd7
+            shareFeeRate: 1000
+      required:
+        - dex
+        - userAddress
+        - name
+        - symbol
+    CreateTokenReply:
+      type: object
+      properties:
+        serializedTx:
+          type: string
+          description: Base64 編碼的代幣建立交易
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        mintAddress:
+          type: string
+          description: 需要簽名的代幣鑄造地址
+          example: So11111111111111111111111111111111111111112
+      required:
+        - serializedTx
+        - mintAddress
+    SendTxInput:
+      type: object
+      properties:
+        signedTx:
+          type: string
+          description: Base64 編碼的已簽名交易
+          example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRgYGpQEDAQIABQcICQoLDA0ODwAAAAAAAAAAAAAQERITFBUWFxgZGhscHR4fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        submitType:
+          type: string
+          description: 交易提交方式
+          example: default
+          enum:
+            - default
+            - priority
+        options:
+          type: object
+          description: jito | direct
+          example:
+            isAntiMev: true
+      required:
+        - signedTx
+    SendTxResponse:
+      type: object
+      properties:
+        signature:
+          type: string
+          description: 交易簽名/雜湊
+          example: 37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F
+        elapsedTime:
+          type: integer
+          description: 交易處理耗時（毫秒）
+          example: 1500
+          format: int64
+        jobId:
+          type: string
+          description: 任務 ID
+          example: '1234567890'
+      required:
+        - signature
+        - elapsedTime
+        - jobId
+    GasPriceResponse:
+      type: object
+      properties:
+        gasPrice:
+          type: string
+          description: Current gas price in wei (hex string)
+          example: '0x5d21dba00'
+        chain:
+          type: string
+          description: Chain symbol
+          example: ethereum
+      required:
+        - gasPrice
+        - chain
+    EstimateGasLimitInput:
+      type: object
+      properties:
+        from:
+          type: string
+          description: From address
+          example: '0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8'
+        to:
+          type: string
+          description: To address
+          example: '0x742d35Cc6634C0532925a3b8D8C9C4b8a8d4C8b8'
+        data:
+          type: string
+          description: Transaction data (hex)
+          example: '0xa9059cbb000000000000000000000000742d35cc6634c0532925a3b8d8c9c4b8a8d4c8b80000000000000000000000000000000000000000000000000de0b6b3a7640000'
+        value:
+          type: string
+          description: Value to send (in wei, hex string)
+          example: '0x0'
+      required:
+        - from
+        - to
+        - data
+    EstimateGasLimitResponse:
+      type: object
+      properties:
+        gasLimit:
+          type: string
+          description: Estimated gas limit (hex string)
+          example: '0x5208'
+        chain:
+          type: string
+          description: Chain symbol
+          example: ethereum
+      required:
+        - gasLimit
+        - chain
+    JobDTO:
+      type: object
+      properties:
+        state:
+          type: string
+          description: 任務狀態
+          example: completed
+        result:
+          type: object
+          description: 任務結果
+          example:
+            success: true
+            data:
+              message: Job completed successfully
+      required:
+        - state
+        - result
+    JobStreamingDTO:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 串流任務 ID
+          example: 1
+        data:
+          type: object
+          description: 串流資料
+          example:
+            id: 5rKfmXQyMhz7F2zRE6SpWWx3YkSxtA4gFqZD8CwGRYMx5YLTB8NhbiM9xEHG9jruiWdUyUz7Fpz8jmB8SKcjsLqe
+            status: completed
+            result:
+              success: true
+              data:
+                message: Job completed successfully
+      required:
+        - id
+        - data

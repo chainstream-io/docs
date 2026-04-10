@@ -1,12 +1,12 @@
 ---
-title: "코드 내보내기"
-description: "GraphQL 쿼리로부터 7가지 프로그래밍 언어의 바로 사용 가능한 코드 스니펫 생성"
+title: "Code Export"
+description: "Generate ready-to-use code snippets from your GraphQL queries in 7 programming languages"
 icon: "file-export"
 ---
 
 ## 개요
 
-코드 내보내기 기능은 현재 GraphQL 쿼리를 선택한 언어의 바로 사용 가능한 코드 스니펫으로 변환합니다. 생성된 코드에는 전체 HTTP 요청 설정이 포함됩니다 — 엔드포인트 URL, 인증 헤더, 쿼리 본문, 변수 — 프로젝트에 바로 복사하여 사용할 수 있습니다.
+Code Export 기능은 현재 GraphQL 쿼리를 선택한 언어의 바로 쓸 수 있는 코드 스니펫으로 변환합니다. 생성된 코드에는 전체 HTTP 요청 설정 — 엔드포인트 URL, 인증 헤더, 쿼리 본문, variables — 가 포함되어 프로젝트에 그대로 붙여 넣을 수 있습니다.
 
 ---
 
@@ -14,60 +14,61 @@ icon: "file-export"
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| 언어 | 형식 | 사용 사례 |
+| 언어 | 형식 | 용도 |
 |:--|:--|:--|
-| **cURL** | Shell 명령 | 빠른 터미널 테스트, CI/CD 스크립트 |
-| **Python** | `requests` 라이브러리 | 백엔드 서비스, 데이터 파이프라인, Jupyter 노트북 |
+| **cURL** | Shell command | 빠른 터미널 테스트, CI/CD 스크립트 |
+| **Python** | `requests` library | 백엔드 서비스, 데이터 파이프라인, Jupyter 노트북 |
 | **JavaScript** | `fetch` API | 브라우저 앱, Node.js 서비스 |
 | **Go** | `net/http` | 백엔드 마이크로서비스, CLI 도구 |
-| **Rust** | `reqwest` 크레이트 | 고성능 서비스 |
-| **Ruby** | `net/http` | Rails 애플리케이션, 스크립트 |
-| **PHP** | `cURL` 확장 | PHP 백엔드, WordPress 플러그인 |
+| **Rust** | `reqwest` crate | 고성능 서비스 |
+| **Ruby** | `net/http` | Rails 앱, 스크립트 |
+| **PHP** | `cURL` extension | PHP 백엔드, WordPress 플러그인 |
 
 </div>
 
 ---
 
-## 내보내기 방법
+## 코드보내기
 
 <Steps>
   <Step title="쿼리 작성">
-    에디터에 쿼리를 입력하거나 불러옵니다. 내보내기 전에 성공적으로 실행되는지 확인하세요.
+    에디터에 쿼리를 입력하거나 불러옵니다. 보내기 전에 실행이 성공하는지 확인하세요.
   </Step>
   <Step title="Export Code 클릭">
-    툴바에서 **Export Code** 버튼을 클릭합니다. 언어 선택기와 생성된 스니펫이 포함된 모달이 열립니다.
+    툴바의 **Export Code** 버튼을 클릭합니다. 언어 선택기와 생성된 스니펫이 있는 모달이 열립니다.
   </Step>
   <Step title="언어 선택">
-    드롭다운에서 대상 언어를 선택합니다. 스니펫이 즉시 업데이트됩니다.
+    드롭다운에서 대상 언어를 고릅니다. 스니펫이 즉시 갱신됩니다.
   </Step>
   <Step title="스니펫 복사">
-    **Copy** 버튼을 클릭하여 생성된 코드를 클립보드에 복사합니다.
+    **Copy** 버튼을 눌러 생성된 코드를 클립보드에 복사합니다.
   </Step>
 </Steps>
 
 <Tip>
-내보낸 코드는 현재 IDE 구성의 GraphQL 엔드포인트와 API Key를 사용합니다. 커스텀 엔드포인트나 헤더를 설정한 경우 생성된 스니펫에 반영됩니다.
+보낸 코드는 현재 IDE 설정의 GraphQL 엔드포인트와 API key를 사용합니다. 사용자 지정 엔드포인트나 헤더를 설정했다면 생성 스니펫에도 반영됩니다.
 </Tip>
 
 ---
 
-## 예제 스니펫
+## 예시 스니펫
 
-다음 예제는 간단한 DEXTrades 쿼리를 내보냅니다 — 최근 Solana DEX 트레이드 10건 조회:
+아래는 간단한 DEXTrades 쿼리(Solana 최신 DEX 거래 10건)를 보낼 때 생성되는 스니펫 예시입니다.
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Currency { MintAddress } Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -80,7 +81,7 @@ query {
       -H "Content-Type: application/json" \
       -H "X-API-KEY: your_api_key" \
       -d '{
-        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+        "query": "{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"
       }'
     ```
   </Tab>
@@ -95,17 +96,18 @@ query {
     }
     query = """
     {
-      DEXTrades(
-        network: sol
-        limit: {count: 10}
-        orderBy: Block_Time_DESC
-      ) {
-        Block { Time }
-        Transaction { Hash }
-        Trade {
-          Buy { Currency { MintAddress } Amount PriceInUSD }
-          Sell { Currency { MintAddress } Amount }
-          Dex { ProtocolName }
+      Solana {
+        DEXTrades(
+          limit: {count: 10}
+          orderBy: {descending: Block_Time}
+        ) {
+          Block { Time }
+          Transaction { Hash }
+          Trade {
+            Buy { Currency { MintAddress } Amount PriceInUSD }
+            Sell { Currency { MintAddress } Amount }
+            Dex { ProtocolName }
+          }
         }
       }
     }
@@ -126,17 +128,18 @@ query {
       },
       body: JSON.stringify({
         query: `{
-          DEXTrades(
-            network: sol
-            limit: {count: 10}
-            orderBy: Block_Time_DESC
-          ) {
-            Block { Time }
-            Transaction { Hash }
-            Trade {
-              Buy { Currency { MintAddress } Amount PriceInUSD }
-              Sell { Currency { MintAddress } Amount }
-              Dex { ProtocolName }
+          Solana {
+            DEXTrades(
+              limit: {count: 10}
+              orderBy: {descending: Block_Time}
+            ) {
+              Block { Time }
+              Transaction { Hash }
+              Trade {
+                Buy { Currency { MintAddress } Amount PriceInUSD }
+                Sell { Currency { MintAddress } Amount }
+                Dex { ProtocolName }
+              }
             }
           }
         }`,
@@ -161,7 +164,7 @@ query {
 
     func main() {
         payload := map[string]string{
-            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+            "query": `{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }`,
         }
         body, _ := json.Marshal(payload)
 
@@ -192,7 +195,7 @@ query {
         headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
 
         let body = json!({
-            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+            "query": r#"{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"#
         });
 
         let client = reqwest::Client::new();
@@ -212,26 +215,26 @@ query {
 
 ---
 
-## 내보낸 코드에 포함되는 항목
+## 보낸 코드에 포함되는 것
 
-모든 생성된 스니펫에는 다음이 포함됩니다:
+생성된 모든 스니펫에 포함됩니다.
 
 | 구성 요소 | 설명 |
 |:--|:--|
-| **엔드포인트 URL** | `https://graphql.chainstream.io/graphql` |
-| **인증** | IDE 헤더 패널의 `X-API-KEY` 헤더 |
+| **Endpoint URL** | `https://graphql.chainstream.io/graphql` |
+| **Authentication** | IDE Headers 패널의 `X-API-KEY` 헤더 |
 | **Content-Type** | `application/json` |
-| **쿼리 본문** | 에디터의 전체 GraphQL 쿼리 |
-| **변수** | 변수 패널에 값이 있는 경우 포함 |
+| **Query body** | 에디터의 전체 GraphQL 쿼리 |
+| **Variables** | Variables 패널에 값이 있을 경우 포함 |
 
 <Note>
-내보낸 코드를 실행하기 전에 `your_api_key`를 실제 API Key로 교체하세요. IDE는 보안을 위해 내보낸 스니펫에 실제 키를 포함하지 않습니다.
+보낸 코드를 실행하기 전에 `your_api_key`를 실제 API key로 바꾸세요. 보안상 IDE는 보낸 스니펫에 실제 키를 넣지 않습니다.
 </Note>
 
 ---
 
 ## 팁
 
-- **내보내기 전에 테스트** — IDE에서 먼저 쿼리를 실행하여 작동하는지 확인하세요. 내보낸 코드는 쿼리를 그대로 복사합니다.
-- **변수로 매개변수화** — 하드코딩된 값 대신 GraphQL 변수를 사용하세요. 내보낸 코드에 쿼리와 함께 `variables` JSON이 포함됩니다.
-- **의존성 확인** — Python 스니펫은 `requests`, Rust는 `reqwest`, Go는 표준 라이브러리를 사용합니다. 프로젝트에 필요한 패키지가 설치되어 있는지 확인하세요.
+- **보내기 전 테스트** — 먼저 IDE에서 쿼리를 실행해 동작을 확인하세요. 보낸 코드는 쿼리를 그대로 복사합니다.
+- **variables로 파라미터화** — 하드코딩 대신 GraphQL variables를 사용하세요. 보낸 코드에 쿼리와 함께 `variables` JSON이 포함됩니다.
+- **의존성 확인** — Python은 `requests`, Rust는 `reqwest`, Go는 표준 라이브러리를 사용합니다. 프로젝트에 필요한 패키지가 설치되어 있는지 확인하세요.

@@ -64,8 +64,7 @@ curl -X POST "https://graphql.chainstream.io/graphql" \
   -H "Content-Type: application/json" \
   -H "X-API-KEY: your_api_key" \
   -d '{
-    "query": "query ($network: Network!) { DEXTrades(network: $network, limit: {count: 5}) { Block { Time } Trade { Buy { Currency { MintAddress } Amount } } } }",
-    "variables": { "network": "sol" }
+    "query": "{ Solana { DEXTrades(limit: {count: 5}, orderBy: {descending: Block_Time}) { Block { Time } Trade { Buy { Currency { MintAddress } Amount } } } } }"
   }'
 ```
   </Tab>
@@ -75,24 +74,26 @@ curl -X POST "https://graphql.chainstream.io/graphql" \
 ```bash
 # Save query to file
 cat > query.graphql << 'EOF'
-query ($network: Network!) {
-  DEXTrades(network: $network, limit: {count: 5}) {
-    Block { Time }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
+{
+  Solana {
+    DEXTrades(limit: {count: 5}, orderBy: {descending: Block_Time}) {
+      Block { Time }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+        }
       }
     }
   }
 }
 EOF
 
-# Send with variables
+# Send request
 curl -X POST "https://graphql.chainstream.io/graphql" \
   -H "Content-Type: application/json" \
   -H "X-API-KEY: your_api_key" \
-  -d "{\"query\": \"$(cat query.graphql | tr '\n' ' ')\", \"variables\": {\"network\": \"sol\"}}"
+  -d "{\"query\": \"$(cat query.graphql | tr '\n' ' ')\"}"
 ```
   </Tab>
   <Tab title="JavaScript (fetch)">
@@ -104,18 +105,19 @@ const response = await fetch("https://graphql.chainstream.io/graphql", {
     "X-API-KEY": "your_api_key",
   },
   body: JSON.stringify({
-    query: `query ($network: Network!) {
-      DEXTrades(network: $network, limit: {count: 5}) {
-        Block { Time }
-        Trade { Buy { Currency { MintAddress } Amount } }
+    query: `{
+      Solana {
+        DEXTrades(limit: {count: 5}, orderBy: {descending: Block_Time}) {
+          Block { Time }
+          Trade { Buy { Currency { MintAddress } Amount } }
+        }
       }
     }`,
-    variables: { network: "sol" },
   }),
 });
 
 const { data, extensions } = await response.json();
-console.log(data.DEXTrades);
+console.log(data.Solana.DEXTrades);
 ```
   </Tab>
   <Tab title="Python (requests)">
@@ -129,18 +131,19 @@ resp = requests.post(
         "X-API-KEY": "your_api_key",
     },
     json={
-        "query": """query ($network: Network!) {
-            DEXTrades(network: $network, limit: {count: 5}) {
-                Block { Time }
-                Trade { Buy { Currency { MintAddress } Amount } }
+        "query": """{
+            Solana {
+                DEXTrades(limit: {count: 5}, orderBy: {descending: Block_Time}) {
+                    Block { Time }
+                    Trade { Buy { Currency { MintAddress } Amount } }
+                }
             }
         }""",
-        "variables": {"network": "sol"},
     },
 )
 
 data = resp.json()
-print(data["data"]["DEXTrades"])
+print(data["data"]["Solana"]["DEXTrades"])
 ```
   </Tab>
 </Tabs>
@@ -150,30 +153,30 @@ print(data["data"]["DEXTrades"])
 ```bash
 curl -G "https://graphql.chainstream.io/graphql" \
   -H "X-API-KEY: your_api_key" \
-  --data-urlencode 'query={ DEXTrades(network: sol, limit: {count: 5}) { Block { Time } } }'
+  --data-urlencode 'query={ Solana { DEXTrades(limit: {count: 5}, orderBy: {descending: Block_Time}) { Block { Time } } } }'
 ```
 
 ---
 
 ## 支持的网络
 
-在每个顶层 Cube 查询上将 `network` 作为枚举传入：
+将 Cube 查询包裹在对应的 **Chain Group** 中以选择网络：
 
-| Network Enum | Blockchain | Chain ID |
+| Chain Group | Blockchain | Chain ID |
 |:--|:--|:--|
-| `sol` | Solana | — |
-| `eth` | Ethereum | 1 |
-| `bsc` | BNB Chain (BSC) | 56 |
+| `Solana` | Solana | — |
+| `EVM(network: eth)` | Ethereum | 1 |
+| `EVM(network: bsc)` | BNB Chain (BSC) | 56 |
 
 ```graphql
 # Solana
-{ DEXTrades(network: sol, limit: {count: 5}) { ... } }
+{ Solana { DEXTrades(limit: {count: 5}) { ... } } }
 
 # Ethereum
-{ DEXTrades(network: eth, limit: {count: 5}) { ... } }
+{ EVM(network: eth) { DEXTrades(limit: {count: 5}) { ... } } }
 
 # BSC
-{ DEXTrades(network: bsc, limit: {count: 5}) { ... } }
+{ EVM(network: bsc) { DEXTrades(limit: {count: 5}) { ... } } }
 ```
 
 ---
@@ -185,9 +188,11 @@ curl -G "https://graphql.chainstream.io/graphql" \
 ```json
 {
   "data": {
-    "DEXTrades": [
-      { "Block": { "Time": "2025-03-27T10:15:30Z" }, "..." : "..." }
-    ]
+    "Solana": {
+      "DEXTrades": [
+        { "Block": { "Time": "2025-03-27T10:15:30Z" }, "..." : "..." }
+      ]
+    }
   },
   "extensions": {
     "credits": {

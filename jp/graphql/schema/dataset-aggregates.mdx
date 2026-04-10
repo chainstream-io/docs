@@ -1,31 +1,31 @@
 ---
-title: "データセットとアグリゲート"
-description: "datasetとaggregatesパラメータでデータソーススコープと事前集計動作を制御"
+title: "Dataset & Aggregates"
+description: "Control data source scope and pre-aggregation behavior with the dataset and aggregates parameters"
 icon: "database"
 ---
 
 ## 概要
 
-ChainStream GraphQLのすべてのチェーングループは、**どの基盤テーブル**をクエリするかを制御する2つのオプションパラメータを受け付けます。これらのパラメータにより、ユースケースに応じてデータの鮮度、クエリ速度、データの完全性を最適化できます。
+ChainStream GraphQL の各 Chain Group は、**どの基盤テーブルに問い合わせるか** を制御する任意パラメータを 2 つ受け取ります。用途に応じて鮮度、クエリ速度、データの網羅性を最適化できます。
 
 ---
 
-## Datasetパラメータ
+## `dataset` パラメータ
 
-`dataset`パラメータはクエリされるデータの**時間スコープ**を制御します。クエリがリアルタイムテーブル、アーカイブテーブル、または両方にアクセスするかを決定します。
+`dataset` パラメータは、問い合わせるデータの **時間的な範囲** を制御します。リアルタイムテーブル、アーカイブテーブル、またはその両方にヒットするかが決まります。
 
-| 値 | 説明 | 一般的なユースケース |
+| 値 | 説明 | 典型的な用途 |
 |:------|:------------|:-----------------|
-| `combined` | リアルタイムデータとアーカイブデータの両方をクエリ **（デフォルト）** | 全範囲が必要な汎用クエリ |
-| `realtime` | 最新データのみ（約24時間以内） | モニタリングダッシュボード、最新トレード、リアルタイムアラート |
-| `archive` | 保持TTLまでの履歴データのみ | 過去分析、バックフィル、トレンドリサーチ |
+| `combined` | リアルタイムとアーカイブの **両方** をクエリ **（デフォルト）** — 通常は直近約 7〜10 日分をカバー | 全期間が必要な汎用クエリ |
+| `realtime` | 直近データのみ（おおよそ過去 24 時間） | モニタリングダッシュボード、最新取引、リアルタイムアラート |
+| `archive` | 保持期間内の履歴データのみ（約 7〜10 日） | 履歴分析、バックフィル、トレンド調査 |
 
-### 使用方法
+### 使い方
 
 ```graphql
 query {
   Solana(dataset: realtime) {
-    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block { Time }
       Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
     }
@@ -49,12 +49,12 @@ query {
 
 ### 履歴データのバックフィル
 
-データパイプラインの構築やダウンタイムからの復旧時に、`dataset: archive`と時間範囲フィルタを使用して履歴データをバックフィルできます：
+データパイプラインの構築やダウンタイムからの復旧では、`dataset: archive` と時間範囲フィルタで履歴をバックフィルできます。
 
-1. 最後に処理したタイムスタンプまたはブロック高を記録
-2. 最後のチェックポイントから現在時刻までの`where`フィルタ付きで`dataset: archive`をクエリ
-3. バックフィルされたデータを処理
-4. 継続的なモニタリングのために`dataset: realtime`に切り替え
+1. 最後に処理したタイムスタンプまたはブロック高を記録する
+2. 最後のチェックポイントから現在までを `where` で指定し、`dataset: archive` でクエリする
+3. バックフィルしたデータを処理する
+4. 継続的な監視には `dataset: realtime` に切り替える
 
 ```graphql
 query BackfillTrades {
@@ -69,7 +69,7 @@ query BackfillTrades {
         }
       }
       limit: {count: 10000}
-      orderBy: Block_Time_ASC
+      orderBy: {ascending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Hash }
@@ -82,28 +82,28 @@ query BackfillTrades {
 }
 ```
 
-### Datasetをサポートしないテーブル
+### `dataset` 非対応のテーブル
 
-一部のCubeは`dataset`値に関係なく常に同じテーブルをクエリします。これには以下が含まれます：
+一部の Cube は `dataset` の値に関わらず常に同じテーブルを参照します。例:
 
-- **DWS Cube**: `TokenHolders`、`WalletTokenPnL`、`DEXPools` — 現在の状態スナップショットを表す
-- **特殊テーブル**: `TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
+- **DWS Cube**: `TokenHolders`、`WalletTokenPnL`、`DEXPools` — 現在状態のスナップショット
+- **特別なテーブル**: `TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
 
-これらのCubeでは、`dataset`はサイレントに無視されます。
+これらの Cube では `dataset` は無視されます。
 
 ---
 
-## Aggregatesパラメータ
+## `aggregates` パラメータ
 
-`aggregates`パラメータは、クエリが生の詳細テーブル（DWDレイヤー）ではなく**事前集計マテリアライズドビュー**（DWMレイヤー）を使用するかどうかを制御します。事前集計テーブルには事前計算されたロールアップ（通常は分単位）が含まれ、クエリが大幅に高速になります。
+`aggregates` パラメータは、生の明細テーブル（DWD）ではなく **事前集計済みマテリアライズドビュー**（DWM レイヤー）を使うかどうかを制御します。事前集計テーブルには通常 1 分単位で事前計算されたロールアップが含まれ、クエリがはるかに高速です。
 
-| 値 | 説明 | 一般的なユースケース |
+| 値 | 説明 | 典型的な用途 |
 |:------|:------------|:-----------------|
-| `yes` | 利用可能な場合、事前集計テーブルを優先 **（デフォルト動作）** | ほとんどの分析クエリ |
-| `no` | 生の詳細テーブルのみを使用 | イベント単位の粒度が必要な場合 |
-| `only` | 事前集計テーブルのみを使用 | 最大のクエリ速度、限定的なフィールドセットを許容 |
+| `yes` | 利用可能なら事前集計テーブルを優先 **（デフォルトの挙動）** | ほとんどの分析クエリ |
+| `no` | 生の明細テーブルのみ | イベント単位の粒度が必要な場合 |
+| `only` | 事前集計テーブルのみ | 最大のクエリ速度（取得フィールドに制限あり） |
 
-### 使用方法
+### 使い方
 
 ```graphql
 query {
@@ -111,7 +111,7 @@ query {
     Pairs(
       where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
       limit: {count: 100}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Price { Ohlc { Open High Low Close } }
@@ -121,20 +121,20 @@ query {
 }
 ```
 
-### 各モードの使い分け
+### モードの選び方
 
 | シナリオ | 推奨 | 理由 |
 |:---------|:------------|:----|
-| OHLCチャートの構築 | `aggregates: only` | 事前計算されたローソク足データ、最速のレスポンス |
-| 経時的な出来高トレンド | `aggregates: yes` | 事前集計された出来高統計を活用 |
-| 個別のトレード分析 | `aggregates: no` | ロールアップでは提供されないイベント単位の詳細が必要 |
-| ユニークトレーダーのカウント | `aggregates: yes` | 事前計算されたユニークカウントが利用可能 |
+| OHLC チャートの構築 | `aggregates: only` | 事前計算済みローソク足で最速 |
+| 時系列の出来高トレンド | `aggregates: yes` | 事前集計の出来高統計を利用 |
+| 個別取引の分析 | `aggregates: no` | ロールアップにないイベント単位の詳細が必要 |
+| ユニークトレーダー数の集計 | `aggregates: yes` | 事前計算済みのユニーク数が利用可能 |
 
 ---
 
-## 両パラメータの組み合わせ
+## 2 つのパラメータの併用
 
-`dataset`と`aggregates`を一緒に使用できます：
+`dataset` と `aggregates` は同時に指定できます。
 
 ```graphql
 query {
@@ -142,7 +142,7 @@ query {
     Tokens(
       where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
       limit: {count: 60}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Volume { Usd BuyVolumeUSD SellVolumeUSD }
@@ -152,23 +152,23 @@ query {
 }
 ```
 
-このクエリは、最大速度のために事前集計テーブルを使用してリアルタイムデータから最後の約60分間のクロスチェーントークントレード統計を取得します。
+このクエリは、リアルタイムデータと事前集計テーブルを組み合わせ、直近約 60 分のクロスチェーントークン取引統計を高速に取得します。
 
 ---
 
-## パフォーマンスの考慮事項
+## パフォーマンスの考慮
 
 <CardGroup cols={2}>
-  <Card title="ダッシュボードにはrealtimeを使用" icon="gauge-high">
-    `dataset: realtime`はより小さいテーブルパーティションをクエリするため、モニタリングユースケースでより高速なレスポンスタイムが得られます。
+  <Card title="ダッシュボードには realtime" icon="gauge-high">
+    `dataset: realtime` はより小さいパーティションを参照するため、モニタリング用途で応答が速くなります。
   </Card>
-  <Card title="分析にはaggregatesを使用" icon="chart-line">
-    `aggregates: yes`または`only`は、生のイベントテーブルをスキャンするよりも桁違いに高速な事前計算ロールアップを活用します。
+  <Card title="分析には aggregates" icon="chart-line">
+    `aggregates: yes` または `only` は、生イベントテーブルをフルスキャンするより桁違いに速い事前計算ロールアップを使います。
   </Card>
 </CardGroup>
 
 <Tip>
-OHLCまたは出来高クエリを可能な限り高速にするには、`dataset: realtime`と`aggregates: only`を組み合わせてください。最小かつ最も最適化されたデータスライスを対象にします。
+OHLC や出来高クエリを最速にしたい場合は、`dataset: realtime` と `aggregates: only` を組み合わせます。最も小さく最適化されたデータスライスを狙えます。
 </Tip>
 
 ---
@@ -177,9 +177,9 @@ OHLCまたは出来高クエリを可能な限り高速にするには、`datase
 
 <CardGroup cols={2}>
   <Card title="スキーマ概要" icon="sitemap" href="/jp/graphql/schema/schema-overview">
-    datasetとaggregatesが全体のクエリ構造にどのように組み込まれるかを確認。
+    `dataset` と `aggregates` が全体のクエリ構造のどこに位置するかを確認します。
   </Card>
-  <Card title="データキューブ" icon="cubes" href="/jp/graphql/schema/cubes">
-    どのCubeがdataset切り替えをサポートしているかを確認。
+  <Card title="データ Cube" icon="cubes" href="/jp/graphql/schema/cubes">
+    どの Cube が `dataset` 切り替えに対応しているかを確認します。
   </Card>
 </CardGroup>

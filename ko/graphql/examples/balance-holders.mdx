@@ -1,49 +1,50 @@
 ---
-title: "잔액 & 홀더"
-description: "월렛 잔액, 잔액 히스토리, 토큰 홀더 쿼리 예제"
+title: "Balances & Holders"
+description: "Query examples for wallet balances, balance history, and token holders"
 icon: "wallet"
 ---
 
-이 페이지에서는 월렛 및 홀더 분석을 위한 네 가지 Cube를 다룹니다:
+이 페이지는 지갑·홀더 분석을 위한 네 가지 Cube를 다룹니다:
 
-- **BalanceUpdates** (DWD) — 월렛의 이벤트별 잔액 변동
+- **BalanceUpdates** (DWD) — 지갑별 잔액 변화 이벤트
 - **TokenHolders** (DWS) — 토큰의 현재 홀더 스냅샷
-- **WalletTokenPnL** (DWS) — 월렛의 토큰별 손익
+- **WalletTokenPnL** (DWS) — 지갑별 토큰 손익(PnL)
 
 <Note>
-아래 모든 예제는 `network: sol` (Solana)을 사용합니다. 다른 지원 체인의 경우 `eth`, `bsc`, `polygon`으로 교체하세요.
+아래 예시는 모두 `network: sol`(Solana)을 사용합니다. 다른 지원 체인은 `eth`, `bsc`, `polygon` 등으로 바꿉니다.
 </Note>
 
 ---
 
-## 월렛의 토큰 잔액을 어떻게 조회하나요?
+## 지갑의 토큰 잔액을 어떻게 가져오나요?
 
-월렛의 현재 토큰 잔액을 조회합니다. 이 쿼리는 월렛이 보유한 각 토큰의 최신 잔액 업데이트 이벤트를 반환합니다.
+지갑의 현재 토큰 잔액을 조회합니다. 이 쿼리는 지갑이 보유한 각 토큰에 대해 가장 최근 잔액 업데이트 이벤트를 반환합니다.
 
 ```graphql
 query {
-  BalanceUpdates(
-    network: sol
-    limit: {count: 50}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      Account { Owner }
-      PostBalance
-      PostBalanceInUSD
+  Solana {
+    BalanceUpdates(
+      limit: {count: 50}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        Account { Owner }
+        PostBalance
+        PostBalanceInUSD
+      }
+      Block { Time }
     }
-    Block { Time }
   }
 }
 ```
 
 <Tip>
-[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여넣어 자동 완성과 스키마 탐색 기능으로 인터랙티브하게 실행해 보세요.
+[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여넣어 자동 완성과 스키마 탐색으로 대화형 실행할 수 있습니다.
 </Tip>
 
 <Tip>
-`WALLET_ADDRESS`를 검사하려는 월렛으로 교체하세요. `ownerAddress` 셀렉터는 월렛 소유자별로 잔액 업데이트 이벤트를 필터링합니다.
+`WALLET_ADDRESS`를 조사할 지갑으로 바꿉니다. `ownerAddress` 셀렉터는 지갑 소유자 기준으로 잔액 업데이트 이벤트를 필터링합니다.
 </Tip>
 
 <AccordionGroup>
@@ -51,39 +52,40 @@ query {
     | 필드 | 설명 |
     |:------|:------------|
     | `BalanceUpdate.Currency.MintAddress` | 토큰 주소 |
-    | `BalanceUpdate.Account.Owner` | 월렛 소유자 주소 |
+    | `BalanceUpdate.Account.Owner` | 지갑 소유자 주소 |
     | `BalanceUpdate.PostBalance` | 업데이트 후 토큰 잔액 |
-    | `BalanceUpdate.PostBalanceInUSD` | USD 잔액 가치 |
+    | `BalanceUpdate.PostBalanceInUSD` | USD 기준 잔액 가치 |
     | `Block.Time` | 잔액 업데이트 타임스탬프 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
-    - **제한 증가**: 보유 토큰이 많은 월렛을 위해 `count: 200`으로 설정
-    - **가치별 필터**: `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}`를 추가하여 더스트 잔액 제외
+  <Accordion title="맞춤 설정 팁">
+    - **limit 늘리기**: `count: 200`으로 더 많은 토큰(보유가 많은 지갑)
+    - **가치로 필터**: `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}`로 먼지 잔액 제외
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 잔액 변동 히스토리를 어떻게 조회하나요?
+## 잔액 변화 이력을 어떻게 가져오나요?
 
-시간에 따른 월렛의 특정 토큰 잔액 변동을 추적합니다.
+특정 토큰에 대해 지갑 잔액이 시간에 따라 어떻게 바뀌는지 추적합니다.
 
 ```graphql
 query {
-  BalanceUpdates(
-    network: sol
-    limit: {count: 20}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    BalanceUpdate {
-      PreBalance
-      PostBalance
-      PostBalanceInUSD
+  Solana {
+    BalanceUpdates(
+      limit: {count: 20}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      BalanceUpdate {
+        PreBalance
+        PostBalance
+        PostBalanceInUSD
+      }
+      Block { Time }
+      Transaction { Hash }
     }
-    Block { Time }
-    Transaction { Hash }
   }
 }
 ```
@@ -92,42 +94,43 @@ query {
   <Accordion title="주요 필드">
     | 필드 | 설명 |
     |:------|:------------|
-    | `BalanceUpdate.PreBalance` | 이벤트 전 잔액 |
-    | `BalanceUpdate.PostBalance` | 이벤트 후 잔액 |
-    | `BalanceUpdate.PostBalanceInUSD` | 사후 잔액의 USD 가치 |
-    | `Block.Time` | 잔액이 변동된 시점 |
-    | `Transaction.Hash` | 변동을 발생시킨 트랜잭션 |
+    | `BalanceUpdate.PreBalance` | 이벤트 이전 잔액 |
+    | `BalanceUpdate.PostBalance` | 이벤트 이후 잔액 |
+    | `BalanceUpdate.PostBalanceInUSD` | 이벤트 후 잔액의 USD 가치 |
+    | `Block.Time` | 잔액이 바뀐 시각 |
+    | `Transaction.Hash` | 변화를 일으킨 트랜잭션 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
-    - **매집 감지**: `PreBalance`와 `PostBalance`를 비교 — `PostBalance > PreBalance`이면 월렛이 매집 중
-    - **시간 범위**: `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}`를 추가하여 특정 기간으로 제한
-    - **더 많은 히스토리**: 포괄적인 잔액 히스토리를 위해 `count`를 최대 `10000`까지 증가
+  <Accordion title="맞춤 설정 팁">
+    - **축적 감지**: `PreBalance`와 `PostBalance` 비교 — `PostBalance > PreBalance`이면 지갑이 축적 중
+    - **기간**: `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}`로 특정 기간 한정
+    - **더 긴 이력**: `count`를 최대 `10000`까지 늘려 전체 잔액 이력
   </Accordion>
 </AccordionGroup>
 
 <Info>
-`PostBalance`와 `PreBalance`의 차이는 이벤트당 순 변동을 보여줍니다. 양의 델타는 토큰 유입, 음의 델타는 토큰 유출을 의미합니다.
+`PostBalance`와 `PreBalance`의 차이는 이벤트당 순변화를 나타냅니다. 양수면 유입, 음수면 유출입니다.
 </Info>
 
 ---
 
-## 토큰의 상위 홀더를 어떻게 조회하나요?
+## 토큰의 상위 홀더를 어떻게 가져오나요?
 
-잔액 기준 토큰의 상위 홀더를 조회합니다.
+잔액 기준으로 정렬된 토큰의 상위 홀더를 조회합니다.
 
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    limit: {count: 100}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    Token { Address }
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
-    FirstSeen
-    LastSeen
+  Solana {
+    TokenHolders(
+      limit: {count: 100}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+    ) {
+      Token { Address }
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
   }
 }
 ```
@@ -137,44 +140,45 @@ query {
     | 필드 | 설명 |
     |:------|:------------|
     | `Token.Address` | 토큰 주소 |
-    | `Holder.Address` | 홀더 월렛 주소 |
+    | `Holder.Address` | 홀더 지갑 주소 |
     | `LatestBalance` | 현재 토큰 잔액 |
-    | `LatestBalanceUSD` | 현재 USD 잔액 |
-    | `FirstSeen` | 홀더가 처음 토큰을 획득한 시점 |
-    | `LastSeen` | 이 토큰 관련 가장 최근 트랜잭션 |
+    | `LatestBalanceUSD` | 현재 잔액의 USD 가치 |
+    | `FirstSeen` | 이 홀더가 처음 해당 토큰을 보유한 시각 |
+    | `LastSeen` | 이 토큰과 관련된 가장 최근 트랜잭션 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
-    - **고래 기준**: `where: {LatestBalanceUSD: {gt: 10000}}`를 추가하여 대규모 홀더만 표시
-    - **활성 홀더**: `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}`를 추가하여 최근 활성 홀더로 필터링
-    - **홀더 수**: `count` 메트릭을 사용하여 총 홀더 수 조회
+  <Accordion title="맞춤 설정 팁">
+    - **고래 기준**: `where: {LatestBalanceUSD: {gt: 10000}}`로 대형 홀더만
+    - **활성 홀더**: `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}`로 최근 활동 홀더만
+    - **홀더 수**: `count` 메트릭으로 총 홀더 수 조회
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-**TokenHolders** Cube는 DWS (Summary) 레이어 테이블입니다 — 사전 집계되어 있어 개별 잔액 업데이트를 스캔하는 것보다 훨씬 빠릅니다. 홀더 순위 및 분포 분석에 사용하세요.
+**TokenHolders** Cube는 DWS(Summary) 레이어 테이블로, 개별 잔액 업데이트를 스캔하는 것보다 훨씬 빠릅니다. 홀더 순위와 분포 분석에 사용하세요.
 </Tip>
 
 ---
 
-## 월렛의 손익을 어떻게 조회하나요?
+## 지갑 손익(PnL)을 어떻게 가져오나요?
 
-매수/매도 거래량과 거래 횟수를 포함한 월렛의 토큰별 손익 데이터를 조회합니다.
+지갑의 토큰별 손익 데이터를 조회합니다. 매수/매도 거래량과 거래 횟수를 포함합니다.
 
 ```graphql
 query {
-  WalletTokenPnL(
-    network: sol
-    limit: {count: 20}
-    walletAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    Wallet { Address }
-    Token { Address }
-    BuyVolumeUSDState
-    SellVolumeUSDState
-    BuyCountState
-    SellCountState
-    FirstTradeState
-    LastTradeState
+  Solana {
+    WalletTokenPnL(
+      limit: {count: 20}
+      walletAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      Wallet { Address }
+      Token { Address }
+      BuyVolumeUSDState
+      SellVolumeUSDState
+      BuyCountState
+      SellCountState
+      FirstTradeState
+      LastTradeState
+    }
   }
 }
 ```
@@ -183,43 +187,44 @@ query {
   <Accordion title="주요 필드">
     | 필드 | 설명 |
     |:------|:------------|
-    | `Wallet.Address` | 월렛 주소 |
+    | `Wallet.Address` | 지갑 주소 |
     | `Token.Address` | 토큰 주소 |
-    | `BuyVolumeUSDState` | 이 토큰 매수에 사용된 총 USD |
+    | `BuyVolumeUSDState` | 이 토큰 매수에 쓴 총 USD |
     | `SellVolumeUSDState` | 이 토큰 매도로 받은 총 USD |
     | `BuyCountState` | 매수 거래 수 |
     | `SellCountState` | 매도 거래 수 |
-    | `FirstTradeState` | 첫 거래 타임스탬프 |
-    | `LastTradeState` | 가장 최근 거래 타임스탬프 |
+    | `FirstTradeState` | 첫 거래 시각 |
+    | `LastTradeState` | 가장 최근 거래 시각 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
-    - **PnL 계산**: `SellVolumeUSDState - BuyVolumeUSDState`로 각 토큰의 실현 PnL 산출
-    - **활성 포지션**: `SellCountState < BuyCountState`인 토큰을 필터링하여 월렛이 아직 보유 중인 토큰 찾기
-    - **고활동 토큰**: `BuyCountState` 또는 `SellCountState`로 정렬하여 가장 자주 거래된 토큰 찾기
+  <Accordion title="맞춤 설정 팁">
+    - **PnL 계산**: `SellVolumeUSDState - BuyVolumeUSDState`가 토큰별 실현 손익
+    - **보유 중 포지션**: `SellCountState < BuyCountState`인 토큰으로 아직 보유 중인 자산 찾기
+    - **거래가 잦은 토큰**: `BuyCountState` 또는 `SellCountState`로 정렬해 가장 자주 거래된 토큰 파악
   </Accordion>
 </AccordionGroup>
 
 <Info>
-**WalletTokenPnL** Cube는 `walletAddress` 셀렉터를 사용합니다 (`ownerAddress`가 아님). 누적 트레이딩 메트릭을 제공하여 포트폴리오 분석과 성과 리더보드에 이상적입니다.
+**WalletTokenPnL** Cube는 `ownerAddress`가 아니라 `walletAddress` 셀렉터를 사용합니다. 누적 거래 메트릭을 제공하며 포트폴리오 분석·성과 리더보드에 적합합니다.
 </Info>
 
 ---
 
-## 멀티체인 예제
+## 멀티체인 예시
 
 <Tabs>
   <Tab title="Solana">
 ```graphql
 query {
-  BalanceUpdates(
-    network: sol
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  Solana {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -228,15 +233,16 @@ query {
   <Tab title="Ethereum">
 ```graphql
 query {
-  BalanceUpdates(
-    network: eth
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  EVM(network: eth) {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -245,15 +251,16 @@ query {
   <Tab title="BSC">
 ```graphql
 query {
-  BalanceUpdates(
-    network: bsc
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  EVM(network: bsc) {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -262,15 +269,16 @@ query {
   <Tab title="Polygon">
 ```graphql
 query {
-  BalanceUpdates(
-    network: polygon
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  EVM(network: polygon) {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -283,16 +291,16 @@ query {
 ## 다음 단계
 
 <CardGroup cols={2}>
-  <Card title="DEX 트레이드" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
-    DEX 트레이딩 데이터를 쿼리합니다 — 토큰 트레이드, 월렛 활동, 상위 트레이더.
+  <Card title="DEX 거래" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
+    DEX 거래 데이터 — 토큰 거래, 지갑 활동, 상위 트레이더를 조회합니다.
   </Card>
   <Card title="전송" icon="paper-plane" href="/ko/graphql/examples/transfers">
-    월렛 간 온체인 토큰 전송을 추적합니다.
+    지갑 간 온체인 토큰 전송을 추적합니다.
   </Card>
-  <Card title="풀 & 유동성" icon="droplet" href="/ko/graphql/examples/pools-liquidity">
+  <Card title="풀 및 유동성" icon="droplet" href="/ko/graphql/examples/pools-liquidity">
     DEX 풀과 유동성 데이터를 탐색합니다.
   </Card>
-  <Card title="OHLC & 통계" icon="chart-candlestick" href="/ko/graphql/examples/ohlc-stats">
-    캔들스틱 데이터, 트레이드 통계, TokenSupplyUpdates, 토큰 메타데이터를 가져옵니다.
+  <Card title="OHLC 및 통계" icon="chart-candlestick" href="/ko/graphql/examples/ohlc-stats">
+    캔들 데이터, 거래 통계, TokenSupplyUpdates, 토큰 메타데이터를 가져옵니다.
   </Card>
 </CardGroup>

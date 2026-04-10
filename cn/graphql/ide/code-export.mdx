@@ -1,12 +1,12 @@
 ---
-title: "代码导出"
-description: "将 GraphQL 查询导出为 7 种编程语言的即用代码片段"
+title: "Code Export"
+description: "Generate ready-to-use code snippets from your GraphQL queries in 7 programming languages"
 icon: "file-export"
 ---
 
 ## 概述
 
-代码导出功能将当前 GraphQL 查询转换为你所选语言的即用代码片段。生成代码包含完整 HTTP 请求设置 — 端点 URL、鉴权请求头、查询 body 与 variables — 可直接复制到项目中使用。
+代码导出功能会将当前 GraphQL 查询转换为你所选语言的即用代码片段。生成代码包含完整 HTTP 请求配置 — 端点 URL、鉴权请求头、查询正文与变量 — 可直接复制到项目中使用。
 
 ---
 
@@ -17,7 +17,7 @@ icon: "file-export"
 | 语言 | 格式 | 适用场景 |
 |:--|:--|:--|
 | **cURL** | Shell 命令 | 终端快速验证、CI/CD 脚本 |
-| **Python** | `requests` 库 | 后端服务、数据管道、Jupyter notebook |
+| **Python** | `requests` 库 | 后端服务、数据管道、Jupyter Notebook |
 | **JavaScript** | `fetch` API | 浏览器应用、Node.js 服务 |
 | **Go** | `net/http` | 后端微服务、CLI 工具 |
 | **Rust** | `reqwest` crate | 高性能服务 |
@@ -32,42 +32,43 @@ icon: "file-export"
 
 <Steps>
   <Step title="编写查询">
-    在编辑器中输入或加载查询。导出前请确保能成功执行。
+    在编辑器中输入或加载查询。导出前请确保查询能成功执行。
   </Step>
   <Step title="点击 Export Code">
-    点击工具栏中的 **Export Code** 按钮。弹出窗口包含语言选择与生成的片段。
+    点击工具栏中的 **Export Code** 按钮。会弹出模态框，内含语言选择与生成片段。
   </Step>
   <Step title="选择语言">
-    在下拉框中选择目标语言。片段会立即更新。
+    在下拉框中选择目标语言，片段会立即更新。
   </Step>
   <Step title="复制片段">
-    点击 **Copy** 将生成代码复制到剪贴板。
+    点击 **Copy** 按钮，将生成代码复制到剪贴板。
   </Step>
 </Steps>
 
 <Tip>
-导出代码会使用当前 IDE 配置中的 GraphQL 端点与 API key。若你设置了自定义端点或 headers，生成片段中会体现这些配置。
+导出代码使用当前 IDE 配置中的 GraphQL 端点与 API Key。若你设置了自定义端点或请求头，生成片段会反映这些设置。
 </Tip>
 
 ---
 
 ## 示例片段
 
-以下示例导出一条简单的 DEXTrades 查询 — 获取 Solana 上最近 10 笔 DEX 成交：
+以下示例导出一个简单的 DEXTrades 查询 — 拉取 Solana 上最近 10 笔 DEX 成交：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Currency { MintAddress } Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -80,7 +81,7 @@ query {
       -H "Content-Type: application/json" \
       -H "X-API-KEY: your_api_key" \
       -d '{
-        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+        "query": "{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"
       }'
     ```
   </Tab>
@@ -95,17 +96,18 @@ query {
     }
     query = """
     {
-      DEXTrades(
-        network: sol
-        limit: {count: 10}
-        orderBy: Block_Time_DESC
-      ) {
-        Block { Time }
-        Transaction { Hash }
-        Trade {
-          Buy { Currency { MintAddress } Amount PriceInUSD }
-          Sell { Currency { MintAddress } Amount }
-          Dex { ProtocolName }
+      Solana {
+        DEXTrades(
+          limit: {count: 10}
+          orderBy: {descending: Block_Time}
+        ) {
+          Block { Time }
+          Transaction { Hash }
+          Trade {
+            Buy { Currency { MintAddress } Amount PriceInUSD }
+            Sell { Currency { MintAddress } Amount }
+            Dex { ProtocolName }
+          }
         }
       }
     }
@@ -126,17 +128,18 @@ query {
       },
       body: JSON.stringify({
         query: `{
-          DEXTrades(
-            network: sol
-            limit: {count: 10}
-            orderBy: Block_Time_DESC
-          ) {
-            Block { Time }
-            Transaction { Hash }
-            Trade {
-              Buy { Currency { MintAddress } Amount PriceInUSD }
-              Sell { Currency { MintAddress } Amount }
-              Dex { ProtocolName }
+          Solana {
+            DEXTrades(
+              limit: {count: 10}
+              orderBy: {descending: Block_Time}
+            ) {
+              Block { Time }
+              Transaction { Hash }
+              Trade {
+                Buy { Currency { MintAddress } Amount PriceInUSD }
+                Sell { Currency { MintAddress } Amount }
+                Dex { ProtocolName }
+              }
             }
           }
         }`,
@@ -161,7 +164,7 @@ query {
 
     func main() {
         payload := map[string]string{
-            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+            "query": `{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }`,
         }
         body, _ := json.Marshal(payload)
 
@@ -192,7 +195,7 @@ query {
         headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
 
         let body = json!({
-            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+            "query": r#"{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"#
         });
 
         let client = reqwest::Client::new();
@@ -219,19 +222,19 @@ query {
 | 组成部分 | 说明 |
 |:--|:--|
 | **Endpoint URL** | `https://graphql.chainstream.io/graphql` |
-| **Authentication** | 来自 IDE Headers 面板的 `X-API-KEY` |
+| **Authentication** | 来自 IDE Headers 面板的 `X-API-KEY` 请求头 |
 | **Content-Type** | `application/json` |
 | **Query body** | 编辑器中的完整 GraphQL 查询 |
-| **Variables** | 若 Variables 面板有值则一并包含 |
+| **Variables** | 若 Variables 面板有值则会一并包含 |
 
 <Note>
-运行导出代码前，请将 `your_api_key` 替换为你的真实 API key。出于安全考虑，IDE 不会在导出片段中嵌入真实 key。
+运行导出代码前请将 `your_api_key` 替换为真实 API Key。出于安全考虑，IDE 不会在导出片段中嵌入真实 Key。
 </Note>
 
 ---
 
 ## 提示
 
-- **先测再导出** — 先在 IDE 中执行查询确认可用。导出代码会原样复制查询。
-- **用 variables 参数化** — 使用 GraphQL variables 替代硬编码值。导出代码会同时包含 `variables` JSON 与查询。
-- **检查依赖** — Python 片段使用 `requests`，Rust 使用 `reqwest`，Go 使用标准库。请确保项目中已安装所需包。
+- **先测再导出** — 先在 IDE 中执行查询确认可用。导出代码会原样复制查询文本。
+- **用变量参数化** — 使用 GraphQL 变量替代硬编码值，导出代码会同时包含 `variables` JSON 与查询。
+- **检查依赖** — Python 片段依赖 `requests`，Rust 依赖 `reqwest`，Go 使用标准库。请确保项目中已安装所需包。

@@ -1,12 +1,12 @@
 ---
 title: "Chain Groups"
-description: "Cube 如何按 EVM、Solana、Trading 三个 Chain Group 组织"
+description: "How Cubes are organized into EVM, Solana, and Trading Chain Groups"
 icon: "layer-group"
 ---
 
 ## 概述
 
-ChainStream GraphQL 将 25 个 Cube 组织为三个 **Chain Group**。每个 Group 代表一个区块链生态，决定了可用的 Cube、`network` 参数的工作方式，以及链特有的字段。
+ChainStream GraphQL 将其 25 个 Cube 划分为三个 **链组（Chain Groups）**。每个组代表一类区块链生态，决定可用的 Cube、`network` 参数如何生效，以及存在哪些链特有字段。
 
 ```graphql
 type ChainStream {
@@ -20,30 +20,34 @@ type ChainStream {
 
 ## EVM
 
-**EVM** 组包含所有 EVM 兼容链的 Cube。它**必须**传入 `network` 参数以指定查询哪条链。
+**EVM** 组包含适用于所有 EVM 兼容链的 Cube。查询时 **必须** 提供 `network` 参数以指定链。
 
 ### 可用网络
 
-| Network ID | 区块链 |
-|:-----------|:-------|
+| 网络 ID | 区块链 |
+|:-----------|:-----------|
 | `eth` | Ethereum |
 | `bsc` | BNB Chain (BSC) |
 | `polygon` | Polygon |
 
-### Cube 列表
+<Warning>
+**Polygon 数据可用性：** 目前仅有 **预测市场** 相关 Cube（`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`）在 Polygon 上有数据。其他 Cube（DEXTrades、Blocks、Transfers 等）正在部署中 —— 对它们的查询可能返回错误。
+</Warning>
 
-**与 Solana 共享：**
+### Cubes
+
+**与 Solana 共用：**
 `DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
 
-**EVM 专属：**
-- `Events` — 智能合约事件日志（解码的 topics 与 data）
+**仅 EVM：**
+- `Events` — 智能合约事件日志（已解码的 topic 与 data）
 - `Calls` — 内部调用追踪（CALL、DELEGATECALL、CREATE 等）
-- `MinerRewards` — 区块奖励拆分（静态、动态、叔块、销毁费用）
+- `MinerRewards` — 出块奖励明细（静态、动态、叔块、销毁手续费等）
 - `DEXPoolSlippages` — 池子价格滑点分析
-- `Uncles` — 叔块数据（主要为 Ethereum PoW 历史数据）
-- `PredictionTrades` — 预测市场交易 *（主要 Polygon）*
-- `PredictionManagements` — 预测市场管理事件 *（主要 Polygon）*
-- `PredictionSettlements` — 预测市场结算 *（主要 Polygon）*
+- `Uncles` — 叔块数据（主要为以太坊 PoW 历史）
+- `PredictionTrades` — 预测市场交易 *（主要为 Polygon）*
+- `PredictionManagements` — 预测市场管理事件 *（主要为 Polygon）*
+- `PredictionSettlements` — 预测市场结算 *（主要为 Polygon）*
 
 ### 示例查询
 
@@ -52,7 +56,7 @@ query {
   EVM(network: eth, dataset: combined) {
     DEXTrades(
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -70,18 +74,18 @@ query {
 
 ## Solana
 
-**Solana** 组包含 Solana 区块链的 Cube。网络为隐式（`sol`）— 无需 `network` 参数。
+**Solana** 组包含 Solana 链上的 Cube。网络为隐式（`sol`）— 无需 `network` 参数。
 
-### Cube 列表
+### Cubes
 
-**与 EVM 共享：**
+**与 EVM 共用：**
 `DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
 
-**Solana 专属：**
+**仅 Solana：**
 - `Instructions` — 程序指令数据（程序地址、方法、账户、日志）
-- `InstructionBalanceUpdates` — 指令级余额变动
-- `Rewards` — 验证者和质押奖励
-- `DEXOrders` — DEX 订单事件（限价单、取消、成交）
+- `InstructionBalanceUpdates` — 指令级别的余额变动
+- `Rewards` — 验证者与质押奖励
+- `DEXOrders` — DEX 订单簿事件（限价单、撤单、成交）
 
 ### 示例查询
 
@@ -90,7 +94,7 @@ query {
   Solana(dataset: realtime) {
     DEXTrades(
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Hash }
@@ -104,34 +108,38 @@ query {
 }
 ```
 
-### Solana 专有字段
+### 跨链字段命名
 
-Solana Cube 中部分维度的字段名与 EVM 不同：
+下表列出各链的惯用字段名。但 Record 类型会包含 **所有链字段的并集** —— 每个 Cube 的 Record 中同时存在 `MintAddress` 与 `SmartContract`，底层数据一致。任意链上均可使用其中任一名称。
 
-| 概念 | Solana | EVM |
-|:-----|:-------|:----|
-| 代币地址 | `MintAddress` | `SmartContract` |
-| 交易 ID | `Signature` / `Hash` | `Hash` |
-| 区块标识 | `Slot` | `Number` |
-| 程序/合约 | `ProgramAddress` | `SmartContract` |
-| 手续费支付者 | `FeePayer` | `From` |
+| 概念 | 惯用（Solana） | 惯用（EVM） | 跨链通用？ |
+|:--------|:---------------------|:-------------------|:-------------|
+| 代币地址 | `MintAddress` | `SmartContract` | 各链均可 |
+| 交易 ID | `Signature` / `Hash` | `Hash` | 各链均可 |
+| 区块标识 | `Slot` | `Number` | 各链均可 |
+| 程序/合约 | `ProgramAddress` | `SmartContract` | 各链均可 |
+| 手续费支付方 | `FeePayer` | `From` | 各链均可 |
+
+<Tip>
+因此你可以用 **同一套查询模板** 跨链查询而无需改字段名。例如 `Currency { MintAddress }` 在 Solana 与 EVM 查询中均可使用。
+</Tip>
 
 ---
 
 ## Trading
 
-**Trading** 组提供**跨链预聚合**交易分析。它将所有支持链的数据合并到统一的物化视图中，并包含 `chain` 维度用于过滤。
+**Trading** 组提供 **跨链预聚合** 的交易分析数据。它将各支持链的数据合并为统一物化视图，并通过 `chain` 维度做筛选。
 
-### Cube 列表
+### Cubes
 
-- `Pairs` — OHLC K 线数据（开盘/最高/最低/收盘、成交量、交易笔数）
-- `Tokens` — 按代币的成交统计（成交量、买卖拆分、独立交易者数）
+- `Pairs` — OHLC K 线（开高低收、成交量、成交笔数）
+- `Tokens` — 按代币的交易统计（成交量、买卖拆分、独立交易者数）
 
-### 与 EVM/Solana 组的关键差异
+### 与 EVM / Solana 组的主要区别
 
-1. **无 `network` 参数** — Trading 组合并跨链数据。使用数据中的 `chain` 维度按网络过滤。
-2. **跨链数据** — 单条查询可同时返回 `sol`、`eth`、`bsc` 的数据。
-3. **预聚合** — 数据来自 DWM 层的分钟级物化视图。
+1. **无 `network` 参数** — Trading 组跨链汇总数据，请在数据内用 `chain` 维度按网络过滤。
+2. **跨链数据** — 单次查询可同时返回 `sol`、`eth`、`bsc` 等。
+3. **预聚合** — 数据来自 DWM 层，按分钟粒度物化。
 
 ### 示例：跨链 OHLC
 
@@ -141,7 +149,7 @@ query {
     Pairs(
       where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
       limit: {count: 60}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Token { Address }
       Market { Network }
@@ -154,7 +162,7 @@ query {
 }
 ```
 
-### 示例：按链查询代币成交统计
+### 示例：按链的代币成交统计
 
 ```graphql
 query {
@@ -165,7 +173,7 @@ query {
         Market: { Network: { is: "eth" } }
       }
       limit: {count: 30}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Volume { Usd BuyVolumeUSD SellVolumeUSD }
@@ -177,12 +185,12 @@ query {
 
 ---
 
-## Chain Group 对比
+## 链组对比
 
 | 特性 | EVM | Solana | Trading |
-|:-----|:----|:-------|:--------|
+|:--------|:----|:-------|:--------|
 | **`network` 参数** | 必填（`eth`、`bsc`、`polygon`） | 不需要（隐式 `sol`） | 不需要（跨链） |
-| **专属 Cube** | Events、Calls、MinerRewards、Uncles、DEXPoolSlippages、Prediction* | Instructions、InstructionBalanceUpdates、Rewards、DEXOrders | Pairs、Tokens |
+| **独有 Cube** | Events、Calls、MinerRewards、Uncles、DEXPoolSlippages、Prediction* | Instructions、InstructionBalanceUpdates、Rewards、DEXOrders | Pairs、Tokens |
 | **数据粒度** | 逐事件（DWD）+ 聚合（DWM/DWS） | 逐事件 + 指令级 | 预聚合（DWM） |
 | **`dataset` 支持** | 是（多数 Cube） | 是（多数 Cube） | 是 |
 | **`aggregates` 支持** | 是 | 是 | 是 |
@@ -192,8 +200,8 @@ query {
 ## 相关文档
 
 <CardGroup cols={2}>
-  <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
-    全部 25 个 Cube 的详细字段结构与使用场景。
+  <Card title="数据 Cubes" icon="cubes" href="/cn/graphql/schema/cubes">
+    全部 25 个 Cube 的字段结构与使用场景详解。
   </Card>
   <Card title="Dataset 与 Aggregates" icon="database" href="/cn/graphql/schema/dataset-aggregates">
     控制数据源范围与预聚合行为。

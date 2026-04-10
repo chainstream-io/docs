@@ -1,70 +1,76 @@
 ---
-title: "篩選"
-description: "使用 selector 快捷方式與 where 引數篩選查詢結果 — 運算子、巢狀 Filter、OR 邏輯與預設值"
+title: "Filtering"
+description: "Filter query results using selector shortcuts and the where argument — operators, nested filters, OR logic, and defaults"
 icon: "filter"
 ---
 
-在 ChainStream GraphQL 中有兩種方式篩選資料：
+在 ChainStream GraphQL 中篩選資料有兩種方式：
 
-1. **Selector shortcuts** — 頂層引數如 `tokenAddress`，為常見 Filter 提供便捷寫法
-2. **`where` 引數** — 巢狀 Filter 物件，支援完整運算子範圍與任意維度篩選
+1. **Selector shortcuts（選擇器捷徑）**——頂層參數如 `tokenAddress`，為常見篩選提供簡便寫法
+2. **`where` 參數**——巢狀篩選物件，支援完整運算子與任意維度篩選
 
-同一查詢中可以同時使用兩者。
+<Warning>
+**最佳實務：務必加上時間篩選。** 對於 DWD（明細）類 Cube，如 DEXTrades、Transfers、BalanceUpdates，若查詢未帶 `Block.Time` 篩選，可能掃描極大的表分區。請一律加入 `where: {Block: {Time: {after: "..."}}}` 以限制掃描範圍，並避免 OLAP 引擎觸及記憶體上限。
+</Warning>
+
+同一查詢中可同時使用兩者。
 
 ---
 
-## Selector shortcuts
+## Selector shortcuts（選擇器捷徑）
 
-Selectors 是 Cube 欄位上的**便捷引數**，對映到常見的 `where` Filter 模式。它們與 `where` 欄位接受**相同的 Filter 輸入型別**（例如帶 `is`、`in`、`like` 等的 `StringFilter`），而非普通字串。
+Selectors 是 Cube 欄位上的**便利參數**，對應常見的 `where` 篩選模式。它們接受與 `where` 欄位相同的篩選輸入型別（例如含 `is`、`in`、`like` 等的 `StringFilter`），而非純字串。
 
-| Selector | 對映關係 | 可用 Cube |
-|:---------|:---------|:----------|
-| `tokenAddress` | 各 Cube 的主 token 地址列 | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens, DEXPoolEvents, TokenHolders |
-| `walletAddress` | 錢包 / 賬戶所有者地址 | DEXTrades, WalletTokenPnL |
-| `poolAddress` | 流動性池合約地址 | DEXTrades, DEXPools |
-| `senderAddress` | 轉賬傳送方地址 | Transfers |
-| `receiverAddress` | 轉賬接收方地址 | Transfers |
-| `ownerAddress` | Token 賬戶所有者地址 | BalanceUpdates |
-| `dexProgram` | DEX 程式 / 合約地址 | DEXTrades |
-| `date` | 區塊時間戳（`DateTime` Filter） | DEXTrades, Transfers, BalanceUpdates, DEXPools |
+| Selector | 對應至 | 適用 Cube |
+|:---------|:--------|:-------------|
+| `tokenAddress` | 各 Cube 的主要代幣地址欄 | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens、DEXPoolEvents、TokenHolders |
+| `walletAddress` | 錢包／帳戶擁有者地址 | DEXTrades、WalletTokenPnL |
+| `poolAddress` | 池合約地址 | DEXTrades、DEXPools |
+| `senderAddress` | 轉帳發送方地址 | Transfers |
+| `receiverAddress` | 轉帳接收方地址 | Transfers |
+| `ownerAddress` | Token 帳戶擁有者地址 | BalanceUpdates |
+| `dexProgram` | DEX 程式／合約地址 | DEXTrades |
+| `date` | 區塊時間戳（DateTime 篩選） | DEXTrades、Transfers、BalanceUpdates、DEXPools |
 
-**以下兩個查詢等價：**
+**以下兩則查詢等價：**
 
 <Tabs>
   <Tab title="使用 Selector">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
   </Tab>
-  <Tab title="使用 where Filter">
+  <Tab title="使用 where 篩選">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Trade: {
-        Buy: {
-          Currency: {
-            MintAddress: {
-              is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  Solana {
+    DEXTrades(
+      where: {
+        Trade: {
+          Buy: {
+            Currency: {
+              MintAddress: {
+                is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+              }
             }
           }
         }
       }
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
     }
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
   }
 }
 ```
@@ -72,14 +78,14 @@ query {
 </Tabs>
 
 <Tip>
-Selectors 支援全部 Filter 運算子，不僅限於精確匹配。例如 `tokenAddress: {in: ["ADDR_1", "ADDR_2"]}` 可匹配多個 token，`date: {after: "2025-01-01T00:00:00Z"}` 可按時間篩選。
+Selectors 支援所有篩選運算子——不僅限於完全相等。例如 `tokenAddress: {in: ["ADDR_1", "ADDR_2"]}` 可匹配多個代幣，`date: {after: "2025-01-01T00:00:00Z"}` 可依時間篩選。
 </Tip>
 
 ---
 
-## `where` 引數
+## `where` 參數
 
-`where` 接受巢狀輸入物件，結構映象 Cube 的維度層級。每個葉子欄位對映到帶型別運算子的 **Filter 原語**。
+`where` 接受巢狀輸入物件，結構鏡射 Cube 的維度階層。每個葉節欄位對應一個具型別運算子的**篩選 primitive**。
 
 ### 結構
 
@@ -93,43 +99,44 @@ where: {
 }
 ```
 
-**示例** — 篩選區塊時間在某日期之後 **且** 買入金額大於 1000 的 DEXTrades：
+**範例**——篩選區塊時間在某日之後，且買入數量大於 1000 的 DEXTrades：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Block: { Time: { after: "2025-01-01T00:00:00Z" } }
-      Trade: { Buy: { Amount: { gt: 1000 } } }
+  Solana {
+    DEXTrades(
+      where: {
+        Block: { Time: { after: "2025-01-01T00:00:00Z" } }
+        Trade: { Buy: { Amount: { gt: 1000 } } }
+      }
+      limit: { count: 20 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
     }
-    limit: { count: 20 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
   }
 }
 ```
 
-`where` 中同一層級多個欄位以 **AND** 邏輯組合。
+當 `where` 同一層級指定多個欄位時，會以 **AND** 邏輯組合。
 
 ---
 
-## Filter 原語型別
+## 篩選 primitive 型別
 
-每個葉子維度對映到以下 Filter 輸入型別之一：
+每個葉維度會對應下列其中一種篩選輸入型別：
 
 ### StringFilter
 
-用於地址、雜湊、協議名等文字欄位。
+用於地址、雜湊、協定名稱等文字欄位。
 
-| Operator | Type | Description |
+| 運算子 | 型別 | 說明 |
 |:---------|:-----|:------------|
-| `is` | `String` | 精確匹配 |
-| `not` | `String` | 不等於 |
-| `in` | `[String!]` | 匹配列表中任一值 |
-| `notIn` | `[String!]` | 排除列表中所有值 |
-| `like` | `String` | SQL LIKE 模式匹配（`%` 萬用字元） |
+| `is` | `String` | 完全相等 |
+| `not` | `String` | 不相等 |
+| `in` | `[String!]` | 符合清單中任一值 |
+| `notIn` | `[String!]` | 排除清單中所有值 |
+| `like` | `String` | SQL LIKE 模式比對（`%` 萬用字元） |
 
 ```graphql
 where: {
@@ -143,18 +150,18 @@ where: {
 
 ### IntFilter / FloatFilter
 
-用於金額、價格、計數等數值欄位。
+用於數量、價格、計數等數值欄位。
 
-| Operator | Type | Description |
+| 運算子 | 型別 | 說明 |
 |:---------|:-----|:------------|
 | `eq` | `Number` | 等於 |
 | `ne` | `Number` | 不等於 |
 | `gt` | `Number` | 大於 |
-| `gte` | `Number` | 大於等於 |
+| `gte` | `Number` | 大於或等於 |
 | `lt` | `Number` | 小於 |
-| `lte` | `Number` | 小於等於 |
-| `in` | `[Number!]` | 匹配列表中任一值 |
-| `notIn` | `[Number!]` | 排除列表中所有值 |
+| `lte` | `Number` | 小於或等於 |
+| `in` | `[Number!]` | 符合清單中任一值 |
+| `notIn` | `[Number!]` | 排除清單中所有值 |
 
 ```graphql
 where: {
@@ -170,13 +177,13 @@ where: {
 
 用於時間戳欄位。值為 ISO 8601 字串。
 
-| Operator | Type | Description |
+| 運算子 | 型別 | 說明 |
 |:---------|:-----|:------------|
-| `after` | `DateTime` | 晚於該時間戳（不含邊界） |
-| `before` | `DateTime` | 早於該時間戳（不含邊界） |
-| `since` | `DateTime` | 從該時間戳起（含邊界） |
-| `till` | `DateTime` | 直到該時間戳（含邊界） |
-| `between` | `[DateTime!, DateTime!]` | 兩時間戳之間（兩端含邊界） |
+| `after` | `DateTime` | 在此時間戳之後（不含邊界） |
+| `before` | `DateTime` | 在此時間戳之前（不含邊界） |
+| `since` | `DateTime` | 自此刻起（含邊界） |
+| `till` | `DateTime` | 直到此刻（含邊界） |
+| `between` | `[DateTime!, DateTime!]` | 介於兩個時間戳之間（兩端皆含） |
 
 ```graphql
 where: {
@@ -187,14 +194,14 @@ where: {
 ```
 
 <Note>
-`after`/`before` 為**不含邊界**（嚴格不等）。`since`/`till` 為**含邊界**。`between` 為二元陣列，兩端均含邊界。
+`after`／`before` 為**不含邊界**（嚴格不等）。`since`／`till` 為**含邊界**。`between` 接受兩個元素的陣列，兩端皆含。
 </Note>
 
 ### BoolFilter
 
 用於布林欄位。
 
-| Operator | Type | Description |
+| 運算子 | 型別 | 說明 |
 |:---------|:-----|:------------|
 | `eq` | `Boolean` | 等於 `true` 或 `false` |
 
@@ -206,60 +213,62 @@ where: {
 
 ---
 
-## 使用 `any` 表達 OR 邏輯
+## 以 `any` 表達 OR 邏輯
 
-預設 `where` 中所有條件以 AND 組合。要表達 OR，使用 `any` 陣列欄位 — 每個元素為完整 Filter 物件，匹配**任意**一條即返回。
+預設 `where` 內所有條件以 AND 組合。若要 OR，請使用 `any` 陣列欄位——每個元素皆為完整篩選物件，符合**任一**條件的紀錄都會回傳。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      any: [
-        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
-        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
-      ]
-    }
-    limit: { count: 20 }
-  ) {
-    Trade {
-      Buy { Currency { MintAddress } Amount }
+  Solana {
+    DEXTrades(
+      where: {
+        any: [
+          { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
+          { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
+        ]
+      }
+      limit: { count: 20 }
+    ) {
+      Trade {
+        Buy { Currency { MintAddress } Amount }
+      }
     }
   }
 }
 ```
 
 <Info>
-`any` 可與其他頂層 `where` 欄位組合：`any` 內條件先 OR，再與同層其他條件 AND。
+`any` 可與其他頂層 `where` 欄位並用。`any` 內條件先以 OR 組合，再與同層其他條件以 AND 組合。
 </Info>
 
 ---
 
-## 預設 Filter
+## 預設篩選
 
-部分 Cube 會自動應用預設 Filter。可在 `where` 中顯式寫出以覆蓋。
+部分 Cube 會自動套用預設篩選。你可在 `where` 子句中明確設定以覆寫。
 
-| Cube | Default Filter | Effect |
+| Cube | 預設篩選 | 效果 |
 |:-----|:---------------|:-------|
-| DEXTrades | `IsSuspect = false` | 預設排除 bot/MEV 交易 |
+| DEXTrades | `IsSuspect = false` | 預設排除 bot／MEV 成交 |
 
-要**包含** suspect 交易，顯式設定 Filter：
+若要**納入** suspect 成交，請明確設定篩選：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { IsSuspect: { eq: true } }
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount } }
-    IsSuspect
+  Solana {
+    DEXTrades(
+      where: { IsSuspect: { eq: true } }
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount } }
+      IsSuspect
+    }
   }
 }
 ```
 
-若不在 `where` 中指定 `IsSuspect`，預設仍為 `false`。要查詢**全部**交易（無論 suspect 狀態），使用 OR：
+若完全不在 `where` 指定 `IsSuspect`——預設 `false` 仍會生效。若要查詢**不論** suspect 狀態的**所有**成交，請使用 OR：
 
 ```graphql
 where: {
@@ -272,34 +281,35 @@ where: {
 
 ---
 
-## 組合 Selectors 與 `where`
+## 合併 Selectors 與 `where`
 
-Selectors 與 `where` 以 AND 組合。可用 selector 鎖定主體實體，用 `where` 進一步細化：
+Selectors 與 `where` 以 AND 合併。因此可用 selector 鎖定主要實體，再以 `where` 細化條件：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    where: {
-      Block: { Time: { after: "2025-03-01T00:00:00Z" } }
-      Trade: { Buy: { Amount: { gt: 100 } } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 50 }
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      where: {
+        Block: { Time: { after: "2025-03-01T00:00:00Z" } }
+        Trade: { Buy: { Amount: { gt: 100 } } }
+      }
+      orderBy: {descending: Block_Time}
+      limit: { count: 50 }
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
 ```
 
-該查詢獲取 Solana 上 USDC 最近 50 筆買入金額大於 100 的 DEX 成交，按時間降序。
+此查詢取得 Solana 上 USDC 最近 50 筆成交（買入數量大於 100），並依時間遞減排序。
 
 ---
 
@@ -307,9 +317,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="排序與分頁" icon="arrow-down-1-9" href="/zh-Hant/graphql/schema/ordering-pagination">
-    使用 `orderBy` 與 `limit` 排序並分頁瀏覽資料。
+    使用 `orderBy` 與 `limit` 排序結果並分頁讀取資料。
   </Card>
   <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
-    使用 count、sum、avg、min、max、uniq 對篩選後資料聚合。
+    以 count、sum、avg、min、max、uniq 聚合已篩選的資料。
   </Card>
 </CardGroup>

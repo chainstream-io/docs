@@ -1,105 +1,106 @@
 ---
-title: "課金とクレジット"
-description: "GraphQL APIクエリがクレジットユニットシステムでどのように課金されるかを理解"
+title: "Billing & Credits"
+description: "Understand how GraphQL API queries are billed using the Credit Unit system"
 icon: "credit-card"
 ---
 
 ## 概要
 
-すべてのGraphQLクエリは、クエリされたCube、リクエストされた行数、集計の複雑さに基づいて**クレジットユニット（CU）**を消費します。クレジットはREST APIと同じ課金プランから差し引かれます — APIキーは両方で共通です。
+すべての GraphQL クエリは、クエリの複雑さに応じて動的に計算される **Credit Unit（CU）** を消費します。クレジットは REST API と同じ請求プランから差し引かれ、API Key は両方で共通です。
 
 <Info>
-GraphQL APIはREST Data APIと同じAPIキーと課金プランを共有します。GraphQLクエリで消費されたクレジットは全体の使用量にカウントされます。
+GraphQL API は REST Data API と同じ API Key・請求プランを共有します。GraphQL で消費したクレジットは全体の利用量に含まれます。
 </Info>
 
 ---
 
 ## クレジット計算式
 
-クレジットは以下の式でCubeごとに計算されます：
+クレジットは Cube ごとに **5 要因の式** で計算されます。最終的な CU は、何をクエリするか、何行要求するか、集計を使うか、メトリクスをいくつ含めるか、フィールドをいくつ選ぶかに依存します。
 
 ```
-Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × ComplexityFactor) / 100
 ```
 
-| ファクター | 計算 | 説明 |
+| 要因 | 計算 | 説明 |
 |:-------|:-----------|:------------|
-| **BaseCost** | Cubeごとの基本価格（下表参照） | Cubeの複雑さにより異なる固定コスト |
-| **LimitFactor** | `ceil(limit / 100)`、最小1 | リクエストされた行数に応じてスケール |
-| **AggregationFactor** | 1.0（なし）、1.5（GROUP BY）、2.0（HAVING） | 集計やHAVINGフィルタを使用するクエリではより高い |
-| **MetricFactor** | `1.0 + (metric_count × 0.2)` | 追加のメトリクス（count、sumなど）ごとに増加 |
+| **BaseCost** | Cube ごとの内部値 | 基盤テーブル規模とスキャンコストを反映。Cube ごとに異なります。 |
+| **LimitFactor** | `ceil(limit / 100)`、最小 1 | 要求行数にほぼ比例。1〜100 行は同コスト、101〜200 は 2 倍、など。 |
+| **AggregationFactor** | 1.0（なし）、1.5（GROUP BY）、2.0（HAVING） | 集計や集計後フィルタ（`selectWhere`）を使うと高くなります。 |
+| **MetricFactor** | `1.0 + (aggregate_count × 0.1)` | 集計関数（`count`、`sum`、`avg` など）を 1 つ追加するごとにコストが約 10% 増。 |
+| **ComplexityFactor** | `min(1.0 + min(select_count, 250) / 50 × 0.2, 1.5)` | 選択フィールドが増えるとコスト増（最大 1.5 倍）。フィールド約 5 個の単純クエリでは要因は約 1.02。 |
 
-<Tip>
-デフォルトリミット（25行）で集計なしのシンプルなクエリは基本コストのみ支払います。より多くの行をリクエストしたり集計メトリクスを追加すると、クレジットが増加します。
-</Tip>
+<Note>
+**0 行のクエリは無料です。** 他の要因に関わらず、結果が 0 行ならクレジットは課金されません。
+</Note>
 
 ### 計算例
 
 <AccordionGroup>
-  <Accordion title="シンプルなクエリ：DEXTrades 10行">
+  <Accordion title="単純クエリ: 10 行、5 フィールド">
     ```
-    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    BaseCost = 2000 (internal), LimitFactor = ceil(10/100) = 1
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ComplexityFactor = 1.0 + (5/50) × 0.2 = 1.02
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.02) = 2040
+    CU = 2040 / 100 = 20.40 CU
     ```
   </Accordion>
-  <Accordion title="大きなクエリ：DEXTrades 500行">
+  <Accordion title="大きいクエリ: 500 行、5 フィールド">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.0 × 1.0 × 1.02) = 10200
+    CU = 10200 / 100 = 102.00 CU
     ```
   </Accordion>
-  <Accordion title="集計クエリ：500行 + GROUP BY + メトリクス2個">
+  <Accordion title="集計クエリ: GROUP BY + メトリクス 2 つ、500 行">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
-    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
-    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY)
+    MetricFactor = 1.0 + 2 × 0.1 = 1.2
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.5 × 1.2 × 1.02) = 18360
+    CU = 18360 / 100 = 183.60 CU
+    ```
+  </Accordion>
+  <Accordion title="複雑なクエリ: 多数のフィールドを選択">
+    ```
+    BaseCost = 2000, LimitFactor = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    ComplexityFactor = min(1.0 + (250/50) × 0.2, 1.5) = 1.5 (capped)
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.5) = 3000
+    CU = 3000 / 100 = 30.00 CU
     ```
   </Accordion>
 </AccordionGroup>
 
----
-
-## Cubeごとの基本コスト
-
-| Cube | 基本コスト（CU） | 備考 |
-|:-----|:---------------|:------|
-| **DEXTrades** | 50 | 最大のテーブル、最も多くのディメンション |
-| **DEXTradeByTokens** | 50 | DEXTradesと同じ基盤データ |
-| **DEXPoolEvents** | 30 | 流動性イベント |
-| **Pairs** | 30 | OHLCローソク足データ（Tradingグループ） |
-| **Tokens** | 30 | トークントレード統計（Tradingグループ） |
-| **WalletTokenPnL** | 25 | DWSサマリー |
-| **Transfers** | 15 | |
-| **BalanceUpdates** | 10 | |
-| **Events**、**Calls** | 20 | EVM専用トレース/イベントデータ |
-| **Instructions** | 20 | Solana専用 |
-| **PredictionTrades** | 20 | 予測市場データ |
-| その他すべてのCube | 20 | デフォルト基本コスト |
-
-<Note>
-基本コストはクエリの複雑さと各Cubeの基盤データ量を反映しています。`extensions.credits`で報告される実際のCube名はサーバーによって決定されます — 常にレスポンス値を正式な課金リファレンスとしてください。
-</Note>
+<Tip>
+CU は動的に計算されるため、正確なコストを知るにはレスポンスの `extensions.credits` を確認するか、IDE のステータスバーの CU 表示を見るのが確実です。
+</Tip>
 
 ---
 
-## レスポンス：`extensions.credits`
+## レスポンス: `extensions.credits`
 
-すべてのGraphQLレスポンスには`extensions`フィールドにクレジット消費の詳細が含まれます：
+すべての GraphQL レスポンスに、`extensions` にクレジット消費の詳細が含まれます。
 
 ```json
 {
   "data": {
-    "DEXTrades": [ ... ]
+    "Solana": {
+      "DEXTrades": [ ... ]
+    }
   },
   "extensions": {
     "credits": {
-      "total": 50,
+      "total": 20.4,
+      "unit": "CU",
       "cubes": [
         {
           "cube": "DEXTrades",
-          "credits": 50,
+          "credits": 20.4,
           "row_count": 10
         }
       ]
@@ -110,39 +111,40 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 
 | フィールド | 型 | 説明 |
 |:------|:-----|:------------|
-| `total` | `Int` | クエリ全体で消費された合計クレジット |
-| `cubes` | `Array` | Cubeごとの内訳 |
-| `cubes[].cube` | `String` | Cube名 |
-| `cubes[].credits` | `Int` | このCubeに請求されたクレジット |
-| `cubes[].row_count` | `Int` | 返された行数 |
+| `total` | `Float` | クエリ全体で消費した CU の合計 |
+| `unit` | `String` | 常に `"CU"` |
+| `cubes` | `Array` | Cube ごとの内訳 |
+| `cubes[].cube` | `String` | 課金エンジンで使う Cube 名 |
+| `cubes[].credits` | `Float` | 当該 Cube に課金された CU |
+| `cubes[].row_count` | `Int` | 返却行数 |
 
 <Note>
-`extensions.credits`フィールドはクレジットが消費された場合（つまり`total > 0`）に存在します。0行を返すクエリでも基本コストは発生します。
+`extensions.credits` はクレジットが消費された場合（`total > 0`）に含まれます。0 行のクエリは課金されません。
 </Note>
 
 ---
 
-## IDEでの使用量モニタリング
+## IDE での利用量の確認
 
-[GraphQL IDE](https://ide.chainstream.io)のステータスバーは各クエリ後にクレジット消費を表示します：
+[GraphQL IDE](https://ide.chainstream.io) のステータスバーに、各クエリ後のクレジット消費が表示されます。
 
-- **CUインジケータ**: 消費されたCU合計を表示（例：`50 CU`）
-- **Latency**: リクエスト所要時間（ミリ秒）
-- **Response size**: ペイロードサイズ
+- **CU 表示**: 消費した CU の合計
+- **レイテンシ**: リクエスト時間（ミリ秒）
+- **レスポンスサイズ**: ペイロードサイズ
 
 ---
 
-## クレジット使用量の最適化ヒント
+## クレジット使用量を抑えるコツ
 
 <CardGroup cols={3}>
-  <Card title="フィールドを減らす" icon="minimize">
-    必要なディメンションのみをリクエスト。フィールドが少ないほど処理データも少なくなります。
+  <Card title="フィールドを絞る" icon="minimize">
+    必要な次元だけ要求します。選択フィールド数が増えると ComplexityFactor が上がります。
   </Card>
-  <Card title="適切なリミットを使用" icon="gauge">
-    `limit.count`を実用的な範囲で低く保つ。クレジットは`ceil(limit / 100)`に応じてスケールします。
+  <Card title="limit を適切に" icon="gauge">
+    実務上可能な範囲で `limit.count` を小さく保ちます。100 行ごとに LimitFactor が増えます。
   </Card>
-  <Card title="事前集計Cubeを使用" icon="layer-group">
-    集計データにはDWD Cube（DEXTrades）でメトリクスを実行するより、DWM/DWS Cube（Pairs、Tokens、TokenHolders）を優先してください。
+  <Card title="事前集計 Cube を使う" icon="layer-group">
+    集計データには、DWD の Cube（DEXTrades）でメトリクスを回すより、DWM/DWS の Cube（Pairs、Tokens、TokenHolders）を優先します。
   </Card>
 </CardGroup>
 
@@ -151,10 +153,10 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 ## 関連ドキュメント
 
 <CardGroup cols={2}>
-  <Card title="一般的な課金とユニット" icon="receipt" href="/jp/guides/getting-started/billing-and-units">
-    ChainStreamの課金プラン、ユニットクォータ、支払い方法の概要。
+  <Card title="課金とユニット（概要）" icon="receipt" href="/jp/guides/getting-started/billing-and-units">
+    ChainStream の請求プラン、ユニット枠、支払い方法の概要。
   </Card>
   <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
-    集計メトリクスがクエリクレジットにどう影響するかを学習。
+    集計メトリクスがクエリのクレジットに与える影響。
   </Card>
 </CardGroup>

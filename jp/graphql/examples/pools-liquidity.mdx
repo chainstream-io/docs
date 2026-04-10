@@ -1,24 +1,24 @@
 ---
-title: "プールと流動性"
-description: "DEXプールと流動性データのクエリ例"
+title: "Pools & Liquidity"
+description: "Query examples for DEX pools and liquidity data"
 icon: "droplet"
 ---
 
-このページでは、DEXプールと流動性分析のためのCubeを扱います：
+このページでは、DEX プールと流動性分析向けの Cube を扱います。
 
-- **DEXPoolEvents**（DWD） — イベント単位のリザーブと価格を含む流動性追加/削除イベント
-- **DEXPools**（DWS） — プール**スナップショット**（現在の流動性と価格、定期的に更新）
-- **TokenSupplyUpdates**（DWD） — トークンサプライ、時価総額、FDVの更新
+- **DEXPoolEvents**（DWD）— 流動性の追加/削除イベントと、イベントごとのリザーブ・価格
+- **DEXPools**（DWS）— プールの**スナップショット**（現在の流動性と価格、定期的に更新）
+- **TokenSupplyUpdates**（DWD）— トークン供給量、時価総額、FDV の更新
 
 <Note>
-例では**Solana**と**EVM**の[チェーングループ](/jp/graphql/schema/chain-groups)を使用しています：Solanaの場合`Solana { ... }`、EVMチェーン（Polygonを含む）の場合`EVM(network: eth | bsc | polygon) { ... }`。
+例では **Solana** と **EVM** の [Chain Groups](/jp/graphql/schema/chain-groups) を使用します: Solana は `Solana { ... }`、EVM チェーン（Polygon を含む）は `EVM(network: eth | bsc | polygon) { ... }` です。
 </Note>
 
 ---
 
 ## トークンの流動性プールを取得するには？
 
-スナップショットで**トークンA**としてトークンがリストされているDEXプールを検索します。アセットがトークンBとしてのみ表示されるプールには、`tokenB`を使用した2番目のクエリ（または`where`句）が必要です。完全なペアコンテキストを持つ**イベントレベル**の行には**DEXPoolEvents**を使用してください。
+スナップショットでトークンが **token A** として掲載されている DEX プールを検索します。資産が token B にしか現れないプールは、`tokenB`（または `where` 句）での 2 回目のクエリが必要です。**イベント単位**でペア文脈が揃った行が欲しい場合は **DEXPoolEvents** を使います。
 
 ```graphql
 query {
@@ -43,37 +43,37 @@ query {
 ```
 
 <Tip>
-[GraphQL IDEで開く](https://ide.chainstream.io) — 上記のクエリを貼り付けて、自動補完とスキーマ探索を使ってインタラクティブに実行できます。
+[GraphQL IDE で開く](https://ide.chainstream.io) — 上記クエリを貼り付けて、オートコンプリートとスキーマ探索付きで対話的に実行できます。
 </Tip>
 
 <Tip>
-`TOKEN_ADDRESS`をトークンミント（Solana）またはコントラクトアドレス（EVM）に置き換えてください。トークンがクォート側であるプールも含めるには`tokenB: {is: "TOKEN_ADDRESS"}`で繰り返してください。
+`TOKEN_ADDRESS` をトークンの mint（Solana）またはコントラクトアドレス（EVM）に置き換えてください。トークンがクォート側にあるプールも含めるには、`tokenB: {is: "TOKEN_ADDRESS"}` で繰り返しクエリします。
 </Tip>
 
 <AccordionGroup>
   <Accordion title="主要フィールド">
     | フィールド | 説明 |
     |:------|:------------|
-    | `Pool.Address` | 流動性プール/マーケットアドレス |
-    | `Pool.ProgramAddress` | DEXプログラムまたはファクトリアドレス |
-    | `Pool.TokenAAddress` | ベース側トークンアドレス |
-    | `Pool.TokenBAddress` | クォート側トークンアドレス |
-    | `Pool.LiquidityUSD` | プールの合計USD流動性（スナップショット） |
-    | `Pool.LastUpdated` | このスナップショット行の最終更新日時 |
+    | `Pool.Address` | 流動性プール / マーケットのアドレス |
+    | `Pool.ProgramAddress` | DEX プログラムまたはファクトリのアドレス |
+    | `Pool.TokenAAddress` | ベース側トークンのアドレス |
+    | `Pool.TokenBAddress` | クォート側トークンのアドレス |
+    | `Pool.LiquidityUSD` | プール全体の流動性（USD、スナップショット） |
+    | `Pool.LastUpdated` | このスナップショット行が最後に更新された時刻 |
   </Accordion>
   <Accordion title="カスタマイズのヒント">
-    - **流動性でフィルタ**: `where: {Pool: {LiquidityUSD: {gt: 10000}}}`を追加してUSD深度閾値以上のプール
-    - **特定のDEX**: `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`を追加
-    - **より多くのプール**: `count`を増やしてトークンの追加プールを発見
-    - **イベント単位のリザーブ**: **DEXPoolEvents**を`tokenAddress`/`poolAddress`と`orderBy: Block_Time_DESC`で使用して追加/削除履歴を取得
+    - **流動性でフィルター**: `where: {Pool: {LiquidityUSD: {gt: 10000}}}` で USD 深さの閾値以上のプールのみ
+    - **特定 DEX**: `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`
+    - **より多くのプール**: `count` を増やしてトークンに対する追加プールを探索
+    - **イベントごとのリザーブ**: **DEXPoolEvents** で `tokenAddress` / `poolAddress` と `orderBy: {descending: Block_Time}` を使い、追加/削除履歴を取得
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 特定のプールの詳細を取得するには？
+## 特定プールの詳細を取得するには？
 
-アドレスで1つのプールの**最新スナップショット**を読み取ります。**DEXPools**は行ごとのブロックタイムラインを公開しません — 履歴のリザーブ系列には**DEXPoolEvents**を使用してください。
+アドレスで **最新スナップショット**を 1 件読み取ります。**DEXPools** は行ごとのブロックタイムラインは提供しません — 履歴のリザーブ系列は **DEXPoolEvents** を使います。
 
 ```graphql
 query {
@@ -102,24 +102,24 @@ query {
     | フィールド | 説明 |
     |:------|:------------|
     | `Pool.TokenAAddress` / `Pool.TokenBAddress` | ペアのトークンアドレス |
-    | `Pool.LiquidityUSD` | USD建ての合計流動性（スナップショット） |
-    | `Pool.LastUpdated` | このプールのスナップショット最終更新 |
+    | `Pool.LiquidityUSD` | 合計流動性（USD、スナップショット） |
+    | `Pool.LastUpdated` | このプールのスナップショットが最後に更新された時刻 |
   </Accordion>
   <Accordion title="カスタマイズのヒント">
-    - **リザーブ履歴**: **DEXPoolEvents**を`poolAddress: {is: "POOL_ADDRESS"}`と`orderBy: Block_Time_DESC`で使用
-    - **イベントの時間範囲**: **DEXPoolEvents**で`where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}`を追加して追加/削除の範囲を限定
+    - **リザーブ履歴**: **DEXPoolEvents** で `poolAddress: {is: "POOL_ADDRESS"}` と `orderBy: {descending: Block_Time}`
+    - **イベントの期間**: **DEXPoolEvents** で `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` を追加して追加/削除を期間限定
   </Accordion>
 </AccordionGroup>
 
 <Info>
-`poolAddress`セレクターは`Pool.Address`でフィルタリングします。**DEXPools**（スナップショット）と**DEXPoolEvents**（イベント）の両方で利用可能です。
+`poolAddress` セレクターは `Pool.Address` でフィルターします。**DEXPools**（スナップショット）と **DEXPoolEvents**（イベント）の両方で利用できます。
 </Info>
 
 ---
 
-## プールのランキングやスナップショット流動性を読み取るには？
+## プールをランキングしたりスナップショット流動性を読むには？
 
-**DEXPools**（DWS）は**現在の状態**の行を保存します（通常数分ごとに更新）。生のイベントをスキャンせずにプールを`LiquidityUSD`でランク付けし、DEXプログラムを比較するために使用します。
+**DEXPools**（DWS）は **現在状態**の行を保持します（通常数分ごとに更新）。`LiquidityUSD` でプールをランキングし、生イベントを走査せずに DEX プログラムを比較するのに使います。
 
 ```graphql
 query {
@@ -146,27 +146,27 @@ query {
     | フィールド | 説明 |
     |:------|:------------|
     | `Pool.Address` | プールアドレス |
-    | `Pool.ProgramAddress` | DEXプログラム/ファクトリ |
+    | `Pool.ProgramAddress` | DEX プログラム / ファクトリ |
     | `Pool.TokenAAddress` / `Pool.TokenBAddress` | ペアのトークン |
-    | `Pool.LiquidityUSD` | スナップショット流動性（USD） |
+    | `Pool.LiquidityUSD` | スナップショット時の流動性（USD） |
     | `Pool.LastUpdated` | スナップショットの鮮度 |
   </Accordion>
   <Accordion title="カスタマイズのヒント">
-    - **流動性でランク**: `LiquidityUSD`でクライアント側ソート、またはスキーマがプールスナップショットのソートを公開している場合`orderBy`を使用
-    - **アクティブなプール**: 最近の`LastUpdated`を持つプールを優先
-    - **DEX比較**: `Pool.ProgramAddress`でグループ化またはフィルタ
+    - **流動性でランキング**: クライアント側で `LiquidityUSD` でソートするか、スキーマでプールスナップショットの `orderBy` があれば利用
+    - **アクティブなプール**: `LastUpdated` が新しいプールを優先
+    - **DEX の比較**: `Pool.ProgramAddress` でグループ化またはフィルター
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-**DEXPoolEvents**（DWD）はリザーブの**時系列**とすべての流動性イベントに適したCubeです。**DEXPools**（DWS）は**最新の**プール状態と発見に最適化されています。
+リザーブと各流動性イベントの**時系列**には **DEXPoolEvents**（DWD）が適した Cube です。**最新**のプール状態と発見には **DEXPools**（DWS）が最適化されています。
 </Tip>
 
 ---
 
-## トークンサプライと時価総額を取得するには？
+## トークン供給量と時価総額を取得するには？
 
-**TokenSupplyUpdates**でサプライ、時価総額、価格、FDVを取得します。
+供給イベントに紐づく供給量、時価総額、価格、FDV には **TokenSupplyUpdates** を使います。
 
 ```graphql
 query {
@@ -174,7 +174,7 @@ query {
     TokenSupplyUpdates(
       limit: {count: 1}
       tokenAddress: {is: "TOKEN_ADDRESS"}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       TokenSupplyUpdate {
         Currency { MintAddress, Decimals }
@@ -195,22 +195,22 @@ query {
     | フィールド | 説明 |
     |:------|:------------|
     | `TokenSupplyUpdate.Currency.MintAddress` | トークンアドレス |
-    | `TokenSupplyUpdate.Currency.Decimals` | トークンデシマル |
-    | `TokenSupplyUpdate.PostBalance` | イベント後の現在のサプライ |
-    | `TokenSupplyUpdate.MarketCapInUSD` | USD建ての時価総額 |
-    | `TokenSupplyUpdate.PriceInUSD` | サプライイベント時のトークン価格 |
-    | `TokenSupplyUpdate.FDVInUSD` | 完全希薄化後バリュエーション |
-    | `TokenSupplyUpdate.TotalSupply` | トークン総サプライ |
+    | `TokenSupplyUpdate.Currency.Decimals` | トークンの小数桁 |
+    | `TokenSupplyUpdate.PostBalance` | イベント後の現在供給量 |
+    | `TokenSupplyUpdate.MarketCapInUSD` | USD 建ての時価総額 |
+    | `TokenSupplyUpdate.PriceInUSD` | 供給イベント時点のトークン価格 |
+    | `TokenSupplyUpdate.FDVInUSD` | フルダイリューション評価額（FDV） |
+    | `TokenSupplyUpdate.TotalSupply` | トークン総供給量 |
   </Accordion>
   <Accordion title="カスタマイズのヒント">
-    - **サプライ履歴**: `count`を増やしてサプライの経時変化を確認（ミント/バーンイベント）
-    - **時価総額履歴**: 複数のサプライ更新をクエリして時価総額の経時グラフを作成
-    - **価格との組み合わせ**: `PriceInUSD`と`TotalSupply`を使用して時価総額の計算を検証
+    - **供給の履歴**: `count` を増やして供給が時間とともにどう変わったか（mint/burn）を確認
+    - **時価総額の履歴**: 複数の供給更新をクエリして時価総額を時系列で可視化
+    - **価格との突合**: 時価総額計算の検証に `PriceInUSD` と `TotalSupply` を併用
   </Accordion>
 </AccordionGroup>
 
 <Info>
-このページではサプライに紐づく時価総額、価格、FDVに**TokenSupplyUpdates**を使用しています。追加のトークンメトリクスとサマリーについては[OHLCと統計](/jp/graphql/examples/ohlc-stats)をご覧ください。
+このページの **TokenSupplyUpdates** は、供給に連動した時価総額・価格・FDV 用です。追加のトークンメトリクスとサマリーは [OHLC と統計](/jp/graphql/examples/ohlc-stats) を参照してください。
 </Info>
 
 ---
@@ -281,16 +281,16 @@ query {
 ## 次のステップ
 
 <CardGroup cols={2}>
-  <Card title="DEXトレード" icon="arrow-right-arrow-left" href="/jp/graphql/examples/dex-trades">
-    DEXトレーディングデータのクエリ — トークントレード、ウォレットアクティビティ、トップトレーダー。
+  <Card title="DEX 取引" icon="arrow-right-arrow-left" href="/jp/graphql/examples/dex-trades">
+    DEX のトレーディングデータ — トークン取引、ウォレット活動、トップトレーダーをクエリします。
   </Card>
-  <Card title="トランスファー" icon="paper-plane" href="/jp/graphql/examples/transfers">
-    ウォレット間のオンチェーントークントランスファーの追跡。
+  <Card title="送金（Transfers）" icon="paper-plane" href="/jp/graphql/examples/transfers">
+    ウォレット間のオンチェーン送金を追跡します。
   </Card>
   <Card title="残高とホルダー" icon="wallet" href="/jp/graphql/examples/balance-holders">
-    ウォレット残高、残高履歴、トップホルダーの検索。
+    ウォレット残高、残高履歴、トップホルダーを調べます。
   </Card>
-  <Card title="OHLCと統計" icon="chart-candlestick" href="/jp/graphql/examples/ohlc-stats">
-    ローソク足データ、トレード統計、時価総額、トークンメタデータの取得。
+  <Card title="OHLC と統計" icon="chart-candlestick" href="/jp/graphql/examples/ohlc-stats">
+    ローソク足、取引統計、時価総額、トークンメタデータを取得します。
   </Card>
 </CardGroup>

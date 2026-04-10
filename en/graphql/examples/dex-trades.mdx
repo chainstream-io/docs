@@ -18,28 +18,29 @@ Fetch the 10 most recent DEX trades on Solana, including block info, transaction
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Slot }
-    Transaction { Hash }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
-        PriceInUSD
-        Account { Owner }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Slot }
+      Transaction { Hash }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+          PriceInUSD
+          Account { Owner }
+        }
+        Sell {
+          Currency { MintAddress }
+          Amount
+          Account { Owner }
+        }
+        Dex { ProgramAddress, ProtocolName }
       }
-      Sell {
-        Currency { MintAddress }
-        Amount
-        Account { Owner }
-      }
-      Dex { ProgramAddress, ProtocolName }
+      Pool { Address }
     }
-    Pool { Address }
   }
 }
 ```
@@ -77,19 +78,20 @@ Get trades for a specific token by passing its address via the `tokenAddress` se
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Trade {
-      Buy { Amount, PriceInUSD, Account { Owner } }
-      Sell { Currency { MintAddress }, Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Trade {
+        Buy { Amount, PriceInUSD, Account { Owner } }
+        Sell { Currency { MintAddress }, Amount }
+        Dex { ProtocolName }
+      }
+      Pool { Address }
     }
-    Pool { Address }
   }
 }
 ```
@@ -123,19 +125,20 @@ Get all trades by a specific wallet address.
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 20}
-    walletAddress: {is: "WALLET_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Trade {
-      Buy { Currency { MintAddress }, Amount, PriceInUSD }
-      Sell { Currency { MintAddress }, Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 20}
+      walletAddress: {is: "WALLET_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Trade {
+        Buy { Currency { MintAddress }, Amount, PriceInUSD }
+        Sell { Currency { MintAddress }, Amount }
+        Dex { ProtocolName }
+      }
+      Transaction { Hash, FeeInNative }
     }
-    Transaction { Hash, FeeInNative }
   }
 }
 ```
@@ -167,17 +170,18 @@ Get the latest price for a token from its most recent non-suspect trade.
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 1}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    where: {IsSuspect: {eq: false}}
-    orderBy: Block_Time_DESC
-  ) {
-    Trade {
-      Buy { PriceInUSD, PriceInNative }
+  Solana {
+    DEXTrades(
+      limit: {count: 1}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      where: {IsSuspect: {eq: false}}
+      orderBy: {descending: Block_Time}
+    ) {
+      Trade {
+        Buy { PriceInUSD, PriceInNative }
+      }
+      Block { Time }
     }
-    Block { Time }
   }
 }
 ```
@@ -208,21 +212,22 @@ Find the top traders for a token using aggregation. This query groups trades by 
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 100}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    where: {IsSuspect: {eq: false}}
-  ) {
-    Trade {
-      Buy {
-        Account { Owner }
-        Amount
-        PriceInUSD
+  Solana {
+    DEXTrades(
+      limit: {count: 100}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      where: {IsSuspect: {eq: false}}
+    ) {
+      Trade {
+        Buy {
+          Account { Owner }
+          Amount
+          PriceInUSD
+        }
       }
+      count
+      sum(of: Trade_Buy_Amount)
     }
-    count
-    sum(of: Trade_Buy_Amount)
   }
 }
 ```
@@ -256,15 +261,16 @@ The same queries work across all supported chains — just change the `network` 
   <Tab title="Solana">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Slot }
-    Trade {
-      Buy { Currency { MintAddress }, PriceInUSD }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Slot }
+      Trade {
+        Buy { Currency { MintAddress }, PriceInUSD }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -273,15 +279,16 @@ query {
   <Tab title="Ethereum">
 ```graphql
 query {
-  DEXTrades(
-    network: eth
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Height }
-    Trade {
-      Buy { Currency { MintAddress }, PriceInUSD }
-      Dex { ProtocolName }
+  EVM(network: eth) {
+    DEXTrades(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Height }
+      Trade {
+        Buy { Currency { MintAddress }, PriceInUSD }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -290,15 +297,16 @@ query {
   <Tab title="BSC">
 ```graphql
 query {
-  DEXTrades(
-    network: bsc
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Height }
-    Trade {
-      Buy { Currency { MintAddress }, PriceInUSD }
-      Dex { ProtocolName }
+  EVM(network: bsc) {
+    DEXTrades(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Height }
+      Trade {
+        Buy { Currency { MintAddress }, PriceInUSD }
+        Dex { ProtocolName }
+      }
     }
   }
 }

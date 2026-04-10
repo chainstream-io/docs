@@ -1,12 +1,12 @@
 ---
-title: "区块与交易"
-description: "Blocks、Transactions、Events、Calls 等基础设施 Cube 的查询示例"
+title: "Blocks & Transactions"
+description: "Query examples for Blocks, Transactions, Events, Calls, and other infrastructure Cubes"
 icon: "cube"
 ---
 
 ## 概述
 
-本页包含区块链基础设施 Cube 的查询示例 — 区块、交易、智能合约事件和内部调用追踪等基础数据。
+本页提供区块链基础设施相关 Cube 的查询示例 — 涵盖区块、交易、智能合约事件与内部 trace 等基础数据。
 
 ---
 
@@ -17,7 +17,7 @@ icon: "cube"
 ```graphql
 query {
   Solana {
-    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    Blocks(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block {
         Time
         Slot
@@ -36,7 +36,7 @@ query {
 ```graphql
 query {
   EVM(network: eth) {
-    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    Blocks(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block {
         Time
         Number
@@ -64,7 +64,7 @@ query {
     Transactions(
       signer: {is: "WALLET_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction {
@@ -86,7 +86,7 @@ query {
     Transactions(
       fromAddress: {is: "0xWALLET_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction {
@@ -104,7 +104,7 @@ query {
 
 ---
 
-## 事件 Events（仅 EVM）
+## 事件（仅 EVM）
 
 ### 按合约与 Topic 过滤事件
 
@@ -114,7 +114,7 @@ query {
     Events(
       contractAddress: {is: "0xCONTRACT_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -137,7 +137,7 @@ query {
     Events(
       topic0: {is: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Transaction { Hash }
@@ -149,7 +149,7 @@ query {
 
 ---
 
-## 调用追踪 Calls（仅 EVM）
+## 调用 / Trace（仅 EVM）
 
 ### 对某合约的内部调用
 
@@ -159,7 +159,7 @@ query {
     Calls(
       toAddress: {is: "0xCONTRACT_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -179,7 +179,7 @@ query {
 
 ---
 
-## 指令 Instructions（仅 Solana）
+## 指令（仅 Solana）
 
 ### 某程序的近期指令
 
@@ -189,7 +189,7 @@ query {
     Instructions(
       programId: {is: "PROGRAM_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Signature }
@@ -206,9 +206,9 @@ query {
 
 ---
 
-## 奖励 Rewards（仅 Solana）
+## 奖励（仅 Solana）
 
-### 验证者质押奖励
+### 验证者的质押奖励
 
 ```graphql
 query {
@@ -216,7 +216,7 @@ query {
     Rewards(
       address: {is: "VALIDATOR_ADDRESS"}
       limit: {count: 50}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Reward {
@@ -234,16 +234,16 @@ query {
 
 ---
 
-## 矿工奖励 MinerRewards（仅 EVM）
+## 矿工奖励（仅 EVM）
 
-### 区块奖励明细
+### 区块奖励构成
 
 ```graphql
 query {
   EVM(network: eth) {
     MinerRewards(
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Reward {
@@ -266,9 +266,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
-    全部 Cube 的详细字段结构，含 Blocks、Transactions、Events、Calls。
+    所有 Cube（含 Blocks、Transactions、Events、Calls）的详细字段结构。
   </Card>
-  <Card title="Chain Groups" icon="layer-group" href="/cn/graphql/schema/chain-groups">
-    了解 EVM 与 Solana 各有哪些 Cube。
+  <Card title="链分组" icon="layer-group" href="/cn/graphql/schema/chain-groups">
+    了解 EVM 与 Solana 分别提供哪些 Cube。
   </Card>
 </CardGroup>

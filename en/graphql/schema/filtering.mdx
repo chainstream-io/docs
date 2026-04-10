@@ -9,6 +9,10 @@ There are two ways to filter data in ChainStream GraphQL:
 1. **Selector shortcuts** — top-level arguments like `tokenAddress` that provide a convenient shorthand for common filters
 2. **`where` argument** — a nested filter object that supports the full range of operators and arbitrary dimension filtering
 
+<Warning>
+**Best Practice: Always add a time filter.** For DWD (detail) Cubes like DEXTrades, Transfers, and BalanceUpdates, queries without a `Block.Time` filter may scan very large table partitions. Always include `where: {Block: {Time: {after: "..."}}}` to limit the scan range and avoid potential memory limits on the OLAP engine.
+</Warning>
+
 You can combine both in the same query.
 
 ---
@@ -34,13 +38,14 @@ Selectors are **convenience arguments** on Cube fields that map to common `where
   <Tab title="With Selector">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
@@ -48,23 +53,24 @@ query {
   <Tab title="With where Filter">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Trade: {
-        Buy: {
-          Currency: {
-            MintAddress: {
-              is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  Solana {
+    DEXTrades(
+      where: {
+        Trade: {
+          Buy: {
+            Currency: {
+              MintAddress: {
+                is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+              }
             }
           }
         }
       }
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
     }
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
   }
 }
 ```
@@ -97,16 +103,17 @@ where: {
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Block: { Time: { after: "2025-01-01T00:00:00Z" } }
-      Trade: { Buy: { Amount: { gt: 1000 } } }
+  Solana {
+    DEXTrades(
+      where: {
+        Block: { Time: { after: "2025-01-01T00:00:00Z" } }
+        Trade: { Buy: { Amount: { gt: 1000 } } }
+      }
+      limit: { count: 20 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
     }
-    limit: { count: 20 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
   }
 }
 ```
@@ -212,18 +219,19 @@ By default, all conditions in `where` are combined with AND. To express OR logic
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      any: [
-        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
-        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
-      ]
-    }
-    limit: { count: 20 }
-  ) {
-    Trade {
-      Buy { Currency { MintAddress } Amount }
+  Solana {
+    DEXTrades(
+      where: {
+        any: [
+          { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
+          { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
+        ]
+      }
+      limit: { count: 20 }
+    ) {
+      Trade {
+        Buy { Currency { MintAddress } Amount }
+      }
     }
   }
 }
@@ -247,14 +255,15 @@ To **include** suspect trades, explicitly set the filter:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { IsSuspect: { eq: true } }
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount } }
-    IsSuspect
+  Solana {
+    DEXTrades(
+      where: { IsSuspect: { eq: true } }
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount } }
+      IsSuspect
+    }
   }
 }
 ```
@@ -278,22 +287,23 @@ Selectors and `where` filters are combined with AND. This lets you use selectors
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    where: {
-      Block: { Time: { after: "2025-03-01T00:00:00Z" } }
-      Trade: { Buy: { Amount: { gt: 100 } } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 50 }
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      where: {
+        Block: { Time: { after: "2025-03-01T00:00:00Z" } }
+        Trade: { Buy: { Amount: { gt: 100 } } }
+      }
+      orderBy: {descending: Block_Time}
+      limit: { count: 50 }
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }

@@ -1,29 +1,29 @@
 ---
-title: "預測市場"
-description: "PredictionTrades、PredictionManagements、PredictionSettlements Cube 的查詢示例"
+title: "Prediction Markets"
+description: "Query examples for PredictionTrades, PredictionManagements, and PredictionSettlements Cubes"
 icon: "chart-mixed"
 ---
 
-## 概述
+## 概覽
 
-ChainStream GraphQL 提供三個預測市場資料 Cube，主要在 Polygon 上使用。這些 Cube 覆蓋預測市場的完整生命週期 — 從建立、交易到結算。
+ChainStream GraphQL 提供三個預測市場（prediction market）資料用的 Cube，主要可在 Polygon 上使用。這些 Cube 涵蓋預測市場完整生命週期——從建立、交易到結算。
 
 <Note>
-預測市場 Cube 屬於 **EVM** Chain Group，主要配合 `network: polygon` 使用。
+預測市場 Cube 位於 **EVM** Chain Group，通常搭配 `network: polygon` 使用。
 </Note>
 
 ---
 
 ## PredictionTrades
 
-### 近期預測市場交易
+### 近期預測市場成交
 
 ```graphql
 query {
   EVM(network: polygon) {
     PredictionTrades(
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Transaction { Hash }
@@ -45,7 +45,7 @@ query {
 }
 ```
 
-### 特定 Condition 的交易
+### 特定條件（Condition）的成交
 
 ```graphql
 query {
@@ -53,7 +53,7 @@ query {
     PredictionTrades(
       conditionId: {is: "CONDITION_ID"}
       limit: {count: 50}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Trade { Buyer Seller Amount Price }
@@ -63,7 +63,7 @@ query {
 }
 ```
 
-### 按 Marketplace 統計交易量
+### 依市集（Marketplace）的成交量
 
 ```graphql
 query {
@@ -71,7 +71,7 @@ query {
     PredictionTrades(
       marketplace: {is: "Polymarket"}
       limit: {count: 100}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Trade { Amount Price }
@@ -90,14 +90,14 @@ query {
 
 ## PredictionManagements
 
-### 市場建立與解析事件
+### 市場建立與結算事件
 
 ```graphql
 query {
   EVM(network: polygon) {
     PredictionManagements(
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Transaction { Hash }
@@ -116,7 +116,7 @@ query {
 }
 ```
 
-### 按事件型別過濾
+### 依事件類型篩選
 
 ```graphql
 query {
@@ -124,7 +124,7 @@ query {
     PredictionManagements(
       eventType: {is: "ConditionResolution"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Management {
@@ -148,7 +148,7 @@ query {
   EVM(network: polygon) {
     PredictionSettlements(
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Transaction { Hash }
@@ -168,7 +168,7 @@ query {
 }
 ```
 
-### 特定持有者的結算
+### 特定持有人（Holder）的結算
 
 ```graphql
 query {
@@ -176,7 +176,7 @@ query {
     PredictionSettlements(
       holder: {is: "0xHOLDER_ADDRESS"}
       limit: {count: 50}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Settlement {
@@ -195,9 +195,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
-    預測市場 Cube 的詳細欄位結構。
+    預測市場 Cube 的欄位結構說明。
   </Card>
   <Card title="Chain Groups" icon="layer-group" href="/zh-Hant/graphql/schema/chain-groups">
-    預測市場 Cube 屬 EVM 專屬，主要在 Polygon 使用。
+    預測相關 Cube 僅限 EVM，主要為 Polygon。
   </Card>
 </CardGroup>

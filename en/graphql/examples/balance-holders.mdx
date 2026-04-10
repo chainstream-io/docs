@@ -22,18 +22,19 @@ Get current token balances for a wallet. This query returns the latest balance u
 
 ```graphql
 query {
-  BalanceUpdates(
-    network: sol
-    limit: {count: 50}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      Account { Owner }
-      PostBalance
-      PostBalanceInUSD
+  Solana {
+    BalanceUpdates(
+      limit: {count: 50}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        Account { Owner }
+        PostBalance
+        PostBalanceInUSD
+      }
+      Block { Time }
     }
-    Block { Time }
   }
 }
 ```
@@ -70,20 +71,21 @@ Track how a wallet's balance for a specific token changes over time.
 
 ```graphql
 query {
-  BalanceUpdates(
-    network: sol
-    limit: {count: 20}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    BalanceUpdate {
-      PreBalance
-      PostBalance
-      PostBalanceInUSD
+  Solana {
+    BalanceUpdates(
+      limit: {count: 20}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      BalanceUpdate {
+        PreBalance
+        PostBalance
+        PostBalanceInUSD
+      }
+      Block { Time }
+      Transaction { Hash }
     }
-    Block { Time }
-    Transaction { Hash }
   }
 }
 ```
@@ -117,17 +119,18 @@ Get the top holders for a token, ranked by balance.
 
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    limit: {count: 100}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-  ) {
-    Token { Address }
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
-    FirstSeen
-    LastSeen
+  Solana {
+    TokenHolders(
+      limit: {count: 100}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+    ) {
+      Token { Address }
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
   }
 }
 ```
@@ -162,19 +165,20 @@ Get per-token profit and loss data for a wallet, including buy/sell volumes and 
 
 ```graphql
 query {
-  WalletTokenPnL(
-    network: sol
-    limit: {count: 20}
-    walletAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    Wallet { Address }
-    Token { Address }
-    BuyVolumeUSDState
-    SellVolumeUSDState
-    BuyCountState
-    SellCountState
-    FirstTradeState
-    LastTradeState
+  Solana {
+    WalletTokenPnL(
+      limit: {count: 20}
+      walletAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      Wallet { Address }
+      Token { Address }
+      BuyVolumeUSDState
+      SellVolumeUSDState
+      BuyCountState
+      SellCountState
+      FirstTradeState
+      LastTradeState
+    }
   }
 }
 ```
@@ -211,15 +215,16 @@ The **WalletTokenPnL** Cube uses the `walletAddress` selector (not `ownerAddress
   <Tab title="Solana">
 ```graphql
 query {
-  BalanceUpdates(
-    network: sol
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  Solana {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -228,15 +233,16 @@ query {
   <Tab title="Ethereum">
 ```graphql
 query {
-  BalanceUpdates(
-    network: eth
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  EVM(network: eth) {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -245,15 +251,16 @@ query {
   <Tab title="BSC">
 ```graphql
 query {
-  BalanceUpdates(
-    network: bsc
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  EVM(network: bsc) {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }
@@ -262,15 +269,16 @@ query {
   <Tab title="Polygon">
 ```graphql
 query {
-  BalanceUpdates(
-    network: polygon
-    limit: {count: 10}
-    ownerAddress: {is: "WALLET_ADDRESS"}
-  ) {
-    BalanceUpdate {
-      Currency { MintAddress }
-      PostBalance
-      PostBalanceInUSD
+  EVM(network: polygon) {
+    BalanceUpdates(
+      limit: {count: 10}
+      ownerAddress: {is: "WALLET_ADDRESS"}
+    ) {
+      BalanceUpdate {
+        Currency { MintAddress }
+        PostBalance
+        PostBalanceInUSD
+      }
     }
   }
 }

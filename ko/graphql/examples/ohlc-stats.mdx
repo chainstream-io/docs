@@ -1,25 +1,25 @@
 ---
-title: "OHLC & 통계"
-description: "K-line 데이터(Pairs), 토큰별 트레이드 통계(Tokens), 공급 및 밸류에이션(TokenSupplyUpdates), 토큰 메타데이터 위치에 대한 쿼리 예제"
+title: "OHLC & Statistics"
+description: "Query examples for K-line data (Pairs), per-token trade statistics (Tokens), supply and valuation (TokenSupplyUpdates), and where to find token metadata"
 icon: "chart-candlestick"
 ---
 
-이 페이지에서는 집계된 트레이딩 및 공급 데이터를 다룹니다. **Cube 이름**은 **Trading** 체인 그룹의 **Pairs**와 **Tokens** (크로스체인 OHLC 및 트레이드 통계)입니다. 시간별 시가총액 및 가격 스냅샷은 **Solana** 또는 **EVM** 아래의 **TokenSupplyUpdates**에서 제공됩니다.
+이 페이지는 집계된 거래 및 공급 데이터를 다룹니다. **Cube 이름**은 **Trading** chain group의 **Pairs**와 **Tokens**(크로스체인 OHLC 및 거래 통계)입니다. 시가총액과 가격 스냅샷은 시간에 따라 **Solana** 또는 **EVM** 아래 **TokenSupplyUpdates**에서 가져옵니다.
 
-- **Pairs** (Trading, DWM) — 분별 캔들스틱 / K-line 데이터 (OHLC, 거래량, 거래 횟수)
-- **Tokens** (Trading, DWM) — 매수/매도 분류 및 고유 트레이더가 포함된 분별 트레이드 통계
-- **TokenSupplyUpdates** (Solana / EVM, DWD) — 공급, 가격, 시가총액, FDV 필드가 포함된 민트/번 이벤트
-- **토큰 메타데이터** — 별도의 **TokenSearch** Cube는 없습니다. **Pairs** / **Tokens**의 **Token** 디멘션이나 **DEXPools**, **TokenHolders**, **DEXTradeByTokens** 같은 다른 Cube를 발견 및 스크리닝에 사용하세요
+- **Pairs** (Trading, DWM) — 분 단위 캔들 / K-line 데이터 (OHLC, 거래량, 거래 건수)
+- **Tokens** (Trading, DWM) — 매수/매도 분해 및 고유 트레이더가 포함된 분 단위 거래 통계
+- **TokenSupplyUpdates** (Solana / EVM, DWD) — 공급, 가격, 시가총액, FDV 필드가 있는 mint/burn 이벤트
+- **토큰 메타데이터** — 별도 **TokenSearch** Cube는 없습니다. **Pairs** / **Tokens**의 **Token**(및 관련) dimension을 쓰거나, **DEXPools**, **TokenHolders**, **DEXTradeByTokens** 등 다른 Cube로 탐색·스크리닝하세요
 
 <Note>
-**Trading**에는 `network` 인자가 **없습니다**. `where: { Market: { Network: { is: "sol" } } }` (또는 `eth`, `bsc`, `polygon`)로 체인을 필터링합니다. **Solana**와 **EVM** 그룹은 일반적인 래퍼를 사용합니다 (`Solana { ... }`, `EVM(network: eth) { ... }`).
+**Trading**에는 `network` 인자가 **없습니다**. 체인은 `where: { Market: { Network: { is: "sol" } } }`처럼 필터합니다 (`eth`, `bsc`, `polygon` 등). **Solana**와 **EVM** 그룹은 기존 래퍼(`Solana { ... }`, `EVM(network: eth) { ... }`)를 그대로 사용합니다.
 </Note>
 
 ---
 
-## K-line (OHLC) 캔들스틱 데이터를 어떻게 조회하나요?
+## K-line(OHLC) 캔들 데이터는 어떻게 가져오나요?
 
-토큰의 캔들스틱 데이터를 가져옵니다 — 분별 시가, 고가, 저가, 종가, USD 거래량과 거래 횟수. **Trading** 내 **Pairs** Cube를 사용합니다.
+토큰의 캔들 데이터 — 분당 시가·고가·저가·종가, USD 거래량 및 거래 건수 — 를 조회합니다. **Trading** 안의 **Pairs** Cube를 사용합니다.
 
 ```graphql
 query {
@@ -49,43 +49,43 @@ query {
 ```
 
 <Tip>
-[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여넣어 자동 완성과 스키마 탐색 기능으로 인터랙티브하게 실행해 보세요.
+[GraphQL IDE에서 열기](https://ide.chainstream.io) — 위 쿼리를 붙여 넣어 자동 완성과 스키마 탐색으로 대화형 실행할 수 있습니다.
 </Tip>
 
 <Tip>
-`TOKEN_ADDRESS`를 토큰 민트 또는 컨트랙트 주소로 교체하세요. 각 행은 1분 버킷입니다 — 약 1시간은 `limit: { count: 60 }`, 약 24시간은 `count: 1440`을 사용합니다. 모든 체인의 결과를 한 번에 조회하려면 `Market` 필터를 생략합니다.
+`TOKEN_ADDRESS`를 토큰 mint 또는 컨트랙트 주소로 바꾸세요. 각 행은 1분 버킷입니다 — 약 1시간은 `limit: { count: 60 }`, 약 24시간은 `count: 1440`을 사용하세요. `Market` 필터를 생략하면 한 결과 집합에서 모든 체인을 조회할 수 있습니다.
 </Tip>
 
 <AccordionGroup>
   <Accordion title="주요 필드">
     | 필드 | 설명 |
     |:------|:------------|
-    | `Interval.Time.Start` | 분 버킷 시작 (캔들 시간과 동일) |
+    | `Interval.Time.Start` | 분 버킷 시작(캔들 시각과 동일) |
     | `Token.Address` | 토큰 주소 |
     | `Market.Network` | 체인 식별자 (`sol`, `eth`, `bsc`, …) |
-    | `Price.Ohlc.Open` | 인터벌의 시가 |
-    | `Price.Ohlc.High` | 인터벌의 최고가 |
-    | `Price.Ohlc.Low` | 인터벌의 최저가 |
-    | `Price.Ohlc.Close` | 인터벌의 종가 |
-    | `Volume.Usd` | 이 인터벌의 총 USD 거래량 |
-    | `Stats.TradeCount` | 이 인터벌의 거래 수 |
+    | `Price.Ohlc.Open` | 구간 시가 |
+    | `Price.Ohlc.High` | 구간 고가 |
+    | `Price.Ohlc.Low` | 구간 저가 |
+    | `Price.Ohlc.Close` | 구간 종가 |
+    | `Volume.Usd` | 해당 구간 USD 거래량 합계 |
+    | `Stats.TradeCount` | 해당 구간 거래 건수 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
-    - **더 긴 시간대**: `limit`으로 더 많은 행을 요청하거나 클라이언트 측에서 집계. 캔들은 분 단위 세분화로 저장됨
-    - **거래량 필터**: 예: `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }`로 저볼륨 인터벌 제외
-    - **시간 범위**: 예: `where: { Block: { Time: { since: "2026-03-27T00:00:00Z" } }, Market: { Network: { is: "sol" } } }`
+  <Accordion title="커스터마이징 팁">
+    - **더 긴 기간**: `limit`으로 더 많은 행을 요청하거나 클라이언트에서 집계합니다. 캔들은 분 단위로 저장됩니다.
+    - **거래량 필터**: 예) `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }`로 저거래량 구간 제외
+    - **시간 범위**: 예) `where: { Block: { Time: { since: "2026-03-27T00:00:00Z" } }, Market: { Network: { is: "sol" } } }`
   </Accordion>
 </AccordionGroup>
 
 <Info>
-**Pairs** Cube는 **DWM** (집계) 모델입니다 — 데이터가 분별로 사전 계산되어 있습니다. 차트 데이터를 위해 원시 트레이드를 스캔하는 것보다 훨씬 빠릅니다.
+**Pairs** Cube는 **DWM**(집계) 모델입니다 — 데이터가 분 단위로 미리 계산됩니다. 차트용으로 raw 거래를 스캔하는 것보다 훨씬 빠릅니다.
 </Info>
 
 ---
 
-## 토큰의 트레이드 통계를 어떻게 조회하나요?
+## 토큰별 거래 통계는 어떻게 가져오나요?
 
-매수/매도 수, 고유 매수자/매도자 수, 거래량이 포함된 분별 트레이드 통계를 조회합니다. **Trading** 내 **Tokens** Cube를 사용합니다.
+매수/매도 건수, 고유 매수자/매도자 수, 거래량이 포함된 분 단위 거래 통계를 가져옵니다. **Trading** 안의 **Tokens** Cube를 사용합니다.
 
 ```graphql
 query {
@@ -116,31 +116,31 @@ query {
   <Accordion title="주요 필드">
     | 필드 | 설명 |
     |:------|:------------|
-    | `Interval.Time.Start` | 분 버킷 시작 (캔들 시간과 동일) |
-    | `Stats.TradeCount` | 이 인터벌의 총 거래 수 |
-    | `Stats.BuyCount` | 매수 측 거래 수 |
-    | `Stats.SellCount` | 매도 측 거래 수 |
+    | `Interval.Time.Start` | 분 버킷 시작(캔들 시각과 동일) |
+    | `Stats.TradeCount` | 해당 구간 총 거래 수 |
+    | `Stats.BuyCount` | 매수 쪽 거래 |
+    | `Stats.SellCount` | 매도 쪽 거래 |
     | `Volume.Usd` | 총 USD 거래량 |
-    | `Stats.UniqueBuyers` | 고유 매수 월렛 수 |
-    | `Stats.UniqueSellers` | 고유 매도 월렛 수 |
+    | `Stats.UniqueBuyers` | 서로 다른 매수 지갑 수 |
+    | `Stats.UniqueSellers` | 서로 다른 매도 지갑 수 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
+  <Accordion title="커스터마이징 팁">
     - **매수/매도 압력**: `Stats.BuyCount`와 `Stats.SellCount` 비교
-    - **고유 트레이더**: `Stats.UniqueBuyers`와 `Stats.UniqueSellers`는 거래량이 넓게 분산되었는지 집중되었는지 보여줌
-    - **활동 히트맵**: 하루 전체(`count: 1440`)를 쿼리하고 `Interval.Time.Start` (또는 `Block.Time`)별로 차트 구성
-    - **매수/매도 거래량**: **Tokens** 레코드는 USD 분리가 필요한 경우 `Volume.BuyVolumeUSD`와 `Volume.SellVolumeUSD`도 노출
+    - **고유 트레이더**: `Stats.UniqueBuyers`와 `Stats.UniqueSellers`로 거래량이 넓게 퍼졌는지 집중됐는지 확인
+    - **활동 히트맵**: 하루 전체(`count: 1440`)를 조회해 `Interval.Time.Start`(또는 `Block.Time`) 기준으로 차트
+    - **매수/매도 거래량**: USD 분해가 필요하면 **Tokens** 레코드의 `Volume.BuyVolumeUSD`, `Volume.SellVolumeUSD` 사용
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-동일한 토큰, 체인, 시간 범위에 대해 **Pairs**와 **Tokens**를 결합하여 대시보드를 구축하세요 — OHLC와 함께 흐름 및 참여자 메트릭.
+같은 토큰·체인·시간 창에 대해 **Pairs**와 **Tokens**를 함께 쓰면 대시보드를 만들 수 있습니다 — OHLC와 유동·참여자 지표를 나란히 표시합니다.
 </Tip>
 
 ---
 
-## 시간별 시가총액, 가격, 공급을 어떻게 조회하나요?
+## 시가총액, 가격, 공급을 시간에 따라 어떻게 가져오나요?
 
-레거시 **TokenMarketCap** 요약 Cube는 현재 스키마에서 사용되지 않습니다. **TokenSupplyUpdates** (Solana 또는 EVM)를 사용하세요: 각 행은 가격, 시가총액, FDV, 총 공급을 포함한 **TokenSupplyUpdate** 메트릭이 있는 공급 영향 이벤트를 반영합니다.
+레거시 **TokenMarketCap** 요약 Cube는 현재 스키마에서 사용하지 않습니다. **TokenSupplyUpdates**(Solana 또는 EVM)를 사용하세요. 각 행은 공급에 영향을 주는 이벤트를 반영하며, 가격·시가총액·FDV·총 공급을 포함하는 **TokenSupplyUpdate** 지표가 있습니다.
 
 ### Solana
 
@@ -172,7 +172,7 @@ query {
 }
 ```
 
-### EVM (Ethereum 예제)
+### EVM (Ethereum 예시)
 
 ```graphql
 query {
@@ -206,37 +206,37 @@ query {
   <Accordion title="주요 필드">
     | 필드 | 설명 |
     |:------|:------------|
-    | `Block.Time` | 이벤트 시간 |
-    | `TokenSupplyUpdate.Currency.*` | 토큰 식별 (민트/컨트랙트, 소수점, 심볼, 이름) |
-    | `TokenSupplyUpdate.PriceInUSD` | 이 업데이트 시점의 USD 가격 |
+    | `Block.Time` | 이벤트 시각 |
+    | `TokenSupplyUpdate.Currency.*` | 토큰 식별(mint/컨트랙트, decimals, symbol, name) |
+    | `TokenSupplyUpdate.PriceInUSD` | 해당 업데이트 시점 USD 가격 |
     | `TokenSupplyUpdate.MarketCapInUSD` | 시가총액 |
-    | `TokenSupplyUpdate.TotalSupply` | 총 공급 |
-    | `TokenSupplyUpdate.FDVInUSD` | 완전 희석 시가총액 |
-    | `TokenSupplyUpdate.PostBalance` | 이벤트 후 공급 관련 잔액 |
+    | `TokenSupplyUpdate.TotalSupply` | 총 공급량 |
+    | `TokenSupplyUpdate.FDVInUSD` | 완전 희석 가치(FDV) |
+    | `TokenSupplyUpdate.PostBalance` | 이벤트 이후 공급 관련 잔액 |
   </Accordion>
-  <Accordion title="커스터마이즈 팁">
-    - **최신 스냅샷**: `limit: { count: 1 }`과 `orderBy: { descending: Block_Time }`
-    - **체인 비교**: `Solana`와 `EVM(network: bsc)` (또는 다른 지원 네트워크) 아래에서 동일한 형태를 실행
-    - **더 많은 컨텍스트**: 공급 및 풀 관련 예제는 [풀 & 유동성](/ko/graphql/examples/pools-liquidity#토큰-공급과-시가총액을-어떻게-조회하나요)도 참조
+  <Accordion title="커스터마이징 팁">
+    - **최신 스냅샷**: `orderBy: { descending: Block_Time }`와 `limit: { count: 1 }`
+    - **체인 비교**: `Solana`와 `EVM(network: bsc)`(또는 지원 네트워크)에서 동일한 쿼리 형태 실행
+    - **추가 맥락**: 공급 및 풀 관련 예시는 [Pools & Liquidity](/ko/graphql/examples/pools-liquidity#how-do-i-get-token-supply-and-market-cap)도 참고하세요
   </Accordion>
 </AccordionGroup>
 
 <Info>
-**TokenSupplyUpdates**는 **DWD** (이벤트 레벨)입니다. 단일 정적 "시가총액" 요약 행이 아니라, 민트/번 활동에 연결된 과거 밸류에이션 및 공급 변동을 위한 적절한 장소입니다.
+**TokenSupplyUpdates**는 **DWD**(이벤트 수준)입니다. 단일 정적 “시가총액” 요약 행이 아니라, mint/burn 활동과 연계된 역사적 밸류에이션·공급 변화를 보기에 적합합니다.
 </Info>
 
 ---
 
 ## 토큰 검색 / 메타데이터는 어디에 있나요?
 
-**TokenSearch** Cube는 현재 API의 일부가 **아닙니다**. 토큰 컨텍스트를 위해:
+**TokenSearch** Cube는 현재 API에 **포함되어 있지 않습니다**. 토큰 맥락이 필요하면:
 
-- **Pairs**와 **Tokens**는 **Token** 디멘션(예: **Token.Address**)을 OHLC 및 통계와 함께 노출합니다 — 주소를 알고 있고 집계된 트레이딩 데이터가 필요할 때 사용합니다.
-- 더 풍부한 메타데이터, 홀더 수, 풀, 또는 발견을 위해서는 체인에 따라 **Solana** 또는 **EVM** 아래의 **DEXPools**, **TokenHolders**, **DEXTradeByTokens** 같은 Cube를 사용합니다.
+- **Pairs**와 **Tokens**는 OHLC·통계와 함께 **Token** dimension(예: **Token.Address**)을 노출합니다 — 주소를 이미 알고 집계 거래 데이터가 필요할 때 사용하세요.
+- 메타데이터·홀더 수·풀·탐색이 더 필요하면 **Solana** 또는 **EVM** 아래 **DEXPools**, **TokenHolders**, **DEXTradeByTokens** 등 Cube를 체인에 맞게 사용하세요.
 
 ---
 
-## 멀티체인 예제
+## 멀티체인 예시
 
 <Tabs>
   <Tab title="Solana (Trading)">
@@ -315,16 +315,16 @@ query {
 ## 다음 단계
 
 <CardGroup cols={2}>
-  <Card title="DEX 트레이드" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
-    DEX 트레이딩 데이터를 쿼리합니다 — 토큰 트레이드, 월렛 활동, 상위 트레이더.
+  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/ko/graphql/examples/dex-trades">
+    DEX 거래 데이터 조회 — 토큰 거래, 지갑 활동, 상위 트레이더.
   </Card>
-  <Card title="전송" icon="paper-plane" href="/ko/graphql/examples/transfers">
-    월렛 간 온체인 토큰 전송을 추적합니다.
+  <Card title="Transfers" icon="paper-plane" href="/ko/graphql/examples/transfers">
+    지갑 간 온체인 토큰 전송 추적.
   </Card>
-  <Card title="잔액 & 홀더" icon="wallet" href="/ko/graphql/examples/balance-holders">
-    월렛 잔액, 잔액 히스토리, 상위 홀더를 조회합니다.
+  <Card title="Balances & Holders" icon="wallet" href="/ko/graphql/examples/balance-holders">
+    지갑 잔액, 잔액 이력, 상위 홀더 조회.
   </Card>
-  <Card title="풀 & 유동성" icon="droplet" href="/ko/graphql/examples/pools-liquidity">
-    DEX 풀과 유동성 데이터를 탐색합니다.
+  <Card title="Pools & Liquidity" icon="droplet" href="/ko/graphql/examples/pools-liquidity">
+    DEX 풀 및 유동성 데이터 탐색.
   </Card>
 </CardGroup>

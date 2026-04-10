@@ -30,6 +30,10 @@ The **EVM** group contains Cubes for all EVM-compatible blockchains. It **requir
 | `bsc` | BNB Chain (BSC) |
 | `polygon` | Polygon |
 
+<Warning>
+**Polygon data availability:** Currently only **Prediction Markets** Cubes (`PredictionTrades`, `PredictionManagements`, `PredictionSettlements`) have data available for Polygon. Other Cubes (DEXTrades, Blocks, Transfers, etc.) are being deployed — queries against them may return errors.
+</Warning>
+
 ### Cubes
 
 **Shared with Solana:**
@@ -52,7 +56,7 @@ query {
   EVM(network: eth, dataset: combined) {
     DEXTrades(
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -90,7 +94,7 @@ query {
   Solana(dataset: realtime) {
     DEXTrades(
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Hash }
@@ -104,17 +108,21 @@ query {
 }
 ```
 
-### Solana-Specific Fields
+### Field Names Across Chains
 
-Solana Cubes use different field names for some dimensions compared to EVM:
+The table below shows the conventional field names for each chain. However, the Record type contains **all fields from all chains as a superset** — both `MintAddress` and `SmartContract` exist in every Cube's Record type and return the same underlying data. You can use either name on any chain.
 
-| Concept | Solana | EVM |
-|:--------|:-------|:----|
-| Token address | `MintAddress` | `SmartContract` |
-| Transaction ID | `Signature` / `Hash` | `Hash` |
-| Block identifier | `Slot` | `Number` |
-| Program/Contract | `ProgramAddress` | `SmartContract` |
-| Fee payer | `FeePayer` | `From` |
+| Concept | Conventional (Solana) | Conventional (EVM) | Cross-chain? |
+|:--------|:---------------------|:-------------------|:-------------|
+| Token address | `MintAddress` | `SmartContract` | Both work on all chains |
+| Transaction ID | `Signature` / `Hash` | `Hash` | Both work on all chains |
+| Block identifier | `Slot` | `Number` | Both work on all chains |
+| Program/Contract | `ProgramAddress` | `SmartContract` | Both work on all chains |
+| Fee payer | `FeePayer` | `From` | Both work on all chains |
+
+<Tip>
+This means you can use a **single query template** across all chains without changing field names. For example, `Currency { MintAddress }` works on both Solana and EVM queries.
+</Tip>
 
 ---
 
@@ -141,7 +149,7 @@ query {
     Pairs(
       where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
       limit: {count: 60}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Token { Address }
       Market { Network }
@@ -165,7 +173,7 @@ query {
         Market: { Network: { is: "eth" } }
       }
       limit: {count: 30}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Volume { Usd BuyVolumeUSD SellVolumeUSD }

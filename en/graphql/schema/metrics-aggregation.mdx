@@ -41,13 +41,14 @@ To use a metric, simply include it in your field selection:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
@@ -72,14 +73,15 @@ uniq(of: Trade_Buy_Account_Owner)
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
@@ -88,18 +90,20 @@ query {
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "count": 1842,
-        "sum": 2847291.45,
-        "Trade": { "Dex": { "ProtocolName": "Raydium" } }
-      },
-      {
-        "count": 923,
-        "sum": 1293847.12,
-        "Trade": { "Dex": { "ProtocolName": "Orca" } }
-      }
-    ]
+    "Solana": {
+      "DEXTrades": [
+        {
+          "count": 1842,
+          "sum": 2847291.45,
+          "Trade": { "Dex": { "ProtocolName": "Raydium" } }
+        },
+        {
+          "count": 923,
+          "sum": 1293847.12,
+          "Trade": { "Dex": { "ProtocolName": "Orca" } }
+        }
+      ]
+    }
   }
 }
 ```
@@ -112,11 +116,12 @@ query {
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+    }
   }
 }
 ```
@@ -125,12 +130,13 @@ When used with dimension fields, it returns the count per group:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
@@ -143,12 +149,13 @@ query {
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    uniq(of: Trade_Buy_Account_Owner)
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      uniq(of: Trade_Buy_Account_Owner)
+    }
   }
 }
 ```
@@ -163,28 +170,36 @@ This returns the number of **unique buyer wallets** that traded USDC today on So
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count(selectWhere: { gt: 100 })
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2026-04-01T00:00:00Z" } } }
+    ) {
+      count(selectWhere: { gt: "100" })
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-This returns only DEX protocols that had **more than 100 trades** today — protocols with fewer trades are excluded from the result.
+This returns only DEX protocols that had **more than 100 trades** — protocols with fewer trades are excluded from the result.
 
-`selectWhere` supports the same numeric operators as `IntFilter`/`FloatFilter`:
+<Note>
+`selectWhere` values must be passed as **strings** (e.g., `"100"` not `100`). They are parsed as numeric values internally.
+</Note>
+
+`selectWhere` supports these comparison operators:
 
 | Operator | Description |
 |:---------|:------------|
 | `gt` | Greater than |
-| `gte` | Greater than or equal |
+| `ge` | Greater than or equal |
 | `lt` | Less than |
-| `lte` | Less than or equal |
+| `le` | Less than or equal |
 | `eq` | Equal to |
-| `ne` | Not equal to |
+
+<Warning>
+**Known limitation:** When using `selectWhere`, the `orderBy` field must reference a dimension that is part of the implicit GROUP BY (i.e., a field you are selecting) or an aggregation result. Ordering by a field not in the GROUP BY (e.g., `Block_Time`) will produce a database error.
+</Warning>
 
 ---
 
@@ -194,20 +209,21 @@ Find the top 10 wallets by trade count for a token today, showing their total bu
 
 ```graphql
 query TopTraders {
-  DEXTrades(
-    network: sol
-    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-    where: {
-      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    Trade {
-      Buy {
-        Account { Owner }
+  Solana {
+    DEXTrades(
+      tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+      where: {
+        Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+      }
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      Trade {
+        Buy {
+          Account { Owner }
+        }
       }
     }
   }
@@ -218,26 +234,28 @@ query TopTraders {
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "count": 47,
-        "sum": 892341023.5,
-        "Trade": {
-          "Buy": {
-            "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+    "Solana": {
+      "DEXTrades": [
+        {
+          "count": 47,
+          "sum": 892341023.5,
+          "Trade": {
+            "Buy": {
+              "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+            }
+          }
+        },
+        {
+          "count": 31,
+          "sum": 451203847.2,
+          "Trade": {
+            "Buy": {
+              "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
+            }
           }
         }
-      },
-      {
-        "count": 31,
-        "sum": 451203847.2,
-        "Trade": {
-          "Buy": {
-            "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
-          }
-        }
-      }
-    ]
+      ]
+    }
   }
 }
 ```
@@ -250,19 +268,20 @@ You can select multiple metric fields in a single query:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "So11111111111111111111111111111111111111112"
-    where: {
-      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "So11111111111111111111111111111111111111112"
+      where: {
+        Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+      }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      min(of: Trade_Buy_PriceInUSD)
+      max(of: Trade_Buy_PriceInUSD)
+      uniq(of: Trade_Buy_Account_Owner)
+      Trade { Dex { ProtocolName } }
     }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    min(of: Trade_Buy_PriceInUSD)
-    max(of: Trade_Buy_PriceInUSD)
-    uniq(of: Trade_Buy_Account_Owner)
-    Trade { Dex { ProtocolName } }
   }
 }
 ```

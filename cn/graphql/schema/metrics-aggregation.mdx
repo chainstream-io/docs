@@ -1,20 +1,20 @@
 ---
-title: "指标与聚合"
-description: "使用 count、sum、avg、min、max、uniq 聚合数据 — of 参数、用于 HAVING 的 selectWhere，以及指标 vs 预聚合 Cube 的选用"
+title: "Metrics & Aggregation"
+description: "Aggregate data with count, sum, avg, min, max, and uniq — the of parameter, selectWhere for HAVING, and when to use metrics vs pre-aggregated Cubes"
 icon: "chart-simple"
 ---
 
-## 什么是 Metrics？
+## 什么是指标（Metrics）
 
-Metrics 是 Cube Record 类型上可用的**聚合函数**字段，可在 GraphQL 查询中直接计算统计量，无需后置处理。同时选择指标字段与维度字段时，查询会按所选维度分组，并为每组计算指标。
+指标是 Cube Record 类型上可作为字段选用的**聚合函数**，让你在 GraphQL 查询中直接计算统计量，无需后置处理。当与维度字段一起选择时，查询会按所选维度分组，并为每组计算指标。
 
-**支持的 metrics：**
+**支持的指标：**
 
-| Metric | SQL Equivalent | Description |
+| Metric | SQL 等价 | 说明 |
 |:-------|:---------------|:------------|
-| `count` | `COUNT(*)` or `COUNT(column)` | 计数行或不同取值 |
+| `count` | `COUNT(*)` 或 `COUNT(column)` | 计数行或不同取值 |
 | `sum` | `SUM(column)` | 数值求和 |
-| `avg` | `AVG(column)` | 平均值 |
+| `avg` | `AVG(column)` | 数值平均 |
 | `min` | `MIN(column)` | 最小值 |
 | `max` | `MAX(column)` | 最大值 |
 | `uniq` | `COUNT(DISTINCT column)` | 不同取值个数 |
@@ -23,7 +23,7 @@ Metrics 是 Cube Record 类型上可用的**聚合函数**字段，可在 GraphQ
 
 ## Record 类型上的指标字段
 
-Metrics 作为每个 Cube Record 类型的**顶层字段**出现。并非所有 Cube 都支持全部 metrics — 取决于 Cube 定义。
+指标以**顶层字段**形式出现在各 Cube 的 Record 类型上。并非每个 Cube 都支持全部指标——取决于 Cube 定义。
 
 ```graphql
 type DEXTradesRecord {
@@ -37,28 +37,29 @@ type DEXTradesRecord {
 }
 ```
 
-在字段选择中包含 metric 即可使用：
+在字段选择中加入指标字段即可使用：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-该查询按 DEX 协议名分组统计成交笔数。
+该查询按协议名对 DEX 成交分组，并返回每组的笔数。
 
 ---
 
 ## `of` 参数
 
-`sum`、`avg`、`min`、`max`、`uniq` 等需要 `of` 参数，指定**对哪个维度**聚合。`of` 的取值为按 Cube 生成的枚举，命名遵循维度路径约定。
+`sum`、`avg`、`min`、`max`、`uniq` 等指标需要 `of` 参数，用于指定**对哪个维度**聚合。`of` 的值为按 Cube 生成的枚举，命名遵循维度路径约定。
 
 ```graphql
 sum(of: Trade_Buy_Amount)
@@ -72,51 +73,55 @@ uniq(of: Trade_Buy_Account_Owner)
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-**Response:**
+**响应：**
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "count": 1842,
-        "sum": 2847291.45,
-        "Trade": { "Dex": { "ProtocolName": "Raydium" } }
-      },
-      {
-        "count": 923,
-        "sum": 1293847.12,
-        "Trade": { "Dex": { "ProtocolName": "Orca" } }
-      }
-    ]
+    "Solana": {
+      "DEXTrades": [
+        {
+          "count": 1842,
+          "sum": 2847291.45,
+          "Trade": { "Dex": { "ProtocolName": "Raydium" } }
+        },
+        {
+          "count": 923,
+          "sum": 1293847.12,
+          "Trade": { "Dex": { "ProtocolName": "Orca" } }
+        }
+      ]
+    }
   }
 }
 ```
 
 ---
 
-## count — 行计数
+## count — 计数行数
 
-不带 `of` 的 `count` 统计每组总行数（等价于 `COUNT(*)`）：
+不带 `of` 的 `count` 统计每组内的总行数（等价于 `COUNT(*)`）：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+    }
   }
 }
 ```
@@ -125,185 +130,199 @@ query {
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
 ---
 
-## uniq — 不同值计数
+## uniq — 统计不同值
 
-`uniq` 对应 SQL 的 `COUNT(DISTINCT column)`，用于统计某维度的不同取值数量：
+`uniq` 对应 SQL 中的 `COUNT(DISTINCT column)`，用于统计某维度的不同取值数量：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    uniq(of: Trade_Buy_Account_Owner)
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      uniq(of: Trade_Buy_Account_Owner)
+    }
   }
 }
 ```
 
-返回今日 Solana 上交易 USDC 的**不同买方钱包**数量。
+该查询返回今日在 Solana 上交易 USDC 的**独立买方钱包**数量。
 
 ---
 
 ## selectWhere — 类 HAVING 筛选
 
-`selectWhere` 用于在**聚合结果**上筛选，类似 SQL 的 `HAVING`。在分组与聚合之后应用，可按指标值过滤分组。
+`selectWhere` 用于在**聚合结果**上筛选，类似 SQL 的 `HAVING`。它在分组与聚合之后应用，可按指标值过滤分组。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count(selectWhere: { gt: 100 })
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2026-04-01T00:00:00Z" } } }
+    ) {
+      count(selectWhere: { gt: "100" })
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-仅返回今日成交笔数**超过 100** 的 DEX 协议 — 笔数更少的协议不会出现在结果中。
+该查询只返回成交笔数**超过 100** 的 DEX 协议——笔数更少的协议不会出现在结果中。
 
-`selectWhere` 支持与 `IntFilter`/`FloatFilter` 相同的数值运算符：
+<Note>
+`selectWhere` 的值必须为**字符串**（例如 `"100"` 而非 `100`）。服务端会按数值解析。
+</Note>
 
-| Operator | Description |
+`selectWhere` 支持下列比较运算符：
+
+| 运算符 | 说明 |
 |:---------|:------------|
 | `gt` | 大于 |
-| `gte` | 大于等于 |
+| `ge` | 大于等于 |
 | `lt` | 小于 |
-| `lte` | 小于等于 |
+| `le` | 小于等于 |
 | `eq` | 等于 |
-| `ne` | 不等于 |
+
+<Warning>
+**已知限制：** 使用 `selectWhere` 时，`orderBy` 引用的字段须属于隐式 GROUP BY 的一部分（即你正在选择的字段）或为聚合结果。按不在 GROUP BY 中的字段排序（例如 `Block_Time`）会导致数据库报错。
+</Warning>
 
 ---
 
-## 实用示例：Top 交易者
+## 实用示例：顶级交易者
 
-查找某 token 今日按成交笔数排名前 10 的钱包，并展示其买入总量与笔数相关指标：
+查找某代币今日按成交笔数排序的前 10 个钱包，并展示其买入总量与独立成交相关统计：
 
 ```graphql
 query TopTraders {
-  DEXTrades(
-    network: sol
-    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-    where: {
-      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    Trade {
-      Buy {
-        Account { Owner }
+  Solana {
+    DEXTrades(
+      tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+      where: {
+        Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+      }
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      Trade {
+        Buy {
+          Account { Owner }
+        }
       }
     }
   }
 }
 ```
 
-**Response:**
+**响应：**
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "count": 47,
-        "sum": 892341023.5,
-        "Trade": {
-          "Buy": {
-            "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+    "Solana": {
+      "DEXTrades": [
+        {
+          "count": 47,
+          "sum": 892341023.5,
+          "Trade": {
+            "Buy": {
+              "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+            }
+          }
+        },
+        {
+          "count": 31,
+          "sum": 451203847.2,
+          "Trade": {
+            "Buy": {
+              "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
+            }
           }
         }
-      },
-      {
-        "count": 31,
-        "sum": 451203847.2,
-        "Trade": {
-          "Buy": {
-            "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
-          }
-        }
-      }
-    ]
+      ]
+    }
   }
 }
 ```
 
 ---
 
-## 组合多个 Metrics
+## 组合多个指标
 
-单次查询可选择多个 metric 字段：
+单个查询中可选择多个指标字段：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "So11111111111111111111111111111111111111112"
-    where: {
-      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "So11111111111111111111111111111111111111112"
+      where: {
+        Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+      }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      min(of: Trade_Buy_PriceInUSD)
+      max(of: Trade_Buy_PriceInUSD)
+      uniq(of: Trade_Buy_Account_Owner)
+      Trade { Dex { ProtocolName } }
     }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    min(of: Trade_Buy_PriceInUSD)
-    max(of: Trade_Buy_PriceInUSD)
-    uniq(of: Trade_Buy_Account_Owner)
-    Trade { Dex { ProtocolName } }
   }
 }
 ```
 
-返回按 DEX 的统计：成交笔数、总成交量、价格区间、独立交易者数 — 一次查询完成。
+该查询按 DEX 返回：成交笔数、总成交量、价格区间与独立交易者数——一次查询完成。
 
 ---
 
-## Metrics vs 预聚合 Cube
+## 指标 vs 预聚合 Cube
 
 <Info>
-常见问题：应该在 DWD Cube 上用 metrics，还是直接查 DWM/DWS Cube？
+常见问题：应该在 DWD Cube 上用指标，还是直接查 DWM/DWS Cube？
 </Info>
 
-| Approach | When to Use | Performance |
+| 方式 | 适用场景 | 性能 |
 |:---------|:------------|:------------|
-| **DWD 上的 Metrics**（如 `DEXTrades.count`） | 自定义聚合、即席分组、灵活时间窗口 | 较慢 — 查询时对原始事件聚合 |
-| **DWM Cube**（如 `Pairs`、`Tokens`） | 标准时间序列、OHLC 图、成交量随时间 | 快 — 读取预计算的分钟级汇总 |
-| **DWS Cube**（如 `TokenHolders`、`WalletTokenPnL`） | 当前快照、累计合计、排行榜 | 最快 — 读取预汇总摘要数据 |
+| **DWD 上的指标**（如 `DEXTrades.count`） | 自定义聚合、即席分组、灵活时间窗口 | 较慢——查询时在原始事件上聚合 |
+| **DWM Cube**（如 `Pairs`、`Tokens`） | 标准时序分析、OHLC 图、随时间变化的成交量 | 较快——读取预计算的分钟级汇总 |
+| **DWS Cube**（如 `TokenHolders`、`WalletTokenPnL`） | 当前快照、累计总量、排行榜 | 最快——读取预聚合汇总数据 |
 
 <Tip>
-**经验法则**：若 DWM/DWS Cube 已覆盖你的场景，优先使用 — 它们预聚合且明显更快。仅在需要自定义分组或预置 Cube 不支持的聚合逻辑时，再回退到带 metrics 的 DWD Cube。
+**经验法则**：若 DWM/DWS 已覆盖你的场景——它们已预聚合，通常明显更快。仅在需要预置 Cube 不支持的自定义分组或聚合逻辑时，再回退到带指标的 DWD Cube。
 </Tip>
 
 ### 决策指引
 
 <AccordionGroup>
-  <Accordion title="需要蜡烛图">
-    使用 **Pairs**（DWM）。已按分钟预计算 open/high/low/close/volume，无需自己对 DEXTrades 聚合。
+  <Accordion title="需要 K 线图">
+    使用 **Pairs**（DWM）。已按分钟预计算 open/high/low/close/volume，无需自己对 DEXTrades 做聚合。
   </Accordion>
-  <Accordion title="需要按 token 的买卖笔数">
-    使用 **Tokens**（DWM）。已按分钟预聚合笔数、成交量与独立交易者。
+  <Accordion title="需要按代币统计买卖笔数">
+    使用 **Tokens**（DWM）。已按分钟预聚合成交笔数、成交量与独立交易者数。
   </Accordion>
-  <Accordion title="需要 Token 持有者排名">
-    使用 **TokenHolders**（DWS）。已预计算每位持有者最新余额 — 比聚合 BalanceUpdates 快得多。
+  <Accordion title="需要代币持有者排名">
+    使用 **TokenHolders**（DWS）。最新每位持有者余额已预计算——比聚合 BalanceUpdates 快得多。
   </Accordion>
-  <Accordion title="需要按 DEX 的自定义成交量拆分">
-    使用 **DEXTrades**，按 `Trade.Dex.ProtocolName` 分组，配合 `count` + `sum(of: Trade_Buy_Amount)`。无现成 Cube 时，DWD metrics 是合适选择。
+  <Accordion title="需要按 DEX 自定义拆分成交量">
+    使用 **DEXTrades**，以 `count` + `sum(of: Trade_Buy_Amount)` 按 `Trade.Dex.ProtocolName` 分组。无现成 Cube 覆盖时，DWD 指标是合适选择。
   </Accordion>
-  <Accordion title="需要钱包按 token 的 PnL">
-    使用 **WalletTokenPnL**（DWS）。已预计算每对 wallet-token 的买卖量与笔数。
+  <Accordion title="需要按代币查看钱包 PnL">
+    使用 **WalletTokenPnL**（DWS）。买入/卖出量与成交笔数已按钱包–代币对预计算。
   </Accordion>
 </AccordionGroup>
 
@@ -315,7 +334,7 @@ query {
   <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
     浏览全部 25 个 Cube 及其字段结构。
   </Card>
-  <Card title="Query 示例" icon="flask" href="/cn/graphql/examples/dex-trades">
-    查看带 metrics 与聚合的实战查询示例。
+  <Card title="查询示例" icon="flask" href="/cn/graphql/examples/dex-trades">
+    查看包含指标与聚合的实战查询示例。
   </Card>
 </CardGroup>

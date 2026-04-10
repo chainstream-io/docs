@@ -6,7 +6,7 @@ icon: "credit-card"
 
 ## Overview
 
-Every GraphQL query consumes **Credit Units (CU)** based on the Cube queried, the number of rows requested, and the complexity of aggregation. Credits are deducted from the same billing plan as the REST API — your API Key works across both.
+Every GraphQL query consumes **Credit Units (CU)** that are dynamically calculated based on the query's complexity. Credits are deducted from the same billing plan as the REST API — your API Key works across both.
 
 <Info>
 The GraphQL API shares the same API Key and billing plan as the REST Data API. Credits consumed by GraphQL queries count toward your overall usage.
@@ -16,71 +16,69 @@ The GraphQL API shares the same API Key and billing plan as the REST Data API. C
 
 ## Credit Calculation Formula
 
-Credits are calculated per Cube using the following formula:
+Credits are calculated per Cube using a **5-factor formula**. The final CU depends on what you query, how many rows you request, whether you use aggregation, how many metrics you include, and how many fields you select.
 
 ```
-Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × ComplexityFactor) / 100
 ```
 
 | Factor | Calculation | Description |
 |:-------|:-----------|:------------|
-| **BaseCost** | Per-Cube base price (see table below) | Fixed cost that varies by Cube complexity |
-| **LimitFactor** | `ceil(limit / 100)`, minimum 1 | Scales with the number of rows requested |
-| **AggregationFactor** | 1.0 (none), 1.5 (GROUP BY), 2.0 (HAVING) | Higher for queries using aggregation or HAVING filters |
-| **MetricFactor** | `1.0 + (metric_count × 0.2)` | Increases with each additional metric (count, sum, etc.) |
+| **BaseCost** | Per-Cube internal value | Reflects the underlying table size and scan cost. Each Cube has a different base cost. |
+| **LimitFactor** | `ceil(limit / 100)`, minimum 1 | Scales linearly with the number of rows requested. Requesting 1–100 rows costs the same; 101–200 costs 2×, etc. |
+| **AggregationFactor** | 1.0 (none), 1.5 (GROUP BY), 2.0 (HAVING) | Higher for queries that use aggregation or post-aggregation filters (`selectWhere`). |
+| **MetricFactor** | `1.0 + (aggregate_count × 0.1)` | Each additional aggregation function (`count`, `sum`, `avg`, etc.) adds 10% to the cost. |
+| **ComplexityFactor** | `min(1.0 + min(select_count, 250) / 50 × 0.2, 1.5)` | Selecting more fields increases cost, capped at 1.5×. A simple query with ~5 fields has a factor of ~1.02. |
 
-<Tip>
-A simple query with default limit (25 rows) and no aggregation pays only the base cost. Credits increase when you request more rows or add aggregation metrics.
-</Tip>
+<Note>
+**Zero-row queries are free.** If a query returns no rows, no credits are charged regardless of the other factors.
+</Note>
 
 ### Calculation Examples
 
 <AccordionGroup>
-  <Accordion title="Simple query: 10 DEXTrades rows">
+  <Accordion title="Simple query: 10 rows, 5 fields">
     ```
-    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    BaseCost = 2000 (internal), LimitFactor = ceil(10/100) = 1
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ComplexityFactor = 1.0 + (5/50) × 0.2 = 1.02
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.02) = 2040
+    CU = 2040 / 100 = 20.40 CU
     ```
   </Accordion>
-  <Accordion title="Large query: 500 DEXTrades rows">
+  <Accordion title="Large query: 500 rows, 5 fields">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.0 × 1.0 × 1.02) = 10200
+    CU = 10200 / 100 = 102.00 CU
     ```
   </Accordion>
-  <Accordion title="Aggregation query: 500 rows + GROUP BY + 2 metrics">
+  <Accordion title="Aggregation query: GROUP BY + 2 metrics, 500 rows">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
-    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
-    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY)
+    MetricFactor = 1.0 + 2 × 0.1 = 1.2
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.5 × 1.2 × 1.02) = 18360
+    CU = 18360 / 100 = 183.60 CU
+    ```
+  </Accordion>
+  <Accordion title="Complex query: many fields selected">
+    ```
+    BaseCost = 2000, LimitFactor = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    ComplexityFactor = min(1.0 + (250/50) × 0.2, 1.5) = 1.5 (capped)
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.5) = 3000
+    CU = 3000 / 100 = 30.00 CU
     ```
   </Accordion>
 </AccordionGroup>
 
----
-
-## Base Cost per Cube
-
-| Cube | Base Cost (CU) | Notes |
-|:-----|:---------------|:------|
-| **DEXTrades** | 50 | Largest table with most dimensions |
-| **DEXTradeByTokens** | 50 | Same underlying data as DEXTrades |
-| **DEXPoolEvents** | 30 | Liquidity events |
-| **Pairs** | 30 | OHLC candlestick data (Trading group) |
-| **Tokens** | 30 | Token trade statistics (Trading group) |
-| **WalletTokenPnL** | 25 | DWS summary |
-| **Transfers** | 15 | |
-| **BalanceUpdates** | 10 | |
-| **Events**, **Calls** | 20 | EVM-only trace/event data |
-| **Instructions** | 20 | Solana-only |
-| **PredictionTrades** | 20 | Prediction market data |
-| All other Cubes | 20 | Default base cost |
-
-<Note>
-Base costs reflect query complexity and the underlying data volume of each Cube. The actual Cube name reported in `extensions.credits` is determined by the server — always use the response value as the authoritative billing reference.
-</Note>
+<Tip>
+Since CU is dynamically calculated, the best way to know the exact cost of a query is to check the `extensions.credits` field in the response, or monitor the CU indicator in the IDE status bar.
+</Tip>
 
 ---
 
@@ -91,15 +89,18 @@ Every GraphQL response includes credit consumption details in the `extensions` f
 ```json
 {
   "data": {
-    "DEXTrades": [ ... ]
+    "Solana": {
+      "DEXTrades": [ ... ]
+    }
   },
   "extensions": {
     "credits": {
-      "total": 50,
+      "total": 20.4,
+      "unit": "CU",
       "cubes": [
         {
           "cube": "DEXTrades",
-          "credits": 50,
+          "credits": 20.4,
           "row_count": 10
         }
       ]
@@ -110,14 +111,15 @@ Every GraphQL response includes credit consumption details in the `extensions` f
 
 | Field | Type | Description |
 |:------|:-----|:------------|
-| `total` | `Int` | Total credits consumed by the entire query |
+| `total` | `Float` | Total CU consumed by the entire query |
+| `unit` | `String` | Always `"CU"` |
 | `cubes` | `Array` | Per-Cube breakdown |
-| `cubes[].cube` | `String` | Cube name |
-| `cubes[].credits` | `Int` | Credits charged for this Cube |
+| `cubes[].cube` | `String` | Cube name as used by the billing engine |
+| `cubes[].credits` | `Float` | CU charged for this Cube |
 | `cubes[].row_count` | `Int` | Number of rows returned |
 
 <Note>
-The `extensions.credits` field is present when credits are consumed (i.e., `total > 0`). Queries that return zero rows still incur the base cost.
+The `extensions.credits` field is present when credits are consumed (i.e., `total > 0`). Queries that return zero rows are not charged.
 </Note>
 
 ---
@@ -126,7 +128,7 @@ The `extensions.credits` field is present when credits are consumed (i.e., `tota
 
 The [GraphQL IDE](https://ide.chainstream.io) status bar displays credit consumption after each query:
 
-- **CU indicator**: Displays the total CU consumed (e.g., `50 CU`)
+- **CU indicator**: Displays the total CU consumed
 - **Latency**: Request duration in milliseconds
 - **Response size**: Payload size
 
@@ -136,10 +138,10 @@ The [GraphQL IDE](https://ide.chainstream.io) status bar displays credit consump
 
 <CardGroup cols={3}>
   <Card title="Select Fewer Fields" icon="minimize">
-    Only request the dimensions you need. Fewer fields means less data processed.
+    Only request the dimensions you need. The ComplexityFactor increases with the number of selected fields.
   </Card>
   <Card title="Use Appropriate Limits" icon="gauge">
-    Keep `limit.count` as low as practical. Credits scale with `ceil(limit / 100)`.
+    Keep `limit.count` as low as practical. The LimitFactor doubles for every 100 additional rows.
   </Card>
   <Card title="Use Pre-aggregated Cubes" icon="layer-group">
     For aggregated data, prefer DWM/DWS Cubes (Pairs, Tokens, TokenHolders) over running metrics on DWD Cubes (DEXTrades).

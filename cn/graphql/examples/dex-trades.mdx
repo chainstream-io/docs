@@ -1,270 +1,276 @@
 ---
-title: "DEX 交易"
-description: "DEX 交易数据的查询示例"
+title: "DEX Trades"
+description: "Query examples for DEX trading data"
 icon: "arrow-right-arrow-left"
 ---
 
-**DEXTrades** Cube 包含逐笔 DEX 兑换事件，是粒度最细的交易数据。可用它查询单笔交易、分析钱包活动、追踪代币价格并找出头部交易者。
+**DEXTrades** Cube 包含逐笔 DEX 兑换事件，是粒度最细的成交数据。可用于查询单笔交易、分析钱包行为、跟踪代币价格以及查找头部交易者。
 
 <Note>
-以下示例均使用 `network: sol`（Solana）。其他受支持的链请改为 `eth`、`bsc` 或 `polygon`。
+以下示例均使用 `network: sol`（Solana）。其他支持的链可改为 `eth`、`bsc` 或 `polygon`。
 </Note>
 
 ---
 
-## How do I get the latest DEX trades?
+## 如何获取最新的 DEX 成交？
 
-获取 Solana 上最近 10 笔 DEX 交易，包含区块信息、交易哈希、买卖明细及 DEX 协议。
+获取 Solana 上最近 10 笔 DEX 成交，包含区块信息、交易哈希、买卖明细及 DEX 协议。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Slot }
-    Transaction { Hash }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
-        PriceInUSD
-        Account { Owner }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Slot }
+      Transaction { Hash }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+          PriceInUSD
+          Account { Owner }
+        }
+        Sell {
+          Currency { MintAddress }
+          Amount
+          Account { Owner }
+        }
+        Dex { ProgramAddress, ProtocolName }
       }
-      Sell {
-        Currency { MintAddress }
-        Amount
-        Account { Owner }
-      }
-      Dex { ProgramAddress, ProtocolName }
+      Pool { Address }
     }
-    Pool { Address }
   }
 }
 ```
 
 <Tip>
-[在 GraphQL IDE 中打开](https://ide.chainstream.io) — 将上方查询粘贴到 IDE 中即可交互式运行，享受自动补全和 Schema 探索。
+[在 GraphQL IDE 中打开](https://ide.chainstream.io) — 将上方查询粘贴进去即可交互运行，并享受自动补全与 schema 浏览。
 </Tip>
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Block.Time` | 区块时间戳（ISO 8601） |
     | `Block.Slot` | Solana slot 编号（Solana 特有） |
-    | `Transaction.Hash` | 链上交易哈希 — 可在浏览器中据此查询交易 |
+    | `Transaction.Hash` | 链上交易哈希 — 可在浏览器中用其查询该笔交易 |
     | `Trade.Buy.Currency.MintAddress` | 买入资产的代币地址 |
     | `Trade.Buy.PriceInUSD` | 成交时买入代币的 USD 价格 |
     | `Trade.Buy.Account.Owner` | 买方钱包地址 |
     | `Trade.Dex.ProtocolName` | DEX 名称（如 Raydium、Orca、Jupiter） |
-    | `Pool.Address` | 成交所在流动性池地址 |
+    | `Pool.Address` | 成交所在的流动性池地址 |
   </Accordion>
-  <Accordion title="自定义技巧">
+  <Accordion title="自定义提示">
     - **切换链**：将 `network: sol` 改为 `network: eth`、`network: bsc` 或 `network: polygon`
     - **增加条数**：将 `count: 10` 提高到最多 `10000`
-    - **时间过滤**：增加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定时间范围
-    - **按 DEX 过滤**：增加 `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` 限定协议
+    - **增加时间过滤**：添加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定时间范围
+    - **按 DEX 过滤**：添加 `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` 限定为某协议
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get trades for a specific token?
+## 如何获取某个代币的成交？
 
-通过 `tokenAddress` 选择器传入地址，获取某一代币的交易。
+通过 `tokenAddress` 选择器传入代币地址，即可查询该代币相关成交。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Trade {
-      Buy { Amount, PriceInUSD, Account { Owner } }
-      Sell { Currency { MintAddress }, Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Trade {
+        Buy { Amount, PriceInUSD, Account { Owner } }
+        Sell { Currency { MintAddress }, Amount }
+        Dex { ProtocolName }
+      }
+      Pool { Address }
     }
-    Pool { Address }
   }
 }
 ```
 
 <Tip>
-将 `TOKEN_ADDRESS` 替换为实际代币 mint 地址（例如 Solana 上 USDC 为 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）。可按名称查地址时参见 [代币元数据](/cn/graphql/examples/ohlc-stats#how-do-i-look-up-token-information)。
+将 `TOKEN_ADDRESS` 替换为实际代币 mint 地址（例如 Solana 上 USDC 为 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）。按名称查地址见 [代币元数据](/cn/graphql/examples/ohlc-stats#how-do-i-look-up-token-information)。
 </Tip>
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Trade.Buy.Amount` | 买入代币数量 |
-    | `Trade.Buy.PriceInUSD` | 成交时单价（USD） |
+    | `Trade.Buy.PriceInUSD` | 成交时的单价（USD） |
     | `Trade.Buy.Account.Owner` | 执行买入的钱包 |
-    | `Trade.Sell.Currency.MintAddress` | 卖出资产代币地址（交易对的另一侧） |
+    | `Trade.Sell.Currency.MintAddress` | 卖出资产的代币地址（交易对的另一侧） |
     | `Trade.Dex.ProtocolName` | DEX 协议名称 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **按最小金额过滤**：增加 `where: {Trade: {Buy: {Amount: {gt: 1000}}}}` 只看大额交易
-    - **按价格区间过滤**：增加 `where: {Trade: {Buy: {PriceInUSD: {gte: 0.001, lte: 1.0}}}}` 限定价格带
-    - **排除可疑交易**：默认已应用 `IsSuspect = false` 过滤 — bot/MEV 交易已排除
+  <Accordion title="自定义提示">
+    - **按最小数量过滤**：添加 `where: {Trade: {Buy: {Amount: {gt: 1000}}}}` 仅看大额成交
+    - **按价格区间过滤**：添加 `where: {Trade: {Buy: {PriceInUSD: {gte: 0.001, lte: 1.0}}}}` 限定价格带
+    - **排除可疑成交**：默认已应用 `IsSuspect = false` 过滤 — 机器人/MEV 类成交已排除
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get all trades by a wallet?
+## 如何获取某个钱包的全部成交？
 
-获取某钱包地址的全部交易。
+按钱包地址查询其参与的全部成交。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 20}
-    walletAddress: {is: "WALLET_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Trade {
-      Buy { Currency { MintAddress }, Amount, PriceInUSD }
-      Sell { Currency { MintAddress }, Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 20}
+      walletAddress: {is: "WALLET_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Trade {
+        Buy { Currency { MintAddress }, Amount, PriceInUSD }
+        Sell { Currency { MintAddress }, Amount }
+        Dex { ProtocolName }
+      }
+      Transaction { Hash, FeeInNative }
     }
-    Transaction { Hash, FeeInNative }
   }
 }
 ```
 
 <Info>
-`walletAddress` 选择器会匹配该钱包作为买方或卖方的交易。
+`walletAddress` 选择器会匹配该钱包作为买方或卖方的成交。
 </Info>
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Trade.Buy.Currency.MintAddress` | 买入的代币 |
     | `Trade.Sell.Currency.MintAddress` | 卖出的代币 |
-    | `Transaction.FeeInNative` | 原生代币支付的手续费（Solana 上为 SOL） |
+    | `Transaction.FeeInNative` | 以原生代币计价的 Gas 费（Solana 上为 SOL） |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **单一代币**：与 `tokenAddress: {is: "TOKEN_ADDRESS"}` 组合，只看该钱包对某代币的交易
-    - **时间窗口**：增加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定近期
-    - **提高 limit**：设 `count: 100` 拉取更多历史（最大 10,000）
+  <Accordion title="自定义提示">
+    - **限定单一代币**：与 `tokenAddress: {is: "TOKEN_ADDRESS"}` 组合，只看该钱包对某代币的成交
+    - **增加时间窗口**：添加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定近期成交
+    - **提高 limit**：将 `count` 设为 `100` 以拉取更多历史（最大 10,000）
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get a token's current price?
+## 如何获取代币当前价格？
 
-从最近一笔非可疑交易获取代币最新价格。
+从最近一笔非可疑成交中获取代币最新价格。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 1}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    where: {IsSuspect: {eq: false}}
-    orderBy: Block_Time_DESC
-  ) {
-    Trade {
-      Buy { PriceInUSD, PriceInNative }
+  Solana {
+    DEXTrades(
+      limit: {count: 1}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      where: {IsSuspect: {eq: false}}
+      orderBy: {descending: Block_Time}
+    ) {
+      Trade {
+        Buy { PriceInUSD, PriceInNative }
+      }
+      Block { Time }
     }
-    Block { Time }
   }
 }
 ```
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Trade.Buy.PriceInUSD` | 最近一笔成交的 USD 价格 |
     | `Trade.Buy.PriceInNative` | 以链原生代币（SOL、ETH、BNB）计价的价格 |
-    | `Block.Time` | 成交时间戳 — 表示价格有多新 |
+    | `Block.Time` | 成交时间戳 — 反映价格有多新 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **多条价格**：提高 `count` 获取多笔近期价格用于平均
-    - **跨链**：使用 `network: eth` 获取该链上同一代币价格（若存在）
+  <Accordion title="自定义提示">
+    - **多条价格**：增大 `count` 可得到多笔近期价格用于平均等用途
+    - **跨链**：使用 `network: eth` 可在以太坊上查询同一代币价格（若该链存在该代币）
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-若需要可靠的代币价格时间序列，可考虑改用 [Pairs](/cn/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cube — 提供预计算的 K 线数据，含每分钟 open/high/low/close。
+若需要更可靠的代币价格时间序列，可考虑使用 [Pairs](/cn/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cube — 其提供预计算的 K 线数据，含每分钟 open/high/low/close。
 </Tip>
 
 ---
 
-## How do I find the top traders for a token?
+## 如何查找某代币的头部交易者？
 
-通过聚合找出某代币的头部交易者。本查询按买方钱包分组，返回总买入笔数与成交量。
+通过聚合查找某代币的头部交易者。以下查询按买方钱包分组，返回总买入笔数与成交量。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 100}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    where: {IsSuspect: {eq: false}}
-  ) {
-    Trade {
-      Buy {
-        Account { Owner }
-        Amount
-        PriceInUSD
+  Solana {
+    DEXTrades(
+      limit: {count: 100}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      where: {IsSuspect: {eq: false}}
+    ) {
+      Trade {
+        Buy {
+          Account { Owner }
+          Amount
+          PriceInUSD
+        }
       }
+      count
+      sum(of: Trade_Buy_Amount)
     }
-    count
-    sum(of: Trade_Buy_Amount)
   }
 }
 ```
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Trade.Buy.Account.Owner` | 钱包地址（分组键） |
-    | `count` | 该钱包成交笔数 |
-    | `sum(of: Trade_Buy_Amount)` | 该钱包买入代币总量 |
+    | `count` | 该钱包的成交笔数 |
+    | `sum(of: Trade_Buy_Amount)` | 该钱包买入的代币总量 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **按成交量排序**：结果按维度字段分组 — 选更少维度可做更高层聚合
-    - **限时排行榜**：增加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定时段
-    - **排除小额**：在 `where` 中增加 `Trade: {Buy: {Amount: {gt: 100}}}`
+  <Accordion title="自定义提示">
+    - **按成交量排序**：结果会按维度字段分组 — 减少维度可得到更高层级的聚合
+    - **限定时间段的排行榜**：添加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定周期
+    - **排除小额成交**：在 `where` 中加入 `Trade: {Buy: {Amount: {gt: 100}}}`
   </Accordion>
 </AccordionGroup>
 
 <Info>
-在同时选择度量字段（`count`、`sum`）与维度字段时，API 会按所选维度自动分组。详见 [Metrics & Aggregation](/cn/graphql/schema/metrics-aggregation)。
+当指标字段（`count`、`sum`）与维度字段同时出现时，API 会按所选维度自动分组。完整说明见 [指标与聚合](/cn/graphql/schema/metrics-aggregation)。
 </Info>
 
 ---
 
 ## 多链示例
 
-以下查询在所有支持链上同样适用 — 只需修改 `network` 参数。
+以下查询在所有支持的链上结构相同 — 只需修改 `network` 参数。
 
 <Tabs>
   <Tab title="Solana">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Slot }
-    Trade {
-      Buy { Currency { MintAddress }, PriceInUSD }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Slot }
+      Trade {
+        Buy { Currency { MintAddress }, PriceInUSD }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -273,15 +279,16 @@ query {
   <Tab title="Ethereum">
 ```graphql
 query {
-  DEXTrades(
-    network: eth
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Height }
-    Trade {
-      Buy { Currency { MintAddress }, PriceInUSD }
-      Dex { ProtocolName }
+  EVM(network: eth) {
+    DEXTrades(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Height }
+      Trade {
+        Buy { Currency { MintAddress }, PriceInUSD }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -290,15 +297,16 @@ query {
   <Tab title="BSC">
 ```graphql
 query {
-  DEXTrades(
-    network: bsc
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time, Height }
-    Trade {
-      Buy { Currency { MintAddress }, PriceInUSD }
-      Dex { ProtocolName }
+  EVM(network: bsc) {
+    DEXTrades(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time, Height }
+      Trade {
+        Buy { Currency { MintAddress }, PriceInUSD }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -308,19 +316,19 @@ query {
 
 ---
 
-## 下一步
+## 后续步骤
 
 <CardGroup cols={2}>
-  <Card title="Transfers" icon="paper-plane" href="/cn/graphql/examples/transfers">
+  <Card title="转账" icon="paper-plane" href="/cn/graphql/examples/transfers">
     查询链上代币转账数据。
   </Card>
-  <Card title="Balances & Holders" icon="wallet" href="/cn/graphql/examples/balance-holders">
-    查询钱包余额、余额历史与头部持有者。
+  <Card title="余额与持币者" icon="wallet" href="/cn/graphql/examples/balance-holders">
+    查询钱包余额、余额历史与头部持币者。
   </Card>
-  <Card title="Pools & Liquidity" icon="droplet" href="/cn/graphql/examples/pools-liquidity">
-    探索 DEX 池与流动性数据。
+  <Card title="池子与流动性" icon="droplet" href="/cn/graphql/examples/pools-liquidity">
+    探索 DEX 池子与流动性数据。
   </Card>
-  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
+  <Card title="OHLC 与统计" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
     获取 K 线、成交统计、市值与代币元数据。
   </Card>
 </CardGroup>

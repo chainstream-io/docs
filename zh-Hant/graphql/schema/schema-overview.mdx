@@ -1,29 +1,29 @@
 ---
-title: "Schema 概覽"
-description: "ChainStream GraphQL Schema 的結構說明 — Chain Group、Cube 欄位、生成型別與 introspection"
+title: "Schema Overview"
+description: "How the ChainStream GraphQL schema is structured — Chain Groups, Cube fields, generated types, and introspection"
 icon: "sitemap"
 ---
 
-## 動態 Schema 生成
+## 動態 Schema 產生
 
-ChainStream GraphQL Schema 在啟動時由 **activecube-rs**（Rust 庫）**動態生成**，該庫將 **Cube** 定義編譯為型別完整的 [async-graphql](https://github.com/async-graphql/async-graphql) Schema。每個 Cube 對應一個由 OLAP 表支撐的分析資料模型，activecube-rs 會自動生成：
+ChainStream GraphQL schema 在啟動時由 **activecube-rs**（Rust 函式庫）**動態產生**，將 **Cube** 定義編譯為完整型別的 [async-graphql](https://github.com/async-graphql/async-graphql) schema。每個 Cube 對應由 OLAP 表支撐的分析資料模型，activecube-rs 會自動產生：
 
-- 該 Cube 的 **頂層 Query 欄位**（巢狀在其 Chain Group 下）
-- 表示可選維度的 **Record 型別**（`{Cube}Record`）
-- 與維度層級匹配的 **Filter 輸入**（`{Cube}Filter`）
-- 每個維度路徑的 ASC/DESC 變體組成的 **OrderBy 列舉**（`{Cube}OrderBy`）
+- Cube 的**頂層 Query 欄位**（巢狀於其 Chain Group 下）
+- **Record 型別**（`{Cube}Record`），代表可選取的維度
+- **Filter 輸入**（`{Cube}Filter`），結構對應維度階層
+- **OrderBy 列舉**（`{Cube}OrderBy`），涵蓋各維度路徑的升序／降序變體
 
-因此 Schema 始終與底層資料模型一致，無需維護手寫的 SDL 檔案。
+因此 schema 永遠與底層資料模型同步——無需手寫 SDL 維護。
 
 <Info>
-由於 Schema 由 Cube 定義生成，在 Rust 中新增任意資料模型後，部署即可在 GraphQL 端點中自動反映。
+由於 schema 自 Cube 定義產生，Rust 中新增的任何資料模型在部署後都會自動反映於 GraphQL 端點。
 </Info>
 
 ---
 
-## 根 Query 結構
+## 根查詢結構
 
-根查詢型別名為 `ChainStream`。Cube 按三個 **Chain Group** 組織，各自作為頂層欄位暴露：
+根查詢型別名為 `ChainStream`。Cube 依三個 **Chain Groups** 組織，各為頂層欄位：
 
 ```graphql
 type ChainStream {
@@ -35,14 +35,14 @@ type ChainStream {
     Transactions(...): [TransactionsRecord!]!
     Events(...): [EventsRecord!]!
     Calls(...): [CallsRecord!]!
-    # ... 更多 EVM Cube
+    # ... more EVM Cubes
   }
 
   Solana(dataset: Dataset, aggregates: Aggregates) {
     DEXTrades(...): [DEXTradesRecord!]!
     Instructions(...): [InstructionsRecord!]!
     DEXOrders(...): [DEXOrdersRecord!]!
-    # ... 更多 Solana Cube
+    # ... more Solana Cubes
   }
 
   Trading(dataset: Dataset, aggregates: Aggregates) {
@@ -52,46 +52,46 @@ type ChainStream {
 }
 ```
 
-不存在 `Mutation` 或 `Subscription` 型別 — GraphQL API 為只讀分析查詢。
+沒有 `Mutation` 或 `Subscription` 型別——GraphQL API 僅供唯讀分析查詢。
 
 ---
 
-## Chain Group
+## Chain Groups
 
-Cube 按目標區塊鏈生態分為三組：
+Cube 依目標區塊鏈生態分成三組：
 
-| Chain Group | `network` 引數 | 可用網路 | 說明 |
+| Chain Group | `network` 參數 | 可用網路 | 說明 |
 |:--|:--|:--|:--|
-| **EVM** | 必填 | `eth`、`bsc`、`polygon` | 適用於所有 EVM 相容鏈的共享 Cube |
-| **Solana** | 不需要 | `sol`（隱式） | Solana 專屬 Cube，含鏈特有的 Instructions、DEXOrders 等 |
-| **Trading** | 不需要 | 跨鏈（`sol`、`eth`、`bsc`） | 預聚合交易分析（OHLC K 線、代幣統計），資料內含 `chain` 維度 |
+| **EVM** | 必填 | `eth`、`bsc`、`polygon` | 所有 EVM 相容鏈共用的 Cube |
+| **Solana** | 不需要 | `sol`（隱含） | Solana 專用 Cube（含 Instructions、DEXOrders 等） |
+| **Trading** | 不需要 | 跨鏈（`sol`、`eth`、`bsc`） | 預先聚合的交易分析（OHLC K 線、代幣統計），內含 `chain` 維度 |
 
 <Note>
-**EVM** 組需要 `network` 引數來選擇要查詢的鏈。**Solana** 和 **Trading** 不需要 `network` 引數 — Solana 為隱式，Trading 資料內包含 `chain` 維度。
+**EVM** 群組必須傳入 `network` 以選擇鏈。**Solana** 與 **Trading** 不需要 `network`——Solana 為隱含，Trading 則在資料內含 `chain` 維度。
 </Note>
 
-詳見 [Chain Groups](/zh-Hant/graphql/schema/chain-groups) 瞭解每個組包含哪些 Cube。
+完整各群組所含 Cube 請見 [Chain Groups](/zh-Hant/graphql/schema/chain-groups)。
 
 ---
 
-## Chain Group 引數
+## Chain Group 參數
 
-每個 Chain Group 接受兩個可選引數，控制資料來源行為：
+每個 Chain Group 接受兩個可選參數，控制資料來源行為：
 
 ### Dataset
 
-`dataset` 引數控制查詢的資料時間範圍：
+`dataset` 控制查詢資料的時間範圍：
 
 | 值 | 說明 |
-|:---|:-----|
-| `combined` | 全量 — 同時查詢近期與歷史資料 **（預設）** |
+|:------|:------------|
+| `combined` | 完整區間——同時查詢近期與歷史資料**（預設）** |
 | `realtime` | 僅近期資料（約最近 24 小時） |
-| `archive` | 歷史資料（至保留期限 TTL） |
+| `archive` | 歷史資料，上限為保留 TTL |
 
 ```graphql
 query {
   Solana(dataset: realtime) {
-    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block { Time }
       Trade { Buy { Amount } }
     }
@@ -101,13 +101,13 @@ query {
 
 ### Aggregates
 
-`aggregates` 引數控制是否使用預聚合（DWM/DWS）表：
+`aggregates` 控制是否使用預先聚合（DWM／DWS）表：
 
 | 值 | 說明 |
-|:---|:-----|
-| `yes` | 優先使用預聚合表 **（適用 Cube 的預設行為）** |
+|:------|:------------|
+| `yes` | 在可用時優先使用預先聚合表**（適用 Cube 的預設）** |
 | `no` | 僅使用原始明細表 |
-| `only` | 僅使用預聚合表（更快但欄位有限） |
+| `only` | 僅使用預先聚合表（較快但欄位較受限） |
 
 ```graphql
 query {
@@ -125,21 +125,21 @@ query {
 ```
 
 <Tip>
-詳見 [Dataset 與 Aggregates](/zh-Hant/graphql/schema/dataset-aggregates) 瞭解用法、支援的表與效能指南。
+詳細用法、支援的表與效能建議請見 [Dataset & Aggregates](/zh-Hant/graphql/schema/dataset-aggregates)。
 </Tip>
 
 ---
 
-## 通用引數模式
+## 常見參數模式
 
-在 Chain Group 內部，每個 Cube 欄位接受同一套標準引數，以及可選的 Cube 專屬 **selectors**：
+在 Chain Group 內，每個 Cube 欄位接受同一組標準參數，外加可選的 Cube 專屬 **selectors**：
 
-| Argument | Type | Required | Description |
+| 參數 | 型別 | 必填 | 說明 |
 |:---------|:-----|:---------|:------------|
-| `where` | `{Cube}Filter` | No | 與維度層級巢狀匹配的 Filter 物件 |
-| `limit` | `LimitInput` | No | 分頁：`{count: Int, offset: Int}` |
-| `orderBy` | `{Cube}OrderBy` | No | 排序列舉（`{Path}_ASC` / `{Path}_DESC`） |
-| *selectors* | Filter input | No | 快捷篩選（例如 `tokenAddress: {is: "..."}`） |
+| `where` | `{Cube}Filter` | 否 | 巢狀篩選物件，對應維度階層 |
+| `limit` | `LimitInput` | 否 | 分頁：`{count: Int, offset: Int}` |
+| `orderBy` | `{Cube}OrderBy` | 否 | 排序列舉（`{Path}_ASC`／`{Path}_DESC`） |
+| *selectors* | Filter 輸入 | 否 | 捷徑篩選（例如 `tokenAddress: {is: "..."}`） |
 
 ```graphql
 query {
@@ -148,7 +148,7 @@ query {
       tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
       where: { Block: { Time: { after: "2026-01-01T00:00:00Z" } } }
       limit: { count: 50, offset: 0 }
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Trade { Buy { Amount PriceInUSD } }
@@ -161,32 +161,32 @@ query {
 
 ```graphql
 input LimitInput {
-  count: Int   # 返回行数
-  offset: Int  # 跳过行数（用于分页）
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip (for pagination)
 }
 ```
 
-預設 `count` 因 Cube 而異（常見為 25）。多數 Cube 最大為 10,000。
+預設 `count` 依 Cube 而異（多為 25）。多數 Cube 上限為 10,000。
 
 ---
 
-## 每個 Cube 的生成型別
+## 每個 Cube 的產生型別
 
-對每個 Cube，activecube-rs 會生成三個配套型別：
+對每個 Cube，activecube-rs 會產生三個配套型別：
 
 <CardGroup cols={3}>
   <Card title="Record 型別" icon="table">
-    `{Cube}Record` — 包含所有可選維度與指標的返回型別。欄位結構映象 Cube 的維度層級。
+    `{Cube}Record`——回傳型別，含所有可選維度與指標。欄位結構鏡射 Cube 的維度階層。
   </Card>
   <Card title="Filter 輸入" icon="filter">
-    `{Cube}Filter` — 巢狀輸入物件，每個維度對映到 Filter 原語（`StringFilter`、`IntFilter`、`DateTimeFilter` 等）。
+    `{Cube}Filter`——巢狀輸入物件，各維度對應篩選 primitive（`StringFilter`、`IntFilter`、`DateTimeFilter` 等）。
   </Card>
   <Card title="OrderBy 列舉" icon="arrow-down-a-z">
-    `{Cube}OrderBy` — 每個維度路徑在 ASC 與 DESC 兩個方向上的列舉變體（例如 `Block_Time_ASC`、`Trade_Buy_Amount_DESC`）。
+    `{Cube}OrderBy`——各維度路徑在升序與降序的列舉變體（例如 `Block_Time_ASC`、`Trade_Buy_Amount_DESC`）。
   </Card>
 </CardGroup>
 
-**以 DEXTrades 為例：**
+**DEXTrades 範例：**
 
 ```graphql
 # Record type (return shape)
@@ -224,7 +224,7 @@ enum DEXTradesOrderBy {
 
 ## Introspection
 
-Schema 支援標準 GraphQL introspection。可使用 `__schema` 與 `__type` 查詢探索型別、欄位與引數：
+Schema 支援標準 GraphQL introspection。可使用 `__schema` 與 `__type` 查詢探索型別、欄位與參數：
 
 <Tabs>
   <Tab title="列出所有 Cube">
@@ -242,7 +242,7 @@ query {
 }
 ```
   </Tab>
-  <Tab title="檢查某個 Cube 型別">
+  <Tab title="檢視某 Cube 型別">
 ```graphql
 query {
   __type(name: "DEXTradesRecord") {
@@ -271,7 +271,7 @@ query {
 </Tabs>
 
 <Tip>
-[GraphQL IDE](https://ide.chainstream.io) 會自動拉取 introspection Schema 以提供自動補全與內聯文件。無需手寫 introspection 查詢即可互動式瀏覽完整 Schema。
+[GraphQL IDE](https://ide.chainstream.io) 會自動抓取 introspection schema 以驅動自動完成與內嵌文件。你可互動探索完整 schema，無須手寫 introspection 查詢。
 </Tip>
 
 ---
@@ -279,20 +279,20 @@ query {
 ## 下一步
 
 <CardGroup cols={2}>
-  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
-    瀏覽全部 25 個 Cube — 欄位、selectors 與數倉分層。
+  <Card title="Data Cubes" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+    瀏覽全部 25 個 Cube——欄位、selectors 與數倉層級。
   </Card>
   <Card title="Chain Groups" icon="layer-group" href="/zh-Hant/graphql/schema/chain-groups">
-    瞭解 EVM、Solana、Trading 三組的 Cube 分佈。
+    了解 EVM、Solana 與 Trading 三個 Chain Group 及其可用 Cube。
   </Card>
-  <Card title="Dataset 與 Aggregates" icon="database" href="/zh-Hant/graphql/schema/dataset-aggregates">
-    使用 `dataset` 和 `aggregates` 控制資料來源範圍與預聚合行為。
+  <Card title="Dataset & Aggregates" icon="database" href="/zh-Hant/graphql/schema/dataset-aggregates">
+    以 `dataset` 與 `aggregates` 控制資料範圍與預聚合行為。
   </Card>
   <Card title="篩選" icon="filter" href="/zh-Hant/graphql/schema/filtering">
-    學習如何用 `where` Filter 與 selector 快捷方式縮小查詢範圍。
+    學習 `where` 篩選與 selector 捷徑以縮小查詢範圍。
   </Card>
   <Card title="排序與分頁" icon="arrow-down-1-9" href="/zh-Hant/graphql/schema/ordering-pagination">
-    使用 `orderBy` 與 `limit` 對結果排序並分頁遍歷大資料集。
+    以 `orderBy` 與 `limit` 排序結果並分頁讀取大型資料集。
   </Card>
   <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
     在查詢中使用 `count`、`sum`、`avg`、`min`、`max`、`uniq` 聚合資料。

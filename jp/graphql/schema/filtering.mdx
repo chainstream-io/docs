@@ -1,70 +1,76 @@
 ---
-title: "フィルタリング"
-description: "セレクターショートカットとwhere引数を使用したクエリ結果のフィルタリング — オペレータ、ネストフィルタ、ORロジック、デフォルト"
+title: "Filtering"
+description: "Filter query results using selector shortcuts and the where argument — operators, nested filters, OR logic, and defaults"
 icon: "filter"
 ---
 
-ChainStream GraphQLでデータをフィルタリングする方法は2つあります：
+ChainStream GraphQL でデータを絞り込む方法は 2 つあります。
 
-1. **セレクターショートカット** — `tokenAddress`のようなトップレベル引数で、一般的なフィルタの便利な省略形を提供
-2. **`where`引数** — 全範囲のオペレータと任意のディメンションフィルタリングをサポートするネストされたフィルタオブジェクト
+1. **セレクター省略形** — `tokenAddress` のようなトップレベル引数で、よく使うフィルターを簡潔に書く
+2. **`where` 引数** — ネストしたフィルターオブジェクトで、すべての演算子と任意のディメンションによる絞り込みが可能
 
-同じクエリ内で両方を組み合わせることができます。
+<Warning>
+**ベストプラクティス: 必ず時間フィルターを付ける。** DWD（明細）Cube（DEXTrades、Transfers、BalanceUpdates など）では、`Block.Time` フィルターなしのクエリは非常に大きなテーブルパーティションをスキャンする可能性があります。`where: {Block: {Time: {after: "..."}}}` でスキャン範囲を限定し、OLAP エンジン上のメモリ制限を避けてください。
+</Warning>
+
+同じクエリで両方を組み合わせられます。
 
 ---
 
-## セレクターショートカット
+## セレクター省略形
 
-セレクターはCubeフィールドの**便利な引数**で、一般的な`where`フィルタパターンにマッピングされます。`where`フィールドと同じフィルタインプットタイプ（例：`is`、`in`、`like`などの`StringFilter`）を受け付けます。単純な文字列ではありません。
+セレクターは Cube フィールド上の**利便性のための引数**で、よく使う `where` パターンにマップされます。プレーン文字列ではなく、`where` のフィールドと同じフィルター入力型（例: `is`、`in`、`like` などを持つ `StringFilter`）を受け取ります。
 
-| セレクター | マッピング先 | 利用可能なCube |
+| セレクター | マップ先 | 利用可能な Cube |
 |:---------|:--------|:-------------|
-| `tokenAddress` | 各Cubeの主要トークンアドレスカラム | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens、DEXPoolEvents、TokenHolders |
-| `walletAddress` | ウォレット/アカウントオーナーアドレス | DEXTrades、WalletTokenPnL |
-| `poolAddress` | プールコントラクトアドレス | DEXTrades、DEXPools |
-| `senderAddress` | トランスファー送信者アドレス | Transfers |
-| `receiverAddress` | トランスファー受信者アドレス | Transfers |
-| `ownerAddress` | トークンアカウントオーナーアドレス | BalanceUpdates |
-| `dexProgram` | DEXプログラム/コントラクトアドレス | DEXTrades |
-| `date` | ブロックタイムスタンプ（DateTimeフィルタ） | DEXTrades、Transfers、BalanceUpdates、DEXPools |
+| `tokenAddress` | 各 Cube の主トークンアドレス列 | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens, DEXPoolEvents, TokenHolders |
+| `walletAddress` | ウォレット／アカウント所有者アドレス | DEXTrades, WalletTokenPnL |
+| `poolAddress` | プールコントラクトアドレス | DEXTrades, DEXPools |
+| `senderAddress` | 転送の送信元アドレス | Transfers |
+| `receiverAddress` | 転送の受信先アドレス | Transfers |
+| `ownerAddress` | トークンアカウント所有者アドレス | BalanceUpdates |
+| `dexProgram` | DEX プログラム／コントラクトアドレス | DEXTrades |
+| `date` | ブロックタイムスタンプ（DateTime フィルター） | DEXTrades, Transfers, BalanceUpdates, DEXPools |
 
-**以下の2つのクエリは同等です：**
+**次の 2 つのクエリは等価です。**
 
 <Tabs>
   <Tab title="セレクター使用">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
   </Tab>
-  <Tab title="whereフィルタ使用">
+  <Tab title="where フィルター">
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Trade: {
-        Buy: {
-          Currency: {
-            MintAddress: {
-              is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  Solana {
+    DEXTrades(
+      where: {
+        Trade: {
+          Buy: {
+            Currency: {
+              MintAddress: {
+                is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+              }
             }
           }
         }
       }
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
     }
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
   }
 }
 ```
@@ -72,14 +78,14 @@ query {
 </Tabs>
 
 <Tip>
-セレクターは完全一致だけでなくすべてのフィルタオペレータをサポートします。例えば、`tokenAddress: {in: ["ADDR_1", "ADDR_2"]}`は複数のトークンにマッチし、`date: {after: "2025-01-01T00:00:00Z"}`は時間でフィルタリングします。
+セレクターは完全一致だけでなく、すべてのフィルター演算子をサポートします。例: `tokenAddress: {in: ["ADDR_1", "ADDR_2"]}` で複数トークンにマッチし、`date: {after: "2025-01-01T00:00:00Z"}` で時間で絞れます。
 </Tip>
 
 ---
 
-## `where`引数
+## `where` 引数
 
-`where`引数は、Cubeのディメンション階層を反映するネストされたインプットオブジェクトを受け付けます。各リーフフィールドは型付きオペレータを持つ**フィルタプリミティブ**にマッピングされます。
+`where` 引数は、Cube のディメンション階層を反映したネストした入力オブジェクトを受け取ります。各リーフフィールドは、型付き演算子を持つ**フィルタープリミティブ**にマップされます。
 
 ### 構造
 
@@ -93,43 +99,44 @@ where: {
 }
 ```
 
-**例** — ブロック時間が特定の日付以降、かつ購入金額が1000以上のDEXTradesをフィルタ：
+**例** — ブロック時刻が指定日より後で、かつ買い数量が 1000 超の DEXTrades に絞る:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Block: { Time: { after: "2025-01-01T00:00:00Z" } }
-      Trade: { Buy: { Amount: { gt: 1000 } } }
+  Solana {
+    DEXTrades(
+      where: {
+        Block: { Time: { after: "2025-01-01T00:00:00Z" } }
+        Trade: { Buy: { Amount: { gt: 1000 } } }
+      }
+      limit: { count: 20 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
     }
-    limit: { count: 20 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
   }
 }
 ```
 
-`where`の同じレベルで複数のフィールドが指定された場合、**AND**ロジックで結合されます。
+`where` の同一レベルに複数フィールドがある場合、**AND** で結合されます。
 
 ---
 
-## フィルタプリミティブの型
+## フィルタープリミティブの型
 
-すべてのリーフディメンションは以下のフィルタインプットタイプのいずれかにマッピングされます：
+各リーフディメンションは、次のいずれかのフィルター入力型にマップされます。
 
 ### StringFilter
 
-アドレス、ハッシュ、プロトコル名などのテキストフィールド用。
+アドレス、ハッシュ、プロトコル名などのテキストフィールド向け。
 
-| オペレータ | 型 | 説明 |
+| 演算子 | 型 | 説明 |
 |:---------|:-----|:------------|
 | `is` | `String` | 完全一致 |
 | `not` | `String` | 不一致 |
-| `in` | `[String!]` | リスト内のいずれかの値にマッチ |
-| `notIn` | `[String!]` | リスト内のすべての値を除外 |
-| `like` | `String` | SQL LIKEパターンマッチング（`%`ワイルドカード） |
+| `in` | `[String!]` | リスト内のいずれかに一致 |
+| `notIn` | `[String!]` | リスト内の値をすべて除外 |
+| `like` | `String` | SQL LIKE パターン（`%` ワイルドカード） |
 
 ```graphql
 where: {
@@ -143,9 +150,9 @@ where: {
 
 ### IntFilter / FloatFilter
 
-金額、価格、カウントなどの数値フィールド用。
+数量、価格、件数などの数値フィールド向け。
 
-| オペレータ | 型 | 説明 |
+| 演算子 | 型 | 説明 |
 |:---------|:-----|:------------|
 | `eq` | `Number` | 等しい |
 | `ne` | `Number` | 等しくない |
@@ -153,8 +160,8 @@ where: {
 | `gte` | `Number` | 以上 |
 | `lt` | `Number` | より小さい |
 | `lte` | `Number` | 以下 |
-| `in` | `[Number!]` | リスト内のいずれかの値にマッチ |
-| `notIn` | `[Number!]` | リスト内のすべての値を除外 |
+| `in` | `[Number!]` | リスト内のいずれかに一致 |
+| `notIn` | `[Number!]` | リスト内の値をすべて除外 |
 
 ```graphql
 where: {
@@ -168,15 +175,15 @@ where: {
 
 ### DateTimeFilter
 
-タイムスタンプフィールド用。値はISO 8601文字列です。
+タイムスタンプフィールド向け。値は ISO 8601 文字列です。
 
-| オペレータ | 型 | 説明 |
+| 演算子 | 型 | 説明 |
 |:---------|:-----|:------------|
-| `after` | `DateTime` | このタイムスタンプ以降（排他的） |
-| `before` | `DateTime` | このタイムスタンプ以前（排他的） |
-| `since` | `DateTime` | このタイムスタンプ以降（包括的） |
-| `till` | `DateTime` | このタイムスタンプまで（包括的） |
-| `between` | `[DateTime!, DateTime!]` | 2つのタイムスタンプ間（両端包括的） |
+| `after` | `DateTime` | この時刻より後（排他的） |
+| `before` | `DateTime` | この時刻より前（排他的） |
+| `since` | `DateTime` | この時刻以降（包含） |
+| `till` | `DateTime` | この時刻まで（包含） |
+| `between` | `[DateTime!, DateTime!]` | 2 つの時刻の間（両端包含） |
 
 ```graphql
 where: {
@@ -187,16 +194,16 @@ where: {
 ```
 
 <Note>
-`after`/`before`は**排他的**（厳密な不等式）です。`since`/`till`は**包括的**です。`between`は2要素の配列を取り、両端が包括的です。
+`after` / `before` は**排他的**（狭義の不等号）。`since` / `till` は**包含**です。`between` は 2 要素の配列で、両端とも包含です。
 </Note>
 
 ### BoolFilter
 
-ブーリアンフィールド用。
+真偽フィールド向け。
 
-| オペレータ | 型 | 説明 |
+| 演算子 | 型 | 説明 |
 |:---------|:-----|:------------|
-| `eq` | `Boolean` | `true`または`false`に等しい |
+| `eq` | `Boolean` | `true` または `false` と等しい |
 
 ```graphql
 where: {
@@ -206,60 +213,62 @@ where: {
 
 ---
 
-## `any`によるORロジック
+## `any` による OR ロジック
 
-デフォルトでは、`where`内のすべての条件はANDで結合されます。ORロジックを表現するには、`any`配列フィールドを使用します — 各要素は完全なフィルタオブジェクトであり、**いずれか**にマッチするレコードが返されます。
+既定では `where` 内の条件はすべて AND で結合されます。OR を表すには `any` 配列フィールドを使います — 各要素は完全なフィルターオブジェクトで、**いずれか**に一致する行が返されます。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      any: [
-        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
-        { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
-      ]
-    }
-    limit: { count: 20 }
-  ) {
-    Trade {
-      Buy { Currency { MintAddress } Amount }
+  Solana {
+    DEXTrades(
+      where: {
+        any: [
+          { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_A" } } } } }
+          { Trade: { Buy: { Currency: { MintAddress: { is: "TOKEN_B" } } } } }
+        ]
+      }
+      limit: { count: 20 }
+    ) {
+      Trade {
+        Buy { Currency { MintAddress } Amount }
+      }
     }
   }
 }
 ```
 
 <Info>
-`any`は他のトップレベルの`where`フィールドと組み合わせることができます。`any`条件はOR結合された後、兄弟条件とAND結合されます。
+`any` は他のトップレベル `where` フィールドと併用できます。`any` 内の条件同士は OR で結合され、その結果が兄弟条件と AND で結合されます。
 </Info>
 
 ---
 
-## デフォルトフィルタ
+## 既定フィルター
 
-一部のCubeはデフォルトフィルタを自動的に適用します。`where`句でフィルタを明示的に設定することでオーバーライドできます。
+一部の Cube では既定フィルターが自動適用されます。`where` で明示的に設定すると上書きできます。
 
-| Cube | デフォルトフィルタ | 効果 |
+| Cube | 既定フィルター | 効果 |
 |:-----|:---------------|:-------|
-| DEXTrades | `IsSuspect = false` | デフォルトでボット/MEVトレードを除外 |
+| DEXTrades | `IsSuspect = false` | 既定でボット／MEV 取引を除外 |
 
-疑わしいトレードを**含める**には、フィルタを明示的に設定します：
+**疑わしい取引を含める**には、フィルターを明示します:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { IsSuspect: { eq: true } }
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount } }
-    IsSuspect
+  Solana {
+    DEXTrades(
+      where: { IsSuspect: { eq: true } }
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount } }
+      IsSuspect
+    }
   }
 }
 ```
 
-または`where`で`IsSuspect`を指定しないことでフィルタを完全に削除します — デフォルトの`false`が引き続き適用されます。疑わしいステータスに関係なく**すべての**トレードをクエリするには、ORを使用します：
+`where` に `IsSuspect` を書かないと、既定の `false` のままです。**疑わしさに関係なくすべての取引**を取得するには OR を使います:
 
 ```graphql
 where: {
@@ -272,44 +281,45 @@ where: {
 
 ---
 
-## セレクターと`where`の組み合わせ
+## セレクターと `where` の併用
 
-セレクターと`where`フィルタはANDで結合されます。セレクターで主要エンティティをフィルタし、`where`で追加の絞り込みを行えます：
+セレクターと `where` は AND で結合されます。主エンティティはセレクター、追加の絞り込みは `where` に書けます:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
-    where: {
-      Block: { Time: { after: "2025-03-01T00:00:00Z" } }
-      Trade: { Buy: { Amount: { gt: 100 } } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 50 }
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
+      where: {
+        Block: { Time: { after: "2025-03-01T00:00:00Z" } }
+        Trade: { Buy: { Amount: { gt: 100 } } }
+      }
+      orderBy: {descending: Block_Time}
+      limit: { count: 50 }
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
 ```
 
-このクエリは、購入金額が100を超えるSolana上のUSDCトレードの最新50件を時間降順で取得します。
+このクエリは、Solana 上の USDC で買い数量が 100 を超える直近 50 件の取引を、時刻の降順で取得します。
 
 ---
 
 ## 次のステップ
 
 <CardGroup cols={2}>
-  <Card title="ソートとページネーション" icon="arrow-down-1-9" href="/jp/graphql/schema/ordering-pagination">
-    `orderBy`と`limit`で結果をソートし、データをページネーション。
+  <Card title="並び順とページネーション" icon="arrow-down-1-9" href="/jp/graphql/schema/ordering-pagination">
+    `orderBy` と `limit` で結果を並べ替え、ページングします。
   </Card>
   <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
-    フィルタリングされたデータをcount、sum、avg、min、max、uniqで集計。
+    count、sum、avg、min、max、uniq でフィルター済みデータを集計します。
   </Card>
 </CardGroup>

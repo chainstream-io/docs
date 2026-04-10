@@ -30,17 +30,18 @@ The main editing area where you write GraphQL queries. This is where Monaco's au
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Currency { MintAddress } Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -53,16 +54,17 @@ Use the Variables panel to pass JSON variables to parameterized queries. This ke
 <Tabs>
   <Tab title="Query">
     ```graphql
-    query LatestTrades($network: Network!, $limit: Int!) {
-      DEXTrades(
-        network: $network
-        limit: {count: $limit}
-        orderBy: Block_Time_DESC
-      ) {
-        Block { Time }
-        Trade {
-          Buy { Currency { MintAddress } Amount PriceInUSD }
-          Sell { Currency { MintAddress } Amount }
+    query LatestTrades($limit: Int!) {
+      Solana {
+        DEXTrades(
+          limit: {count: $limit}
+          orderBy: {descending: Block_Time}
+        ) {
+          Block { Time }
+          Trade {
+            Buy { Currency { MintAddress } Amount PriceInUSD }
+            Sell { Currency { MintAddress } Amount }
+          }
         }
       }
     }
@@ -71,7 +73,6 @@ Use the Variables panel to pass JSON variables to parameterized queries. This ke
   <Tab title="Variables">
     ```json
     {
-      "network": "sol",
       "limit": 20
     }
     ```

@@ -1,28 +1,28 @@
 ---
-title: "查询编辑器"
-description: "基于 Monaco 的 GraphQL 编辑器：自动补全、语法高亮、多面板与实时执行查询"
+title: "Query Editor"
+description: "Monaco-powered GraphQL editor with autocomplete, syntax highlighting, panels, and real-time query execution"
 icon: "pen-to-square"
 ---
 
 ## Monaco 编辑器
 
-查询编辑器基于 [Monaco](https://microsoft.github.io/monaco-editor/) — 与 VS Code 同源 — 并配有 GraphQL language worker，提供：
+查询编辑器基于 [Monaco](https://microsoft.github.io/monaco-editor/) — 与 VS Code 同源 — 并配有 GraphQL 语言 worker，提供：
 
-- GraphQL 操作、字段、参数与指令的 **语法高亮**
-- **基于 schema 的自动补全** — 按 `Ctrl+Space` 查看当前 live schema 下可用的字段、参数与类型
+- **语法高亮**：GraphQL 操作、字段、参数与指令
+- **基于 schema 的自动补全** — 按 `Ctrl+Space` 查看基于实时 schema 的可用字段、参数与类型
 - **实时错误检测** — 无效字段名、缺少参数或类型不匹配时显示红色下划线与错误标记
-- 花括号、括号与字符串的 **括号匹配** 与 **自动闭合**
-- 便于批量修改的 **多光标编辑**
+- **括号匹配** 与 **自动闭合**：大括号、圆括号与字符串
+- **多光标编辑**：批量修改
 
 <Tip>
-自动补全会感知 schema。在某一 Cube（例如 `DEXTrades`）内输入时，建议列表中只会出现对该 Cube 合法的字段与参数。
+自动补全会感知 schema。在某一 Cube（如 `DEXTrades`）内输入时，建议列表中只会出现该 Cube 合法的字段与参数。
 </Tip>
 
 ---
 
 ## 编辑器面板
 
-编辑器区域在底部分为三个标签页，切换即可配置请求的不同部分。
+编辑区域底部有三个标签页，可在其间切换以配置请求的不同部分。
 
 ### Query 面板
 
@@ -30,17 +30,18 @@ icon: "pen-to-square"
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Currency { MintAddress } Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -48,21 +49,22 @@ query {
 
 ### Variables 面板
 
-在 Variables 面板中以 JSON 向带参数的查询传入变量。这样查询可复用 — 只需改变量值而无需改查询正文。
+通过 Variables 面板向参数化查询传入 JSON 变量。这样查询可复用 — 修改变量值而无需改动查询正文。
 
 <Tabs>
   <Tab title="Query">
     ```graphql
-    query LatestTrades($network: Network!, $limit: Int!) {
-      DEXTrades(
-        network: $network
-        limit: {count: $limit}
-        orderBy: Block_Time_DESC
-      ) {
-        Block { Time }
-        Trade {
-          Buy { Currency { MintAddress } Amount PriceInUSD }
-          Sell { Currency { MintAddress } Amount }
+    query LatestTrades($limit: Int!) {
+      Solana {
+        DEXTrades(
+          limit: {count: $limit}
+          orderBy: {descending: Block_Time}
+        ) {
+          Block { Time }
+          Trade {
+            Buy { Currency { MintAddress } Amount PriceInUSD }
+            Sell { Currency { MintAddress } Amount }
+          }
         }
       }
     }
@@ -71,7 +73,6 @@ query {
   <Tab title="Variables">
     ```json
     {
-      "network": "sol",
       "limit": 20
     }
     ```
@@ -80,7 +81,7 @@ query {
 
 ### Headers 面板
 
-配置随每次请求发送的 HTTP 请求头。Headers 面板 **默认显示**，并已预填 `X-API-KEY`。
+配置随每次请求发送的 HTTP 请求头。Headers 面板 **默认显示**，并已预置 `X-API-KEY` 请求头。
 
 ```json
 {
@@ -88,10 +89,10 @@ query {
 }
 ```
 
-可按需添加其他自定义请求头。所有请求头会作为 GraphQL 端点 POST 请求的一部分发送。
+可按需添加其他自定义请求头。所有请求头会随 POST 请求一并发送到 GraphQL 端点。
 
 <Note>
-`Content-Type: application/json` 会自动附带 — 无需手动设置。
+`Content-Type: application/json` 会自动添加 — 无需手动设置。
 </Note>
 
 ---
@@ -102,34 +103,34 @@ query {
 
 | 按钮 | 操作 | 说明 |
 |:--|:--|:--|
-| **Execute**（▶） | 运行查询 | 将当前查询（含 variables 与 headers）发送到 GraphQL 端点 |
+| **Execute** (▶) | 运行查询 | 将当前查询（含变量与请求头）发送到 GraphQL 端点 |
 | **Prettify** | 格式化查询 | 自动整理缩进与换行 |
 | **Copy** | 复制查询 | 将当前查询文本复制到剪贴板 |
-| **Merge** | 合并片段 | 将 inline fragments 合并为单一扁平查询 |
+| **Merge** | 合并片段 | 将内联片段合并为单一扁平查询 |
 | **Save Query** | 本地保存 | 以标题与可选标签保存当前查询 |
-| **Export Code** | 导出片段 | 按所选语言生成当前查询的代码片段 |
+| **Export Code** | 导出片段 | 为当前查询生成所选语言的代码片段 |
 
 ---
 
 ## 执行查询
 
-执行步骤：
+执行查询的步骤：
 
 1. 在编辑器中编写或加载查询
 2. 在 Headers 面板设置 `X-API-KEY`
-3. 点击工具栏中的 **Execute**（▶），或按 **Ctrl/Cmd+Enter**
+3. 点击工具栏 **Execute** (▶)，或按 **Ctrl/Cmd+Enter**
 
-响应显示在编辑器右侧 **Results Panel**，JSON 带完整语法高亮。若查询有误，会展示错误响应及错误信息与位置。
+响应显示在编辑器右侧 **Results Panel**，JSON 带完整语法高亮。若查询有误，会展示错误响应及错误信息与位置详情。
 
 ---
 
-## Results 面板
+## 结果面板
 
 结果面板展示 GraphQL 端点返回的 JSON，并提供：
 
 - JSON 键、字符串、数字与布尔值的 **语法高亮**
-- 用于浏览深层嵌套响应的 **可折叠节点**
-- 通过右键菜单 **复制响应**
+- 可折叠节点，便于浏览深层嵌套响应
+- 右键菜单支持 **复制响应**
 
 典型成功响应包含与查询结构对应的 `data` 对象，以及展示计费信息的 `extensions.credits` 对象。
 
@@ -137,17 +138,17 @@ query {
 
 ## 状态栏
 
-IDE 底部状态栏实时反馈查询执行情况：
+IDE 底部状态栏实时反馈查询执行状态：
 
-| 指示项 | 取值示例 | 说明 |
+| 指示项 | 取值 | 说明 |
 |:--|:--|:--|
 | **State** | `Ready` · `Executing...` · `Success` · `Error` | 当前请求生命周期状态 |
-| **Latency** | 如 `120ms` | 从发出请求到收到响应的往返时间 |
+| **Latency** | 如 `120ms` | 从发出请求到收到响应的往返耗时 |
 | **Size** | 如 `2.4 KB` | 响应体大小 |
-| **Credits** | 如 `8 CU` | 本次查询消耗的 Credit Units |
+| **Credits** | 如 `8 CU` | 本查询消耗的 Credit Units（CU） |
 
 <Info>
-Credit Units（CU）反映查询的计算成本。扫描更多数据或返回更大结果集会消耗更多 CU。详见 [计费与 Credits](/cn/graphql/billing/graphql-billing)。
+Credit Units（CU）反映查询的计算成本。扫描数据更多或返回结果更大的查询会消耗更多 CU。详见 [计费与额度](/cn/graphql/billing/graphql-billing)。
 </Info>
 
 ---
@@ -170,5 +171,5 @@ Credit Units（CU）反映查询的计算成本。扫描更多数据或返回更
 </div>
 
 <Tip>
-在 macOS 上，将 `Ctrl` 换为 `Cmd`。IDE 会检测操作系统并显示对应的修饰键。
+在 macOS 上，将 `Ctrl` 换为 `Cmd`。IDE 会自动检测操作系统并显示对应的修饰键。
 </Tip>

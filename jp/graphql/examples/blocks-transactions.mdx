@@ -1,23 +1,23 @@
 ---
-title: "ブロックとトランザクション"
-description: "Blocks、Transactions、Events、Calls などインフラ系 Cube のクエリ例"
+title: "Blocks & Transactions"
+description: "Query examples for Blocks, Transactions, Events, Calls, and other infrastructure Cubes"
 icon: "cube"
 ---
 
 ## 概要
 
-このページでは、ブロック・トランザクション・スマートコントラクトイベント・内部トレースなど、ブロックチェーン基盤の Cube に関するクエリ例を扱います。
+このページでは、ブロック、トランザクション、スマートコントラクトイベント、内部トレースなど、ブロックチェーン基盤に関する Cube のクエリ例を扱います。
 
 ---
 
-## Blocks
+## ブロック
 
 ### 最新ブロック（Solana）
 
 ```graphql
 query {
   Solana {
-    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    Blocks(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block {
         Time
         Slot
@@ -36,7 +36,7 @@ query {
 ```graphql
 query {
   EVM(network: eth) {
-    Blocks(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    Blocks(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block {
         Time
         Number
@@ -54,7 +54,7 @@ query {
 
 ---
 
-## Transactions
+## トランザクション
 
 ### アドレス別の直近トランザクション（Solana）
 
@@ -64,7 +64,7 @@ query {
     Transactions(
       signer: {is: "WALLET_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction {
@@ -86,7 +86,7 @@ query {
     Transactions(
       fromAddress: {is: "0xWALLET_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction {
@@ -104,9 +104,9 @@ query {
 
 ---
 
-## Events（EVM のみ）
+## イベント（EVM のみ）
 
-### コントラクトとトピックでイベントを絞り込む
+### コントラクトとトピックでイベントをフィルター
 
 ```graphql
 query {
@@ -114,7 +114,7 @@ query {
     Events(
       contractAddress: {is: "0xCONTRACT_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -129,7 +129,7 @@ query {
 }
 ```
 
-### イベントシグネチャ（Topic0）で絞り込む
+### イベントシグネチャ（Topic0）でフィルター
 
 ```graphql
 query {
@@ -137,7 +137,7 @@ query {
     Events(
       topic0: {is: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Transaction { Hash }
@@ -149,7 +149,7 @@ query {
 
 ---
 
-## Calls / Traces（EVM のみ）
+## コール / トレース（EVM のみ）
 
 ### コントラクトへの内部コール
 
@@ -159,7 +159,7 @@ query {
     Calls(
       toAddress: {is: "0xCONTRACT_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -179,7 +179,7 @@ query {
 
 ---
 
-## Instructions（Solana のみ）
+## インストラクション（Solana のみ）
 
 ### プログラムの直近インストラクション
 
@@ -189,7 +189,7 @@ query {
     Instructions(
       programId: {is: "PROGRAM_ADDRESS"}
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Signature }
@@ -206,7 +206,7 @@ query {
 
 ---
 
-## Rewards（Solana のみ）
+## リワード（Solana のみ）
 
 ### バリデータのステーキング報酬
 
@@ -216,7 +216,7 @@ query {
     Rewards(
       address: {is: "VALIDATOR_ADDRESS"}
       limit: {count: 50}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Reward {
@@ -234,7 +234,7 @@ query {
 
 ---
 
-## Miner Rewards（EVM のみ）
+## マイナー報酬（EVM のみ）
 
 ### ブロック報酬の内訳
 
@@ -243,7 +243,7 @@ query {
   EVM(network: eth) {
     MinerRewards(
       limit: {count: 20}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Reward {
@@ -265,10 +265,10 @@ query {
 ## 関連ドキュメント
 
 <CardGroup cols={2}>
-  <Card title="データ Cube" icon="cubes" href="/jp/graphql/schema/cubes">
+  <Card title="Data Cubes" icon="cubes" href="/jp/graphql/schema/cubes">
     Blocks、Transactions、Events、Calls を含むすべての Cube のフィールド構造の詳細。
   </Card>
-  <Card title="チェーングループ" icon="layer-group" href="/jp/graphql/schema/chain-groups">
-    EVM と Solana で利用できる Cube の違いを理解する。
+  <Card title="Chain Groups" icon="layer-group" href="/jp/graphql/schema/chain-groups">
+    EVM と Solana でどの Cube が利用可能かを理解する。
   </Card>
 </CardGroup>

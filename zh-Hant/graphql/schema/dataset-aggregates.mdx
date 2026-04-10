@@ -1,31 +1,31 @@
 ---
-title: "Dataset 與 Aggregates"
-description: "使用 dataset 和 aggregates 引數控制資料來源範圍與預聚合行為"
+title: "Dataset & Aggregates"
+description: "Control data source scope and pre-aggregation behavior with the dataset and aggregates parameters"
 icon: "database"
 ---
 
-## 概述
+## 概覽
 
-ChainStream GraphQL 中每個 Chain Group 都接受兩個可選引數，控制**查詢底層命中哪些表**。你可以據此在資料新鮮度、查詢速度與資料完整性之間做出權衡。
+ChainStream GraphQL 中，每個 Chain Group 都可接受兩個選填參數，用來控制**實際查詢的底層表**。可依情境在資料新鮮度、查詢速度與資料完整度之間取捨。
 
 ---
 
-## Dataset 引數
+## `dataset` 參數
 
-`dataset` 引數控制查詢的**資料時間範圍**。它決定查詢是命中實時表、歸檔表、還是二者兼查。
+`dataset` 參數控制所查資料的**時間範圍**。它決定查詢會打到即時表、歸檔表，或兩者皆查。
 
-| 值 | 說明 | 典型使用場景 |
-|:---|:-----|:-------------|
-| `combined` | 同時查詢實時和歸檔資料 **（預設）** | 需要全量範圍的通用查詢 |
-| `realtime` | 僅近期資料（約最近 24 小時） | 監控儀表盤、最新成交、實時告警 |
-| `archive` | 僅歷史資料（至保留期限 TTL） | 歷史分析、資料回灌、趨勢研究 |
+| 值 | 說明 | 典型用途 |
+|:------|:------------|:-----------------|
+| `combined` | 同時查即時與歸檔資料 **（預設）** — 通常涵蓋最近約 7–10 天 | 需要完整時間範圍的通用查詢 |
+| `realtime` | 僅近期資料（約最近 24 小時內） | 監控儀表板、最新成交、即時告警 |
+| `archive` | 僅保留區間內的歷史資料（約 7–10 天） | 歷史分析、回填、趨勢研究 |
 
 ### 用法
 
 ```graphql
 query {
   Solana(dataset: realtime) {
-    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block { Time }
       Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
     }
@@ -47,14 +47,14 @@ query {
 }
 ```
 
-### 歷史資料回灌
+### 歷史資料回填
 
-在構建資料管道或從停機中恢復時，可使用 `dataset: archive` 配合時間範圍過濾來回灌歷史資料：
+建置資料管線或從中斷恢復時，可搭配時間範圍篩選使用 `dataset: archive` 回填歷史：
 
 1. 記錄最後處理的時間戳或區塊高度
-2. 以 `dataset: archive` 查詢從上次斷點到當前時間的資料
-3. 處理回灌資料
-4. 切換到 `dataset: realtime` 進行持續監控
+2. 以 `dataset: archive` 搭配 `where`，從上次檢查點查到目前時間
+3. 處理回填資料
+4. 改為 `dataset: realtime` 做持續監控
 
 ```graphql
 query BackfillTrades {
@@ -69,7 +69,7 @@ query BackfillTrades {
         }
       }
       limit: {count: 10000}
-      orderBy: Block_Time_ASC
+      orderBy: {ascending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Hash }
@@ -82,26 +82,26 @@ query BackfillTrades {
 }
 ```
 
-### 不支援 Dataset 的表
+### 不支援 `dataset` 切換的表
 
-部分 Cube 無論 `dataset` 取何值都查詢同一張表，包括：
+部分 Cube 不論 `dataset` 為何都查同一張表，包括：
 
-- **DWS Cube**：`TokenHolders`、`WalletTokenPnL`、`DEXPools` — 這些代表當前狀態快照
+- **DWS Cube**：`TokenHolders`、`WalletTokenPnL`、`DEXPools` — 代表目前狀態快照
 - **特殊表**：`TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
 
 對這些 Cube，`dataset` 會被靜默忽略。
 
 ---
 
-## Aggregates 引數
+## `aggregates` 參數
 
-`aggregates` 引數控制查詢是否使用**預聚合物化檢視**（DWM 層）替代原始明細表（DWD 層）。預聚合表包含預計算的 rollup（通常按分鐘），查詢速度顯著更快。
+`aggregates` 參數控制查詢是否使用**預先彙總的 materialized view**（DWM 層），而非原始明細表（DWD 層）。預先彙總表內含預先計算的 rollup（通常為每分鐘），查詢會快很多。
 
-| 值 | 說明 | 典型使用場景 |
-|:---|:-----|:-------------|
-| `yes` | 優先使用預聚合表 **（預設行為）** | 大多數分析查詢 |
-| `no` | 僅使用原始明細表 | 需要逐事件粒度時 |
-| `only` | 僅使用預聚合表 | 最高查詢速度，接受有限欄位集 |
+| 值 | 說明 | 典型用途 |
+|:------|:------------|:-----------------|
+| `yes` | 在可用時優先使用預先彙總表 **（預設行為）** | 多數分析查詢 |
+| `no` | 僅使用原始明細表 | 需要單筆事件粒度時 |
+| `only` | 僅使用預先彙總表 | 追求最快速度，可接受較少欄位 |
 
 ### 用法
 
@@ -111,7 +111,7 @@ query {
     Pairs(
       where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
       limit: {count: 100}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Price { Ohlc { Open High Low Close } }
@@ -121,20 +121,20 @@ query {
 }
 ```
 
-### 各模式適用場景
+### 各模式何時使用
 
-| 場景 | 推薦值 | 原因 |
-|:-----|:-------|:-----|
-| 構建 OHLC K 線圖 | `aggregates: only` | 預計算 K 線資料，最快響應 |
-| 隨時間的成交量趨勢 | `aggregates: yes` | 利用預聚合成交量統計 |
-| 單筆成交分析 | `aggregates: no` | 需要 rollup 無法提供的逐事件細節 |
-| 統計獨立交易者數 | `aggregates: yes` | 預計算的獨立計數可用 |
+| 情境 | 建議 | 原因 |
+|:---------|:------------|:----|
+| 建立 OHLC 圖表 | `aggregates: only` | 預先計算的 K 線資料，回應最快 |
+| 隨時間的成交量趨勢 | `aggregates: yes` | 善用預先彙總的成交量統計 |
+| 單筆成交分析 | `aggregates: no` | 需要 rollup 無法提供的單筆明細 |
+| 計算不重複交易者數 | `aggregates: yes` | 可使用預先計算的不重複計數 |
 
 ---
 
-## 組合使用
+## 兩者並用
 
-可以同時使用 `dataset` 和 `aggregates`：
+`dataset` 與 `aggregates` 可同時使用：
 
 ```graphql
 query {
@@ -142,7 +142,7 @@ query {
     Tokens(
       where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
       limit: {count: 60}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Volume { Usd BuyVolumeUSD SellVolumeUSD }
@@ -152,23 +152,23 @@ query {
 }
 ```
 
-該查詢使用實時資料與預聚合表，以最高速度獲取最近約 60 分鐘的跨鏈代幣成交統計。
+此查詢以即時資料搭配預先彙總表，取得最近約 60 分鐘的跨鏈代幣交易統計，以追求較快速度。
 
 ---
 
 ## 效能考量
 
 <CardGroup cols={2}>
-  <Card title="儀表盤用 realtime" icon="gauge-high">
-    `dataset: realtime` 查詢更小的表分割槽，在監控場景下可獲得更快的響應時間。
+  <Card title="儀表板請用 realtime" icon="gauge-high">
+    `dataset: realtime` 會打到較小的表分割區，監控情境下回應較快。
   </Card>
-  <Card title="分析用 aggregates" icon="chart-line">
-    `aggregates: yes` 或 `only` 利用預計算 rollup，比掃描原始事件錶快數個量級。
+  <Card title="分析請用 aggregates" icon="chart-line">
+    `aggregates: yes` 或 `only` 會使用預先計算的 rollup，比掃描原始事件表快上數個數量級。
   </Card>
 </CardGroup>
 
 <Tip>
-要獲得最快的 OHLC 或成交量查詢，組合使用 `dataset: realtime` 與 `aggregates: only`，命中最小、最最佳化的資料切片。
+若要 OHLC 或成交量查詢盡可能快，可同時使用 `dataset: realtime` 與 `aggregates: only`，鎖定最小、最優化的資料切片。
 </Tip>
 
 ---
@@ -177,9 +177,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="Schema 概覽" icon="sitemap" href="/zh-Hant/graphql/schema/schema-overview">
-    瞭解 dataset 和 aggregates 如何融入整體查詢結構。
+    了解 `dataset` 與 `aggregates` 在整體查詢結構中的位置。
   </Card>
   <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
-    檢視哪些 Cube 支援 dataset 切換。
+    查閱哪些 Cube 支援 `dataset` 切換。
   </Card>
 </CardGroup>

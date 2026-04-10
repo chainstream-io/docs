@@ -1,74 +1,80 @@
 ---
-title: "排序與分頁"
-description: "使用 orderBy 列舉排序查詢結果，使用 limit 分頁 — 命名約定、預設值與基於 offset 的分頁"
+title: "Ordering & Pagination"
+description: "Sort query results with the orderBy input object and paginate with limit — naming conventions, defaults, and offset-based pagination"
 icon: "arrow-down-1-9"
 ---
 
-## orderBy 列舉
+## orderBy InputObject
 
-每個 Cube 會生成 `{Cube}OrderBy` 列舉，包含每個可排序維度的 ASC 與 DESC 變體。命名規則為維度路徑以下劃線連線：
-
-```
-{DimensionGroup}_{DimensionField}_ASC
-{DimensionGroup}_{DimensionField}_DESC
-```
-
-巢狀維度每一級都參與拼接：
+每個 Cube 會產生 `{Cube}OrderBy` 輸入物件，含 `ascending` 與 `descending` 欄位。各欄位接受 `CompareFields` 列舉值，命名為維度路徑以底線連接：
 
 ```
-Trade_Buy_Amount_ASC
-Trade_Buy_PriceInUSD_DESC
-Block_Time_ASC
+{DimensionGroup}_{DimensionField}
 ```
 
-### 常見 orderBy 取值
+巢狀維度則逐層連接：
+
+```
+Block_Time
+Trade_Buy_Amount
+Trade_Buy_PriceInUSD
+```
+
+用法：
+
+```graphql
+orderBy: {descending: Block_Time}      # newest first
+orderBy: {ascending: Trade_Buy_Amount}  # smallest amount first
+```
+
+### 常見 CompareFields 值
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| Enum Value | Cube(s) | Description |
-|:-----------|:--------|:------------|
-| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 最舊在前 |
-| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 最新在前 |
-| `Interval_Time_Start_ASC` | Pairs, Tokens | 最舊在前（區間起始時間） |
-| `Interval_Time_Start_DESC` | Pairs, Tokens | 最新在前（區間起始時間） |
-| `Trade_Buy_Amount_DESC` | DEXTrades | 買入量最大在前 |
-| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | USD 價格最高在前 |
-| `Transfer_AmountInUSD_DESC` | Transfers | USD 轉賬額最大在前 |
-| `LatestBalanceUSD_DESC` | TokenHolders | 持倉 USD 最大在前 |
-| `BuyVolumeUSDState_DESC` | WalletTokenPnL | 買入量 USD 最大在前 |
+| CompareFields 值 | 範例用法 | Cube | 說明 |
+|:-----------|:--------|:--------|:------------|
+| `Block_Time` | `orderBy: {descending: Block_Time}` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 最新的在前 |
+| `Block_Time` | `orderBy: {ascending: Block_Time}` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 最舊的在前 |
+| `Interval_Time_Start` | `orderBy: {ascending: Interval_Time_Start}` | Pairs、Tokens | 最舊的在前（區間起始時間） |
+| `Trade_Buy_Amount` | `orderBy: {descending: Trade_Buy_Amount}` | DEXTrades | 買入量大的在前 |
+| `Trade_Buy_PriceInUSD` | `orderBy: {descending: Trade_Buy_PriceInUSD}` | DEXTrades | USD 價高者在前 |
+| `Transfer_AmountInUSD` | `orderBy: {descending: Transfer_AmountInUSD}` | Transfers | USD 轉帳金額大者在前 |
+| `LatestBalanceUSD` | `orderBy: {descending: LatestBalanceUSD}` | TokenHolders | 持倉大者在前 |
+| `BuyVolumeUSDState` | `orderBy: {descending: BuyVolumeUSDState}` | WalletTokenPnL | 買入量高者在前 |
 
 </div>
 
 <Tip>
-在 [GraphQL IDE](https://ide.chainstream.io) 中用自動補全檢視某 Cube 全部可用 `orderBy` — 輸入 `orderBy:` 即可列出完整列舉。
+在 [GraphQL IDE](https://ide.chainstream.io) 使用自動完成即可探索某 Cube 所有可用的 `CompareFields`——輸入 `orderBy: {descending:` 後 IDE 會列出可用欄位。
 </Tip>
 
 ### 用法
 
-向 `orderBy` 傳入**單個**列舉值：
+傳入 `orderBy` 輸入物件，將 `descending` 或 `ascending` 設為某個 `CompareFields` 值：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
 
 <Note>
-`orderBy` 只接受**一個**列舉值。不支援多列排序 — 查詢僅按單一維度排序。
+`orderBy` 僅接受**單一**方向／欄位組合。不支援多欄排序——查詢一次只依一個維度排序。
 </Note>
 
 ---
 
-## limit 引數
+## limit 參數
 
-`limit` 控制返回行數，並支援基於 offset 的分頁：
+`limit` 控制回傳列數，並支援以 offset 為基礎的分頁：
 
 ```graphql
 input LimitInput {
@@ -77,11 +83,11 @@ input LimitInput {
 }
 ```
 
-### 預設與最大限制
+### 預設與上限
 
-每個 Cube 在省略 `limit` 時有**預設**行數上限，並有**最大**上限：
+每個 Cube 在省略 `limit` 時會套用**預設**筆數，並有**最大**上限：
 
-| Cube | Default `count` | Maximum `count` |
+| Cube | 預設 `count` | 最大 `count` |
 |:-----|:----------------|:----------------|
 | DEXTrades | 25 | 10,000 |
 | Transfers | 25 | 10,000 |
@@ -95,34 +101,35 @@ input LimitInput {
 | WalletTokenPnL | 25 | 10,000 |
 
 <Info>
-若請求的 `count` 超過最大值，服務端會靜默截斷為最大值。
+若請求的 `count` 超過上限，伺服器會靜默裁切為最大值。
 </Info>
 
 ---
 
-## 基於 offset 的分頁
+## 以 offset 分頁
 
-使用 `offset` 翻頁，模式如下：
+使用 `offset` 逐頁讀取結果集，模式很直觀：
 
 - **第 1 頁**：`limit: { count: 50, offset: 0 }`
 - **第 2 頁**：`limit: { count: 50, offset: 50 }`
 - **第 3 頁**：`limit: { count: 50, offset: 100 }`
 
-### 示例：Token 持有者分頁
+### 範例：代幣持有者分頁
 
 <Tabs>
   <Tab title="第 1 頁">
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 20, offset: 0 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
+  Solana {
+    TokenHolders(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 20, offset: 0 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+    }
   }
 }
 ```
@@ -130,15 +137,16 @@ query {
   <Tab title="第 2 頁">
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 20, offset: 20 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
+  Solana {
+    TokenHolders(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 20, offset: 20 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+    }
   }
 }
 ```
@@ -148,51 +156,52 @@ query {
 ### 分頁建議
 
 <AccordionGroup>
-  <Accordion title="分頁務必配合 orderBy">
-    沒有穩定排序時，行間順序可能在翻頁時變化。請始終將 `limit` 與能產生確定順序的 `orderBy` 一起使用。
+  <Accordion title="分頁時務必搭配 orderBy">
+    若無穩定排序，各頁之間列順序可能漂移。請一律將 `limit` 與能產生決定性順序的 `orderBy` 併用。
   </Accordion>
-  <Accordion title="避免過大的 offset">
-    很大的 `offset`（例如 50,000+）可能拖慢查詢，因為資料庫需要掃描並跳過行。對超大資料集，優先用 `where` 收窄結果，而非深度分頁。
+  <Accordion title="避免過深的 offset">
+    過大的 `offset`（例如 50,000+）可能拖慢查詢，因為資料庫須掃描並略過列。對超大資料集，宜以 `where` 縮小範圍，而非深度分頁。
   </Accordion>
-  <Accordion title="用 count 判斷是否到底">
-    若某頁返回行數少於請求的 `count`，說明已到資料集末尾。也可事先使用指標欄位 `count` 獲取總行數。
+  <Accordion title="以筆數判斷是否到底">
+    若某頁回傳列數少於請求的 `count`，表示已到資料末尾。亦可事先使用 `count` 指標欄取得總列數。
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 實用示例
+## 實務範例
 
 ### 最新大額成交
 
-獲取 Solana 上最近 10 筆買入價值超過 $10,000 的 DEX 成交：
+取得 Solana 上最近 10 筆買入價值超過 10,000 美元的 DEX 成交：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
-        PriceInUSD
+  Solana {
+    DEXTrades(
+      where: {
+        Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
       }
-      Dex { ProtocolName }
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+          PriceInUSD
+        }
+        Dex { ProtocolName }
+      }
     }
   }
 }
 ```
 
-### OHLC 蠟燭 — 最近 60 分鐘
+### OHLC K 線——最近 60 分鐘
 
-獲取某 token 的 1 分鐘 K 線，按時間正序：
+取得某代幣 1 分鐘 K 線，依時間正序：
 
 ```graphql
 query {
@@ -203,7 +212,7 @@ query {
         Market: { Network: { is: "sol" } }
         Block: { Time: { after: "2025-03-27T09:00:00Z" } }
       }
-      orderBy: Block_Time_ASC
+      orderBy: {ascending: Block_Time}
       limit: { count: 60 }
     ) {
       Block { Time }
@@ -217,23 +226,24 @@ query {
 }
 ```
 
-### Top 50 Token 持有者
+### 前 50 名代幣持有者
 
-按 USD 餘額排序取前 50 名持有者：
+依 USD 餘額排序取得前 50 名持有者：
 
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 50 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
-    FirstSeen
-    LastSeen
+  Solana {
+    TokenHolders(
+      tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 50 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
   }
 }
 ```
@@ -244,9 +254,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="篩選" icon="filter" href="/zh-Hant/graphql/schema/filtering">
-    將排序與 Filter 結合，構建精確的分析查詢。
+    將排序與篩選結合，建構精準的分析查詢。
   </Card>
   <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
-    使用 count、sum、avg、min、max、uniq 對已排序資料聚合。
+    以 count、sum、avg、min、max、uniq 聚合已排序的資料。
   </Card>
 </CardGroup>

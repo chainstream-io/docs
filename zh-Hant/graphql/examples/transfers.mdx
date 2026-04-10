@@ -1,191 +1,196 @@
 ---
-title: "轉賬"
-description: "鏈上轉賬資料的查詢示例"
+title: "Transfers"
+description: "Query examples for on-chain transfer data"
 icon: "paper-plane"
 ---
 
-**Transfers** Cube 包含鏈上代幣轉賬事件 — 代幣從一個錢包轉到另一個錢包的每一次記錄。可用它追蹤錢包活動、監控巨鯨動向、分析代幣流向並識別交易所充提。
+**Transfers** Cube 收錄鏈上代幣轉帳事件 — 每次代幣從一個錢包移到另一個錢包。可用來追蹤錢包活動、監控大戶動向、分析代幣流向，以及偵測交易所存提款。
 
 <Note>
-以下示例均使用 `network: sol`（Solana）。其他受支援的鏈請改為 `eth`、`bsc` 或 `polygon`。
+以下範例皆使用 `network: sol`（Solana）。若為其他支援鏈，請改為 `eth`、`bsc` 或 `polygon`。
 </Note>
 
 ---
 
-## How do I get the latest transfers?
+## 如何取得最新的轉帳？
 
-獲取 Solana 上最近 10 筆代幣轉賬，包含傳送方、接收方、數量與 USD 價值。
+取得 Solana 上最近 10 筆代幣轉帳，包含發送方、接收方、數量與美元價值。
 
 ```graphql
 query {
-  Transfers(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Transfer {
-      Currency { MintAddress }
-      Sender { Address }
-      Receiver { Address }
-      Amount
-      AmountInUSD
+  Solana {
+    Transfers(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address }
+        Receiver { Address }
+        Amount
+        AmountInUSD
+      }
     }
   }
 }
 ```
 
 <Tip>
-[在 GraphQL IDE 中開啟](https://ide.chainstream.io) — 將上方查詢貼上到 IDE 中即可互動式執行，享受自動補全和 Schema 探索。
+[在 GraphQL IDE 開啟](https://ide.chainstream.io) — 貼上上方查詢即可互動執行，並享有自動完成與 schema 探索。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="關鍵欄位">
-    | Field | Description |
+  <Accordion title="主要欄位">
+    | 欄位 | 說明 |
     |:------|:------------|
     | `Block.Time` | 區塊時間戳（ISO 8601） |
     | `Transaction.Hash` | 鏈上交易雜湊 |
-    | `Transfer.Currency.MintAddress` | 被轉賬的代幣地址 |
-    | `Transfer.Sender.Address` | 傳送代幣的錢包 |
+    | `Transfer.Currency.MintAddress` | 被轉移的代幣地址 |
+    | `Transfer.Sender.Address` | 發送代幣的錢包 |
     | `Transfer.Receiver.Address` | 接收代幣的錢包 |
-    | `Transfer.Amount` | 轉賬代幣數量 |
-    | `Transfer.AmountInUSD` | 發生時的 USD 價值 |
+    | `Transfer.Amount` | 轉移的代幣數量 |
+    | `Transfer.AmountInUSD` | 發生當下的轉帳美元價值 |
   </Accordion>
-  <Accordion title="自定義技巧">
-    - **按代幣過濾**：增加 `tokenAddress: {is: "TOKEN_ADDRESS"}` 只看某一代幣
-    - **僅大額**：增加 `where: {Transfer: {AmountInUSD: {gt: 10000}}}` 查詢巨鯨動向
-    - **時間範圍**：增加 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定時段
+  <Accordion title="自訂建議">
+    - **依代幣篩選**：加上 `tokenAddress: {is: "TOKEN_ADDRESS"}` 僅看特定代幣
+    - **僅大額轉帳**：加上 `where: {Transfer: {AmountInUSD: {gt: 10000}}}` 找出大戶動向
+    - **時間範圍**：加上 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定區間
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get outgoing transfers from a wallet?
+## 如何取得某錢包對外轉出的轉帳？
 
-使用 `senderAddress` 選擇器獲取某錢包的轉出記錄。
+使用 `senderAddress` 選擇器取得特定錢包對外發出的轉帳。
 
 ```graphql
 query {
-  Transfers(
-    network: sol
-    limit: {count: 20}
-    senderAddress: {is: "WALLET_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transfer {
-      Currency { MintAddress }
-      Receiver { Address }
-      Amount
-      AmountInUSD
+  Solana {
+    Transfers(
+      limit: {count: 20}
+      senderAddress: {is: "WALLET_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transfer {
+        Currency { MintAddress }
+        Receiver { Address }
+        Amount
+        AmountInUSD
+      }
     }
   }
 }
 ```
 
 <Tip>
-將 `WALLET_ADDRESS` 替換為你要分析的實際錢包地址。
+請將 `WALLET_ADDRESS` 換成要調查的實際錢包地址。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="關鍵欄位">
-    | Field | Description |
+  <Accordion title="主要欄位">
+    | 欄位 | 說明 |
     |:------|:------------|
-    | `Transfer.Currency.MintAddress` | 傳送的代幣 |
+    | `Transfer.Currency.MintAddress` | 送出的代幣 |
     | `Transfer.Receiver.Address` | 接收方 |
-    | `Transfer.Amount` | 傳送數量 |
-    | `Transfer.AmountInUSD` | 轉賬時的 USD 價值 |
+    | `Transfer.Amount` | 送出的代幣數量 |
+    | `Transfer.AmountInUSD` | 轉帳當下的美元價值 |
   </Accordion>
-  <Accordion title="自定義技巧">
-    - **僅某代幣**：增加 `tokenAddress: {is: "TOKEN_ADDRESS"}` 縮小範圍
-    - **增加條數**：將 `count: 20` 提高到最多 `10000` 以拉更深歷史
-    - **接收方過濾**：使用 `where: {Transfer: {Receiver: {Address: {is: "RECEIVER_ADDRESS"}}}}` 追蹤兩錢包間轉賬
+  <Accordion title="自訂建議">
+    - **僅單一代幣**：加上 `tokenAddress: {is: "TOKEN_ADDRESS"}` 縮小範圍
+    - **增加筆數**：將 `count: 20` 改為最多 `10000` 以拉更深歷史
+    - **加入接收方篩選**：使用 `where: {Transfer: {Receiver: {Address: {is: "RECEIVER_ADDRESS"}}}}` 追蹤兩個特定錢包之間的轉帳
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get incoming transfers to a wallet?
+## 如何取得轉入某錢包的轉帳？
 
-使用 `receiverAddress` 選擇器查詢轉入某錢包的記錄。
+使用 `receiverAddress` 選擇器找出轉入該錢包的轉帳。
 
 ```graphql
 query {
-  Transfers(
-    network: sol
-    limit: {count: 20}
-    receiverAddress: {is: "WALLET_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transfer {
-      Currency { MintAddress }
-      Sender { Address }
-      Amount
-      AmountInUSD
+  Solana {
+    Transfers(
+      limit: {count: 20}
+      receiverAddress: {is: "WALLET_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address }
+        Amount
+        AmountInUSD
+      }
     }
   }
 }
 ```
 
 <Tip>
-Transfers Cube 同時支援 `senderAddress` 與 `receiverAddress` 選擇器。可與 `where` 組合做進一步過濾（例如時間範圍或最小金額）。
+Transfers Cube 同時支援 `senderAddress` 與 `receiverAddress` 選擇器。可與 `where` 併用做額外篩選（例如時間範圍或最小金額）。
 </Tip>
 
 ---
 
-## How do I get all transfers of a specific token?
+## 如何取得特定代幣的所有轉帳？
 
-追蹤全網約某一代幣的所有轉賬。
+追蹤網路上某代幣的所有轉帳。
 
 ```graphql
 query {
-  Transfers(
-    network: sol
-    limit: {count: 20}
-    tokenAddress: {is: "TOKEN_ADDRESS"}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Transfer {
-      Sender { Address }
-      Receiver { Address }
-      Amount
-      AmountInUSD
+  Solana {
+    Transfers(
+      limit: {count: 20}
+      tokenAddress: {is: "TOKEN_ADDRESS"}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Transfer {
+        Sender { Address }
+        Receiver { Address }
+        Amount
+        AmountInUSD
+      }
     }
   }
 }
 ```
 
 <AccordionGroup>
-  <Accordion title="自定義技巧">
-    - **巨鯨提醒**：增加 `where: {Transfer: {AmountInUSD: {gt: 100000}}}` 只看大額（> $100K）
-    - **排除 dust**：增加 `where: {Transfer: {Amount: {gt: 0.01}}}` 過濾極小金額
-    - **時間邊界**：與 `where: {Block: {Time: {since: "2025-03-27T00:00:00Z"}}}` 組合檢視當日
+  <Accordion title="自訂建議">
+    - **大戶警示**：加上 `where: {Transfer: {AmountInUSD: {gt: 100000}}}` 僅看大額轉帳（>10 萬美元）
+    - **排除碎額**：加上 `where: {Transfer: {Amount: {gt: 0.01}}}` 過濾可忽略的小額
+    - **限定時間**：可與 `where: {Block: {Time: {since: "2025-03-27T00:00:00Z"}}}` 併用取得當日轉帳
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 多鏈示例
+## 多鏈範例
 
 <Tabs>
   <Tab title="Solana">
 ```graphql
 query {
-  Transfers(
-    network: sol
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transfer {
-      Currency { MintAddress }
-      Sender { Address }
-      Receiver { Address }
-      Amount
+  Solana {
+    Transfers(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address }
+        Receiver { Address }
+        Amount
+      }
     }
   }
 }
@@ -194,17 +199,18 @@ query {
   <Tab title="Ethereum">
 ```graphql
 query {
-  Transfers(
-    network: eth
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transfer {
-      Currency { MintAddress }
-      Sender { Address }
-      Receiver { Address }
-      Amount
+  EVM(network: eth) {
+    Transfers(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address }
+        Receiver { Address }
+        Amount
+      }
     }
   }
 }
@@ -213,17 +219,18 @@ query {
   <Tab title="BSC">
 ```graphql
 query {
-  Transfers(
-    network: bsc
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transfer {
-      Currency { MintAddress }
-      Sender { Address }
-      Receiver { Address }
-      Amount
+  EVM(network: bsc) {
+    Transfers(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address }
+        Receiver { Address }
+        Amount
+      }
     }
   }
 }
@@ -232,17 +239,18 @@ query {
   <Tab title="Polygon">
 ```graphql
 query {
-  Transfers(
-    network: polygon
-    limit: {count: 5}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transfer {
-      Currency { MintAddress }
-      Sender { Address }
-      Receiver { Address }
-      Amount
+  EVM(network: polygon) {
+    Transfers(
+      limit: {count: 5}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transfer {
+        Currency { MintAddress }
+        Sender { Address }
+        Receiver { Address }
+        Amount
+      }
     }
   }
 }
@@ -255,16 +263,16 @@ query {
 ## 下一步
 
 <CardGroup cols={2}>
-  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
-    查詢 DEX 交易資料 — 代幣交易、錢包活動與頭部交易者。
+  <Card title="DEX 交易" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
+    查詢 DEX 交易資料 — 代幣成交、錢包活動與頂尖交易者。
   </Card>
-  <Card title="Balances & Holders" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
-    查詢錢包餘額、餘額歷史與頭部持有者。
+  <Card title="餘額與持倉者" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
+    查詢錢包餘額、餘額歷史與代幣大戶。
   </Card>
-  <Card title="Pools & Liquidity" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
-    探索 DEX 池與流動性資料。
+  <Card title="資金池與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
+    探索 DEX 資金池與流動性資料。
   </Card>
-  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/zh-Hant/graphql/examples/ohlc-stats">
-    獲取 K 線、成交統計、市值與代幣後設資料。
+  <Card title="OHLC 與統計" icon="chart-candlestick" href="/zh-Hant/graphql/examples/ohlc-stats">
+    取得 K 線、交易統計、市值與代幣 metadata。
   </Card>
 </CardGroup>

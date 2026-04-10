@@ -1,87 +1,93 @@
 ---
-title: "ソートとページネーション"
-description: "orderBy enumによるクエリ結果のソートとlimitによるページネーション — 命名規則、デフォルト、オフセットベースのページネーション"
+title: "Ordering & Pagination"
+description: "Sort query results with the orderBy input object and paginate with limit — naming conventions, defaults, and offset-based pagination"
 icon: "arrow-down-1-9"
 ---
 
-## orderBy Enum
+## orderBy InputObject
 
-各Cubeは、すべてのソート可能なディメンションに対してASCとDESCバリアントを持つ`{Cube}OrderBy` enumを生成します。命名規則は、ディメンションパスをアンダースコアで結合します：
-
-```
-{DimensionGroup}_{DimensionField}_ASC
-{DimensionGroup}_{DimensionField}_DESC
-```
-
-ネストされたディメンションの場合、各レベルが結合されます：
+各 Cube は `{Cube}OrderBy` 入力オブジェクトを生成し、`ascending` と `descending` フィールドを持ちます。各フィールドはディメンションパスをアンダースコアでつないだ `CompareFields` 列挙値を受け取ります:
 
 ```
-Trade_Buy_Amount_ASC
-Trade_Buy_PriceInUSD_DESC
-Block_Time_ASC
+{DimensionGroup}_{DimensionField}
 ```
 
-### 一般的なorderBy値
+ネストしたディメンションでは、レベルごとに結合します:
+
+```
+Block_Time
+Trade_Buy_Amount
+Trade_Buy_PriceInUSD
+```
+
+使用例:
+
+```graphql
+orderBy: {descending: Block_Time}      # newest first
+orderBy: {ascending: Trade_Buy_Amount}  # smallest amount first
+```
+
+### よく使う CompareFields の値
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| Enum値 | Cube | 説明 |
-|:-----------|:--------|:------------|
-| `Block_Time_ASC` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 古い順 |
-| `Block_Time_DESC` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 新しい順 |
-| `Interval_Time_Start_ASC` | Pairs、Tokens | 古い順（インターバル開始時刻） |
-| `Interval_Time_Start_DESC` | Pairs、Tokens | 新しい順（インターバル開始時刻） |
-| `Trade_Buy_Amount_DESC` | DEXTrades | 最大購入金額順 |
-| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | 最高USD価格順 |
-| `Transfer_AmountInUSD_DESC` | Transfers | 最大USDトランスファー順 |
-| `LatestBalanceUSD_DESC` | TokenHolders | 最大ホルダー順 |
-| `BuyVolumeUSDState_DESC` | WalletTokenPnL | 最高購入出来高順 |
+| CompareFields の値 | 使用例 | Cube | 説明 |
+|:-----------|:--------|:--------|:------------|
+| `Block_Time` | `orderBy: {descending: Block_Time}` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 新しい順 |
+| `Block_Time` | `orderBy: {ascending: Block_Time}` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 古い順 |
+| `Interval_Time_Start` | `orderBy: {ascending: Interval_Time_Start}` | Pairs, Tokens | 古い順（区間開始時刻） |
+| `Trade_Buy_Amount` | `orderBy: {descending: Trade_Buy_Amount}` | DEXTrades | 買い数量の大きい順 |
+| `Trade_Buy_PriceInUSD` | `orderBy: {descending: Trade_Buy_PriceInUSD}` | DEXTrades | USD 価格の高い順 |
+| `Transfer_AmountInUSD` | `orderBy: {descending: Transfer_AmountInUSD}` | Transfers | USD 転送額の大きい順 |
+| `LatestBalanceUSD` | `orderBy: {descending: LatestBalanceUSD}` | TokenHolders | 保有額の大きい順 |
+| `BuyVolumeUSDState` | `orderBy: {descending: BuyVolumeUSDState}` | WalletTokenPnL | 買いボリュームの大きい順 |
 
 </div>
 
 <Tip>
-[GraphQL IDE](https://ide.chainstream.io)の自動補完を使用して、Cubeの利用可能なすべての`orderBy`値を発見できます — `orderBy:`と入力するとIDEが完全なenumを表示します。
+[GraphQL IDE](https://ide.chainstream.io) のオートコンプリートで、Cube ごとに利用可能なすべての `CompareFields` を確認できます — `orderBy: {descending:` と入力すると IDE が候補を表示します。
 </Tip>
 
-### 使用方法
+### 使い方
 
-`orderBy`引数に単一のenum値を渡します：
+`descending` または `ascending` のどちらか一方に `CompareFields` の値を指定した `orderBy` 入力オブジェクトを渡します:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
 
 <Note>
-`orderBy`は**単一の**enum値を受け付けます。複数カラムによるソートはサポートされていません — クエリは一度に1つのディメンションでソートされます。
+`orderBy` は**1 組**の方向／フィールドのみ受け付けます。複数列ソートはサポートされず、一度に 1 ディメンションで並べ替えます。
 </Note>
 
 ---
 
-## limit引数
+## limit 引数
 
-`limit`引数は返される行数を制御し、オフセットベースのページネーションをサポートします：
+`limit` 引数は返す行数を制御し、オフセットベースのページネーションをサポートします:
 
 ```graphql
 input LimitInput {
-  count: Int   # 返す行数
-  offset: Int  # スキップする行数
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip
 }
 ```
 
-### デフォルトと最大リミット
+### 既定値と最大値
 
-各Cubeには`limit`引数を省略した場合に適用される**デフォルト**リミットと、**最大**上限があります：
+各 Cube には `limit` を省略したときの**既定**の件数と、**最大**の上限があります:
 
-| Cube | デフォルト`count` | 最大`count` |
+| Cube | 既定の `count` | 最大 `count` |
 |:-----|:----------------|:----------------|
 | DEXTrades | 25 | 10,000 |
 | Transfers | 25 | 10,000 |
@@ -95,50 +101,52 @@ input LimitInput {
 | WalletTokenPnL | 25 | 10,000 |
 
 <Info>
-最大値を超える`count`をリクエストした場合、サーバーはサイレントに最大値で制限します。
+要求した `count` が最大を超える場合、サーバーは黙って最大値に切り詰めます。
 </Info>
 
 ---
 
 ## オフセットベースのページネーション
 
-`offset`を使用して結果セットをページングします。パターンはシンプルです：
+`offset` で結果セットをページングします。パターンは次のとおりです。
 
-- **ページ1**: `limit: { count: 50, offset: 0 }`
-- **ページ2**: `limit: { count: 50, offset: 50 }`
-- **ページ3**: `limit: { count: 50, offset: 100 }`
+- **ページ 1**: `limit: { count: 50, offset: 0 }`
+- **ページ 2**: `limit: { count: 50, offset: 50 }`
+- **ページ 3**: `limit: { count: 50, offset: 100 }`
 
-### 例：ページネーション付きトークンホルダー
+### 例: トークン保有者のページング
 
 <Tabs>
-  <Tab title="ページ1">
+  <Tab title="ページ 1">
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 20, offset: 0 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
+  Solana {
+    TokenHolders(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 20, offset: 0 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+    }
   }
 }
 ```
   </Tab>
-  <Tab title="ページ2">
+  <Tab title="ページ 2">
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 20, offset: 20 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
+  Solana {
+    TokenHolders(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 20, offset: 20 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+    }
   }
 }
 ```
@@ -148,51 +156,52 @@ query {
 ### ページネーションのヒント
 
 <AccordionGroup>
-  <Accordion title="ページネーションには必ずorderByを使用">
-    安定したソート順がないと、ページ間で行がシフトする可能性があります。決定的な順序を生成する`orderBy`を常に`limit`とペアにしてください。
+  <Accordion title="ページネーションには常に orderBy を付ける">
+    安定した並び順がないと、ページ間で行がずれることがあります。決定的な順序になるよう、常に `limit` と `orderBy` を組み合わせてください。
   </Accordion>
-  <Accordion title="深いオフセットを避ける">
-    大きな`offset`値（例：50,000以上）は、データベースが行をスキャンしてスキップする必要があるため、パフォーマンスが低下する可能性があります。非常に大きなデータセットの場合、深くページネーションするのではなく`where`フィルタでクエリを絞り込んでください。
+  <Accordion title="深い offset は避ける">
+    大きな `offset`（例: 50,000 以上）は、DB がスキャンしてスキップするため性能が落ちることがあります。非常に大きなデータセットでは、深くページングするより `where` でクエリを狭めてください。
   </Accordion>
-  <Accordion title="countで結果の終了を検出">
-    ページがリクエストした`count`より少ない行を返した場合、データセットの末尾に達しています。あるいは、`count`メトリクスフィールドを使用して事前に総行数を取得することもできます。
+  <Accordion title="count で結果の終端を判定する">
+    1 ページの行数が要求した `count` より少なければ、データセットの終端に達しています。別法として、事前に総行数を得る `count` メトリクスフィールドも使えます。
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 実践的な例
+## 実践例
 
-### 最新の大口トレード
+### 直近の大口取引
 
-Solanaで購入価格が$10,000を超える最新10件のDEXトレードを取得：
+Solana で買い価値が 10,000 ドル超の、直近 10 件の DEX 取引を取得:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
-        PriceInUSD
+  Solana {
+    DEXTrades(
+      where: {
+        Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
       }
-      Dex { ProtocolName }
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+          PriceInUSD
+        }
+        Dex { ProtocolName }
+      }
     }
   }
 }
 ```
 
-### OHLCローソク足 — 直近60分
+### OHLC ローソク — 直近 60 分
 
-トークンの1分足ローソク足を時系列順で取得：
+トークンの 1 分足を時系列で取得:
 
 ```graphql
 query {
@@ -203,7 +212,7 @@ query {
         Market: { Network: { is: "sol" } }
         Block: { Time: { after: "2025-03-27T09:00:00Z" } }
       }
-      orderBy: Block_Time_ASC
+      orderBy: {ascending: Block_Time}
       limit: { count: 60 }
     ) {
       Block { Time }
@@ -217,23 +226,24 @@ query {
 }
 ```
 
-### トップ50トークンホルダー
+### トップ 50 保有者
 
-USD残高順でトップ50ホルダーを取得：
+USD 残高でソートした上位 50 保有者:
 
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 50 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
-    FirstSeen
-    LastSeen
+  Solana {
+    TokenHolders(
+      tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 50 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
   }
 }
 ```
@@ -244,9 +254,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="フィルタリング" icon="filter" href="/jp/graphql/schema/filtering">
-    ソートとフィルタを組み合わせて精密な分析クエリを構築。
+    並び順とフィルターを組み合わせて、精密な分析クエリを構築します。
   </Card>
   <Card title="メトリクスと集計" icon="chart-simple" href="/jp/graphql/schema/metrics-aggregation">
-    ソートされたデータをcount、sum、avg、min、max、uniqで集計。
+    count、sum、avg、min、max、uniq で並べたデータを集計します。
   </Card>
 </CardGroup>

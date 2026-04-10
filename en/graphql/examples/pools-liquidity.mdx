@@ -65,7 +65,7 @@ Replace `TOKEN_ADDRESS` with the token mint (Solana) or contract address (EVM). 
     - **Filter by liquidity**: Add `where: {Pool: {LiquidityUSD: {gt: 10000}}}` for pools above a USD depth threshold
     - **Specific DEX**: Add `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`
     - **More pools**: Increase `count` to discover additional pools for the token
-    - **Per-event reserves**: Use **DEXPoolEvents** with `tokenAddress` / `poolAddress` and `orderBy: Block_Time_DESC` for add/remove history
+    - **Per-event reserves**: Use **DEXPoolEvents** with `tokenAddress` / `poolAddress` and `orderBy: {descending: Block_Time}` for add/remove history
   </Accordion>
 </AccordionGroup>
 
@@ -106,7 +106,7 @@ query {
     | `Pool.LastUpdated` | Last snapshot refresh for this pool |
   </Accordion>
   <Accordion title="Customization tips">
-    - **Reserve history**: Query **DEXPoolEvents** with `poolAddress: {is: "POOL_ADDRESS"}` and `orderBy: Block_Time_DESC`
+    - **Reserve history**: Query **DEXPoolEvents** with `poolAddress: {is: "POOL_ADDRESS"}` and `orderBy: {descending: Block_Time}`
     - **Time range on events**: On **DEXPoolEvents**, add `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` to scope add/removes
   </Accordion>
 </AccordionGroup>
@@ -174,7 +174,7 @@ query {
     TokenSupplyUpdates(
       limit: {count: 1}
       tokenAddress: {is: "TOKEN_ADDRESS"}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       TokenSupplyUpdate {
         Currency { MintAddress, Decimals }

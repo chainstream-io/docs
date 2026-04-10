@@ -1,67 +1,73 @@
 ---
 title: "Ordering & Pagination"
-description: "Sort query results with orderBy enums and paginate with limit — naming conventions, defaults, and offset-based pagination"
+description: "Sort query results with the orderBy input object and paginate with limit — naming conventions, defaults, and offset-based pagination"
 icon: "arrow-down-1-9"
 ---
 
-## orderBy Enum
+## orderBy InputObject
 
-Each Cube generates an `{Cube}OrderBy` enum with ASC and DESC variants for every sortable dimension. The naming convention follows the dimension path joined by underscores:
+Each Cube generates an `{Cube}OrderBy` input object with `ascending` and `descending` fields. Each field accepts a `CompareFields` enum value that follows the dimension path joined by underscores:
 
 ```
-{DimensionGroup}_{DimensionField}_ASC
-{DimensionGroup}_{DimensionField}_DESC
+{DimensionGroup}_{DimensionField}
 ```
 
 For nested dimensions, each level is joined:
 
 ```
-Trade_Buy_Amount_ASC
-Trade_Buy_PriceInUSD_DESC
-Block_Time_ASC
+Block_Time
+Trade_Buy_Amount
+Trade_Buy_PriceInUSD
 ```
 
-### Common orderBy Values
+Usage:
+
+```graphql
+orderBy: {descending: Block_Time}      # newest first
+orderBy: {ascending: Trade_Buy_Amount}  # smallest amount first
+```
+
+### Common CompareFields Values
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| Enum Value | Cube(s) | Description |
-|:-----------|:--------|:------------|
-| `Block_Time_ASC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | Oldest first |
-| `Block_Time_DESC` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | Newest first |
-| `Interval_Time_Start_ASC` | Pairs, Tokens | Oldest first (interval start time) |
-| `Interval_Time_Start_DESC` | Pairs, Tokens | Newest first (interval start time) |
-| `Trade_Buy_Amount_DESC` | DEXTrades | Largest buy amount first |
-| `Trade_Buy_PriceInUSD_DESC` | DEXTrades | Highest USD price first |
-| `Transfer_AmountInUSD_DESC` | Transfers | Largest USD transfer first |
-| `LatestBalanceUSD_DESC` | TokenHolders | Largest holder first |
-| `BuyVolumeUSDState_DESC` | WalletTokenPnL | Highest buy volume first |
+| CompareFields Value | Example Usage | Cube(s) | Description |
+|:-----------|:--------|:--------|:------------|
+| `Block_Time` | `orderBy: {descending: Block_Time}` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | Newest first |
+| `Block_Time` | `orderBy: {ascending: Block_Time}` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | Oldest first |
+| `Interval_Time_Start` | `orderBy: {ascending: Interval_Time_Start}` | Pairs, Tokens | Oldest first (interval start time) |
+| `Trade_Buy_Amount` | `orderBy: {descending: Trade_Buy_Amount}` | DEXTrades | Largest buy amount first |
+| `Trade_Buy_PriceInUSD` | `orderBy: {descending: Trade_Buy_PriceInUSD}` | DEXTrades | Highest USD price first |
+| `Transfer_AmountInUSD` | `orderBy: {descending: Transfer_AmountInUSD}` | Transfers | Largest USD transfer first |
+| `LatestBalanceUSD` | `orderBy: {descending: LatestBalanceUSD}` | TokenHolders | Largest holder first |
+| `BuyVolumeUSDState` | `orderBy: {descending: BuyVolumeUSDState}` | WalletTokenPnL | Highest buy volume first |
 
 </div>
 
 <Tip>
-Use the [GraphQL IDE](https://ide.chainstream.io) auto-complete to discover all available `orderBy` values for a Cube — type `orderBy:` and the IDE will show the full enum.
+Use the [GraphQL IDE](https://ide.chainstream.io) auto-complete to discover all available `CompareFields` values for a Cube — type `orderBy: {descending:` and the IDE will show available fields.
 </Tip>
 
 ### Usage
 
-Pass a single enum value to the `orderBy` argument:
+Pass an `orderBy` input object with either `descending` or `ascending` set to a `CompareFields` value:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade { Buy { Amount PriceInUSD } }
+  Solana {
+    DEXTrades(
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade { Buy { Amount PriceInUSD } }
+    }
   }
 }
 ```
 
 <Note>
-`orderBy` accepts a **single** enum value. Multi-column sorting is not supported — the query is sorted by one dimension at a time.
+`orderBy` accepts a **single** direction/field pair. Multi-column sorting is not supported — the query is sorted by one dimension at a time.
 </Note>
 
 ---
@@ -114,15 +120,16 @@ Use `offset` to page through result sets. The pattern is straightforward:
   <Tab title="Page 1">
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 20, offset: 0 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
+  Solana {
+    TokenHolders(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 20, offset: 0 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+    }
   }
 }
 ```
@@ -130,15 +137,16 @@ query {
   <Tab title="Page 2">
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 20, offset: 20 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
+  Solana {
+    TokenHolders(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 20, offset: 20 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+    }
   }
 }
 ```
@@ -169,22 +177,23 @@ Fetch the 10 most recent DEX trades on Solana with a buy value over $10,000:
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: {
-      Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    Block { Time }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
-        PriceInUSD
+  Solana {
+    DEXTrades(
+      where: {
+        Trade: { Buy: { PriceInUSD: { gt: 10000 } } }
       }
-      Dex { ProtocolName }
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      Block { Time }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+          PriceInUSD
+        }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -203,7 +212,7 @@ query {
         Market: { Network: { is: "sol" } }
         Block: { Time: { after: "2025-03-27T09:00:00Z" } }
       }
-      orderBy: Block_Time_ASC
+      orderBy: {ascending: Block_Time}
       limit: { count: 60 }
     ) {
       Block { Time }
@@ -223,17 +232,18 @@ Fetch the top 50 holders sorted by USD balance:
 
 ```graphql
 query {
-  TokenHolders(
-    network: sol
-    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-    orderBy: LatestBalanceUSD_DESC
-    limit: { count: 50 }
-  ) {
-    Holder { Address }
-    LatestBalance
-    LatestBalanceUSD
-    FirstSeen
-    LastSeen
+  Solana {
+    TokenHolders(
+      tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+      orderBy: {descending: LatestBalanceUSD}
+      limit: { count: 50 }
+    ) {
+      Holder { Address }
+      LatestBalance
+      LatestBalanceUSD
+      FirstSeen
+      LastSeen
+    }
   }
 }
 ```

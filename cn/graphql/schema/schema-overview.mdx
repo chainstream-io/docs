@@ -1,29 +1,29 @@
 ---
-title: "Schema 概览"
-description: "ChainStream GraphQL Schema 的结构说明 — Chain Group、Cube 字段、生成类型与 introspection"
+title: "Schema Overview"
+description: "How the ChainStream GraphQL schema is structured — Chain Groups, Cube fields, generated types, and introspection"
 icon: "sitemap"
 ---
 
 ## 动态 Schema 生成
 
-ChainStream GraphQL Schema 在启动时由 **activecube-rs**（Rust 库）**动态生成**，该库将 **Cube** 定义编译为类型完整的 [async-graphql](https://github.com/async-graphql/async-graphql) Schema。每个 Cube 对应一个由 OLAP 表支撑的分析数据模型，activecube-rs 会自动生成：
+ChainStream GraphQL schema 在启动时由 **activecube-rs** **动态生成**。该 Rust 库将 **Cube** 定义编译为类型完整的 [async-graphql](https://github.com/async-graphql/async-graphql) schema。每个 Cube 对应由 OLAP 表支撑的分析数据模型，activecube-rs 会自动产出：
 
-- 该 Cube 的 **顶层 Query 字段**（嵌套在其 Chain Group 下）
+- Cube 的**顶层 Query 字段**（嵌套在其 Chain Group 下）
 - 表示可选维度的 **Record 类型**（`{Cube}Record`）
-- 与维度层级匹配的 **Filter 输入**（`{Cube}Filter`）
-- 每个维度路径的 ASC/DESC 变体组成的 **OrderBy 枚举**（`{Cube}OrderBy`）
+- 与维度层级一致的 **Filter 输入**（`{Cube}Filter`）
+- 每条维度路径的 ASC/DESC 变体组成的 **OrderBy 枚举**（`{Cube}OrderBy`）
 
-因此 Schema 始终与底层数据模型一致，无需维护手写的 SDL 文件。
+因此 schema 始终与底层数据模型一致——无需手写 SDL 维护。
 
 <Info>
-由于 Schema 由 Cube 定义生成，在 Rust 中新增任意数据模型后，部署即可在 GraphQL 端点中自动反映。
+由于 schema 由 Cube 定义生成，Rust 中新增的数据模型在部署后会自动反映到 GraphQL 端点。
 </Info>
 
 ---
 
-## 根 Query 结构
+## 根查询结构
 
-根查询类型名为 `ChainStream`。Cube 按三个 **Chain Group** 组织，各自作为顶层字段暴露：
+根查询类型名为 `ChainStream`。Cube 归入三个 **Chain Group**，每个作为顶层字段暴露：
 
 ```graphql
 type ChainStream {
@@ -35,14 +35,14 @@ type ChainStream {
     Transactions(...): [TransactionsRecord!]!
     Events(...): [EventsRecord!]!
     Calls(...): [CallsRecord!]!
-    # ... 更多 EVM Cube
+    # ... more EVM Cubes
   }
 
   Solana(dataset: Dataset, aggregates: Aggregates) {
     DEXTrades(...): [DEXTradesRecord!]!
     Instructions(...): [InstructionsRecord!]!
     DEXOrders(...): [DEXOrdersRecord!]!
-    # ... 更多 Solana Cube
+    # ... more Solana Cubes
   }
 
   Trading(dataset: Dataset, aggregates: Aggregates) {
@@ -52,46 +52,46 @@ type ChainStream {
 }
 ```
 
-不存在 `Mutation` 或 `Subscription` 类型 — GraphQL API 为只读分析查询。
+不存在 `Mutation` 或 `Subscription` 类型——GraphQL API 为只读分析查询。
 
 ---
 
 ## Chain Group
 
-Cube 按目标区块链生态分为三组：
+按目标区块链生态，Cube 分为三组：
 
 | Chain Group | `network` 参数 | 可用网络 | 说明 |
 |:--|:--|:--|:--|
-| **EVM** | 必填 | `eth`、`bsc`、`polygon` | 适用于所有 EVM 兼容链的共享 Cube |
-| **Solana** | 不需要 | `sol`（隐式） | Solana 专属 Cube，含链特有的 Instructions、DEXOrders 等 |
-| **Trading** | 不需要 | 跨链（`sol`、`eth`、`bsc`） | 预聚合交易分析（OHLC K 线、代币统计），数据内含 `chain` 维度 |
+| **EVM** | 必填 | `eth`、`bsc`、`polygon` | 所有 EVM 兼容链共用的 Cube |
+| **Solana** | 不需要 | `sol`（隐式） | Solana 专用 Cube（含 Instructions、DEXOrders 等） |
+| **Trading** | 不需要 | 跨链（`sol`、`eth`、`bsc`） | 预聚合交易分析（OHLC K 线、代币统计等），数据中带 `chain` 维度 |
 
 <Note>
-**EVM** 组需要 `network` 参数来选择要查询的链。**Solana** 和 **Trading** 不需要 `network` 参数 — Solana 为隐式，Trading 数据内包含 `chain` 维度。
+**EVM** 组必须传入 `network` 以选择链。**Solana** 与 **Trading** 不需要 `network`——Solana 为隐式，Trading 在数据内通过 `chain` 维度区分。
 </Note>
 
-详见 [Chain Groups](/cn/graphql/schema/chain-groups) 了解每个组包含哪些 Cube。
+完整划分见 [Chain Groups](/cn/graphql/schema/chain-groups)。
 
 ---
 
 ## Chain Group 参数
 
-每个 Chain Group 接受两个可选参数，控制数据源行为：
+每个 Chain Group 接受两个可选参数，用于控制数据源行为：
 
 ### Dataset
 
-`dataset` 参数控制查询的数据时间范围：
+`dataset` 控制查询数据的时间范围：
 
 | 值 | 说明 |
-|:---|:-----|
-| `combined` | 全量 — 同时查询近期与历史数据 **（默认）** |
+|:------|:------------|
+| `combined` | 全量范围——同时包含近期与历史数据**（默认）** |
 | `realtime` | 仅近期数据（约最近 24 小时） |
-| `archive` | 历史数据（至保留期限 TTL） |
+| `archive` | 历史数据，上限为保留 TTL |
 
 ```graphql
 query {
   Solana(dataset: realtime) {
-    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block { Time }
       Trade { Buy { Amount } }
     }
@@ -101,13 +101,13 @@ query {
 
 ### Aggregates
 
-`aggregates` 参数控制是否使用预聚合（DWM/DWS）表：
+`aggregates` 控制是否使用预聚合（DWM/DWS）表：
 
 | 值 | 说明 |
-|:---|:-----|
-| `yes` | 优先使用预聚合表 **（适用 Cube 的默认行为）** |
+|:------|:------------|
+| `yes` | 在可用时优先使用预聚合表**（适用 Cube 的默认行为）** |
 | `no` | 仅使用原始明细表 |
-| `only` | 仅使用预聚合表（更快但字段有限） |
+| `only` | 仅使用预聚合表（更快但字段受限） |
 
 ```graphql
 query {
@@ -125,21 +125,21 @@ query {
 ```
 
 <Tip>
-详见 [Dataset 与 Aggregates](/cn/graphql/schema/dataset-aggregates) 了解用法、支持的表与性能指南。
+详细用法、支持的表与性能建议见 [Dataset & Aggregates](/cn/graphql/schema/dataset-aggregates)。
 </Tip>
 
 ---
 
 ## 通用参数模式
 
-在 Chain Group 内部，每个 Cube 字段接受同一套标准参数，以及可选的 Cube 专属 **selectors**：
+在 Chain Group 内，每个 Cube 字段接受同一套标准参数，外加可选的 Cube 专属 **selector**：
 
-| Argument | Type | Required | Description |
+| 参数 | 类型 | 必填 | 说明 |
 |:---------|:-----|:---------|:------------|
-| `where` | `{Cube}Filter` | No | 与维度层级嵌套匹配的 Filter 对象 |
-| `limit` | `LimitInput` | No | 分页：`{count: Int, offset: Int}` |
-| `orderBy` | `{Cube}OrderBy` | No | 排序枚举（`{Path}_ASC` / `{Path}_DESC`） |
-| *selectors* | Filter input | No | 快捷筛选（例如 `tokenAddress: {is: "..."}`） |
+| `where` | `{Cube}Filter` | 否 | 与维度层级一致的嵌套筛选对象 |
+| `limit` | `LimitInput` | 否 | 分页：`{count: Int, offset: Int}` |
+| `orderBy` | `{Cube}OrderBy` | 否 | 排序枚举（`{Path}_ASC` / `{Path}_DESC`） |
+| *selectors* | 筛选输入 | 否 | 快捷筛选（如 `tokenAddress: {is: "..."}`） |
 
 ```graphql
 query {
@@ -148,7 +148,7 @@ query {
       tokenAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}
       where: { Block: { Time: { after: "2026-01-01T00:00:00Z" } } }
       limit: { count: 50, offset: 0 }
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time }
       Trade { Buy { Amount PriceInUSD } }
@@ -161,32 +161,32 @@ query {
 
 ```graphql
 input LimitInput {
-  count: Int   # 返回行数
-  offset: Int  # 跳过行数（用于分页）
+  count: Int   # Number of rows to return
+  offset: Int  # Number of rows to skip (for pagination)
 }
 ```
 
-默认 `count` 因 Cube 而异（常见为 25）。多数 Cube 最大为 10,000。
+默认 `count` 因 Cube 而异（多为 25）。多数 Cube 最大为 10,000。
 
 ---
 
 ## 每个 Cube 的生成类型
 
-对每个 Cube，activecube-rs 会生成三个配套类型：
+对每个 Cube，activecube-rs 会生成三类配套类型：
 
 <CardGroup cols={3}>
   <Card title="Record 类型" icon="table">
-    `{Cube}Record` — 包含所有可选维度与指标的返回类型。字段结构镜像 Cube 的维度层级。
+    `{Cube}Record` — 返回值类型，包含全部可选维度与指标。字段结构与 Cube 维度层级一致。
   </Card>
   <Card title="Filter 输入" icon="filter">
-    `{Cube}Filter` — 嵌套输入对象，每个维度映射到 Filter 原语（`StringFilter`、`IntFilter`、`DateTimeFilter` 等）。
+    `{Cube}Filter` — 嵌套输入对象，各维度映射到筛选原语（`StringFilter`、`IntFilter`、`DateTimeFilter` 等）。
   </Card>
   <Card title="OrderBy 枚举" icon="arrow-down-a-z">
-    `{Cube}OrderBy` — 每个维度路径在 ASC 与 DESC 两个方向上的枚举变体（例如 `Block_Time_ASC`、`Trade_Buy_Amount_DESC`）。
+    `{Cube}OrderBy` — 每条维度路径在升序与降序下的枚举变体（如 `Block_Time_ASC`、`Trade_Buy_Amount_DESC`）。
   </Card>
 </CardGroup>
 
-**以 DEXTrades 为例：**
+**DEXTrades 示例：**
 
 ```graphql
 # Record type (return shape)
@@ -224,7 +224,7 @@ enum DEXTradesOrderBy {
 
 ## Introspection
 
-Schema 支持标准 GraphQL introspection。可使用 `__schema` 与 `__type` 查询探索类型、字段与参数：
+Schema 支持标准 GraphQL introspection。可用 `__schema`、`__type` 查询探索类型、字段与参数：
 
 <Tabs>
   <Tab title="列出所有 Cube">
@@ -242,7 +242,7 @@ query {
 }
 ```
   </Tab>
-  <Tab title="检查某个 Cube 类型">
+  <Tab title="查看某 Cube 类型">
 ```graphql
 query {
   __type(name: "DEXTradesRecord") {
@@ -255,7 +255,7 @@ query {
 }
 ```
   </Tab>
-  <Tab title="列出 Filter 运算符">
+  <Tab title="列出筛选运算符">
 ```graphql
 query {
   __type(name: "StringFilter") {
@@ -271,7 +271,7 @@ query {
 </Tabs>
 
 <Tip>
-[GraphQL IDE](https://ide.chainstream.io) 会自动拉取 introspection Schema 以提供自动补全与内联文档。无需手写 introspection 查询即可交互式浏览完整 Schema。
+[GraphQL IDE](https://ide.chainstream.io) 会自动拉取 introspection schema 以驱动自动补全与内联文档。可在界面中交互探索完整 schema，无需手写 introspection 查询。
 </Tip>
 
 ---
@@ -280,19 +280,19 @@ query {
 
 <CardGroup cols={2}>
   <Card title="数据 Cube" icon="cubes" href="/cn/graphql/schema/cubes">
-    浏览全部 25 个 Cube — 字段、selectors 与数仓分层。
+    浏览全部 25 个 Cube——字段、selector 与数仓分层。
   </Card>
-  <Card title="Chain Groups" icon="layer-group" href="/cn/graphql/schema/chain-groups">
-    了解 EVM、Solana、Trading 三组的 Cube 分布。
+  <Card title="Chain Group" icon="layer-group" href="/cn/graphql/schema/chain-groups">
+    了解 EVM、Solana、Trading 三个 Chain Group 及其可用 Cube。
   </Card>
   <Card title="Dataset 与 Aggregates" icon="database" href="/cn/graphql/schema/dataset-aggregates">
-    使用 `dataset` 和 `aggregates` 控制数据源范围与预聚合行为。
+    使用 `dataset` 与 `aggregates` 控制数据源范围与预聚合行为。
   </Card>
   <Card title="筛选" icon="filter" href="/cn/graphql/schema/filtering">
-    学习如何用 `where` Filter 与 selector 快捷方式缩小查询范围。
+    学习如何用 `where` 与 selector 快捷方式收窄查询。
   </Card>
   <Card title="排序与分页" icon="arrow-down-1-9" href="/cn/graphql/schema/ordering-pagination">
-    使用 `orderBy` 与 `limit` 对结果排序并分页遍历大数据集。
+    使用 `orderBy` 与 `limit` 对大数据集排序与分页。
   </Card>
   <Card title="指标与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
     在查询中使用 `count`、`sum`、`avg`、`min`、`max`、`uniq` 聚合数据。

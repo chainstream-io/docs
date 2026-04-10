@@ -1,105 +1,106 @@
 ---
-title: "計費與 Credits"
-description: "瞭解 GraphQL API 如何透過 Credit Unit（CU）體系計費"
+title: "Billing & Credits"
+description: "Understand how GraphQL API queries are billed using the Credit Unit system"
 icon: "credit-card"
 ---
 
-## 概述
+## 概覽
 
-每條 GraphQL 查詢會根據所查 **Cube**、請求行數與聚合複雜度消耗 **Credit Units (CU)**。Credits 與 REST API 使用同一套計費計劃 — 你的 API Key 在兩者間通用。
+每筆 GraphQL 查詢都會依查詢複雜度動態計算並消耗 **Credit Unit（CU，點數單位）**。點數從與 REST API **相同**的計費方案扣除——同一把 API Key 兩邊通用。
 
 <Info>
-GraphQL API 與 REST Data API 共用同一 API Key 與計費計劃。GraphQL 查詢消耗的 Credits 計入整體用量。
+GraphQL API 與 REST Data API 共用同一組 API Key 與計費方案。GraphQL 查詢消耗的點數會計入整體用量。
 </Info>
 
 ---
 
-## Credit 計算公式
+## 點數計算公式
 
-Credits 按 Cube 分別計算，公式如下：
+點數依 Cube 以 **五因子公式**計算。最終 CU 取決於你查哪些 Cube、要幾列、是否彙總、納入幾個 metric，以及選了幾個欄位。
 
 ```
-Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × ComplexityFactor) / 100
 ```
 
-| Factor | Calculation | Description |
+| 因子 | 計算方式 | 說明 |
 |:-------|:-----------|:------------|
-| **BaseCost** | 各 Cube 基礎價（見下表） | 隨 Cube 複雜度變化的固定成本 |
-| **LimitFactor** | `ceil(limit / 100)`，最小為 1 | 隨請求行數縮放 |
-| **AggregationFactor** | 1.0（無）、1.5（GROUP BY）、2.0（HAVING） | 使用聚合或 HAVING 過濾時更高 |
-| **MetricFactor** | `1.0 + (metric_count × 0.2)` | 每增加一個 metric（如 count、sum）都會提高 |
+| **BaseCost** | 各 Cube 內部值 | 反映底層表大小與掃描成本。每個 Cube 的 base cost 不同。 |
+| **LimitFactor** | `ceil(limit / 100)`，至少為 1 | 與請求的列數線性成長。1–100 列成本相同；101–200 為 2 倍，以此類推。 |
+| **AggregationFactor** | 1.0（無）、1.5（GROUP BY）、2.0（HAVING） | 使用彙總或彙總後篩選（`selectWhere`）時較高。 |
+| **MetricFactor** | `1.0 + (aggregate_count × 0.1)` | 每多一個彙總函式（`count`、`sum`、`avg` 等）成本約增加 10%。 |
+| **ComplexityFactor** | `min(1.0 + min(select_count, 250) / 50 × 0.2, 1.5)` | 選越多欄位成本越高，上限 1.5×。約 5 個欄位的簡單查詢因子約 1.02。 |
 
-<Tip>
-在預設 limit（25 行）且無聚合的簡單查詢中，通常只支付基礎成本。提高行數或增加聚合類 metric 時，Credits 會上升。
-</Tip>
+<Note>
+**零列查詢免費。** 若查詢未回傳任何列，不論其他因子為何都不扣點。
+</Note>
 
-### 計算示例
+### 計算範例
 
 <AccordionGroup>
-  <Accordion title="簡單查詢：10 行 DEXTrades">
+  <Accordion title="簡單查詢：10 列、5 個欄位">
     ```
-    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    BaseCost = 2000 (internal), LimitFactor = ceil(10/100) = 1
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ComplexityFactor = 1.0 + (5/50) × 0.2 = 1.02
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.02) = 2040
+    CU = 2040 / 100 = 20.40 CU
     ```
   </Accordion>
-  <Accordion title="大結果集：500 行 DEXTrades">
+  <Accordion title="大型查詢：500 列、5 個欄位">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.0 × 1.0 × 1.02) = 10200
+    CU = 10200 / 100 = 102.00 CU
     ```
   </Accordion>
-  <Accordion title="聚合查詢：500 行 + GROUP BY + 2 個 metrics">
+  <Accordion title="彙總查詢：GROUP BY + 2 個 metric、500 列">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
-    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
-    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY)
+    MetricFactor = 1.0 + 2 × 0.1 = 1.2
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.5 × 1.2 × 1.02) = 18360
+    CU = 18360 / 100 = 183.60 CU
+    ```
+  </Accordion>
+  <Accordion title="複雜查詢：選取大量欄位">
+    ```
+    BaseCost = 2000, LimitFactor = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    ComplexityFactor = min(1.0 + (250/50) × 0.2, 1.5) = 1.5 (capped)
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.5) = 3000
+    CU = 3000 / 100 = 30.00 CU
     ```
   </Accordion>
 </AccordionGroup>
 
----
-
-## 各 Cube 基礎成本
-
-| Cube | Base Cost (CU) | 說明 |
-|:-----|:---------------|:-----|
-| **DEXTrades** | 50 | 維度最多、體量最大的表 |
-| **DEXTradeByTokens** | 50 | 與 DEXTrades 同源資料 |
-| **DEXPoolEvents** | 30 | 流動性事件 |
-| **Pairs** | 30 | OHLC K 線資料（Trading 組） |
-| **Tokens** | 30 | 代幣成交統計（Trading 組） |
-| **WalletTokenPnL** | 25 | DWS 彙總 |
-| **Transfers** | 15 | |
-| **BalanceUpdates** | 10 | |
-| **Events**、**Calls** | 20 | EVM 專屬事件/呼叫追蹤 |
-| **Instructions** | 20 | Solana 專屬 |
-| **PredictionTrades** | 20 | 預測市場資料 |
-| 其餘所有 Cube | 20 | 預設基礎成本 |
-
-<Note>
-基礎成本反映查詢複雜度與各 Cube 底層資料規模。`extensions.credits` 中返回的實際 Cube 名稱由服務端決定 — 請以響應值為計費依據。
-</Note>
+<Tip>
+由於 CU 為動態計算，要知道確切成本，最可靠的方式是查看回應中的 `extensions.credits` 欄位，或監看 IDE 狀態列上的 CU 指示。
+</Tip>
 
 ---
 
-## 響應：`extensions.credits`
+## 回應：`extensions.credits`
 
-每條 GraphQL 響應都會在 `extensions` 中附帶 Credits 消耗詳情：
+每筆 GraphQL 回應都會在 `extensions` 中附上點數消耗資訊：
 
 ```json
 {
   "data": {
-    "DEXTrades": [ ... ]
+    "Solana": {
+      "DEXTrades": [ ... ]
+    }
   },
   "extensions": {
     "credits": {
-      "total": 50,
+      "total": 20.4,
+      "unit": "CU",
       "cubes": [
         {
           "cube": "DEXTrades",
-          "credits": 50,
+          "credits": 20.4,
           "row_count": 10
         }
       ]
@@ -108,41 +109,42 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 }
 ```
 
-| Field | Type | Description |
+| 欄位 | 型別 | 說明 |
 |:------|:-----|:------------|
-| `total` | `Int` | 整條查詢消耗的 Credits 合計 |
-| `cubes` | `Array` | 按 Cube 拆分 |
-| `cubes[].cube` | `String` | Cube 名稱 |
-| `cubes[].credits` | `Int` | 該 Cube 計費的 Credits |
-| `cubes[].row_count` | `Int` | 返回行數 |
+| `total` | `Float` | 整筆查詢消耗的 CU 總計 |
+| `unit` | `String` | 固定為 `"CU"` |
+| `cubes` | `Array` | 依 Cube 拆分 |
+| `cubes[].cube` | `String` | 計費引擎使用的 Cube 名稱 |
+| `cubes[].credits` | `Float` | 該 Cube 計收的 CU |
+| `cubes[].row_count` | `Int` | 回傳列數 |
 
 <Note>
-在發生扣費（即 `total > 0`）時會出現 `extensions.credits`。即使返回 0 行，仍會收取基礎成本。
+有扣點時（即 `total > 0`）才會出現 `extensions.credits`。零列查詢不計費。
 </Note>
 
 ---
 
-## 在 IDE 中檢視用量
+## 在 IDE 中監控用量
 
-[GraphQL IDE](https://ide.chainstream.io) 狀態列會在每次查詢後顯示 Credits 消耗：
+[GraphQL IDE](https://ide.chainstream.io) 狀態列會在每筆查詢後顯示點數消耗：
 
-- **CU 指示**：顯示消耗的 CU 總數（例如 `50 CU`）
+- **CU 指示**：顯示該次查詢消耗的 CU 總量
 - **Latency**：請求耗時（毫秒）
-- **Response size**：響應體大小
+- **Response size**：回應本文大小
 
 ---
 
-## 最佳化 Credits 使用的建議
+## 優化點數使用的建議
 
 <CardGroup cols={3}>
   <Card title="少選欄位" icon="minimize">
-    只請求需要的維度欄位。欄位越少，處理的資料量通常越小。
+    只請求需要的維度。ComplexityFactor 會隨選取欄位數增加。
   </Card>
-  <Card title="合理 limit" icon="gauge">
-    在業務允許範圍內儘量壓低 `limit.count`。Credits 隨 `ceil(limit / 100)` 縮放。
+  <Card title="適當的 limit" icon="gauge">
+    在可接受範圍內盡量降低 `limit.count`。LimitFactor 每多 100 列會加倍。
   </Card>
-  <Card title="優先預聚合 Cube" icon="layer-group">
-    需要彙總資料時，優先使用 DWM/DWS Cube（如 Pairs、Tokens、TokenHolders），而不是在 DWD Cube（如 DEXTrades）上堆 metrics。
+  <Card title="善用預先彙總 Cube" icon="layer-group">
+    需要彙總資料時，優先使用 DWM／DWS Cube（Pairs、Tokens、TokenHolders），而非在 DWD Cube（DEXTrades）上跑 metric。
   </Card>
 </CardGroup>
 
@@ -151,10 +153,10 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 ## 相關文件
 
 <CardGroup cols={2}>
-  <Card title="計費與 Units 總覽" icon="receipt" href="/zh-Hant/guides/getting-started/billing-and-units">
-    ChainStream 計費計劃、單位配額與支付方式概覽。
+  <Card title="計費與用量單位" icon="receipt" href="/zh-Hant/guides/getting-started/billing-and-units">
+    ChainStream 計費方案、單位配額與付款方式總覽。
   </Card>
-  <Card title="Metrics 與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
-    瞭解聚合 metrics 如何影響查詢 Credits。
+  <Card title="Metrics 與彙總" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
+    了解彙總 metric 如何影響查詢點數。
   </Card>
 </CardGroup>

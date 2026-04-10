@@ -1,105 +1,106 @@
 ---
-title: "计费与 Credits"
-description: "了解 GraphQL API 如何通过 Credit Unit（CU）体系计费"
+title: "Billing & Credits"
+description: "Understand how GraphQL API queries are billed using the Credit Unit system"
 icon: "credit-card"
 ---
 
 ## 概述
 
-每条 GraphQL 查询会根据所查 **Cube**、请求行数与聚合复杂度消耗 **Credit Units (CU)**。Credits 与 REST API 使用同一套计费计划 — 你的 API Key 在两者间通用。
+每条 GraphQL 查询会消耗根据查询复杂度动态计算的 **Credit Units（CU，信用单位）**。额度与 REST Data API 共用同一计费计划 —— 同一 API Key 即可访问两者。
 
 <Info>
-GraphQL API 与 REST Data API 共用同一 API Key 与计费计划。GraphQL 查询消耗的 Credits 计入整体用量。
+GraphQL API 与 REST Data API 共用 API Key 与计费计划。GraphQL 查询消耗的额度计入总用量。
 </Info>
 
 ---
 
-## Credit 计算公式
+## 额度计算公式
 
-Credits 按 Cube 分别计算，公式如下：
+按 Cube 采用 **五因子公式** 计算额度。最终 CU 取决于查询内容、请求行数、是否聚合、指标数量以及选中字段数。
 
 ```
-Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
+CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × ComplexityFactor) / 100
 ```
 
-| Factor | Calculation | Description |
+| 因子 | 计算方式 | 说明 |
 |:-------|:-----------|:------------|
-| **BaseCost** | 各 Cube 基础价（见下表） | 随 Cube 复杂度变化的固定成本 |
-| **LimitFactor** | `ceil(limit / 100)`，最小为 1 | 随请求行数缩放 |
-| **AggregationFactor** | 1.0（无）、1.5（GROUP BY）、2.0（HAVING） | 使用聚合或 HAVING 过滤时更高 |
-| **MetricFactor** | `1.0 + (metric_count × 0.2)` | 每增加一个 metric（如 count、sum）都会提高 |
+| **BaseCost** | 各 Cube 内部基准值 | 反映底层表规模与扫描成本，不同 Cube 不同。 |
+| **LimitFactor** | `ceil(limit / 100)`，最小为 1 | 与请求行数近似线性；1–100 行同价；101–200 为 2×，以此类推。 |
+| **AggregationFactor** | 1.0（无）、1.5（GROUP BY）、2.0（HAVING） | 使用聚合或聚合后过滤（`selectWhere`）时更高。 |
+| **MetricFactor** | `1.0 + (aggregate_count × 0.1)` | 每多一个聚合函数（`count`、`sum`、`avg` 等）约增加 10% 成本。 |
+| **ComplexityFactor** | `min(1.0 + min(select_count, 250) / 50 × 0.2, 1.5)` | 选中字段越多成本越高，上限 1.5×；约 5 个字段的简单查询因子约 1.02。 |
 
-<Tip>
-在默认 limit（25 行）且无聚合的简单查询中，通常只支付基础成本。提高行数或增加聚合类 metric 时，Credits 会上升。
-</Tip>
+<Note>
+**零行查询不扣费。** 若查询无返回行，无论其他因子如何均不计费。
+</Note>
 
 ### 计算示例
 
 <AccordionGroup>
-  <Accordion title="简单查询：10 行 DEXTrades">
+  <Accordion title="简单查询：10 行，5 个字段">
     ```
-    BaseCost = 50, LimitFactor = ceil(10/100) = 1
+    BaseCost = 2000 (internal), LimitFactor = ceil(10/100) = 1
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 1 × 1.0 × 1.0 = 50 CU
+    ComplexityFactor = 1.0 + (5/50) × 0.2 = 1.02
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.02) = 2040
+    CU = 2040 / 100 = 20.40 CU
     ```
   </Accordion>
-  <Accordion title="大结果集：500 行 DEXTrades">
+  <Accordion title="较大查询：500 行，5 个字段">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
     AggregationFactor = 1.0, MetricFactor = 1.0
-    Credits = 50 × 5 × 1.0 × 1.0 = 250 CU
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.0 × 1.0 × 1.02) = 10200
+    CU = 10200 / 100 = 102.00 CU
     ```
   </Accordion>
-  <Accordion title="聚合查询：500 行 + GROUP BY + 2 个 metrics">
+  <Accordion title="聚合查询：GROUP BY + 2 个指标，500 行">
     ```
-    BaseCost = 50, LimitFactor = ceil(500/100) = 5
-    AggregationFactor = 1.5 (GROUP BY), MetricFactor = 1.0 + 2×0.2 = 1.4
-    Credits = 50 × 5 × 1.5 × 1.4 = 525 CU
+    BaseCost = 2000, LimitFactor = ceil(500/100) = 5
+    AggregationFactor = 1.5 (GROUP BY)
+    MetricFactor = 1.0 + 2 × 0.1 = 1.2
+    ComplexityFactor = 1.02
+    Internal = ceil(2000 × 5 × 1.5 × 1.2 × 1.02) = 18360
+    CU = 18360 / 100 = 183.60 CU
+    ```
+  </Accordion>
+  <Accordion title="复杂查询：选中大量字段">
+    ```
+    BaseCost = 2000, LimitFactor = 1
+    AggregationFactor = 1.0, MetricFactor = 1.0
+    ComplexityFactor = min(1.0 + (250/50) × 0.2, 1.5) = 1.5 (capped)
+    Internal = ceil(2000 × 1 × 1.0 × 1.0 × 1.5) = 3000
+    CU = 3000 / 100 = 30.00 CU
     ```
   </Accordion>
 </AccordionGroup>
 
----
-
-## 各 Cube 基础成本
-
-| Cube | Base Cost (CU) | 说明 |
-|:-----|:---------------|:-----|
-| **DEXTrades** | 50 | 维度最多、体量最大的表 |
-| **DEXTradeByTokens** | 50 | 与 DEXTrades 同源数据 |
-| **DEXPoolEvents** | 30 | 流动性事件 |
-| **Pairs** | 30 | OHLC K 线数据（Trading 组） |
-| **Tokens** | 30 | 代币成交统计（Trading 组） |
-| **WalletTokenPnL** | 25 | DWS 汇总 |
-| **Transfers** | 15 | |
-| **BalanceUpdates** | 10 | |
-| **Events**、**Calls** | 20 | EVM 专属事件/调用追踪 |
-| **Instructions** | 20 | Solana 专属 |
-| **PredictionTrades** | 20 | 预测市场数据 |
-| 其余所有 Cube | 20 | 默认基础成本 |
-
-<Note>
-基础成本反映查询复杂度与各 Cube 底层数据规模。`extensions.credits` 中返回的实际 Cube 名称由服务端决定 — 请以响应值为计费依据。
-</Note>
+<Tip>
+由于 CU 为动态计算，最准确的方式是查看响应中的 `extensions.credits` 字段，或关注 IDE 状态栏中的 CU 指示。
+</Tip>
 
 ---
 
 ## 响应：`extensions.credits`
 
-每条 GraphQL 响应都会在 `extensions` 中附带 Credits 消耗详情：
+每条 GraphQL 响应在 `extensions` 中包含额度消耗详情：
 
 ```json
 {
   "data": {
-    "DEXTrades": [ ... ]
+    "Solana": {
+      "DEXTrades": [ ... ]
+    }
   },
   "extensions": {
     "credits": {
-      "total": 50,
+      "total": 20.4,
+      "unit": "CU",
       "cubes": [
         {
           "cube": "DEXTrades",
-          "credits": 50,
+          "credits": 20.4,
           "row_count": 10
         }
       ]
@@ -108,41 +109,42 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 }
 ```
 
-| Field | Type | Description |
+| 字段 | 类型 | 说明 |
 |:------|:-----|:------------|
-| `total` | `Int` | 整条查询消耗的 Credits 合计 |
+| `total` | `Float` | 整条查询消耗的总 CU |
+| `unit` | `String` | 恒为 `"CU"` |
 | `cubes` | `Array` | 按 Cube 拆分 |
-| `cubes[].cube` | `String` | Cube 名称 |
-| `cubes[].credits` | `Int` | 该 Cube 计费的 Credits |
+| `cubes[].cube` | `String` | 计费引擎使用的 Cube 名 |
+| `cubes[].credits` | `Float` | 该 Cube 计费的 CU |
 | `cubes[].row_count` | `Int` | 返回行数 |
 
 <Note>
-在发生扣费（即 `total > 0`）时会出现 `extensions.credits`。即使返回 0 行，仍会收取基础成本。
+在产生扣费时会出现 `extensions.credits`（即 `total > 0`）。零行返回的查询不计费。
 </Note>
 
 ---
 
-## 在 IDE 中查看用量
+## 在 IDE 中监控用量
 
-[GraphQL IDE](https://ide.chainstream.io) 状态栏会在每次查询后显示 Credits 消耗：
+[GraphQL IDE](https://ide.chainstream.io) 状态栏会在每次查询后显示额度消耗：
 
-- **CU 指示**：显示消耗的 CU 总数（例如 `50 CU`）
-- **Latency**：请求耗时（毫秒）
-- **Response size**：响应体大小
+- **CU 指示**：显示本次消耗的总 CU
+- **延迟**：请求耗时（毫秒）
+- **响应大小**：载荷体积
 
 ---
 
-## 优化 Credits 使用的建议
+## 优化额度使用的建议
 
 <CardGroup cols={3}>
   <Card title="少选字段" icon="minimize">
-    只请求需要的维度字段。字段越少，处理的数据量通常越小。
+    只请求需要的维度。ComplexityFactor 随选中字段数增加。
   </Card>
   <Card title="合理 limit" icon="gauge">
-    在业务允许范围内尽量压低 `limit.count`。Credits 随 `ceil(limit / 100)` 缩放。
+    在可接受范围内尽量降低 `limit.count`。LimitFactor 每多 100 行约翻倍。
   </Card>
   <Card title="优先预聚合 Cube" icon="layer-group">
-    需要汇总数据时，优先使用 DWM/DWS Cube（如 Pairs、Tokens、TokenHolders），而不是在 DWD Cube（如 DEXTrades）上堆 metrics。
+    需要汇总数据时，优先使用 DWM/DWS Cube（Pairs、Tokens、TokenHolders），而非在 DWD Cube（DEXTrades）上跑指标。
   </Card>
 </CardGroup>
 
@@ -151,10 +153,10 @@ Credits = BaseCost × LimitFactor × AggregationFactor × MetricFactor
 ## 相关文档
 
 <CardGroup cols={2}>
-  <Card title="计费与 Units 总览" icon="receipt" href="/cn/guides/getting-started/billing-and-units">
-    ChainStream 计费计划、单位配额与支付方式概览。
+  <Card title="计费与单位（总览）" icon="receipt" href="/cn/guides/getting-started/billing-and-units">
+    ChainStream 计费计划、额度配额与支付方式概览。
   </Card>
-  <Card title="Metrics 与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
-    了解聚合 metrics 如何影响查询 Credits。
+  <Card title="指标与聚合" icon="chart-simple" href="/cn/graphql/schema/metrics-aggregation">
+    了解聚合指标如何影响查询额度。
   </Card>
 </CardGroup>

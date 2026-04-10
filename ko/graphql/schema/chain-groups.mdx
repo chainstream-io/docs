@@ -1,12 +1,12 @@
 ---
-title: "체인 그룹"
-description: "Cube가 EVM, Solana, Trading 체인 그룹으로 구성되는 방식"
+title: "Chain Groups"
+description: "How Cubes are organized into EVM, Solana, and Trading Chain Groups"
 icon: "layer-group"
 ---
 
 ## 개요
 
-ChainStream GraphQL은 25개 Cube를 세 개의 **체인 그룹**으로 구성합니다. 각 그룹은 블록체인 생태계를 나타내며, 사용 가능한 Cube, `network` 파라미터의 작동 방식, 존재하는 체인 특화 필드를 결정합니다.
+ChainStream GraphQL은 25개의 Cube를 세 가지 **Chain Group**으로 묶습니다. 각 그룹은 블록체인 생태계를 나타내며, 어떤 Cube를 쓸 수 있는지, `network` 파라미터가 어떻게 동작하는지, 체인별 필드가 무엇인지를 결정합니다.
 
 ```graphql
 type ChainStream {
@@ -20,15 +20,19 @@ type ChainStream {
 
 ## EVM
 
-**EVM** 그룹은 모든 EVM 호환 블록체인을 위한 Cube를 포함합니다. 어떤 체인을 쿼리할지 지정하기 위해 `network` 인자가 **필수**입니다.
+**EVM** 그룹에는 모든 EVM 호환 블록체인용 Cube가 포함됩니다. 조회할 체인을 지정하려면 **`network` 인자가 필수**입니다.
 
 ### 사용 가능한 네트워크
 
-| Network ID | 블록체인 |
+| 네트워크 ID | 블록체인 |
 |:-----------|:-----------|
 | `eth` | Ethereum |
 | `bsc` | BNB Chain (BSC) |
 | `polygon` | Polygon |
+
+<Warning>
+**Polygon 데이터 가용성:** 현재 Polygon에서 데이터가 있는 Cube는 **예측 시장(Prediction Markets)** Cube(`PredictionTrades`, `PredictionManagements`, `PredictionSettlements`)뿐입니다. 다른 Cube(DEXTrades, Blocks, Transfers 등)는 배포 중이며, 해당 Cube에 대한 쿼리는 오류를 반환할 수 있습니다.
+</Warning>
 
 ### Cube
 
@@ -36,23 +40,23 @@ type ChainStream {
 `DEXTrades`, `DEXTradeByTokens`, `Transfers`, `BalanceUpdates`, `DEXPoolEvents`, `TokenSupplyUpdates`, `Blocks`, `Transactions`, `TransactionBalances`, `DEXPools`, `TokenHolders`, `WalletTokenPnL`
 
 **EVM 전용:**
-- `Events` — 스마트 컨트랙트 이벤트 로그 (디코딩된 토픽 및 데이터)
-- `Calls` — 내부 호출 트레이스 (CALL, DELEGATECALL, CREATE 등)
-- `MinerRewards` — 블록 보상 분류 (정적, 동적, 엉클, 소각 수수료)
+- `Events` — 스마트 컨트랙트 이벤트 로그(디코딩된 topic·data)
+- `Calls` — 내부 호출 트레이스(CALL, DELEGATECALL, CREATE 등)
+- `MinerRewards` — 블록 보상 분해(static, dynamic, uncle, burned fees)
 - `DEXPoolSlippages` — 풀 가격 슬리피지 분석
-- `Uncles` — 엉클 블록 데이터 (주로 Ethereum PoW 과거 데이터)
-- `PredictionTrades` — 예측 시장 트레이드 *(주로 Polygon)*
+- `Uncles` — Uncle 블록 데이터(주로 Ethereum PoW 과거)
+- `PredictionTrades` — 예측 시장 거래 *(주로 Polygon)*
 - `PredictionManagements` — 예측 시장 관리 이벤트 *(주로 Polygon)*
 - `PredictionSettlements` — 예측 시장 정산 *(주로 Polygon)*
 
-### 쿼리 예제
+### 예시 쿼리
 
 ```graphql
 query {
   EVM(network: eth, dataset: combined) {
     DEXTrades(
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Number }
       Transaction { Hash }
@@ -70,7 +74,7 @@ query {
 
 ## Solana
 
-**Solana** 그룹은 Solana 블록체인을 위한 Cube를 포함합니다. 네트워크가 암시적(`sol`)이므로 `network` 인자가 필요하지 않습니다.
+**Solana** 그룹에는 Solana 블록체인용 Cube가 들어 있습니다. 네트워크는 암시적으로 `sol`이며 **`network` 인자는 필요 없습니다.**
 
 ### Cube
 
@@ -78,19 +82,19 @@ query {
 `DEXTrades`, `DEXTradeByTokens`, `Transfers`, `BalanceUpdates`, `DEXPoolEvents`, `TokenSupplyUpdates`, `Blocks`, `Transactions`, `TransactionBalances`, `DEXPools`, `TokenHolders`, `WalletTokenPnL`
 
 **Solana 전용:**
-- `Instructions` — 프로그램 인스트럭션 데이터 (프로그램 주소, 메서드, 계정, 로그)
-- `InstructionBalanceUpdates` — 인스트럭션 레벨 잔액 변동
-- `Rewards` — 밸리데이터 및 스테이킹 보상
-- `DEXOrders` — DEX 주문장 이벤트 (지정가 주문, 취소, 체결)
+- `Instructions` — 프로그램 instruction 데이터(프로그램 주소, 메서드, 계정, 로그)
+- `InstructionBalanceUpdates` — instruction 단위 잔액 변화
+- `Rewards` — 검증자·스테이킹 보상
+- `DEXOrders` — DEX 오더북 이벤트(지정가 주문, 취소, 체결)
 
-### 쿼리 예제
+### 예시 쿼리
 
 ```graphql
 query {
   Solana(dataset: realtime) {
     DEXTrades(
       limit: {count: 10}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Hash }
@@ -104,36 +108,40 @@ query {
 }
 ```
 
-### Solana 전용 필드
+### 체인 간 필드 이름
 
-Solana Cube는 EVM과 비교하여 일부 디멘션에 대해 다른 필드 이름을 사용합니다:
+아래 표는 체인별 관례적인 필드 이름입니다. 다만 Record 타입에는 **모든 체인의 필드를 합친 superset**이 들어 있어, 모든 Cube의 Record에 `MintAddress`와 `SmartContract`가 함께 존재하며 동일한 기본 데이터를 가리킵니다. 어떤 체인에서든 둘 중 하나를 쓸 수 있습니다.
 
-| 개념 | Solana | EVM |
-|:--------|:-------|:----|
-| 토큰 주소 | `MintAddress` | `SmartContract` |
-| 트랜잭션 ID | `Signature` / `Hash` | `Hash` |
-| 블록 식별자 | `Slot` | `Number` |
-| 프로그램/컨트랙트 | `ProgramAddress` | `SmartContract` |
-| 수수료 지불자 | `FeePayer` | `From` |
+| 개념 | 관례(Solana) | 관례(EVM) | 크로스체인? |
+|:--------|:---------------------|:-------------------|:-------------|
+| 토큰 주소 | `MintAddress` | `SmartContract` | 모든 체인에서 둘 다 동작 |
+| 트랜잭션 ID | `Signature` / `Hash` | `Hash` | 모든 체인에서 둘 다 동작 |
+| 블록 식별자 | `Slot` | `Number` | 모든 체인에서 둘 다 동작 |
+| 프로그램/컨트랙트 | `ProgramAddress` | `SmartContract` | 모든 체인에서 둘 다 동작 |
+| 수수료 지불자 | `FeePayer` | `From` | 모든 체인에서 둘 다 동작 |
+
+<Tip>
+즉 **하나의 쿼리 템플릿**으로 모든 체인을 다룰 때 필드 이름을 바꿀 필요가 없습니다. 예를 들어 Solana·EVM 쿼리 모두에서 `Currency { MintAddress }`가 동작합니다.
+</Tip>
 
 ---
 
 ## Trading
 
-**Trading** 그룹은 **크로스체인 사전 집계** 트레이딩 분석을 제공합니다. 모든 지원 체인의 데이터를 필터링을 위한 `chain` 디멘션과 함께 통합 매터리얼라이즈드 뷰로 결합합니다.
+**Trading** 그룹은 **크로스체인 사전 집계** 거래 분석을 제공합니다. 지원 체인 데이터를 통합한 materialized view에 `chain` 차원으로 필터링할 수 있습니다.
 
 ### Cube
 
-- `Pairs` — OHLC 캔들스틱 데이터 (시가/고가/저가/종가, 거래량, 거래 횟수)
-- `Tokens` — 토큰별 트레이드 통계 (거래량, 매수/매도 분류, 고유 트레이더)
+- `Pairs` — OHLC 캔들(open/high/low/close, 거래량, 거래 건수)
+- `Tokens` — 토큰별 거래 통계(거래량, 매수/매도 분해, 고유 트레이더 수)
 
-### EVM/Solana 그룹과의 주요 차이점
+### EVM/Solana 그룹과의 주요 차이
 
-1. **`network` 인자 없음** — Trading 그룹은 체인 간 데이터를 결합합니다. 네트워크별 필터링에는 데이터 내의 `chain` 디멘션을 사용합니다.
-2. **크로스체인 데이터** — 단일 쿼리로 `sol`, `eth`, `bsc`의 데이터를 함께 반환할 수 있습니다.
-3. **사전 집계** — 데이터는 DWM 레이어에서 분 단위 세분화로 매터리얼라이즈되어 있습니다.
+1. **`network` 인자 없음** — Trading은 체인을 합친 데이터입니다. 네트워크별 필터는 데이터 안의 `chain` 차원을 사용하세요.
+2. **크로스체인 데이터** — 한 쿼리로 `sol`, `eth`, `bsc` 등을 함께 반환할 수 있습니다.
+3. **사전 집계** — DWM 레이어에서 분 단위로 materialize된 데이터입니다.
 
-### 예제: 크로스체인 OHLC
+### 예시: 크로스체인 OHLC
 
 ```graphql
 query {
@@ -141,7 +149,7 @@ query {
     Pairs(
       where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
       limit: {count: 60}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Token { Address }
       Market { Network }
@@ -154,7 +162,7 @@ query {
 }
 ```
 
-### 예제: 체인별 토큰 트레이드 통계
+### 예시: 체인별 토큰 거래 통계
 
 ```graphql
 query {
@@ -165,7 +173,7 @@ query {
         Market: { Network: { is: "eth" } }
       }
       limit: {count: 30}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Volume { Usd BuyVolumeUSD SellVolumeUSD }
@@ -177,14 +185,14 @@ query {
 
 ---
 
-## 체인 그룹 비교
+## Chain Group 비교
 
 | 기능 | EVM | Solana | Trading |
 |:--------|:----|:-------|:--------|
-| **`network` 인자** | 필수 (`eth`, `bsc`, `polygon`) | 불필요 (암시적 `sol`) | 불필요 (크로스체인) |
+| **`network` 인자** | 필수(`eth`, `bsc`, `polygon`) | 불필요(암시적 `sol`) | 불필요(크로스체인) |
 | **고유 Cube** | Events, Calls, MinerRewards, Uncles, DEXPoolSlippages, Prediction* | Instructions, InstructionBalanceUpdates, Rewards, DEXOrders | Pairs, Tokens |
-| **데이터 세분화** | 이벤트별 (DWD) + 집계 (DWM/DWS) | 이벤트별 + 인스트럭션 레벨 | 사전 집계 (DWM) |
-| **`dataset` 지원** | 예 (대부분의 Cube) | 예 (대부분의 Cube) | 예 |
+| **데이터 세분도** | 이벤트 단위(DWD) + 집계(DWM/DWS) | 이벤트 + instruction 단위 | 사전 집계(DWM) |
+| **`dataset` 지원** | 예(대부분 Cube) | 예(대부분 Cube) | 예 |
 | **`aggregates` 지원** | 예 | 예 | 예 |
 
 ---
@@ -192,10 +200,10 @@ query {
 ## 관련 문서
 
 <CardGroup cols={2}>
-  <Card title="데이터 큐브" icon="cubes" href="/ko/graphql/schema/cubes">
-    25개 Cube의 상세 필드 구조와 사용 사례.
+  <Card title="데이터 Cube" icon="cubes" href="/ko/graphql/schema/cubes">
+    25개 Cube 전체의 필드 구조와 사용 사례.
   </Card>
-  <Card title="데이터셋 & 어그리게이트" icon="database" href="/ko/graphql/schema/dataset-aggregates">
+  <Card title="Dataset과 Aggregates" icon="database" href="/ko/graphql/schema/dataset-aggregates">
     데이터 소스 범위와 사전 집계 동작 제어.
   </Card>
 </CardGroup>

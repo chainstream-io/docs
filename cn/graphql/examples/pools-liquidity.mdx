@@ -1,24 +1,24 @@
 ---
-title: "池与流动性"
-description: "DEX 池与流动性数据的查询示例"
+title: "Pools & Liquidity"
+description: "Query examples for DEX pools and liquidity data"
 icon: "droplet"
 ---
 
-本页涵盖用于 DEX 池与流动性分析的 Cube：
+本文介绍用于 DEX 池子与流动性分析的 Cube：
 
-- **DEXPoolEvents** (DWD) — 添加/移除流动性事件及逐事件储备与价格
-- **DEXPools** (DWS) — 池子**快照**（当前流动性与价格，定期刷新）
-- **TokenSupplyUpdates** (DWD) — 代币供应量、市值与 FDV 更新
+- **DEXPoolEvents**（DWD）— 流动性添加/移除事件，含逐事件储备与价格
+- **DEXPools**（DWS）— 池子**快照**（当前流动性与价格，定期刷新）
+- **TokenSupplyUpdates**（DWD）— 代币供应量、市值与 FDV 更新
 
 <Note>
-示例使用 **Solana** 与 **EVM** [链分组](/cn/graphql/schema/chain-groups)：`Solana { ... }` 查询 Solana，`EVM(network: eth | bsc | polygon) { ... }` 查询 EVM 链（含 Polygon）。
+示例使用 **Solana** 与 **EVM** [链分组](/cn/graphql/schema/chain-groups)：`Solana { ... }` 用于 Solana，`EVM(network: eth | bsc | polygon) { ... }` 用于 EVM 链（含 Polygon）。
 </Note>
 
 ---
 
-## How do I get liquidity pools for a token?
+## 如何获取某代币的流动性池？
 
-查找快照中该代币作为 **token A** 的 DEX 池。若代币只作为 token B 出现，需再用 `tokenB` 查一次（或使用 `where`）；需要**逐事件**的完整交易对上下文时，请用 **DEXPoolEvents**。
+在快照中查找将某代币列为 **token A** 的 DEX 池子。若资产仅作为 token B 出现，需用 `tokenB` 再查一次（或使用 `where`）；需要**事件级**行与完整交易对上下文时，请用 **DEXPoolEvents**。
 
 ```graphql
 query {
@@ -43,37 +43,37 @@ query {
 ```
 
 <Tip>
-[在 GraphQL IDE 中打开](https://ide.chainstream.io) — 将上方查询粘贴到 IDE 中即可交互式运行，享受自动补全和 Schema 探索。
+[在 GraphQL IDE 中打开](https://ide.chainstream.io) — 将上方查询粘贴进去即可交互运行，并享受自动补全与 schema 浏览。
 </Tip>
 
 <Tip>
-将 `TOKEN_ADDRESS` 替换为代币 mint（Solana）或合约地址（EVM）。若代币常作为 quote 侧，请再用 `tokenB: {is: "TOKEN_ADDRESS"}` 查询。
+将 `TOKEN_ADDRESS` 替换为代币 mint（Solana）或合约地址（EVM）。再用 `tokenB: {is: "TOKEN_ADDRESS"}` 查询一次，可包含该代币作为报价侧的池子。
 </Tip>
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Pool.Address` | 流动性池 / 市场地址 |
-    | `Pool.ProgramAddress` | DEX program 或工厂合约地址 |
-    | `Pool.TokenAAddress` | Base 侧代币地址 |
-    | `Pool.TokenBAddress` | Quote 侧代币地址 |
+    | `Pool.ProgramAddress` | DEX 程序或工厂合约地址 |
+    | `Pool.TokenAAddress` | 基础侧代币地址 |
+    | `Pool.TokenBAddress` | 报价侧代币地址 |
     | `Pool.LiquidityUSD` | 池子总流动性（USD，快照） |
     | `Pool.LastUpdated` | 该快照行上次更新时间 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **按流动性过滤**：增加 `where: {Pool: {LiquidityUSD: {gt: 10000}}}` 筛选深度足够的池
-    - **指定 DEX**：增加 `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`
-    - **更多池**：提高 `count` 以发现更多相关池
-    - **逐事件储备**：用 **DEXPoolEvents**，配合 `tokenAddress` / `poolAddress` 与 `orderBy: Block_Time_DESC` 查看加减仓历史
+  <Accordion title="自定义提示">
+    - **按流动性过滤**：添加 `where: {Pool: {LiquidityUSD: {gt: 10000}}}` 筛选超过某 USD 深度的池子
+    - **指定 DEX**：添加 `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`
+    - **更多池子**：提高 `count` 以发现该代币的更多池子
+    - **逐事件储备**：对 **DEXPoolEvents** 使用 `tokenAddress` / `poolAddress` 与 `orderBy: {descending: Block_Time}` 查看加/减流动性历史
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get details of a specific pool?
+## 如何获取某个池子的详情？
 
-按地址读取该池的**最新快照**。**DEXPools** 每行不是区块时间线；储备**历史序列**请用 **DEXPoolEvents**。
+按地址读取单个池子的**最新快照**。**DEXPools** 不按行暴露区块时间线 — 历史储备序列请用 **DEXPoolEvents**。
 
 ```graphql
 query {
@@ -99,27 +99,27 @@ query {
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `Pool.TokenAAddress` / `Pool.TokenBAddress` | 交易对代币地址 |
     | `Pool.LiquidityUSD` | 总流动性（USD，快照） |
-    | `Pool.LastUpdated` | 该池快照最近刷新时间 |
+    | `Pool.LastUpdated` | 该池快照上次刷新时间 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **储备历史**：在 **DEXPoolEvents** 上使用 `poolAddress: {is: "POOL_ADDRESS"}` 与 `orderBy: Block_Time_DESC`
-    - **事件时间范围**：在 **DEXPoolEvents** 上增加 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定加减仓时段
+  <Accordion title="自定义提示">
+    - **储备历史**：查询 **DEXPoolEvents**，`poolAddress: {is: "POOL_ADDRESS"}` 且 `orderBy: {descending: Block_Time}`
+    - **事件时间范围**：在 **DEXPoolEvents** 上添加 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定加/减流动性时段
   </Accordion>
 </AccordionGroup>
 
 <Info>
-`poolAddress` 选择器按 `Pool.Address` 过滤，在 **DEXPools**（快照）与 **DEXPoolEvents**（事件）上均可用。
+`poolAddress` 选择器按 `Pool.Address` 过滤。**DEXPools**（快照）与 **DEXPoolEvents**（事件）均支持。
 </Info>
 
 ---
 
-## How do I rank pools or read snapshot liquidity?
+## 如何对池子排序或读取快照流动性？
 
-**DEXPools** (DWS) 存**当前状态**行（通常数分钟级刷新）。适合按 `LiquidityUSD` 排名、按 DEX program 对比，而无需扫原始事件。
+**DEXPools**（DWS）存储**当前状态**行（通常每隔数分钟刷新）。可用其按 `LiquidityUSD` 对池子排序，并在不扫原始事件的情况下对比各 DEX 程序。
 
 ```graphql
 query {
@@ -143,30 +143,30 @@ query {
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
-    | `Pool.Address` | 池地址 |
-    | `Pool.ProgramAddress` | DEX program / 工厂 |
+    | `Pool.Address` | 池子地址 |
+    | `Pool.ProgramAddress` | DEX 程序 / 工厂 |
     | `Pool.TokenAAddress` / `Pool.TokenBAddress` | 交易对代币 |
     | `Pool.LiquidityUSD` | 快照流动性（USD） |
     | `Pool.LastUpdated` | 快照新鲜度 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **按流动性排名**：可在客户端按 `LiquidityUSD` 排序，或在 Schema 支持时对快照使用 `orderBy`
-    - **活跃池**：优先看 `LastUpdated` 较新的池
+  <Accordion title="自定义提示">
+    - **按流动性排序**：客户端按 `LiquidityUSD` 排序，或在 schema 支持时对池快照使用 `orderBy`
+    - **活跃池子**：优先选择 `LastUpdated` 较新的池子
     - **对比 DEX**：按 `Pool.ProgramAddress` 分组或过滤
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-**时间序列**储备与每笔流动性变动用 **DEXPoolEvents** (DWD)；**最新**池状态与发现用 **DEXPools** (DWS)。
+**DEXPoolEvents**（DWD）适合储备与每笔流动性事件的**时间序列**。**DEXPools**（DWS）针对**最新**池子状态与发现做了优化。
 </Tip>
 
 ---
 
-## How do I get token supply and market cap?
+## 如何获取代币供应量与市值？
 
-用 **TokenSupplyUpdates** 获取与供应事件相关的供应量、市值、价格与 FDV。
+使用 **TokenSupplyUpdates** 获取与供应事件关联的供应量、市值、价格与 FDV。
 
 ```graphql
 query {
@@ -174,7 +174,7 @@ query {
     TokenSupplyUpdates(
       limit: {count: 1}
       tokenAddress: {is: "TOKEN_ADDRESS"}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       TokenSupplyUpdate {
         Currency { MintAddress, Decimals }
@@ -192,25 +192,25 @@ query {
 
 <AccordionGroup>
   <Accordion title="关键字段">
-    | Field | Description |
+    | 字段 | 说明 |
     |:------|:------------|
     | `TokenSupplyUpdate.Currency.MintAddress` | 代币地址 |
     | `TokenSupplyUpdate.Currency.Decimals` | 代币小数位 |
-    | `TokenSupplyUpdate.PostBalance` | 事件后当前供应量 |
+    | `TokenSupplyUpdate.PostBalance` | 事件后的当前供应量 |
     | `TokenSupplyUpdate.MarketCapInUSD` | 市值（USD） |
-    | `TokenSupplyUpdate.PriceInUSD` | 供应事件时的代币价格（USD） |
-    | `TokenSupplyUpdate.FDVInUSD` | 完全稀释估值 |
-    | `TokenSupplyUpdate.TotalSupply` | 代币总供应 |
+    | `TokenSupplyUpdate.PriceInUSD` | 供应事件发生时的代币价格 |
+    | `TokenSupplyUpdate.FDVInUSD` | 完全稀释估值（FDV） |
+    | `TokenSupplyUpdate.TotalSupply` | 代币总供应量 |
   </Accordion>
-  <Accordion title="自定义技巧">
-    - **供应历史**：提高 `count` 查看供应量随时间变化（mint/burn）
+  <Accordion title="自定义提示">
+    - **供应历史**：提高 `count` 查看供应量如何随时间变化（铸造/销毁事件）
     - **市值历史**：查询多条供应更新以绘制市值曲线
-    - **与价格结合**：用 `PriceInUSD` 与 `TotalSupply` 交叉校验市值计算
+    - **与价格结合**：将 `PriceInUSD` 与 `TotalSupply` 联用以核对市值计算
   </Accordion>
 </AccordionGroup>
 
 <Info>
-本页以 **TokenSupplyUpdates** 提供与供应相关的市值、价格、FDV。更多代币指标与汇总见 [OHLC 与统计](/cn/graphql/examples/ohlc-stats)。
+本页通过 **TokenSupplyUpdates** 提供与供应相关的市值、价格与 FDV。更多代币指标与汇总见 [OHLC 与统计](/cn/graphql/examples/ohlc-stats)。
 </Info>
 
 ---
@@ -278,19 +278,19 @@ query {
 
 ---
 
-## 下一步
+## 后续步骤
 
 <CardGroup cols={2}>
-  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
-    查询 DEX 交易数据 — 代币交易、钱包活动与头部交易者。
+  <Card title="DEX 成交" icon="arrow-right-arrow-left" href="/cn/graphql/examples/dex-trades">
+    查询 DEX 交易数据 — 代币成交、钱包活动与头部交易者。
   </Card>
-  <Card title="Transfers" icon="paper-plane" href="/cn/graphql/examples/transfers">
-    追踪钱包间的链上代币转账。
+  <Card title="转账" icon="paper-plane" href="/cn/graphql/examples/transfers">
+    跟踪钱包之间的链上代币转账。
   </Card>
-  <Card title="Balances & Holders" icon="wallet" href="/cn/graphql/examples/balance-holders">
-    查询钱包余额、余额历史与头部持有者。
+  <Card title="余额与持币者" icon="wallet" href="/cn/graphql/examples/balance-holders">
+    查询钱包余额、余额历史与头部持币者。
   </Card>
-  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
+  <Card title="OHLC 与统计" icon="chart-candlestick" href="/cn/graphql/examples/ohlc-stats">
     获取 K 线、成交统计、市值与代币元数据。
   </Card>
 </CardGroup>

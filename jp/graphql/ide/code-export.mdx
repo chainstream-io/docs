@@ -1,12 +1,12 @@
 ---
-title: "コードエクスポート"
-description: "GraphQLクエリから7つのプログラミング言語でのすぐに使えるコードスニペットを生成"
+title: "Code Export"
+description: "Generate ready-to-use code snippets from your GraphQL queries in 7 programming languages"
 icon: "file-export"
 ---
 
 ## 概要
 
-コードエクスポート機能は、現在のGraphQLクエリを選択した言語のすぐに使えるコードスニペットに変換します。生成されたコードには、エンドポイントURL、認証ヘッダー、クエリボディ、変数を含む完全なHTTPリクエストセットアップが含まれているため、プロジェクトに直接コピーできます。
+Code Export 機能は、現在の GraphQL クエリを選択した言語の、そのまま使えるコードスニペットに変換します。生成コードには HTTP リクエスト一式 — エンドポイント URL、認証ヘッダー、クエリ本文、variables — が含まれるため、プロジェクトにそのまま貼り付けられます。
 
 ---
 
@@ -14,60 +14,61 @@ icon: "file-export"
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| 言語 | フォーマット | ユースケース |
+| 言語 | 形式 | 用途 |
 |:--|:--|:--|
-| **cURL** | シェルコマンド | ターミナルでのクイックテスト、CI/CDスクリプト |
-| **Python** | `requests`ライブラリ | バックエンドサービス、データパイプライン、Jupyterノートブック |
-| **JavaScript** | `fetch` API | ブラウザアプリ、Node.jsサービス |
-| **Go** | `net/http` | バックエンドマイクロサービス、CLIツール |
-| **Rust** | `reqwest`クレート | 高性能サービス |
-| **Ruby** | `net/http` | Railsアプリケーション、スクリプト |
-| **PHP** | `cURL`エクステンション | PHPバックエンド、WordPressプラグイン |
+| **cURL** | シェルコマンド | ターミナルでの手早い検証、CI/CD スクリプト |
+| **Python** | `requests` ライブラリ | バックエンド、データパイプライン、Jupyter |
+| **JavaScript** | `fetch` API | ブラウザアプリ、Node.js サービス |
+| **Go** | `net/http` | バックエンドのマイクロサービス、CLI |
+| **Rust** | `reqwest` crate | 高スループットなサービス |
+| **Ruby** | `net/http` | Rails アプリ、スクリプト |
+| **PHP** | `cURL` 拡張 | PHP バックエンド、WordPress プラグイン |
 
 </div>
 
 ---
 
-## エクスポート方法
+## エクスポート手順
 
 <Steps>
-  <Step title="クエリを記述">
-    エディタにクエリを入力またはロードします。エクスポート前に正常に実行されることを確認してください。
+  <Step title="クエリを書く">
+    エディタにクエリを入力または読み込みます。エクスポート前に正常に実行できることを確認してください。
   </Step>
-  <Step title="Export Codeをクリック">
-    ツールバーの**Export Code**ボタンをクリックします。言語セレクタと生成されたスニペットを含むモーダルが開きます。
+  <Step title="Export Code をクリック">
+    ツールバーの **Export Code** をクリックします。言語選択と生成スニペットが表示されるモーダルが開きます。
   </Step>
-  <Step title="言語を選択">
-    ドロップダウンから対象言語を選択します。スニペットは即座に更新されます。
+  <Step title="言語を選ぶ">
+    ドロップダウンから対象言語を選びます。スニペットはすぐに更新されます。
   </Step>
   <Step title="スニペットをコピー">
-    **Copy**ボタンをクリックして、生成されたコードをクリップボードにコピーします。
+    **Copy** をクリックして生成コードをクリップボードにコピーします。
   </Step>
 </Steps>
 
 <Tip>
-エクスポートされたコードは、現在のIDE設定のGraphQLエンドポイントとAPIキーを使用します。カスタムエンドポイントやヘッダーを設定している場合、それらが生成されたスニペットに反映されます。
+エクスポートされたコードは、IDE で現在設定している GraphQL エンドポイントと API Key を使います。カスタムエンドポイントやヘッダーを設定している場合、その内容が生成スニペットに反映されます。
 </Tip>
 
 ---
 
-## スニペットの例
+## スニペット例
 
-以下の例は、シンプルなDEXTradesクエリ（Solanaの最新10件のDEXトレードを取得）をエクスポートしたものです：
+次の例は、単純な DEXTrades クエリ — Solana の最新 10 件の DEX 取引 — をエクスポートしたものです。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Currency { MintAddress } Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -80,7 +81,7 @@ query {
       -H "Content-Type: application/json" \
       -H "X-API-KEY: your_api_key" \
       -d '{
-        "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+        "query": "{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"
       }'
     ```
   </Tab>
@@ -95,17 +96,18 @@ query {
     }
     query = """
     {
-      DEXTrades(
-        network: sol
-        limit: {count: 10}
-        orderBy: Block_Time_DESC
-      ) {
-        Block { Time }
-        Transaction { Hash }
-        Trade {
-          Buy { Currency { MintAddress } Amount PriceInUSD }
-          Sell { Currency { MintAddress } Amount }
-          Dex { ProtocolName }
+      Solana {
+        DEXTrades(
+          limit: {count: 10}
+          orderBy: {descending: Block_Time}
+        ) {
+          Block { Time }
+          Transaction { Hash }
+          Trade {
+            Buy { Currency { MintAddress } Amount PriceInUSD }
+            Sell { Currency { MintAddress } Amount }
+            Dex { ProtocolName }
+          }
         }
       }
     }
@@ -126,17 +128,18 @@ query {
       },
       body: JSON.stringify({
         query: `{
-          DEXTrades(
-            network: sol
-            limit: {count: 10}
-            orderBy: Block_Time_DESC
-          ) {
-            Block { Time }
-            Transaction { Hash }
-            Trade {
-              Buy { Currency { MintAddress } Amount PriceInUSD }
-              Sell { Currency { MintAddress } Amount }
-              Dex { ProtocolName }
+          Solana {
+            DEXTrades(
+              limit: {count: 10}
+              orderBy: {descending: Block_Time}
+            ) {
+              Block { Time }
+              Transaction { Hash }
+              Trade {
+                Buy { Currency { MintAddress } Amount PriceInUSD }
+                Sell { Currency { MintAddress } Amount }
+                Dex { ProtocolName }
+              }
             }
           }
         }`,
@@ -161,7 +164,7 @@ query {
 
     func main() {
         payload := map[string]string{
-            "query": `{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }`,
+            "query": `{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }`,
         }
         body, _ := json.Marshal(payload)
 
@@ -192,7 +195,7 @@ query {
         headers.insert("X-API-KEY", HeaderValue::from_static("your_api_key"));
 
         let body = json!({
-            "query": r#"{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"#
+            "query": r#"{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"#
         });
 
         let client = reqwest::Client::new();
@@ -212,26 +215,26 @@ query {
 
 ---
 
-## エクスポートされるコードの内容
+## エクスポートコードに含まれるもの
 
-生成されるすべてのスニペットには以下が含まれます：
+生成される各スニペットには次が含まれます。
 
-| コンポーネント | 説明 |
+| 項目 | 説明 |
 |:--|:--|
-| **エンドポイントURL** | `https://graphql.chainstream.io/graphql` |
-| **認証** | IDEのHeadersパネルからの`X-API-KEY`ヘッダー |
+| **Endpoint URL** | `https://graphql.chainstream.io/graphql` |
+| **Authentication** | IDE の Headers パネルの `X-API-KEY` ヘッダー |
 | **Content-Type** | `application/json` |
-| **クエリボディ** | エディタからのGraphQLクエリ全文 |
-| **変数** | 変数パネルに値が含まれている場合に含まれます |
+| **Query body** | エディタ上の GraphQL クエリ全文 |
+| **Variables** | Variables パネルに値がある場合に含まれます |
 
 <Note>
-エクスポートされたコードを実行する前に、`your_api_key`を実際のAPIキーに置き換えることを忘れないでください。セキュリティのため、IDEはエクスポートされたスニペットに実際のキーを埋め込みません。
+実行前に `your_api_key` を実際の API Key に置き換えてください。セキュリティのため、IDE はエクスポートスニペットに本物のキーを埋め込みません。
 </Note>
 
 ---
 
 ## ヒント
 
-- **エクスポート前にテスト** — まずIDEでクエリを実行して動作を確認してください。エクスポートされたコードはクエリをそのままコピーします。
-- **変数でパラメータ化** — ハードコードされた値の代わりにGraphQL変数を使用してください。エクスポートされたコードはクエリとともに`variables` JSONを含みます。
-- **依存関係を確認** — Pythonスニペットは`requests`を、Rustは`reqwest`を、Goは標準ライブラリを使用します。プロジェクトに必要なパッケージがインストールされていることを確認してください。
+- **エクスポート前にテスト** — まず IDE でクエリを実行し、動作を確認してください。エクスポートはクエリをそのままコピーします。
+- **variables でパラメータ化** — ハードコードではなく GraphQL variables を使います。エクスポートコードにはクエリと並んで `variables` の JSON が含まれます。
+- **依存関係の確認** — Python は `requests`、Rust は `reqwest`、Go は標準ライブラリを使います。プロジェクトに必要なパッケージが入っているか確認してください。

@@ -1,24 +1,24 @@
 ---
-title: "池與流動性"
-description: "DEX 池與流動性資料的查詢示例"
+title: "Pools & Liquidity"
+description: "Query examples for DEX pools and liquidity data"
 icon: "droplet"
 ---
 
-本頁涵蓋用於 DEX 池與流動性分析的 Cube：
+本頁涵蓋用於 DEX 資金池與流動性分析的 Cube：
 
-- **DEXPoolEvents** (DWD) — 新增/移除流動性事件及逐事件儲備與價格
-- **DEXPools** (DWS) — 池子**快照**（當前流動性與價格，定期重新整理）
-- **TokenSupplyUpdates** (DWD) — 代幣供應量、市值與 FDV 更新
+- **DEXPoolEvents**（DWD）— 流動性新增／移除事件，含每筆事件的準備金與價格
+- **DEXPools**（DWS）— 資金池**快照**（目前流動性與價格，定期更新）
+- **TokenSupplyUpdates**（DWD）— 代幣供給、市值與 FDV 更新
 
 <Note>
-示例使用 **Solana** 與 **EVM** [鏈分組](/zh-Hant/graphql/schema/chain-groups)：`Solana { ... }` 查詢 Solana，`EVM(network: eth | bsc | polygon) { ... }` 查詢 EVM 鏈（含 Polygon）。
+範例使用 **Solana** 與 **EVM** 的 [Chain Groups](/zh-Hant/graphql/schema/chain-groups)：`Solana { ... }` 用於 Solana，`EVM(network: eth | bsc | polygon) { ... }` 用於 EVM 鏈（含 Polygon）。
 </Note>
 
 ---
 
-## How do I get liquidity pools for a token?
+## 如何取得某代幣的流動性池？
 
-查詢快照中該代幣作為 **token A** 的 DEX 池。若代幣只作為 token B 出現，需再用 `tokenB` 查一次（或使用 `where`）；需要**逐事件**的完整交易對上下文時，請用 **DEXPoolEvents**。
+找出快照中將代幣列為 **token A** 的 DEX 池。若資產僅作為 token B 出現，需再以 `tokenB`（或 `where`）查第二趟；若要**事件層級**且含完整交易對脈絡，請用 **DEXPoolEvents**。
 
 ```graphql
 query {
@@ -43,37 +43,37 @@ query {
 ```
 
 <Tip>
-[在 GraphQL IDE 中開啟](https://ide.chainstream.io) — 將上方查詢貼上到 IDE 中即可互動式執行，享受自動補全和 Schema 探索。
+[在 GraphQL IDE 開啟](https://ide.chainstream.io) — 貼上上方查詢即可互動執行，並享有自動完成與 schema 探索。
 </Tip>
 
 <Tip>
-將 `TOKEN_ADDRESS` 替換為代幣 mint（Solana）或合約地址（EVM）。若代幣常作為 quote 側，請再用 `tokenB: {is: "TOKEN_ADDRESS"}` 查詢。
+請將 `TOKEN_ADDRESS` 換成代幣 mint（Solana）或合約地址（EVM）。再以 `tokenB: {is: "TOKEN_ADDRESS"}` 重複查詢，可納入該代幣為報價端的池。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="關鍵欄位">
-    | Field | Description |
+  <Accordion title="主要欄位">
+    | 欄位 | 說明 |
     |:------|:------------|
-    | `Pool.Address` | 流動性池 / 市場地址 |
-    | `Pool.ProgramAddress` | DEX program 或工廠合約地址 |
-    | `Pool.TokenAAddress` | Base 側代幣地址 |
-    | `Pool.TokenBAddress` | Quote 側代幣地址 |
-    | `Pool.LiquidityUSD` | 池子總流動性（USD，快照） |
-    | `Pool.LastUpdated` | 該快照行上次更新時間 |
+    | `Pool.Address` | 流動性池／市場地址 |
+    | `Pool.ProgramAddress` | DEX 程式或 factory 地址 |
+    | `Pool.TokenAAddress` | 基礎端代幣地址 |
+    | `Pool.TokenBAddress` | 報價端代幣地址 |
+    | `Pool.LiquidityUSD` | 池子總流動性（美元，快照） |
+    | `Pool.LastUpdated` | 此快照列最後更新時間 |
   </Accordion>
-  <Accordion title="自定義技巧">
-    - **按流動性過濾**：增加 `where: {Pool: {LiquidityUSD: {gt: 10000}}}` 篩選深度足夠的池
-    - **指定 DEX**：增加 `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`
-    - **更多池**：提高 `count` 以發現更多相關池
-    - **逐事件儲備**：用 **DEXPoolEvents**，配合 `tokenAddress` / `poolAddress` 與 `orderBy: Block_Time_DESC` 檢視加減倉歷史
+  <Accordion title="自訂建議">
+    - **依流動性篩選**：加上 `where: {Pool: {LiquidityUSD: {gt: 10000}}}` 僅顯示超過某美元深度門檻的池
+    - **特定 DEX**：加上 `where: {Pool: {ProgramAddress: {is: "DEX_PROGRAM_OR_FACTORY_ADDRESS"}}}`
+    - **更多池**：提高 `count` 以探索該代幣的更多池
+    - **逐事件準備金**：使用 **DEXPoolEvents** 搭配 `tokenAddress`／`poolAddress` 與 `orderBy: {descending: Block_Time}` 取得加／減流動歷史
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## How do I get details of a specific pool?
+## 如何取得特定資金池的詳情？
 
-按地址讀取該池的**最新快照**。**DEXPools** 每行不是區塊時間線；儲備**歷史序列**請用 **DEXPoolEvents**。
+依地址讀取單一池的**最新快照**。**DEXPools** 不提供每列的區塊時間軸 — 歷史準備金序列請用 **DEXPoolEvents**。
 
 ```graphql
 query {
@@ -98,28 +98,28 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="關鍵欄位">
-    | Field | Description |
+  <Accordion title="主要欄位">
+    | 欄位 | 說明 |
     |:------|:------------|
     | `Pool.TokenAAddress` / `Pool.TokenBAddress` | 交易對代幣地址 |
-    | `Pool.LiquidityUSD` | 總流動性（USD，快照） |
-    | `Pool.LastUpdated` | 該池快照最近重新整理時間 |
+    | `Pool.LiquidityUSD` | 總流動性（美元，快照） |
+    | `Pool.LastUpdated` | 此池快照最後刷新時間 |
   </Accordion>
-  <Accordion title="自定義技巧">
-    - **儲備歷史**：在 **DEXPoolEvents** 上使用 `poolAddress: {is: "POOL_ADDRESS"}` 與 `orderBy: Block_Time_DESC`
-    - **事件時間範圍**：在 **DEXPoolEvents** 上增加 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定加減倉時段
+  <Accordion title="自訂建議">
+    - **準備金歷史**：查詢 **DEXPoolEvents**，`poolAddress: {is: "POOL_ADDRESS"}` 並 `orderBy: {descending: Block_Time}`
+    - **事件時間範圍**：在 **DEXPoolEvents** 加上 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定加／減流區間
   </Accordion>
 </AccordionGroup>
 
 <Info>
-`poolAddress` 選擇器按 `Pool.Address` 過濾，在 **DEXPools**（快照）與 **DEXPoolEvents**（事件）上均可用。
+`poolAddress` 選擇器依 `Pool.Address` 篩選，**DEXPools**（快照）與 **DEXPoolEvents**（事件）皆可用。
 </Info>
 
 ---
 
-## How do I rank pools or read snapshot liquidity?
+## 如何對池排序或讀取快照流動性？
 
-**DEXPools** (DWS) 存**當前狀態**行（通常數分鐘級重新整理）。適合按 `LiquidityUSD` 排名、按 DEX program 對比，而無需掃原始事件。
+**DEXPools**（DWS）儲存**目前狀態**列（通常每數分鐘刷新）。可用它依 `LiquidityUSD` 排序，並比較不同 DEX 程式，無需掃描原始事件。
 
 ```graphql
 query {
@@ -142,31 +142,31 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="關鍵欄位">
-    | Field | Description |
+  <Accordion title="主要欄位">
+    | 欄位 | 說明 |
     |:------|:------------|
     | `Pool.Address` | 池地址 |
-    | `Pool.ProgramAddress` | DEX program / 工廠 |
+    | `Pool.ProgramAddress` | DEX 程式／factory |
     | `Pool.TokenAAddress` / `Pool.TokenBAddress` | 交易對代幣 |
-    | `Pool.LiquidityUSD` | 快照流動性（USD） |
+    | `Pool.LiquidityUSD` | 快照流動性（美元） |
     | `Pool.LastUpdated` | 快照新鮮度 |
   </Accordion>
-  <Accordion title="自定義技巧">
-    - **按流動性排名**：可在客戶端按 `LiquidityUSD` 排序，或在 Schema 支援時對快照使用 `orderBy`
-    - **活躍池**：優先看 `LastUpdated` 較新的池
-    - **對比 DEX**：按 `Pool.ProgramAddress` 分組或過濾
+  <Accordion title="自訂建議">
+    - **依流動性排序**：客戶端依 `LiquidityUSD` 排序，或若 schema 支援池快照排序則使用 `orderBy`
+    - **活躍池**：優先選擇 `LastUpdated` 較新的池
+    - **比較 DEX**：依 `Pool.ProgramAddress` 分組或篩選
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-**時間序列**儲備與每筆流動性變動用 **DEXPoolEvents** (DWD)；**最新**池狀態與發現用 **DEXPools** (DWS)。
+**時間序列**的準備金與每筆流動性事件請用 **DEXPoolEvents**（DWD）。**最新**池狀態與探索請用 **DEXPools**（DWS）。
 </Tip>
 
 ---
 
-## How do I get token supply and market cap?
+## 如何取得代幣供給與市值？
 
-用 **TokenSupplyUpdates** 獲取與供應事件相關的供應量、市值、價格與 FDV。
+使用 **TokenSupplyUpdates** 取得與供給事件連動的供給量、市值、價格與 FDV。
 
 ```graphql
 query {
@@ -174,7 +174,7 @@ query {
     TokenSupplyUpdates(
       limit: {count: 1}
       tokenAddress: {is: "TOKEN_ADDRESS"}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       TokenSupplyUpdate {
         Currency { MintAddress, Decimals }
@@ -191,31 +191,31 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="關鍵欄位">
-    | Field | Description |
+  <Accordion title="主要欄位">
+    | 欄位 | 說明 |
     |:------|:------------|
     | `TokenSupplyUpdate.Currency.MintAddress` | 代幣地址 |
-    | `TokenSupplyUpdate.Currency.Decimals` | 代幣小數位 |
-    | `TokenSupplyUpdate.PostBalance` | 事件後當前供應量 |
-    | `TokenSupplyUpdate.MarketCapInUSD` | 市值（USD） |
-    | `TokenSupplyUpdate.PriceInUSD` | 供應事件時的代幣價格（USD） |
+    | `TokenSupplyUpdate.Currency.Decimals` | 代幣小數位數 |
+    | `TokenSupplyUpdate.PostBalance` | 事件後的目前供給 |
+    | `TokenSupplyUpdate.MarketCapInUSD` | 美元市值 |
+    | `TokenSupplyUpdate.PriceInUSD` | 供給事件當下的代幣價格 |
     | `TokenSupplyUpdate.FDVInUSD` | 完全稀釋估值 |
-    | `TokenSupplyUpdate.TotalSupply` | 代幣總供應 |
+    | `TokenSupplyUpdate.TotalSupply` | 代幣總供給 |
   </Accordion>
-  <Accordion title="自定義技巧">
-    - **供應歷史**：提高 `count` 檢視供應量隨時間變化（mint/burn）
-    - **市值歷史**：查詢多條供應更新以繪製市值曲線
-    - **與價格結合**：用 `PriceInUSD` 與 `TotalSupply` 交叉校驗市值計算
+  <Accordion title="自訂建議">
+    - **供給歷史**：提高 `count` 觀察供給隨時間變化（鑄造／銷毀事件）
+    - **市值歷史**：查多筆供給更新以繪製市值走勢
+    - **與價格交叉驗證**：將 `PriceInUSD` 與 `TotalSupply` 併用以核對市值計算
   </Accordion>
 </AccordionGroup>
 
 <Info>
-本頁以 **TokenSupplyUpdates** 提供與供應相關的市值、價格、FDV。更多代幣指標與彙總見 [OHLC 與統計](/zh-Hant/graphql/examples/ohlc-stats)。
+本頁以 **TokenSupplyUpdates** 說明與供給連動的市值、價格與 FDV。更多代幣指標與摘要見 [OHLC 與統計](/zh-Hant/graphql/examples/ohlc-stats)。
 </Info>
 
 ---
 
-## 多鏈示例
+## 多鏈範例
 
 <Tabs>
   <Tab title="Solana">
@@ -281,16 +281,16 @@ query {
 ## 下一步
 
 <CardGroup cols={2}>
-  <Card title="DEX Trades" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
-    查詢 DEX 交易資料 — 代幣交易、錢包活動與頭部交易者。
+  <Card title="DEX 交易" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
+    查詢 DEX 交易資料 — 代幣成交、錢包活動與頂尖交易者。
   </Card>
-  <Card title="Transfers" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
-    追蹤錢包間的鏈上代幣轉賬。
+  <Card title="轉帳" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
+    追蹤錢包之間的鏈上代幣轉帳。
   </Card>
-  <Card title="Balances & Holders" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
-    查詢錢包餘額、餘額歷史與頭部持有者。
+  <Card title="餘額與持倉者" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
+    查詢錢包餘額、餘額歷史與大戶持倉。
   </Card>
-  <Card title="OHLC & Statistics" icon="chart-candlestick" href="/zh-Hant/graphql/examples/ohlc-stats">
-    獲取 K 線、成交統計、市值與代幣後設資料。
+  <Card title="OHLC 與統計" icon="chart-candlestick" href="/zh-Hant/graphql/examples/ohlc-stats">
+    取得 K 線、交易統計、市值與代幣 metadata。
   </Card>
 </CardGroup>

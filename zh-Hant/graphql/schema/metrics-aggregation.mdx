@@ -1,29 +1,29 @@
 ---
-title: "指標與聚合"
-description: "使用 count、sum、avg、min、max、uniq 聚合資料 — of 引數、用於 HAVING 的 selectWhere，以及指標 vs 預聚合 Cube 的選用"
+title: "Metrics & Aggregation"
+description: "Aggregate data with count, sum, avg, min, max, and uniq — the of parameter, selectWhere for HAVING, and when to use metrics vs pre-aggregated Cubes"
 icon: "chart-simple"
 ---
 
-## 什麼是 Metrics？
+## 什麼是指標（Metrics）？
 
-Metrics 是 Cube Record 型別上可用的**聚合函式**欄位，可在 GraphQL 查詢中直接計算統計量，無需後置處理。同時選擇指標欄位與維度欄位時，查詢會按所選維度分組，併為每組計算指標。
+Metrics 是 Cube Record 型別上可作為欄位選取的**聚合函式**，讓你無須在查詢後再處理即可在 GraphQL 中直接計算統計值。當你同時選取指標欄位與維度欄位時，查詢會依所選維度分組，並為各組計算指標。
 
-**支援的 metrics：**
+**支援的指標：**
 
-| Metric | SQL Equivalent | Description |
+| Metric | 對應 SQL | 說明 |
 |:-------|:---------------|:------------|
-| `count` | `COUNT(*)` or `COUNT(column)` | 計數行或不同取值 |
-| `sum` | `SUM(column)` | 數值求和 |
-| `avg` | `AVG(column)` | 平均值 |
+| `count` | `COUNT(*)` 或 `COUNT(column)` | 列數或不重複值計數 |
+| `sum` | `SUM(column)` | 數值總和 |
+| `avg` | `AVG(column)` | 數值平均 |
 | `min` | `MIN(column)` | 最小值 |
 | `max` | `MAX(column)` | 最大值 |
-| `uniq` | `COUNT(DISTINCT column)` | 不同取值個數 |
+| `uniq` | `COUNT(DISTINCT column)` | 不重複值個數 |
 
 ---
 
 ## Record 型別上的指標欄位
 
-Metrics 作為每個 Cube Record 型別的**頂層欄位**出現。並非所有 Cube 都支援全部 metrics — 取決於 Cube 定義。
+指標以各 Cube Record 型別的**頂層欄位**出現。並非所有 Cube 都支援全部指標——視 Cube 定義而定。
 
 ```graphql
 type DEXTradesRecord {
@@ -37,28 +37,29 @@ type DEXTradesRecord {
 }
 ```
 
-在欄位選擇中包含 metric 即可使用：
+使用時只需將指標納入欄位選取：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-該查詢按 DEX 協議名分組統計成交筆數。
+此查詢依協定名稱分組 DEX 成交，並回傳各組筆數。
 
 ---
 
-## `of` 引數
+## `of` 參數
 
-`sum`、`avg`、`min`、`max`、`uniq` 等需要 `of` 引數，指定**對哪個維度**聚合。`of` 的取值為按 Cube 生成的列舉，命名遵循維度路徑約定。
+`sum`、`avg`、`min`、`max`、`uniq` 等指標需要 `of` 參數，指定**要聚合的維度**。`of` 的值為依 Cube 產生的列舉，命名遵循維度路徑慣例。
 
 ```graphql
 sum(of: Trade_Buy_Amount)
@@ -68,242 +69,260 @@ max(of: Trade_Sell_Amount)
 uniq(of: Trade_Buy_Account_Owner)
 ```
 
-### 示例：按 DEX 統計買入總量
+### 範例：依 DEX 的買入總量
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-**Response:**
+**回應：**
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "count": 1842,
-        "sum": 2847291.45,
-        "Trade": { "Dex": { "ProtocolName": "Raydium" } }
-      },
-      {
-        "count": 923,
-        "sum": 1293847.12,
-        "Trade": { "Dex": { "ProtocolName": "Orca" } }
-      }
-    ]
+    "Solana": {
+      "DEXTrades": [
+        {
+          "count": 1842,
+          "sum": 2847291.45,
+          "Trade": { "Dex": { "ProtocolName": "Raydium" } }
+        },
+        {
+          "count": 923,
+          "sum": 1293847.12,
+          "Trade": { "Dex": { "ProtocolName": "Orca" } }
+        }
+      ]
+    }
   }
 }
 ```
 
 ---
 
-## count — 行計數
+## count——列數統計
 
-不帶 `of` 的 `count` 統計每組總行數（等價於 `COUNT(*)`）：
+未帶 `of` 的 `count` 會計算各組內總列數（等同 `COUNT(*)`）：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+    }
   }
 }
 ```
 
-與維度欄位一起使用時，返回每組的計數：
+與維度欄位並用時，回傳各組筆數：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      count
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
 ---
 
-## uniq — 不同值計數
+## uniq——不重複計數
 
-`uniq` 對應 SQL 的 `COUNT(DISTINCT column)`，用於統計某維度的不同取值數量：
+`uniq` 對應 SQL 的 `COUNT(DISTINCT column)`，用於計算某維度的不重複值數量：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    uniq(of: Trade_Buy_Account_Owner)
+  Solana {
+    DEXTrades(
+      tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
+    ) {
+      uniq(of: Trade_Buy_Account_Owner)
+    }
   }
 }
 ```
 
-返回今日 Solana 上交易 USDC 的**不同買方錢包**數量。
+此查詢回傳今日在 Solana 上交易 USDC 的**不重複買方錢包**數量。
 
 ---
 
-## selectWhere — 類 HAVING 篩選
+## selectWhere——類 HAVING 篩選
 
-`selectWhere` 用於在**聚合結果**上篩選，類似 SQL 的 `HAVING`。在分組與聚合之後應用，可按指標值過濾分組。
+`selectWhere` 可對**聚合結果**篩選，類似 SQL 的 `HAVING`。它在分組與聚合之後套用，可依指標值過濾各組。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    where: { Block: { Time: { after: "2025-03-27T00:00:00Z" } } }
-  ) {
-    count(selectWhere: { gt: 100 })
-    Trade { Dex { ProtocolName } }
+  Solana {
+    DEXTrades(
+      where: { Block: { Time: { after: "2026-04-01T00:00:00Z" } } }
+    ) {
+      count(selectWhere: { gt: "100" })
+      Trade { Dex { ProtocolName } }
+    }
   }
 }
 ```
 
-僅返回今日成交筆數**超過 100** 的 DEX 協議 — 筆數更少的協議不會出現在結果中。
+僅回傳成交筆數**超過 100** 的 DEX 協定——筆數較少者不會出現在結果中。
 
-`selectWhere` 支援與 `IntFilter`/`FloatFilter` 相同的數值運算子：
+<Note>
+`selectWhere` 的值必須以**字串**傳入（例如 `"100"` 而非 `100`）。內部會再解析為數值。
+</Note>
 
-| Operator | Description |
+`selectWhere` 支援下列比較運算子：
+
+| 運算子 | 說明 |
 |:---------|:------------|
 | `gt` | 大於 |
-| `gte` | 大於等於 |
+| `ge` | 大於或等於 |
 | `lt` | 小於 |
-| `lte` | 小於等於 |
+| `le` | 小於或等於 |
 | `eq` | 等於 |
-| `ne` | 不等於 |
+
+<Warning>
+**已知限制：** 使用 `selectWhere` 時，`orderBy` 必須引用屬於隱式 GROUP BY 的維度（即你正在選取的欄位）或聚合結果。若依不在 GROUP BY 內的欄位排序（例如 `Block_Time`），會導致資料庫錯誤。
+</Warning>
 
 ---
 
-## 實用示例：Top 交易者
+## 實務範例：頂尖交易者
 
-查詢某 token 今日按成交筆數排名前 10 的錢包，並展示其買入總量與筆數相關指標：
+找出今日某代幣成交筆數最多的前 10 個錢包，並顯示其買入總量與（範例中的）交易統計：
 
 ```graphql
 query TopTraders {
-  DEXTrades(
-    network: sol
-    tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
-    where: {
-      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
-    }
-    orderBy: Block_Time_DESC
-    limit: { count: 10 }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    Trade {
-      Buy {
-        Account { Owner }
+  Solana {
+    DEXTrades(
+      tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+      where: {
+        Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+      }
+      orderBy: {descending: Block_Time}
+      limit: { count: 10 }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      Trade {
+        Buy {
+          Account { Owner }
+        }
       }
     }
   }
 }
 ```
 
-**Response:**
+**回應：**
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "count": 47,
-        "sum": 892341023.5,
-        "Trade": {
-          "Buy": {
-            "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+    "Solana": {
+      "DEXTrades": [
+        {
+          "count": 47,
+          "sum": 892341023.5,
+          "Trade": {
+            "Buy": {
+              "Account": { "Owner": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" }
+            }
+          }
+        },
+        {
+          "count": 31,
+          "sum": 451203847.2,
+          "Trade": {
+            "Buy": {
+              "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
+            }
           }
         }
-      },
-      {
-        "count": 31,
-        "sum": 451203847.2,
-        "Trade": {
-          "Buy": {
-            "Account": { "Owner": "3kMq5RezM9XBbBGRNxP9vXkJHAfG8S7gn5WfBsHFQr7T" }
-          }
-        }
-      }
-    ]
+      ]
+    }
   }
 }
 ```
 
 ---
 
-## 組合多個 Metrics
+## 合併多個指標
 
-單次查詢可選擇多個 metric 欄位：
+單一查詢可同時選取多個指標欄位：
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    tokenAddress: "So11111111111111111111111111111111111111112"
-    where: {
-      Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+  Solana {
+    DEXTrades(
+      tokenAddress: "So11111111111111111111111111111111111111112"
+      where: {
+        Block: { Time: { after: "2025-03-27T00:00:00Z" } }
+      }
+    ) {
+      count
+      sum(of: Trade_Buy_Amount)
+      min(of: Trade_Buy_PriceInUSD)
+      max(of: Trade_Buy_PriceInUSD)
+      uniq(of: Trade_Buy_Account_Owner)
+      Trade { Dex { ProtocolName } }
     }
-  ) {
-    count
-    sum(of: Trade_Buy_Amount)
-    min(of: Trade_Buy_PriceInUSD)
-    max(of: Trade_Buy_PriceInUSD)
-    uniq(of: Trade_Buy_Account_Owner)
-    Trade { Dex { ProtocolName } }
   }
 }
 ```
 
-返回按 DEX 的統計：成交筆數、總成交量、價格區間、獨立交易者數 — 一次查詢完成。
+此查詢回傳各 DEX 的統計：成交筆數、總量、價格區間與不重複交易者——一次查詢完成。
 
 ---
 
-## Metrics vs 預聚合 Cube
+## 指標 vs 預先聚合 Cube
 
 <Info>
-常見問題：應該在 DWD Cube 上用 metrics，還是直接查 DWM/DWS Cube？
+常見問題：應在 DWD Cube 上用指標，還是直接查 DWM／DWS Cube？
 </Info>
 
-| Approach | When to Use | Performance |
+| 作法 | 適用時機 | 效能 |
 |:---------|:------------|:------------|
-| **DWD 上的 Metrics**（如 `DEXTrades.count`） | 自定義聚合、即席分組、靈活時間視窗 | 較慢 — 查詢時對原始事件聚合 |
-| **DWM Cube**（如 `Pairs`、`Tokens`） | 標準時間序列、OHLC 圖、成交量隨時間 | 快 — 讀取預計算的分鐘級彙總 |
-| **DWS Cube**（如 `TokenHolders`、`WalletTokenPnL`） | 當前快照、累計合計、排行榜 | 最快 — 讀取預彙總摘要資料 |
+| **DWD 上的指標**（例如 `DEXTrades.count`） | 自訂聚合、臨時分組、彈性時間窗 | 較慢——查詢時對原始事件聚合 |
+| **DWM Cube**（例如 `Pairs`、`Tokens`） | 標準時間序列、OHLC 圖、隨時間變化的成交量 | 較快——讀取預先計算的分鐘級 rollup |
+| **DWS Cube**（例如 `TokenHolders`、`WalletTokenPnL`） | 當前快照、累計總額、排行榜 | 最快——讀取預先聚合摘要 |
 
 <Tip>
-**經驗法則**：若 DWM/DWS Cube 已覆蓋你的場景，優先使用 — 它們預聚合且明顯更快。僅在需要自定義分組或預置 Cube 不支援的聚合邏輯時，再回退到帶 metrics 的 DWD Cube。
+**經驗法則**：若 DWM／DWS Cube 已涵蓋你的情境——它們已預先聚合，通常明顯較快。僅在需要預建 Cube 不支援的自訂分組或聚合邏輯時，再退回 DWD Cube 搭配指標。
 </Tip>
 
 ### 決策指引
 
 <AccordionGroup>
-  <Accordion title="需要蠟燭圖">
-    使用 **Pairs**（DWM）。已按分鐘預計算 open/high/low/close/volume，無需自己對 DEXTrades 聚合。
+  <Accordion title="我需要 K 線圖">
+    使用 **Pairs**（DWM）。已內建每分鐘的 open／high／low／close／volume，無須自行聚合 DEXTrades。
   </Accordion>
-  <Accordion title="需要按 token 的買賣筆數">
-    使用 **Tokens**（DWM）。已按分鐘預聚合筆數、成交量與獨立交易者。
+  <Accordion title="我需要各代幣的買／賣筆數">
+    使用 **Tokens**（DWM）。已預先聚合每分鐘的成交筆數、成交量與不重複交易者。
   </Accordion>
-  <Accordion title="需要 Token 持有者排名">
-    使用 **TokenHolders**（DWS）。已預計算每位持有者最新餘額 — 比聚合 BalanceUpdates 快得多。
+  <Accordion title="我需要代幣持有者排行">
+    使用 **TokenHolders**（DWS）。最新餘額已預先計算——遠快於聚合 BalanceUpdates。
   </Accordion>
-  <Accordion title="需要按 DEX 的自定義成交量拆分">
-    使用 **DEXTrades**，按 `Trade.Dex.ProtocolName` 分組，配合 `count` + `sum(of: Trade_Buy_Amount)`。無現成 Cube 時，DWD metrics 是合適選擇。
+  <Accordion title="我需要自訂的各 DEX 成交量拆解">
+    使用 **DEXTrades** 搭配依 `Trade.Dex.ProtocolName` 分組的 `count` + `sum(of: Trade_Buy_Amount)`。此情境無現成 Cube，DWD 指標較合適。
   </Accordion>
-  <Accordion title="需要錢包按 token 的 PnL">
-    使用 **WalletTokenPnL**（DWS）。已預計算每對 wallet-token 的買賣量與筆數。
+  <Accordion title="我需要錢包對各代幣的 PnL">
+    使用 **WalletTokenPnL**（DWS）。買／賣量與成交筆數已依錢包—代幣配對預先計算。
   </Accordion>
 </AccordionGroup>
 
@@ -312,10 +331,10 @@ query {
 ## 下一步
 
 <CardGroup cols={2}>
-  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+  <Card title="Data Cubes" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
     瀏覽全部 25 個 Cube 及其欄位結構。
   </Card>
-  <Card title="Query 示例" icon="flask" href="/zh-Hant/graphql/examples/dex-trades">
-    檢視帶 metrics 與聚合的實戰查詢示例。
+  <Card title="查詢範例" icon="flask" href="/zh-Hant/graphql/examples/dex-trades">
+    查看含指標與聚合的實際查詢範例。
   </Card>
 </CardGroup>

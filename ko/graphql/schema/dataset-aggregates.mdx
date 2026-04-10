@@ -1,31 +1,31 @@
 ---
-title: "데이터셋 & 어그리게이트"
-description: "dataset과 aggregates 파라미터로 데이터 소스 범위와 사전 집계 동작 제어"
+title: "Dataset & Aggregates"
+description: "Control data source scope and pre-aggregation behavior with the dataset and aggregates parameters"
 icon: "database"
 ---
 
 ## 개요
 
-ChainStream GraphQL의 모든 체인 그룹은 **어떤 기본 테이블**을 쿼리할지 제어하는 두 개의 선택적 파라미터를 받습니다. 이 파라미터를 통해 사용 사례에 따라 최신성, 쿼리 속도, 데이터 완전성을 최적화할 수 있습니다.
+ChainStream GraphQL의 모든 Chain Group은 **어떤 기본 테이블을 조회할지** 제어하는 선택 파라미터 두 개를 받습니다. 사용 사례에 따라 신선도, 쿼리 속도, 데이터 완전성을 맞출 수 있습니다.
 
 ---
 
 ## Dataset 파라미터
 
-`dataset` 파라미터는 쿼리되는 데이터의 **시간 범위**를 제어합니다. 쿼리가 실시간 테이블, 아카이브 테이블, 또는 둘 다를 조회할지 결정합니다.
+`dataset` 파라미터는 조회 데이터의 **시간 범위**를 제어합니다. 실시간 테이블, 아카이브 테이블, 또는 둘 다를 칠지 결정합니다.
 
-| 값 | 설명 | 일반적인 사용 사례 |
+| 값 | 설명 | 일반적인 사용 |
 |:------|:------------|:-----------------|
-| `combined` | 실시간 및 아카이브 데이터 모두 쿼리 **(기본값)** | 전체 범위가 필요한 범용 쿼리 |
-| `realtime` | 최근 데이터만 (약 최근 24시간) | 모니터링 대시보드, 최근 트레이드, 실시간 알림 |
-| `archive` | 보존 TTL까지의 과거 데이터만 | 과거 분석, 백필, 추세 연구 |
+| `combined` | 실시간·아카이브 데이터 **모두** 조회 **(기본값)** — 보통 최근 약 7–10일 | 전체 범위가 필요한 범용 쿼리 |
+| `realtime` | 최근 데이터만(대략 지난 24시간) | 모니터링 대시보드, 최신 거래, 실시간 알림 |
+| `archive` | 보존 기간(~7–10일) 내 역사 데이터만 | 역사 분석, 백필, 트렌드 조사 |
 
 ### 사용법
 
 ```graphql
 query {
   Solana(dataset: realtime) {
-    DEXTrades(limit: {count: 10}, orderBy: Block_Time_DESC) {
+    DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) {
       Block { Time }
       Trade { Buy { Currency { MintAddress } Amount PriceInUSD } }
     }
@@ -47,14 +47,14 @@ query {
 }
 ```
 
-### 과거 데이터 백필
+### 역사 데이터 백필
 
-데이터 파이프라인을 구축하거나 다운타임에서 복구할 때 `dataset: archive`와 시간 범위 필터를 사용하여 과거 데이터를 백필할 수 있습니다:
+데이터 파이프라인을 만들거나 다운타임 복구 시 `dataset: archive`와 시간 범위 필터로 역사 데이터를 백필할 수 있습니다.
 
-1. 마지막으로 처리된 타임스탬프 또는 블록 높이를 기록
-2. 마지막 체크포인트부터 현재 시간까지의 `where` 필터와 함께 `dataset: archive`를 쿼리
-3. 백필된 데이터 처리
-4. 지속적인 모니터링을 위해 `dataset: realtime`으로 전환
+1. 마지막으로 처리한 타임스탬프 또는 블록 높이를 기록합니다.
+2. 마지막 체크포인트부터 현재까지 `where` 필터와 함께 `dataset: archive`로 쿼리합니다.
+3. 백필된 데이터를 처리합니다.
+4. 지속 모니터링에는 `dataset: realtime`으로 전환합니다.
 
 ```graphql
 query BackfillTrades {
@@ -69,7 +69,7 @@ query BackfillTrades {
         }
       }
       limit: {count: 10000}
-      orderBy: Block_Time_ASC
+      orderBy: {ascending: Block_Time}
     ) {
       Block { Time Slot }
       Transaction { Hash }
@@ -84,24 +84,24 @@ query BackfillTrades {
 
 ### Dataset 미지원 테이블
 
-일부 Cube는 `dataset` 값에 관계없이 항상 동일한 테이블을 쿼리합니다:
+일부 Cube는 `dataset` 값과 관계없이 항상 같은 테이블을 조회합니다. 예:
 
-- **DWS Cube**: `TokenHolders`, `WalletTokenPnL`, `DEXPools` — 현재 상태 스냅샷을 나타냄
+- **DWS Cube**: `TokenHolders`, `WalletTokenPnL`, `DEXPools` — 현재 상태 스냅샷
 - **특수 테이블**: `TransactionBalances`, `PredictionTrades`, `PredictionManagements`, `PredictionSettlements`
 
-이러한 Cube에서는 `dataset`이 조용히 무시됩니다.
+이 Cube들에서는 `dataset`이 조용히 무시됩니다.
 
 ---
 
 ## Aggregates 파라미터
 
-`aggregates` 파라미터는 쿼리가 원시 상세 테이블(DWD 레이어) 대신 **사전 집계된 매터리얼라이즈드 뷰**(DWM 레이어)를 사용할지 제어합니다. 사전 집계 테이블은 사전 계산된 롤업(일반적으로 분별)을 포함하여 쿼리 속도가 크게 빨라집니다.
+`aggregates` 파라미터는 원시 상세 테이블(DWD) 대신 **사전 집계 materialized view**(DWM 레이어)를 쓸지 결정합니다. 사전 집계 테이블에는 보통 분 단위로 미리 계산된 rollup이 들어 있어 훨씬 빠르게 조회할 수 있습니다.
 
-| 값 | 설명 | 일반적인 사용 사례 |
+| 값 | 설명 | 일반적인 사용 |
 |:------|:------------|:-----------------|
-| `yes` | 가능한 경우 사전 집계 테이블 우선 사용 **(기본 동작)** | 대부분의 분석 쿼리 |
-| `no` | 원시 상세 테이블만 사용 | 이벤트별 세분화가 필요한 경우 |
-| `only` | 사전 집계 테이블만 사용 | 최대 쿼리 속도, 제한된 필드 세트 허용 |
+| `yes` | 가능하면 사전 집계 테이블 사용 **(기본 동작)** | 대부분의 분석 쿼리 |
+| `no` | 원시 상세 테이블만 사용 | 이벤트 단위 세분도가 필요할 때 |
+| `only` | 사전 집계 테이블만 사용 | 최대 속도, 선택 가능한 필드는 제한적 |
 
 ### 사용법
 
@@ -111,7 +111,7 @@ query {
     Pairs(
       where: { Token: { Address: { is: "0xdac17f958d2ee523a2206206994597c13d831ec7" } } }
       limit: {count: 100}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Price { Ohlc { Open High Low Close } }
@@ -121,20 +121,20 @@ query {
 }
 ```
 
-### 모드별 사용 시점
+### 모드별 선택 가이드
 
 | 시나리오 | 권장 | 이유 |
 |:---------|:------------|:----|
-| OHLC 차트 구축 | `aggregates: only` | 사전 계산된 캔들스틱 데이터, 가장 빠른 응답 |
-| 시간별 거래량 추세 | `aggregates: yes` | 사전 집계된 거래량 통계 활용 |
-| 개별 트레이드 분석 | `aggregates: no` | 롤업이 제공하지 않는 이벤트별 세부 정보 필요 |
-| 고유 트레이더 수 | `aggregates: yes` | 사전 계산된 고유 수 사용 가능 |
+| OHLC 차트 작성 | `aggregates: only` | 사전 계산 캔들 데이터, 가장 빠른 응답 |
+| 시간에 따른 거래량 추이 | `aggregates: yes` | 사전 집계 거래량 통계 활용 |
+| 개별 거래 분석 | `aggregates: no` | rollup에 없는 이벤트 단위 상세 필요 |
+| 고유 트레이더 수 집계 | `aggregates: yes` | 사전 계산된 고유 카운트 활용 가능 |
 
 ---
 
-## 두 파라미터 결합
+## 두 파라미터 함께 쓰기
 
-`dataset`과 `aggregates`를 함께 사용할 수 있습니다:
+`dataset`과 `aggregates`를 동시에 사용할 수 있습니다.
 
 ```graphql
 query {
@@ -142,7 +142,7 @@ query {
     Tokens(
       where: { Token: { Address: { is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" } } }
       limit: {count: 60}
-      orderBy: Block_Time_DESC
+      orderBy: {descending: Block_Time}
     ) {
       Interval { Time }
       Volume { Usd BuyVolumeUSD SellVolumeUSD }
@@ -152,23 +152,23 @@ query {
 }
 ```
 
-이 쿼리는 최대 속도를 위해 실시간 데이터와 사전 집계 테이블을 사용하여 최근 약 60분의 크로스체인 토큰 트레이드 통계를 가져옵니다.
+이 쿼리는 실시간 데이터와 사전 집계 테이블을 함께 사용해, 최근 약 60분간의 크로스체인 토큰 거래 통계를 최대한 빠르게 가져옵니다.
 
 ---
 
-## 성능 고려사항
+## 성능 고려 사항
 
 <CardGroup cols={2}>
-  <Card title="대시보드에는 realtime 사용" icon="gauge-high">
-    `dataset: realtime`은 더 작은 테이블 파티션을 쿼리하여 모니터링 사용 사례에 더 빠른 응답 시간을 제공합니다.
+  <Card title="대시보드에는 realtime" icon="gauge-high">
+    `dataset: realtime`은 더 작은 테이블 파티션을 조회해 모니터링 용도에서 응답이 빨라집니다.
   </Card>
-  <Card title="분석에는 aggregates 사용" icon="chart-line">
-    `aggregates: yes` 또는 `only`는 원시 이벤트 테이블을 스캔하는 것보다 수 배 빠른 사전 계산된 롤업을 활용합니다.
+  <Card title="분석에는 aggregates" icon="chart-line">
+    `aggregates: yes` 또는 `only`는 원시 이벤트 테이블 풀스캔보다 수 배 빠른 사전 계산 rollup을 사용합니다.
   </Card>
 </CardGroup>
 
 <Tip>
-가장 빠른 OHLC 또는 거래량 쿼리를 위해 `dataset: realtime`과 `aggregates: only`를 결합하세요. 가장 작고 가장 최적화된 데이터 슬라이스를 대상으로 합니다.
+OHLC나 거래량 쿼리를 최대한 빠르게 하려면 `dataset: realtime`과 `aggregates: only`를 함께 쓰세요. 가장 작고 최적화된 데이터 슬라이스를 겨냥합니다.
 </Tip>
 
 ---
@@ -177,9 +177,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="스키마 개요" icon="sitemap" href="/ko/graphql/schema/schema-overview">
-    전체 쿼리 구조에서 dataset과 aggregates가 어떻게 맞는지 확인하세요.
+    dataset과 aggregates가 전체 쿼리 구조에서 어떻게 맞는지 확인합니다.
   </Card>
-  <Card title="데이터 큐브" icon="cubes" href="/ko/graphql/schema/cubes">
-    어떤 Cube가 dataset 전환을 지원하는지 확인하세요.
+  <Card title="데이터 Cube" icon="cubes" href="/ko/graphql/schema/cubes">
+    dataset 전환이 지원되는 Cube를 확인합니다.
   </Card>
 </CardGroup>

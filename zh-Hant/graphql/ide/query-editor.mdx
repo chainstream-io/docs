@@ -1,46 +1,47 @@
 ---
-title: "查詢編輯器"
-description: "基於 Monaco 的 GraphQL 編輯器：自動補全、語法高亮、多面板與實時執行查詢"
+title: "Query Editor"
+description: "Monaco-powered GraphQL editor with autocomplete, syntax highlighting, panels, and real-time query execution"
 icon: "pen-to-square"
 ---
 
 ## Monaco 編輯器
 
-查詢編輯器基於 [Monaco](https://microsoft.github.io/monaco-editor/) — 與 VS Code 同源 — 並配有 GraphQL language worker，提供：
+查詢編輯器以 [Monaco](https://microsoft.github.io/monaco-editor/) 為基礎——與 VS Code 相同的核心——並搭配 GraphQL 語言 worker，提供：
 
-- GraphQL 操作、欄位、引數與指令的 **語法高亮**
-- **基於 schema 的自動補全** — 按 `Ctrl+Space` 檢視當前 live schema 下可用的欄位、引數與型別
-- **實時錯誤檢測** — 無效欄位名、缺少引數或型別不匹配時顯示紅色下劃線與錯誤標記
-- 花括號、括號與字串的 **括號匹配** 與 **自動閉合**
-- 便於批次修改的 **多游標編輯**
+- GraphQL 操作、欄位、引數與指示詞的**語法突顯**
+- **依 schema 驅動的自動完成**——按 `Ctrl+Space` 可依即時 schema 查看可用欄位、引數與型別
+- **即時錯誤偵測**——無效欄位名、缺少引數或型別不符時會以紅線與錯誤標記提示
+- 大括號、括號與字串的**括號配對**與**自動閉合**
+- **多游標編輯**，方便批次修改
 
 <Tip>
-自動補全會感知 schema。在某一 Cube（例如 `DEXTrades`）內輸入時，建議列表中只會出現對該 Cube 合法的欄位與引數。
+自動完成會依 schema 調整。在 Cube 內輸入時（例如 `DEXTrades`），建議清單只會出現該 Cube 有效的欄位與引數。
 </Tip>
 
 ---
 
 ## 編輯器面板
 
-編輯器區域在底部分為三個標籤頁，切換即可配置請求的不同部分。
+編輯區底部有三個分頁，可切換以設定請求的不同部分。
 
 ### Query 面板
 
-編寫 GraphQL 查詢的主編輯區。Monaco 的自動補全、高亮與錯誤檢測在此生效。
+撰寫 GraphQL 查詢的主要區域。Monaco 的自動完成、突顯與錯誤偵測皆在此啟用。
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block { Time }
-    Transaction { Hash }
-    Trade {
-      Buy { Currency { MintAddress } Amount PriceInUSD }
-      Sell { Currency { MintAddress } Amount }
-      Dex { ProtocolName }
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block { Time }
+      Transaction { Hash }
+      Trade {
+        Buy { Currency { MintAddress } Amount PriceInUSD }
+        Sell { Currency { MintAddress } Amount }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -48,21 +49,22 @@ query {
 
 ### Variables 面板
 
-在 Variables 面板中以 JSON 向帶引數的查詢傳入變數。這樣查詢可複用 — 只需改變數值而無需改查詢正文。
+使用 Variables 面板以 JSON 變數傳入參數化查詢。可讓查詢重複使用——無需改查詢文字，只需變更變數值。
 
 <Tabs>
   <Tab title="Query">
     ```graphql
-    query LatestTrades($network: Network!, $limit: Int!) {
-      DEXTrades(
-        network: $network
-        limit: {count: $limit}
-        orderBy: Block_Time_DESC
-      ) {
-        Block { Time }
-        Trade {
-          Buy { Currency { MintAddress } Amount PriceInUSD }
-          Sell { Currency { MintAddress } Amount }
+    query LatestTrades($limit: Int!) {
+      Solana {
+        DEXTrades(
+          limit: {count: $limit}
+          orderBy: {descending: Block_Time}
+        ) {
+          Block { Time }
+          Trade {
+            Buy { Currency { MintAddress } Amount PriceInUSD }
+            Sell { Currency { MintAddress } Amount }
+          }
         }
       }
     }
@@ -71,7 +73,6 @@ query {
   <Tab title="Variables">
     ```json
     {
-      "network": "sol",
       "limit": 20
     }
     ```
@@ -80,7 +81,7 @@ query {
 
 ### Headers 面板
 
-配置隨每次請求傳送的 HTTP 請求頭。Headers 面板 **預設顯示**，並已預填 `X-API-KEY`。
+設定每次請求一併送出的 HTTP 標頭。Headers 面板**預設顯示**，並已預填 `X-API-KEY` 標頭。
 
 ```json
 {
@@ -88,66 +89,66 @@ query {
 }
 ```
 
-可按需新增其他自定義請求頭。所有請求頭會作為 GraphQL 端點 POST 請求的一部分傳送。
+可依需求新增其他自訂標頭。所有標頭都會作為 POST 請求的一部分送往 GraphQL 端點。
 
 <Note>
-`Content-Type: application/json` 會自動附帶 — 無需手動設定。
+`Content-Type: application/json` 會自動加入——無需手動設定。
 </Note>
 
 ---
 
-## 工具欄
+## 工具列
 
-工具欄位於編輯器頂部，提供快捷操作：
+工具列位於編輯器頂端，提供快速操作：
 
-| 按鈕 | 操作 | 說明 |
+| 按鈕 | 動作 | 說明 |
 |:--|:--|:--|
-| **Execute**（▶） | 執行查詢 | 將當前查詢（含 variables 與 headers）傳送到 GraphQL 端點 |
-| **Prettify** | 格式化查詢 | 自動整理縮排與換行 |
-| **Copy** | 複製查詢 | 將當前查詢文字複製到剪貼簿 |
-| **Merge** | 合併片段 | 將 inline fragments 合併為單一扁平查詢 |
-| **Save Query** | 本地儲存 | 以標題與可選標籤儲存當前查詢 |
-| **Export Code** | 匯出片段 | 按所選語言生成當前查詢的程式碼片段 |
+| **Execute**（▶） | 執行查詢 | 將目前查詢（含變數與標頭）送至 GraphQL 端點 |
+| **Prettify** | 格式化查詢 | 以一致縮排與換行自動排版查詢 |
+| **Copy** | 複製查詢 | 將目前查詢文字複製到剪貼簿 |
+| **Merge** | 合併片段 | 將 inline fragment 合併為單一扁平查詢 |
+| **Save Query** | 本機儲存 | 以標題與選填標籤儲存目前查詢 |
+| **Export Code** | 匯出片段 | 依所選語言為目前查詢產生程式碼片段 |
 
 ---
 
 ## 執行查詢
 
-執行步驟：
+執行查詢的步驟：
 
-1. 在編輯器中編寫或載入查詢
+1. 在編輯器中撰寫或載入查詢
 2. 在 Headers 面板設定 `X-API-KEY`
-3. 點選工具欄中的 **Execute**（▶），或按 **Ctrl/Cmd+Enter**
+3. 點選工具列的 **Execute**（▶），或按 **Ctrl／Cmd+Enter**
 
-響應顯示在編輯器右側 **Results Panel**，JSON 帶完整語法高亮。若查詢有誤，會展示錯誤響應及錯誤資訊與位置。
+回應會顯示在編輯器右側的 **Results Panel**，並具完整 JSON 語法突顯。若查詢有誤，會顯示錯誤回應，含錯誤訊息與位置資訊。
 
 ---
 
 ## Results 面板
 
-結果面板展示 GraphQL 端點返回的 JSON，並提供：
+結果面板會顯示 GraphQL 端點回傳的 JSON，並提供：
 
-- JSON 鍵、字串、數字與布林值的 **語法高亮**
-- 用於瀏覽深層巢狀響應的 **可摺疊節點**
-- 透過右鍵選單 **複製響應**
+- JSON 鍵、字串、數字與布林值的**語法突顯**
+- 可摺疊節點，方便瀏覽深層巢狀回應
+- 透過右鍵選單**複製回應**
 
-典型成功響應包含與查詢結構對應的 `data` 物件，以及展示計費資訊的 `extensions.credits` 物件。
+一般成功回應會包含與查詢結構對應的 `data` 物件，以及顯示計費資訊的 `extensions.credits` 物件。
 
 ---
 
 ## 狀態列
 
-IDE 底部狀態列實時反饋查詢執行情況：
+IDE 底部的狀態列會即時反映查詢執行狀態：
 
-| 指示項 | 取值示例 | 說明 |
+| 指示 | 數值 | 說明 |
 |:--|:--|:--|
-| **State** | `Ready` · `Executing...` · `Success` · `Error` | 當前請求生命週期狀態 |
-| **Latency** | 如 `120ms` | 從發出請求到收到響應的往返時間 |
-| **Size** | 如 `2.4 KB` | 響應體大小 |
-| **Credits** | 如 `8 CU` | 本次查詢消耗的 Credit Units |
+| **State** | `Ready` · `Executing...` · `Success` · `Error` | 目前請求生命週期狀態 |
+| **Latency** | 例如 `120ms` | 從送出請求到收到回應的往返時間 |
+| **Size** | 例如 `2.4 KB` | 回應本文大小 |
+| **Credits** | 例如 `8 CU` | 此查詢消耗的 Credit Units（CU） |
 
 <Info>
-Credit Units（CU）反映查詢的計算成本。掃描更多資料或返回更大結果集會消耗更多 CU。詳見 [計費與 Credits](/zh-Hant/graphql/billing/graphql-billing)。
+Credit Units（CU）反映查詢的運算成本。掃描較多資料或回傳較大結果集的查詢會消耗較多 CU。詳見 [計費與點數](/zh-Hant/graphql/billing/graphql-billing)。
 </Info>
 
 ---
@@ -156,19 +157,19 @@ Credit Units（CU）反映查詢的計算成本。掃描更多資料或返回更
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| 快捷鍵 | 操作 |
+| 快捷鍵 | 動作 |
 |:--|:--|
 | `Ctrl/Cmd + Enter` | 執行查詢 |
 | `Ctrl/Cmd + B` | 切換側邊欄 |
-| `Ctrl + Space` | 觸發自動補全 |
-| `Ctrl/Cmd + Shift + P` | 命令面板 |
-| `Ctrl/Cmd + /` | 切換行註釋 |
-| `Ctrl/Cmd + D` | 選中下一處相同內容 |
-| `Ctrl/Cmd + Shift + F` | 格式化 / Prettify |
-| `Alt + Up/Down` | 上移/下移當前行 |
+| `Ctrl + Space` | 觸發自動完成 |
+| `Ctrl/Cmd + Shift + P` | 命令選擇區 |
+| `Ctrl/Cmd + /` | 切換行註解 |
+| `Ctrl/Cmd + D` | 選取下一個相同字串 |
+| `Ctrl/Cmd + Shift + F` | 格式化／Prettify |
+| `Alt + Up/Down` | 上移／下移目前行 |
 
 </div>
 
 <Tip>
-在 macOS 上，將 `Ctrl` 換為 `Cmd`。IDE 會檢測作業系統並顯示對應的修飾鍵。
+在 macOS 上通常以 `Cmd` 取代 `Ctrl`。IDE 會偵測作業系統並顯示對應的修飾鍵。
 </Tip>

@@ -60,29 +60,30 @@ Paste the following query into the editor. It fetches the **latest 10 DEX trades
 
 ```graphql
 query {
-  DEXTrades(
-    network: sol
-    limit: {count: 10}
-    orderBy: Block_Time_DESC
-  ) {
-    Block {
-      Time
-      Slot
-    }
-    Transaction {
-      Hash
-    }
-    Trade {
-      Buy {
-        Currency { MintAddress }
-        Amount
-        PriceInUSD
+  Solana {
+    DEXTrades(
+      limit: {count: 10}
+      orderBy: {descending: Block_Time}
+    ) {
+      Block {
+        Time
+        Slot
       }
-      Sell {
-        Currency { MintAddress }
-        Amount
+      Transaction {
+        Hash
       }
-      Dex { ProtocolName }
+      Trade {
+        Buy {
+          Currency { MintAddress }
+          Amount
+          PriceInUSD
+        }
+        Sell {
+          Currency { MintAddress }
+          Amount
+        }
+        Dex { ProtocolName }
+      }
     }
   }
 }
@@ -105,7 +106,7 @@ curl -X POST "https://graphql.chainstream.io/graphql" \
   -H "Content-Type: application/json" \
   -H "X-API-KEY: your_api_key" \
   -d '{
-    "query": "{ DEXTrades(network: sol, limit: {count: 10}, orderBy: Block_Time_DESC) { Block { Time Slot } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } }"
+    "query": "{ Solana { DEXTrades(limit: {count: 10}, orderBy: {descending: Block_Time}) { Block { Time Slot } Transaction { Hash } Trade { Buy { Currency { MintAddress } Amount PriceInUSD } Sell { Currency { MintAddress } Amount } Dex { ProtocolName } } } } }"
   }'
 ```
 
@@ -118,50 +119,52 @@ A successful response looks like this:
 ```json
 {
   "data": {
-    "DEXTrades": [
-      {
-        "Block": {
-          "Time": "2025-03-27T10:32:18Z",
-          "Slot": 325847291
-        },
-        "Transaction": {
-          "Hash": "4vKzR8g...x9bQ"
-        },
-        "Trade": {
-          "Buy": {
-            "Currency": { "MintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
-            "Amount": 1523.45,
-            "PriceInUSD": 1.0001
+    "Solana": {
+      "DEXTrades": [
+        {
+          "Block": {
+            "Time": "2025-03-27T10:32:18Z",
+            "Slot": 325847291
           },
-          "Sell": {
-            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
-            "Amount": 10.237
+          "Transaction": {
+            "Hash": "4vKzR8g...x9bQ"
           },
-          "Dex": { "ProtocolName": "Raydium" }
+          "Trade": {
+            "Buy": {
+              "Currency": { "MintAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+              "Amount": 1523.45,
+              "PriceInUSD": 1.0001
+            },
+            "Sell": {
+              "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+              "Amount": 10.237
+            },
+            "Dex": { "ProtocolName": "Raydium" }
+          }
+        },
+        {
+          "Block": {
+            "Time": "2025-03-27T10:32:17Z",
+            "Slot": 325847289
+          },
+          "Transaction": {
+            "Hash": "3mPqW7n...kR2J"
+          },
+          "Trade": {
+            "Buy": {
+              "Currency": { "MintAddress": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
+              "Amount": 48291037.12,
+              "PriceInUSD": 0.00003152
+            },
+            "Sell": {
+              "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
+              "Amount": 10.5
+            },
+            "Dex": { "ProtocolName": "Orca" }
+          }
         }
-      },
-      {
-        "Block": {
-          "Time": "2025-03-27T10:32:17Z",
-          "Slot": 325847289
-        },
-        "Transaction": {
-          "Hash": "3mPqW7n...kR2J"
-        },
-        "Trade": {
-          "Buy": {
-            "Currency": { "MintAddress": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" },
-            "Amount": 48291037.12,
-            "PriceInUSD": 0.00003152
-          },
-          "Sell": {
-            "Currency": { "MintAddress": "So11111111111111111111111111111111111111112" },
-            "Amount": 10.5
-          },
-          "Dex": { "ProtocolName": "Orca" }
-        }
-      }
-    ]
+      ]
+    }
   },
   "extensions": {
     "credits": {
@@ -209,34 +212,37 @@ Now that you have a working query, try these modifications:
   <Accordion title="Add a time filter">
     Filter trades from the last hour by adding a `where` clause:
     ```graphql
-    DEXTrades(
-      network: sol
-      limit: {count: 10}
-      orderBy: Block_Time_DESC
-      where: {Block: {Time: {after: "2025-03-27T09:00:00Z"}}}
-    ) { ... }
+    Solana {
+      DEXTrades(
+        limit: {count: 10}
+        orderBy: {descending: Block_Time}
+        where: {Block: {Time: {after: "2025-03-27T09:00:00Z"}}}
+      ) { ... }
+    }
     ```
   </Accordion>
   <Accordion title="Query a specific token">
     Filter by token mint address to see trades for a specific token:
     ```graphql
-    DEXTrades(
-      network: sol
-      limit: {count: 10}
-      orderBy: Block_Time_DESC
-      where: {Trade: {Buy: {Currency: {MintAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}}}}}
-    ) { ... }
+    Solana {
+      DEXTrades(
+        limit: {count: 10}
+        orderBy: {descending: Block_Time}
+        where: {Trade: {Buy: {Currency: {MintAddress: {is: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"}}}}}
+      ) { ... }
+    }
     ```
   </Accordion>
   <Accordion title="Add aggregation">
     Count total trades per DEX protocol:
     ```graphql
-    DEXTrades(
-      network: sol
-      where: {Block: {Time: {after: "2025-03-27T00:00:00Z"}}}
-    ) {
-      count
-      Trade { Dex { ProtocolName } }
+    Solana {
+      DEXTrades(
+        where: {Block: {Time: {after: "2025-03-27T00:00:00Z"}}}
+      ) {
+        count
+        Trade { Dex { ProtocolName } }
+      }
     }
     ```
   </Accordion>

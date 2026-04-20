@@ -1,9 +1,64 @@
 ---
 title: "REST API"
-description: "用于按需查询代币、钱包、交易等数据的 HTTPS 接口。"
+description: "基于 HTTP 的查询、快照、分析端点——多数应用的默认接入面。"
+icon: "database"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+REST API 是从 ChainStream 拿数据最简单的方式。每个 [数据产品](/cn/docs/data-products/overview) 都以 JSON 端点形式暴露，共享同一套鉴权与错误信封。
+
+## Base URL
+
+```
+https://api.chainstream.io
+```
+
+## 鉴权
+
+使用以下任意一种：
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Authorization: Bearer $OAUTH_TOKEN"
+-H "X-PAYMENT: <signed payload>"
+```
+
+完整矩阵见 [鉴权](/cn/api-reference/authentication/authenticate)。
+
+## 第一次请求
+
+```bash
+curl -H "Authorization: Bearer $CHAINSTREAM_API_KEY" \
+  "https://api.chainstream.io/v1/tokens/search?chain=solana&q=USDC&limit=5"
+```
+
+## 什么时候用
+
+- 单次查询、快照、服务端渲染页面
+- 亚秒级延迟不是关键的场景
+- 与 [WebSocket](/cn/docs/access-methods/websocket) 搭配（REST 查历史、WS 跑实时）
+- Agent 工具调用——每次调用对应一个端点
+
+**不建议用** 的场景：高频流式（用 WebSocket 或 Kafka）、跨产品 JOIN（用 GraphQL）。
+
+## 约定
+
+- 分页：列表端点使用 `limit` + `cursor`（基于游标）
+- 限流：按套餐；响应头 `X-RateLimit-Remaining`、`X-RateLimit-Reset`
+- 错误：RFC 7807 风格 JSON，包含 `code`、`message`、`requestId`
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/cn/api-reference/overview">
+    所有 REST 端点，带请求 / 响应示例。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/docs/access-methods/sdks">
+    TS / Py / Go / Rust 的类型化封装。
+  </Card>
+  <Card title="限流" icon="gauge" href="/cn/docs/platform/billing-payments/plans-and-units">
+    各套餐吞吐上限与规划方法。
+  </Card>
+  <Card title="鉴权" icon="key" href="/cn/api-reference/authentication/authenticate">
+    API Key、OAuth、钱包登录、x402。
+  </Card>
+</CardGroup>

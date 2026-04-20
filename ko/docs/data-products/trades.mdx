@@ -1,9 +1,49 @@
 ---
-title: "거래"
-description: "DEX trade stream — every swap normalized across Solana, Ethereum, BSC and more."
+title: "Trades"
+description: "지원되는 모든 체인의 DEX 스왑 이벤트를 정규화 — 가격, 사이즈, maker/taker, 라우터, 슬리피지."
+icon: "right-left"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Trades**는 ChainStream이 인덱싱하는 모든 DEX 스왑의 정규화 버전입니다. 어떤 AMM가 발행했는지 신경 쓰지 않고 토큰/지갑/풀/라우터 단위로 조회할 수 있습니다.
+
+## 필드
+
+| 분류 | 예시 |
+|:--|:--|
+| Identity | `chainId`, `txHash`, `logIndex`, `blockNumber`, `timestamp` |
+| Parties | `makerAddress`, `takerAddress`, `router`, `dex` |
+| Economics | `tokenIn`, `tokenOut`, `amountIn`, `amountOut`, `priceUsd`, `sizeUsd` |
+| Context | `poolAddress`, `feeTier`, `slippageBps`, `gasUsedUsd` |
+
+## 커버리지 & 신선도
+
+- 지연: Kafka 1–2s, REST 5–10s.
+- DEX: Uniswap v2/v3/v4, Raydium, Meteora, PancakeSwap, Aerodrome, Jupiter 라우팅 등.
+
+## 접근
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/ko/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/trades`, `wallets/{address}/trades`.
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/ko/api-reference/endpoint/websocket/connection">
+    `trades.token`, `trades.wallet`, `trades.pool`.
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/ko/api-reference/kafka-topics/evm">
+    `*.dex.trade` 토픽 (Protobuf).
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/ko/graphql/getting-started/overview">
+    유연한 필터. Tokens / Wallets와 JOIN.
+  </Card>
+</CardGroup>
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="Candles (OHLC)" icon="chart-column" href="/ko/docs/data-products/candles-ohlc">
+    틱 단위가 필요 없을 때 사전 집계 바.
+  </Card>
+  <Card title="Smart Money" icon="brain" href="/ko/docs/data-products/smart-money">
+    고성과 지갑만 필터링한 거래.
+  </Card>
+</CardGroup>

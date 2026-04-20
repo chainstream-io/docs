@@ -12,7 +12,7 @@ Solana 目標出塊時間為 400ms，實際吞吐量約 4,000 TPS，理論峰值
 
 ## Message Types 總覽
 
-Solana Streams 提供以下訊息類型：
+Solana Streams 提供以下訊息型別：
 
 | Message Type | 說明 | Topic |
 |:---|:---|:---|
@@ -20,7 +20,7 @@ Solana Streams 提供以下訊息類型：
 | TokenEvents | Token 事件 | `sol.tokens` |
 | BalanceEvents | 餘額變動事件 | `sol.balances` |
 | DexPoolEvents | 流動性池事件 | `sol.dex.pools` |
-| TransferEvents | 轉帳事件 | `sol.transfers` |
+| TransferEvents | 轉賬事件 | `sol.transfers` |
 | CandlestickEvents | K線資料 | `sol.candlesticks` |
 
 ---
@@ -29,7 +29,7 @@ Solana Streams 提供以下訊息類型：
 
 Solana 使用 Slot 而非傳統區塊號作為時間線標識。
 
-| 欄位 | 類型 | 說明 |
+| 欄位 | 型別 | 說明 |
 |:---|:---|:---|
 | `Slot` | uint64 | Slot 號（主要標識） |
 | `BlockHeight` | uint64 | 區塊高度 |
@@ -47,11 +47,11 @@ Solana 的 shred stream 中，Block Header 可能不完整，僅 **Slot** 欄位
 
 ### 交易核心欄位
 
-| 欄位 | 類型 | 說明 |
+| 欄位 | 型別 | 說明 |
 |:---|:---|:---|
 | `Signature` | bytes | 交易簽名（唯一標識） |
 | `Status` | Status | 執行狀態 |
-| `Header` | TransactionHeader | 中繼資料（含費用和簽名者） |
+| `Header` | TransactionHeader | 後設資料（含費用和簽名者） |
 | `Index` | uint32 | 區塊內位置 |
 
 ### Instructions
@@ -62,7 +62,7 @@ Solana 的 shred stream 中，Block Header 可能不完整，僅 **Slot** 欄位
 |:---|:---|
 | `ProgramAccountIndex` | 被呼叫的程式 |
 | `Data` | 編碼的指令資料 |
-| `AccountIndexes` | 引用的帳戶 |
+| `AccountIndexes` | 引用的賬戶 |
 | `BalanceUpdates` | 該指令引起的 SOL 餘額變動 |
 
 <Note>
@@ -73,7 +73,7 @@ Solana 的 shred stream 中，Block Header 可能不完整，僅 **Slot** 欄位
 
 ## Transfer Data
 
-`TransferEvents` 提供 Solana 的轉帳資訊（Topic: `sol.transfers`）。
+`TransferEvents` 提供 Solana 的轉賬資訊（Topic: `sol.transfers`）。
 
 ### TransferEvent 結構
 
@@ -90,16 +90,16 @@ message TransferEvent {
 
 ### Transfer 核心欄位
 
-| 欄位 | 類型 | 說明 |
+| 欄位 | 型別 | 說明 |
 |:---|:---|:---|
-| `sender_token_account_address` | string | 發送方 Token 帳戶地址 |
-| `sender_account_owner_address` | string | 發送方帳戶所有者地址 |
-| `receiver_token_account_address` | string | 接收方 Token 帳戶地址 |
-| `receiver_account_owner_address` | string | 接收方帳戶所有者地址 |
+| `sender_token_account_address` | string | 傳送方 Token 賬戶地址 |
+| `sender_account_owner_address` | string | 傳送方賬戶所有者地址 |
+| `receiver_token_account_address` | string | 接收方 Token 賬戶地址 |
+| `receiver_account_owner_address` | string | 接收方賬戶所有者地址 |
 | `token_address` | string | Token 地址（Mint） |
-| `token_amount` | string | 轉帳數量 |
+| `token_amount` | string | 轉賬數量 |
 
-### Token 中繼資料（TokenEvent）
+### Token 後設資料（TokenEvent）
 
 Token 事件使用通用的 `TokenEvents`（Topic: `sol.tokens`），包含：
 
@@ -108,13 +108,13 @@ Token 事件使用通用的 `TokenEvents`（Topic: `sol.tokens`），包含：
 | `address` | Token 地址 |
 | `name` / `symbol` | 名稱和符號 |
 | `decimals` | 精度 |
-| `uri` | 中繼資料 URI |
-| `metadata_address` | 中繼資料地址 |
+| `uri` | 後設資料 URI |
+| `metadata_address` | 後設資料地址 |
 | `creators` | 建立者列表（地址、驗證狀態、分成比例） |
 
 ### SolanaExtra 特有欄位
 
-Solana Token 包含額外的中繼資料欄位：
+Solana Token 包含額外的後設資料欄位：
 
 | 欄位 | 說明 |
 |:---|:---|
@@ -125,7 +125,7 @@ Solana Token 包含額外的中繼資料欄位：
 | `program_address` | 程式地址 |
 | `seller_fee_basis_points` | 創作者版稅基點（NFT） |
 | `token_standard` | Token 標準 |
-| `mint_authority` / `freeze_authority` / `update_authority` | 權限帳戶 |
+| `mint_authority` / `freeze_authority` / `update_authority` | 許可權賬戶 |
 | `is_verified_collection` | 是否已驗證集合 |
 
 ### Balance Updates 分層機制（Solana 特有）
@@ -151,12 +151,12 @@ Solana Token 包含額外的中繼資料欄位：
 
     ```
     Transaction
-    └── FinalBalanceUpdate: +75 SOL (淨變動)
+    └── FinalBalanceUpdate: +75 SOL (净变动)
     ```
   </Tab>
 </Tabs>
 
-這使得開發者既可以追蹤細粒度的資金流向，也可以取得最終狀態。
+這使得開發者既可以追蹤細粒度的資金流向，也可以獲取最終狀態。
 
 ---
 
@@ -187,7 +187,7 @@ Solana Token 包含額外的中繼資料欄位：
 
 | 欄位 | 說明 |
 |:---|:---|
-| `type` | 事件類型（INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP） |
+| `type` | 事件型別（INITIALIZE/INCREASE_LIQUIDITY/DECREASE_LIQUIDITY/SWAP） |
 | `address` | 池子地址 |
 | `token_a_address` / `token_b_address` | 代幣地址 |
 | `token_a_amount` / `token_b_amount` | 代幣數量 |
@@ -228,7 +228,7 @@ Solana 的 shred stream 中，Block Header 可能不完整，僅 **Slot** 欄位
 
 ---
 
-## Topic → Message Type 映射表
+## Topic → Message Type 對映表
 
 | Topic | Proto File | Message Type | 說明 |
 |:---|:---|:---|:---|
@@ -237,7 +237,7 @@ Solana 的 shred stream 中，Block Header 可能不完整，僅 **Slot** 欄位
 | `sol.tokens` | token_event.proto | TokenEvents | Token 事件 |
 | `sol.tokens.processed` | token_event.proto | TokenEvents | 含描述、圖片、社交連結 |
 | `sol.balances` | balance_event.proto | BalanceEvents | 餘額變動事件 |
-| `sol.transfers` | solana/transfer_event.proto | TransferEvents | Solana 轉帳事件 |
+| `sol.transfers` | solana/transfer_event.proto | TransferEvents | Solana 轉賬事件 |
 | `sol.transfers.processed` | solana/transfer_processed_event.proto | TransferProcessedEvents | 含 USD 價值 |
 | `sol.dex.pools` | dex_pool_event.proto | DexPoolEvents | 流動性池事件 |
 | `sol.candlesticks` | candlestick.proto | CandlestickEvents | K線資料 |
@@ -250,9 +250,9 @@ Solana 的 shred stream 中，Block Header 可能不完整，僅 **Slot** 欄位
 
 ```python
 from kafka import KafkaConsumer
-from common import trade_event_pb2  # 從 streaming_protobuf 倉庫取得
+from common import trade_event_pb2  # 从 streaming_protobuf 仓库获取
 
-# 建立 consumer
+# 创建 consumer
 consumer = KafkaConsumer(
     'sol.dex.trades',
     bootstrap_servers=['<your_broker_address>'],
@@ -265,7 +265,7 @@ consumer = KafkaConsumer(
     group_id='my-solana-consumer'
 )
 
-# 消費並解析訊息
+# 消费并解析消息
 for message in consumer:
     trade_events = trade_event_pb2.TradeEvents()
     trade_events.ParseFromString(message.value)
@@ -311,10 +311,10 @@ func main() {
     })
     defer reader.Close()
 
-    // 使用 worker pool 並行處理
+    // 使用 worker pool 并行处理
     messages := make(chan kafka.Message, 100)
     
-    // 啟動 worker
+    // 启动 worker
     for i := 0; i < 10; i++ {
         go func() {
             for msg := range messages {
@@ -324,7 +324,7 @@ func main() {
                     continue
                 }
                 
-                // 處理交易
+                // 处理交易
                 for _, event := range tradeEvents.Events {
                     log.Printf("Pool: %s, Token A: %s, Token B: %s",
                         event.Trade.PoolAddress,
@@ -339,7 +339,7 @@ func main() {
         }()
     }
 
-    // 讀取訊息
+    // 读取消息
     for {
         msg, err := reader.ReadMessage(context.Background())
         if err != nil {
@@ -356,16 +356,16 @@ func main() {
 ## 相關文件
 
 <CardGroup cols={2}>
-  <Card title="概念與接入指南" icon="book-open" href="/zh-Hant/guides/data-concepts/kafka-streams/overview">
+  <Card title="概念與接入指南" icon="book-open" href="/zh-Hant/docs/access-methods/kafka-streams/overview">
     Kafka Streams 接入基礎
   </Card>
-  <Card title="EVM Streams" icon="ethereum" href="/zh-Hant/guides/data-concepts/kafka-streams/evm-streams">
+  <Card title="EVM Streams" icon="ethereum" href="/zh-Hant/docs/access-methods/kafka-streams/evm-streams">
     EVM 鏈資料流
   </Card>
-  <Card title="TRON Streams" icon="circle-t" href="/zh-Hant/guides/data-concepts/kafka-streams/tron-streams">
+  <Card title="TRON Streams" icon="circle-t" href="/zh-Hant/docs/access-methods/kafka-streams/tron-streams">
     TRON 網路資料流
   </Card>
-  <Card title="WebSocket 即時資料" icon="bolt" href="/zh-Hant/guides/data-concepts/realtime-streaming">
+  <Card title="WebSocket 實時資料" icon="bolt" href="/zh-Hant/docs/access-methods/websocket">
     WebSocket 接入方式
   </Card>
 </CardGroup>

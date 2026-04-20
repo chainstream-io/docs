@@ -1,9 +1,58 @@
 ---
-title: "데이터 신선도 및 SLA"
-description: "Latency guarantees, refresh intervals and backfill behaviour per dataset."
+title: "데이터 신선도 & SLA"
+description: "모든 데이터 제품의 지연, 갱신 간격, 백필 동작 — 체인/표면별."
+icon: "gauge-high"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+이 페이지는 각 데이터 제품이 "얼마나 신선한가"에 대한 단일 사실 소스입니다. 트레이딩 봇, 컴플라이언스 알림, 에이전트 피드백 루프의 용량 산정에 필요한 수치가 모두 여기 모여 있습니다.
+
+## 엔드투엔드 지연
+
+```
+[체인 이벤트] → [수집] → [정규화] → [Kafka] → [REST / WS / GraphQL 캐시]
+     ~0         <200ms    <200ms      <500ms       +50–500ms
+```
+
+## 표면별 지연
+
+| 표면 | p50 | p99 | 비고 |
+|:--|:--|:--|:--|
+| Kafka Streams | 800 ms | 2 s | 소스 최근접 |
+| WebSocket | 1.0 s | 3 s | Kafka와 같은 소스, 팬아웃 추가 |
+| REST (캐시) | 1.5 s | 5 s | 엔드포인트별 TTL |
+| GraphQL | 2 s | 6 s | JOIN 플래닝 추가 |
+
+## 제품별 갱신
+
+| 제품 | 실시간 | 스냅샷 |
+|:--|:--|:--|
+| Tokens — 시장 | yes | 거래마다 |
+| Tokens — 보안 | 지연 | 생성 후 수 분 |
+| Trades | yes | 블록 |
+| Pools | yes | 이벤트 |
+| Wallets — 보유 | yes | 이전 후 초 |
+| Wallets — 순자산 이력 | no | 1시간 |
+| Candles (OHLC) | yes | 바 종료 |
+| Holders 테이블 | yes | 이전 |
+| Holders 분포 | no | 5분 |
+| Smart Money 코호트 | no | 매주 월 UTC 00:00 |
+| Blockchain Core | yes | 블록 |
+| Rankings | 대부분 yes | 1분/블록 |
+| Compliance | yes | 요청 |
+
+## 백필
+
+- Solana / EVM은 가능한 한 genesis까지.
+- 신규 체인은 30일 이상에서 시작, 90일 이내 전체 이력 완료.
+- Reorg 발생 시 해당 slot/block을 하류 전체에서 재작성. 컨슈머는 `(chainId, txHash)` + `logIndex` 멱등 처리.
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="속도 제한" icon="gauge" href="/ko/docs/platform/billing-payments/plans-and-units">
+    플랜별 스루풋.
+  </Card>
+  <Card title="Kafka 토픽 카탈로그" icon="tower-broadcast" href="/ko/api-reference/kafka-topics/evm">
+    체인별 토픽과 보존.
+  </Card>
+</CardGroup>

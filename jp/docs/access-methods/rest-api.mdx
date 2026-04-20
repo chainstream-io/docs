@@ -1,9 +1,56 @@
 ---
 title: "REST API"
-description: "HTTPS endpoints for on-demand lookups of tokens, wallets, trades and more."
+description: "プレーン HTTP 上のルックアップ・スナップショット・アナリティカルエンドポイント — ほとんどのアプリのデフォルトサーフェス。"
+icon: "database"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+REST API は ChainStream からデータを取る最もシンプルな方法です。すべての [データプロダクト](/jp/docs/data-products/overview) が JSON エンドポイントとして公開され、認証とエラーエンベロープは共通です。
+
+## Base URL
+
+```
+https://api.chainstream.io
+```
+
+## 認証
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Authorization: Bearer $OAUTH_TOKEN"
+-H "X-PAYMENT: <signed payload>"
+```
+
+詳細は [認証](/jp/api-reference/authentication/authenticate)。
+
+## 最初のリクエスト
+
+```bash
+curl -H "Authorization: Bearer $CHAINSTREAM_API_KEY" \
+  "https://api.chainstream.io/v1/tokens/search?chain=solana&q=USDC&limit=5"
+```
+
+## いつ使うか
+
+- 単発ルックアップ、スナップショット、SSR
+- サブ秒遅延がクリティカルでないワークロード
+- [WebSocket](/jp/docs/access-methods/websocket) との併用 (履歴=REST、ライブ=WS)
+- Agent のツール呼び出し
+
+**向かない**: 高頻度ストリーミング (WebSocket / Kafka を)、マルチプロダクト JOIN (GraphQL を)。
+
+## 規約
+
+- ページング: `limit` + `cursor`
+- レート制限: プラン別。`X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- エラー: `code`, `message`, `requestId` の RFC 7807 スタイル JSON
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/jp/api-reference/overview">
+    すべての REST エンドポイント。
+  </Card>
+  <Card title="SDK" icon="box" href="/jp/docs/access-methods/sdks">
+    TS / Py / Go / Rust の型付きラッパー。
+  </Card>
+</CardGroup>

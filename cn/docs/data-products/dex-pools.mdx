@@ -1,9 +1,61 @@
 ---
-title: "DEX 池子"
-description: "流动性池状态、储备、手续费与快照。"
+title: "DEX Pools 池子"
+description: "每个 AMM / CLMM 的池子状态、储备、费率档、TVL 与流动性快照。"
+icon: "droplet"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**DEX Pools** 数据产品给你 ChainStream 索引的每个流动性池的状态——经典 Uniswap v2 恒积池、v3/v4 集中流动性池、Solana AMM 等——字段已规整。
+
+## 包含什么
+
+| 字段组 | 举例 |
+|:--|:--|
+| 身份 | `chainId`, `poolAddress`, `dex`, `pairType`（v2/v3/v4/CLMM/StableSwap） |
+| 代币 | `token0`, `token1`, `decimals0`, `decimals1`, `reserve0`, `reserve1` |
+| 经济 | `tvlUsd`, `volume24hUsd`, `feeTierBps`, `apy7d` |
+| 状态 | `priceToken0InToken1`, `sqrtPriceX96`, `tick`, `liquidity` |
+| 来源 | `createdAtBlock`, `factoryAddress`, `initCodeHash` |
+
+## 覆盖与新鲜度
+
+- 池子创建按区块检测；状态字段在每次 swap / add / remove 之后更新（通常秒级）。
+- 历史 TVL 与成交量按 1h、1d 聚合。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `pools/{address}`、`pools/search`、`pools/{address}/trades`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    一个查询把 Pools 与 Tokens、Trades JOIN。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    `pools.state`、`pools.created` 频道。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    各链 `*.pool.created`、`*.pool.sync` 主题。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 构建按 TVL / 成交量筛选的 all-pools 看板
+- 抓新池 / 打新告警
+- swap 前检查具体池子深度
+- 驱动需要实时储备的路由层
+
+## 计费
+
+单池查询 **1 read unit**；搜索与列表按 `limit` 计费。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Trades 交易" icon="right-left" href="/cn/docs/data-products/trades">
+    流经这些池子的成交流。
+  </Card>
+  <Card title="Candles (OHLC) K 线" icon="chart-column" href="/cn/docs/data-products/candles-ohlc">
+    想要 K 线而不是状态快照时用。
+  </Card>
+</CardGroup>

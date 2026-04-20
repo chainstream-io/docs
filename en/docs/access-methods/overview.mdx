@@ -1,9 +1,90 @@
 ---
 title: "Access Methods"
-description: "Pick the right interface for your workload — REST, GraphQL, WebSocket, Kafka, SDK, or CLI."
+description: "Pick the right interface for your workload — REST, GraphQL, WebSocket, Kafka, SDK, CLI or MCP."
+icon: "plug"
 ---
 
+ChainStream exposes the same catalog of [data products](/en/docs/data-products/overview) through several different interfaces. Each one has a sweet spot — you will usually combine two or three in a single integration.
+
+## Quick comparison
+
+| | Best for | Pattern | Latency | Auth | Where to start |
+|:--|:--|:--|:--|:--|:--|
+| **REST API** | On-demand lookups, dashboards, user queries | Request/response | 50–200 ms | API key / OAuth | [REST API](/en/docs/access-methods/rest-api) |
+| **GraphQL** | Analytical queries, aggregations, flexible joins | Request/response | 100–500 ms | API key / OAuth | [GraphQL](/en/docs/access-methods/graphql) |
+| **WebSocket** | Live UIs, browser + mobile apps | Push (subscribe) | &lt;2 ms tick | API key | [WebSocket](/en/docs/access-methods/websocket) |
+| **Kafka Streams** | Trading engines, indexers, alert pipelines | Stream (consume) | &lt;100 ms p99 | SASL / OAuth | [Kafka](/en/docs/access-methods/kafka-streams/overview) |
+| **SDKs** | Typed access from TS / Python / Go / Rust | Client library | Matches transport | Inherits underlying | [SDKs](/en/sdks/overview) |
+| **CLI** | Scripting, CI/CD, AI agents, pay-per-call | Command line | Matches transport | API key / OAuth / x402 | [CLI](/en/docs/access-methods/cli) |
+| **MCP Server** | AI agents (Claude, Cursor, ChatGPT, custom) | Tool protocol | Matches transport | API key / x402 | [MCP](/en/docs/ai-agents/mcp-server/introduction) |
+
+## Decision guide
+
+<AccordionGroup>
+  <Accordion title="I'm building a user-facing dashboard">
+    Start with **REST** for lookups and charts, layer **WebSocket** for live
+    updates. Use **GraphQL** if your screens need aggregated or pivoted data.
+  </Accordion>
+  <Accordion title="I'm building a trading / indexing backend">
+    Use **Kafka Streams** for primary ingestion (exactly-once, horizontally
+    scaled). Fall back to **REST** for cold lookups and **GraphQL** for
+    analytical backfills.
+  </Accordion>
+  <Accordion title="I'm doing research or ad-hoc analysis">
+    **GraphQL** gives you dimensional queries over the entire data cube without
+    per-chain boilerplate. Export to notebooks via the **Python SDK**.
+  </Accordion>
+  <Accordion title="I'm building a browser / mobile app">
+    **WebSocket** for live streams (prices, trades, balances). **REST** for
+    anything that is fine with polling or happens on user action.
+  </Accordion>
+  <Accordion title="I'm building an AI agent">
+    **MCP Server** exposes the catalog as typed tools for LLM agents. If your
+    agent runs its own code, use **SDKs** directly; for pay-per-call semantics,
+    use the **CLI** with x402/MPP.
+  </Accordion>
+  <Accordion title="I'm running compliance / KYT workflows">
+    **REST** calls to the KYT endpoints fit most integration patterns. For high
+    volume screening pipelines, use the **Kafka transfer topic** plus REST
+    scoring side-by-side.
+  </Accordion>
+</AccordionGroup>
+
+## Authentication at a glance
+
+Every access method accepts the same credentials. Pick the one that matches your environment — you do not need separate credentials per transport.
+
+<CardGroup cols={3}>
+  <Card title="API Keys" icon="key" href="/en/docs/platform/authentication/api-keys-oauth">
+    Quickest path. One header, works on REST / GraphQL / WebSocket / CLI / SDK.
+  </Card>
+  <Card title="OAuth 2.0" icon="shield-halved" href="/en/docs/platform/authentication/api-keys-oauth">
+    For server-to-server production use — client-credentials JWT flow.
+  </Card>
+  <Card title="Wallet Sign-In (SIWX)" icon="wallet" href="/en/docs/platform/authentication/wallet-auth-siwx">
+    Sign-In With X — let end-users authenticate with their wallet.
+  </Card>
+</CardGroup>
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  For AI agents and per-call micropayments see
+  [x402 Payments](/en/docs/platform/billing-payments/x402-payments) and
+  [MPP Payments](/en/docs/platform/billing-payments/mpp-payments).
 </Note>
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="REST API" icon="bolt" href="/en/docs/access-methods/rest-api">
+    HTTP endpoints for tokens, wallets, trades, pools, compliance.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/docs/access-methods/graphql">
+    Flexible analytics across the normalized chain cube.
+  </Card>
+  <Card title="WebSocket" icon="tower-broadcast" href="/en/docs/access-methods/websocket">
+    Live push for prices, trades, balances and pool events.
+  </Card>
+  <Card title="Kafka Streams" icon="bars-staggered" href="/en/docs/access-methods/kafka-streams/overview">
+    Production streaming with exactly-once semantics.
+  </Card>
+</CardGroup>

@@ -1,9 +1,85 @@
 ---
 title: "Tokens"
-description: "Token metadata, market data, prices, and stats across all supported chains."
+description: "Token metadata, market data, prices, stats, creation events and security signals across every supported chain."
+icon: "coins"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The **Tokens** data product is the canonical source of truth for every fungible token ChainStream indexes. One schema, one address space per chain, one set of fields — whether you're looking up a blue-chip ERC-20, a brand-new Solana meme coin or a BSC pair.
+
+## What's inside
+
+| Field group | Examples |
+|:--|:--|
+| Identity | `chainId`, `address`, `name`, `symbol`, `decimals`, `logo` |
+| Market | `priceUsd`, `priceChange24h`, `marketCap`, `fdv`, `volume24h` |
+| Supply | `totalSupply`, `circulatingSupply`, `holderCount` |
+| Creation | `createdAtBlock`, `creatorAddress`, `firstTxHash`, `launchpad` |
+| Security | `isHoneypot`, `canBuy`, `canSell`, `taxBuy`, `taxSell`, `owner` |
+| Social | `website`, `twitter`, `telegram`, `verifiedSources` |
+
+Security and social fields are best-effort — see [Data Freshness](/en/docs/data-products/data-freshness) for confidence levels.
+
+## Coverage & freshness
+
+<CardGroup cols={2}>
+  <Card title="Chains" icon="globe">
+    Solana, Ethereum, BSC, Base, Polygon, Arbitrum, Optimism, Avalanche,
+    zkSync, Sui — plus anything in [Supported Chains](/en/docs/supported-chains).
+  </Card>
+  <Card title="Freshness" icon="clock">
+    Metadata: minutes after creation. Market data: seconds (near-real-time).
+    Creation events: block-level (sub-second on Solana, 1–12 s on EVM).
+  </Card>
+</CardGroup>
+
+## Access
+
+<CardGroup cols={2}>
+  <Card title="REST — lookup & search" icon="database" href="/en/api-reference/endpoint/data/tokens/search">
+    `tokens/search`, `tokens/{address}`, `tokens/meta`, `tokens/security`.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/graphql/getting-started/overview">
+    Join Tokens with Trades, Holders, Candles in one query.
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/en/api-reference/endpoint/websocket/connection">
+    Subscribe to `tokens.price` and `tokens.created` channels.
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/en/api-reference/kafka-topics/evm">
+    `*.token.created`, `*.token.metadata` topics per chain.
+  </Card>
+  <Card title="SDK" icon="box" href="/en/sdks/overview">
+    `client.tokens.search()`, `.get()`, `.security()` in TS / Py / Go / Rust.
+  </Card>
+  <Card title="MCP / CLI" icon="robot" href="/en/docs/ai-agents/mcp-server/introduction">
+    `tokens_search`, `tokens_analyze` MCP tools; `chainstream tokens` CLI.
+  </Card>
+</CardGroup>
+
+## Common use cases
+
+- Resolve a symbol like `PEPE` to the right address on the chain the user actually meant
+- Render a token page with price, supply, security score and socials
+- Detect new launches on a chain with a created-at filter
+- Rank tokens by volume, market cap or holder growth
+- Feed an LLM with a token "snapshot" for analysis
+
+## Billing
+
+Each REST / GraphQL call consumes **1 read unit**; security and full-meta endpoints may cost more. WebSocket and Kafka charge per message delivered. See [Billing & units](/en/docs/platform/billing-payments/billing-and-units).
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Trades" icon="right-left" href="/en/docs/data-products/trades">
+    Every DEX swap for this token, with maker/taker and router labels.
+  </Card>
+  <Card title="Holders" icon="users" href="/en/docs/data-products/holders">
+    Distribution, concentration and top-holder movements.
+  </Card>
+  <Card title="Candles (OHLC)" icon="chart-column" href="/en/docs/data-products/candles-ohlc">
+    Multi-interval OHLC data for price charts.
+  </Card>
+  <Card title="Token research tutorial" icon="graduation-cap" href="/en/docs/tutorials/build-price-alert-bot">
+    End-to-end example using the Tokens product.
+  </Card>
+</CardGroup>

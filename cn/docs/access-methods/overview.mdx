@@ -1,9 +1,84 @@
 ---
 title: "接入方式"
-description: "为你的场景选对接口——REST、GraphQL、WebSocket、Kafka、SDK 或 CLI。"
+description: "为你的场景选对接口——REST、GraphQL、WebSocket、Kafka、SDK、CLI 或 MCP。"
+icon: "plug"
 ---
 
+ChainStream 通过几种不同的接入方式暴露同一套 [数据产品](/cn/docs/data-products/overview)。每种都有各自的甜蜜点——真实集成里你通常会同时用上两三种。
+
+## 快速对比
+
+| | 适合 | 模式 | 延迟 | 鉴权 | 从哪开始 |
+|:--|:--|:--|:--|:--|:--|
+| **REST API** | 按需查询、仪表盘、用户查询 | 请求/响应 | 50–200 ms | API Key / OAuth | [REST API](/cn/docs/access-methods/rest-api) |
+| **GraphQL** | 分析查询、聚合、灵活 JOIN | 请求/响应 | 100–500 ms | API Key / OAuth | [GraphQL](/cn/docs/access-methods/graphql) |
+| **WebSocket** | 实时 UI、浏览器 + 移动端 | 推送（订阅） | &lt;2 ms tick | API Key | [WebSocket](/cn/docs/access-methods/websocket) |
+| **Kafka Streams** | 交易引擎、索引器、告警流水线 | 流（消费） | &lt;100 ms p99 | SASL / OAuth | [Kafka](/cn/docs/access-methods/kafka-streams/overview) |
+| **SDK** | TS / Python / Go / Rust 的类型化访问 | 客户端库 | 匹配底层 | 继承底层 | [SDK](/cn/sdks/overview) |
+| **CLI** | 脚本、CI/CD、AI Agent、按次付费 | 命令行 | 匹配底层 | API Key / OAuth / x402 | [CLI](/cn/docs/access-methods/cli) |
+| **MCP Server** | AI Agent（Claude、Cursor、ChatGPT、自研） | Tool 协议 | 匹配底层 | API Key / x402 | [MCP](/cn/docs/ai-agents/mcp-server/introduction) |
+
+## 决策指南
+
+<AccordionGroup>
+  <Accordion title="我在做用户侧仪表盘">
+    用 **REST** 查数据与画图，加 **WebSocket** 做实时刷新。若屏幕需要聚合或透视数据，再叠加 **GraphQL**。
+  </Accordion>
+  <Accordion title="我在做交易 / 索引后端">
+    主路使用 **Kafka Streams**（exactly-once、水平扩展）。冷查询回退到 **REST**，
+    离线回填用 **GraphQL**。
+  </Accordion>
+  <Accordion title="我在做研究 / 临时分析">
+    **GraphQL** 提供对整个数据 cube 的维度查询，无需单链样板代码。通过 **Python SDK** 导出到 Notebook。
+  </Accordion>
+  <Accordion title="我在做浏览器 / 移动端 App">
+    实时流（价格、交易、余额）用 **WebSocket**。能轮询或用户触发的操作用 **REST**。
+  </Accordion>
+  <Accordion title="我在做 AI Agent">
+    **MCP Server** 把我们的能力目录暴露为 LLM Agent 的类型化工具。Agent 自己跑代码用 **SDK**；
+    按次付费场景用 **CLI** + x402/MPP。
+  </Accordion>
+  <Accordion title="我在做合规 / KYT 流水线">
+    大多数集成模式下直接调 **REST** KYT 接口即可。大吞吐筛查流水线建议订阅
+    **Kafka transfer topic** 同时旁路 REST 打分。
+  </Accordion>
+</AccordionGroup>
+
+## 鉴权一览
+
+所有接入方式共用同一组凭据——无需按通道分别签发。
+
+<CardGroup cols={3}>
+  <Card title="API Key" icon="key" href="/cn/docs/platform/authentication/api-keys-oauth">
+    最快上手。一组 header 通吃 REST / GraphQL / WebSocket / CLI / SDK。
+  </Card>
+  <Card title="OAuth 2.0" icon="shield-halved" href="/cn/docs/platform/authentication/api-keys-oauth">
+    面向生产服务间——client-credentials JWT 流程。
+  </Card>
+  <Card title="钱包登录 (SIWX)" icon="wallet" href="/cn/docs/platform/authentication/wallet-auth-siwx">
+    Sign-In With X——让终端用户用钱包登录。
+  </Card>
+</CardGroup>
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  AI Agent 的按次微支付见
+  [x402 支付](/cn/docs/platform/billing-payments/x402-payments) 与
+  [MPP 支付](/cn/docs/platform/billing-payments/mpp-payments)。
 </Note>
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="REST API" icon="bolt" href="/cn/docs/access-methods/rest-api">
+    代币、钱包、交易、池子、合规的 HTTP 接口。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/docs/access-methods/graphql">
+    基于规整 cube 的灵活分析查询。
+  </Card>
+  <Card title="WebSocket" icon="tower-broadcast" href="/cn/docs/access-methods/websocket">
+    价格、交易、余额、池子事件的实时推送。
+  </Card>
+  <Card title="Kafka Streams" icon="bars-staggered" href="/cn/docs/access-methods/kafka-streams/overview">
+    exactly-once 语义的生产级流。
+  </Card>
+</CardGroup>

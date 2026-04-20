@@ -1,9 +1,85 @@
 ---
-title: "代幣"
-description: "所有支援鏈上的代幣元資料、市場資料、價格與統計指標。"
+title: "Tokens 代幣"
+description: "全部支援鏈的代幣後設資料、行情、價格、統計、建立事件與安全訊號。"
+icon: "coins"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Tokens** 資料產品是 ChainStream 索引的所有同質化代幣的規範來源。一套 schema、一套地址空間（按鏈區分）、一套欄位——不論你查的是藍籌 ERC-20、新發 Solana meme 幣，還是 BSC 上的交易對。
+
+## 包含什麼
+
+| 欄位組 | 舉例 |
+|:--|:--|
+| 身份 | `chainId`, `address`, `name`, `symbol`, `decimals`, `logo` |
+| 行情 | `priceUsd`, `priceChange24h`, `marketCap`, `fdv`, `volume24h` |
+| 供給 | `totalSupply`, `circulatingSupply`, `holderCount` |
+| 建立 | `createdAtBlock`, `creatorAddress`, `firstTxHash`, `launchpad` |
+| 安全 | `isHoneypot`, `canBuy`, `canSell`, `taxBuy`, `taxSell`, `owner` |
+| 社交 | `website`, `twitter`, `telegram`, `verifiedSources` |
+
+安全與社交欄位為盡力而為，具體置信度見 [資料新鮮度](/zh-Hant/docs/data-products/data-freshness)。
+
+## 覆蓋與新鮮度
+
+<CardGroup cols={2}>
+  <Card title="鏈" icon="globe">
+    Solana、Ethereum、BSC、Base、Polygon、Arbitrum、Optimism、Avalanche、
+    zkSync、Sui——以及 [支援的鏈](/zh-Hant/docs/supported-chains) 中的其他鏈。
+  </Card>
+  <Card title="新鮮度" icon="clock">
+    後設資料：建立後數分鐘。行情：秒級（近實時）。建立事件：區塊級
+    （Solana 亞秒級，EVM 1–12s）。
+  </Card>
+</CardGroup>
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST——查詢與搜尋" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `tokens/search`、`tokens/{address}`、`tokens/meta`、`tokens/security`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    一個查詢把 Tokens、Trades、Holders、Candles 連起來。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/connection">
+    訂閱 `tokens.price`、`tokens.created` 頻道。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/zh-Hant/api-reference/kafka-topics/evm">
+    各鏈的 `*.token.created`、`*.token.metadata` 主題。
+  </Card>
+  <Card title="SDK" icon="box" href="/zh-Hant/sdks/overview">
+    TS / Py / Go / Rust 的 `client.tokens.search()`、`.get()`、`.security()`。
+  </Card>
+  <Card title="MCP / CLI" icon="robot" href="/zh-Hant/docs/ai-agents/mcp-server/introduction">
+    `tokens_search`、`tokens_analyze` MCP 工具；`chainstream tokens` CLI。
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 把 `PEPE` 這樣的符號解析到使用者真正想要的那條鏈上的正確地址
+- 渲染帶價格、供給、安全分數、社交資訊的代幣頁
+- 用建立時間過濾器發現新發代幣
+- 按成交量、市值、持幣人增速排序
+- 給 LLM 喂一個代幣"快照"讓它做分析
+
+## 計費
+
+REST / GraphQL 每次呼叫 **1 個 read unit**；安全與完整後設資料端點可能更貴。WebSocket 與 Kafka 按投遞條數計費。見 [計費與 unit](/zh-Hant/docs/platform/billing-payments/billing-and-units)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Trades 交易" icon="right-left" href="/zh-Hant/docs/data-products/trades">
+    這個代幣的每一筆 DEX swap，帶 maker/taker 與路由標籤。
+  </Card>
+  <Card title="Holders 持幣人" icon="users" href="/zh-Hant/docs/data-products/holders">
+    分佈、集中度、大戶變動。
+  </Card>
+  <Card title="Candles (OHLC) K 線" icon="chart-column" href="/zh-Hant/docs/data-products/candles-ohlc">
+    多週期 OHLC 畫圖用。
+  </Card>
+  <Card title="代幣研究教程" icon="graduation-cap" href="/zh-Hant/docs/tutorials/build-price-alert-bot">
+    基於 Tokens 產品的端到端示例。
+  </Card>
+</CardGroup>

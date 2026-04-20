@@ -1,9 +1,85 @@
 ---
-title: "代币"
-description: "所有支持链上的代币元数据、市场数据、价格与统计指标。"
+title: "Tokens 代币"
+description: "全部支持链的代币元数据、行情、价格、统计、创建事件与安全信号。"
+icon: "coins"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Tokens** 数据产品是 ChainStream 索引的所有同质化代币的规范来源。一套 schema、一套地址空间（按链区分）、一套字段——不论你查的是蓝筹 ERC-20、新发 Solana meme 币，还是 BSC 上的交易对。
+
+## 包含什么
+
+| 字段组 | 举例 |
+|:--|:--|
+| 身份 | `chainId`, `address`, `name`, `symbol`, `decimals`, `logo` |
+| 行情 | `priceUsd`, `priceChange24h`, `marketCap`, `fdv`, `volume24h` |
+| 供给 | `totalSupply`, `circulatingSupply`, `holderCount` |
+| 创建 | `createdAtBlock`, `creatorAddress`, `firstTxHash`, `launchpad` |
+| 安全 | `isHoneypot`, `canBuy`, `canSell`, `taxBuy`, `taxSell`, `owner` |
+| 社交 | `website`, `twitter`, `telegram`, `verifiedSources` |
+
+安全与社交字段为尽力而为，具体置信度见 [数据新鲜度](/cn/docs/data-products/data-freshness)。
+
+## 覆盖与新鲜度
+
+<CardGroup cols={2}>
+  <Card title="链" icon="globe">
+    Solana、Ethereum、BSC、Base、Polygon、Arbitrum、Optimism、Avalanche、
+    zkSync、Sui——以及 [支持的链](/cn/docs/supported-chains) 中的其他链。
+  </Card>
+  <Card title="新鲜度" icon="clock">
+    元数据：创建后数分钟。行情：秒级（近实时）。创建事件：区块级
+    （Solana 亚秒级，EVM 1–12s）。
+  </Card>
+</CardGroup>
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST——查询与搜索" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `tokens/search`、`tokens/{address}`、`tokens/meta`、`tokens/security`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    一个查询把 Tokens、Trades、Holders、Candles 连起来。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    订阅 `tokens.price`、`tokens.created` 频道。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    各链的 `*.token.created`、`*.token.metadata` 主题。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/sdks/overview">
+    TS / Py / Go / Rust 的 `client.tokens.search()`、`.get()`、`.security()`。
+  </Card>
+  <Card title="MCP / CLI" icon="robot" href="/cn/docs/ai-agents/mcp-server/introduction">
+    `tokens_search`、`tokens_analyze` MCP 工具；`chainstream tokens` CLI。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 把 `PEPE` 这样的符号解析到用户真正想要的那条链上的正确地址
+- 渲染带价格、供给、安全分数、社交信息的代币页
+- 用创建时间过滤器发现新发代币
+- 按成交量、市值、持币人增速排序
+- 给 LLM 喂一个代币"快照"让它做分析
+
+## 计费
+
+REST / GraphQL 每次调用 **1 个 read unit**；安全与完整元数据端点可能更贵。WebSocket 与 Kafka 按投递条数计费。见 [计费与 unit](/cn/docs/platform/billing-payments/billing-and-units)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Trades 交易" icon="right-left" href="/cn/docs/data-products/trades">
+    这个代币的每一笔 DEX swap，带 maker/taker 与路由标签。
+  </Card>
+  <Card title="Holders 持币人" icon="users" href="/cn/docs/data-products/holders">
+    分布、集中度、大户变动。
+  </Card>
+  <Card title="Candles (OHLC) K 线" icon="chart-column" href="/cn/docs/data-products/candles-ohlc">
+    多周期 OHLC 画图用。
+  </Card>
+  <Card title="代币研究教程" icon="graduation-cap" href="/cn/docs/tutorials/build-price-alert-bot">
+    基于 Tokens 产品的端到端示例。
+  </Card>
+</CardGroup>

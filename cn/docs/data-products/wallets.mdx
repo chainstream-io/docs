@@ -1,9 +1,68 @@
 ---
-title: "钱包"
-description: "钱包余额、PnL、持仓、转账与净值演变。"
+title: "Wallets 钱包"
+description: "任意链上地址的余额、PnL、净值曲线、转账历史与活跃度。"
+icon: "wallet"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Wallets** 数据产品把任何一个链上地址变成可查询的档案——当前持仓、历史 PnL、活跃度、首笔交易时间——覆盖所有支持链，你不用自己拼多个 RPC。
+
+## 包含什么
+
+| 字段组 | 举例 |
+|:--|:--|
+| 身份 | `chainId`, `address`, `ens`/`sns`, `tags`, `firstSeenAt` |
+| 持仓 | `holdings[]`：`token`, `balance`, `valueUsd`, `costBasisUsd`, `unrealizedPnlUsd` |
+| 净值 | `netWorthUsd`、小时 / 日粒度的 `netWorthHistory[]` |
+| 活跃度 | `txCount24h`, `tradeCount30d`, `avgTradeSizeUsd`, `activeChains[]` |
+| 分类 | `walletType` (EOA / 合约 / 交易所 / smart-money)、`riskScore` |
+
+## 覆盖与新鲜度
+
+- **跨链**：默认按所有支持链聚合余额与 PnL；需要时按链过滤。
+- **新鲜度**：持仓在命中的转账 / 交易之后秒级刷新；净值历史按小时快照。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `wallets/{address}/profile`、`/holdings`、`/trades`、`/pnl`、`/transfers`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    一次请求返回持仓 + 交易的 JOIN 结果。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    `wallet.activity` 按地址订阅。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    消费 `*.transfer` + `*.dex.trade` 主题并按地址过滤构建。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/sdks/overview">
+    `client.wallets.profile()`、`.holdings()`、`.pnl()`。
+  </Card>
+  <Card title="MCP" icon="robot" href="/cn/docs/ai-agents/mcp-server/introduction">
+    Agent 用 `wallets_profile`、`wallets_activity`。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 零售用户的资产总览
+- 大户 / smart money 跟单 feed
+- "这个钱包是谁？"的轻量级预览
+- 活动归因（空投、奖励）
+- 作为合规初筛输入（配合 [KYA](/cn/docs/compliance/kya-concepts)）
+
+## 计费
+
+档案与持仓端点 **1 read unit**；时间序列 PnL 与历史按返回范围计费。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Smart Money 聪明钱" icon="brain" href="/cn/docs/data-products/smart-money">
+    基于 Wallets 精选的高胜率钱包 cohort。
+  </Card>
+  <Card title="KYA——Know Your Address" icon="user-shield" href="/cn/docs/compliance/kya-concepts">
+    地址画像与风险分。
+  </Card>
+</CardGroup>

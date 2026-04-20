@@ -1,9 +1,73 @@
 ---
 title: "GraphQL"
-description: "Flexible analytical queries across blocks, transactions, trades and balances."
+description: "Flexible, analytical queries that JOIN across data products in a single request."
+icon: "diagram-project"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The GraphQL endpoint is the right choice when you want to **shape your response** — picking exactly the fields you need across multiple data products in one request. If REST is "look up this one thing", GraphQL is "answer this one analytical question."
+
+## Endpoint
+
+```
+POST https://graphql.chainstream.io/v1/query
+```
+
+Or use the [GraphQL IDE](https://graphql.chainstream.io) to explore interactively.
+
+## Authentication
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+```
+
+## First query
+
+```graphql
+query TopSolanaTokens {
+  tokens(chain: SOLANA, orderBy: VOLUME_24H_DESC, limit: 5) {
+    address
+    symbol
+    priceUsd
+    marketCap
+    recentTrades(limit: 3) {
+      timestamp
+      sizeUsd
+      side
+    }
+  }
+}
+```
+
+One request returns tokens, metadata and their recent trades — no N+1 roundtrips.
+
+## When to use
+
+- Analytical queries crossing multiple data products
+- Dashboards that need many fields without overfetching
+- Reporting / BI workloads
+- Server-side rendering where you pre-shape the response
+
+When **not** to: real-time streams (use WebSocket/Kafka) and hot-path reads where REST caching is cheaper.
+
+## Schema
+
+<CardGroup cols={2}>
+  <Card title="Schema overview" icon="diagram-project" href="/en/graphql/schema/schema-overview">
+    Types, relationships and conventions.
+  </Card>
+  <Card title="Getting started" icon="rocket" href="/en/graphql/getting-started/overview">
+    Complete first-query walkthrough.
+  </Card>
+</CardGroup>
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="GraphQL IDE" icon="terminal" href="https://graphql.chainstream.io">
+    Explore the schema and run queries interactively.
+  </Card>
+  <Card title="SDKs" icon="box" href="/en/docs/access-methods/sdks">
+    Typed GraphQL wrappers via codegen.
+  </Card>
+</CardGroup>

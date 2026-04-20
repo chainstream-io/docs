@@ -1,9 +1,62 @@
 ---
 title: "GraphQL"
-description: "Flexible analytical queries across blocks, transactions, trades and balances."
+description: "유연한 분석 쿼리 — 한 번의 요청으로 여러 데이터 제품을 JOIN."
+icon: "diagram-project"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+GraphQL 엔드포인트는 **응답 모양을 원하는 대로** 만들고 싶을 때 적합합니다 — 여러 제품에 걸쳐 필요한 필드만 한 번의 요청으로 가져올 수 있습니다. REST가 "이 하나를 조회"라면, GraphQL은 "이 하나의 분석 질문에 답"입니다.
+
+## 엔드포인트
+
+```
+POST https://graphql.chainstream.io/v1/query
+```
+
+또는 [GraphQL IDE](https://graphql.chainstream.io)에서 인터랙티브 탐색.
+
+## 인증
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+```
+
+## 첫 쿼리
+
+```graphql
+query TopSolanaTokens {
+  tokens(chain: SOLANA, orderBy: VOLUME_24H_DESC, limit: 5) {
+    address
+    symbol
+    priceUsd
+    marketCap
+    recentTrades(limit: 3) {
+      timestamp
+      sizeUsd
+      side
+    }
+  }
+}
+```
+
+한 번의 요청으로 토큰/메타/최근 거래를 반환합니다 — N+1 없음.
+
+## 언제 사용할까
+
+- 여러 제품을 가로지르는 분석 쿼리
+- 오버페치 없는 다필드 대시보드
+- 리포트/BI
+- 응답을 사전 정형하는 SSR
+
+**부적합**: 실시간 스트림, REST 캐시가 저렴한 핫 리드.
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="Schema 개요" icon="diagram-project" href="/ko/graphql/schema/schema-overview">
+    타입과 관계.
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/ko/graphql/getting-started/overview">
+    첫 쿼리 가이드.
+  </Card>
+</CardGroup>

@@ -1,9 +1,49 @@
 ---
-title: "トレード"
-description: "DEX trade stream — every swap normalized across Solana, Ethereum, BSC and more."
+title: "Trades"
+description: "全サポートチェーンの DEX スワップイベントを正規化 — 価格、サイズ、maker/taker、ルーター、スリッページ。"
+icon: "right-left"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Trades** は ChainStream がインデックスするすべての DEX スワップを正規化したデータプロダクトです。どの AMM が発した出来事かを意識せず、トークン・ウォレット・プール・ルーター単位で検索できます。
+
+## フィールド
+
+| 分類 | 例 |
+|:--|:--|
+| Identity | `chainId`, `txHash`, `logIndex`, `blockNumber`, `timestamp` |
+| Parties | `makerAddress`, `takerAddress`, `router`, `dex` |
+| Economics | `tokenIn`, `tokenOut`, `amountIn`, `amountOut`, `priceUsd`, `sizeUsd` |
+| Context | `poolAddress`, `feeTier`, `slippageBps`, `gasUsedUsd` |
+
+## カバレッジ & 鮮度
+
+- 遅延: Kafka 1–2s、REST 5–10s。
+- DEX: Uniswap v2/v3/v4、Raydium、Meteora、PancakeSwap、Aerodrome、Jupiter ルート、他。
+
+## アクセス
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/jp/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/trades`, `wallets/{address}/trades`。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/jp/api-reference/endpoint/websocket/connection">
+    `trades.token`, `trades.wallet`, `trades.pool` チャネル。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/jp/api-reference/kafka-topics/evm">
+    `*.dex.trade` トピック (Protobuf)。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/jp/graphql/getting-started/overview">
+    柔軟な条件。Tokens / Wallets との JOIN 可。
+  </Card>
+</CardGroup>
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="Candles (OHLC)" icon="chart-column" href="/jp/docs/data-products/candles-ohlc">
+    ティック粒度が不要な場合の事前集計バー。
+  </Card>
+  <Card title="Smart Money" icon="brain" href="/jp/docs/data-products/smart-money">
+    高パフォーマンスウォレットのトレードのみを抽出。
+  </Card>
+</CardGroup>

@@ -1,9 +1,77 @@
 ---
 title: "SDKs"
-description: "Typed client libraries in TypeScript, Python, Go and Rust."
+description: "Typed client libraries for TypeScript, Python, Go and Rust — idiomatic wrappers over REST, GraphQL and WebSocket."
+icon: "box"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The ChainStream SDKs give you a single, ergonomic way to call every data product from your language of choice. The same [data products](/en/docs/data-products/overview) and [access methods](/en/docs/access-methods/overview) — just typed, batteries-included.
+
+## Languages
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/en/sdks/typescript">
+    `@chainstream-io/sdk` — first-class support for browser and Node.
+  </Card>
+  <Card title="Python" icon="python" href="/en/sdks/python">
+    `chainstream` — async-first client, friendly for notebooks and bots.
+  </Card>
+  <Card title="Go" icon="golang" href="/en/sdks/go">
+    `github.com/chainstream-io/chainstream-go` — idiomatic Go.
+  </Card>
+  <Card title="Rust" icon="rust" href="/en/sdks/rust">
+    `chainstream` crate — for latency-critical consumers.
+  </Card>
+</CardGroup>
+
+## Install
+
+```bash
+npm install @chainstream-io/sdk          # TypeScript
+pip install chainstream                  # Python
+go get github.com/chainstream-io/chainstream-go
+cargo add chainstream                    # Rust
+```
+
+## First call — TypeScript
+
+```ts
+import { ChainStream } from "@chainstream-io/sdk";
+
+const cs = new ChainStream({ apiKey: process.env.CHAINSTREAM_API_KEY! });
+
+const results = await cs.tokens.search({
+  chain: "solana",
+  query: "USDC",
+  limit: 5,
+});
+
+for (const t of results) {
+  console.log(t.symbol, t.priceUsd);
+}
+```
+
+## Common patterns
+
+- **REST** — `cs.tokens.*`, `cs.wallets.*`, `cs.trades.*`, ...
+- **WebSocket** — `cs.subscribe("trades.token", { address }, msg => ...)`
+- **GraphQL** — `cs.gql(query, variables)` returns a fully typed result via codegen
+- **CLI bridge** — `cs.cli("rankings", "hot")` runs the same logic as `chainstream rankings hot`
+
+## When to use
+
+- Integrating into an application — almost always the right default
+- When you want types, retries, error mapping and pagination handled for you
+- When you want to swap REST ↔ WebSocket for the same resource without rewriting
+
+When **not** to: quick one-offs where `curl` + REST is faster (or CLI).
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="SDK catalog" icon="box" href="/en/sdks/overview">
+    Per-language guides and release notes.
+  </Card>
+  <Card title="Reference" icon="code" href="/en/api-reference/overview">
+    Underlying REST / GraphQL / WebSocket surfaces.
+  </Card>
+</CardGroup>

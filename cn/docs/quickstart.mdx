@@ -1,65 +1,43 @@
 ---
 title: "快速开始"
-description: "5 分钟完成你的第一次 API 调用"
+description: "5 分钟内完成首次带鉴权的 ChainStream 调用。"
 icon: "rocket"
 ---
 
-## 你将学到
+读完本文后你将拥有：
 
-完成本教程后，你将能够：
+- 一个 API Key（或 OAuth Token）
+- 一次跑通的 REST API 调用
+- 一次跑通的 SDK、CLI、MCP Server 调用
+- 明确的下一步——REST / GraphQL / WebSocket / Kafka / SDK / CLI / MCP，哪个最适合你的场景
 
-- 使用 API Key 或 OAuth Token 认证 ChainStream
-- 调用 API 获取代币元数据
-- 使用 CLI 和 SDK 完成相同的查询
-- 理解 API 响应结构
+<Note>预计时间：**5 分钟**。</Note>
 
-<Note>
-**预计耗时**：5 分钟
-</Note>
+## 前置条件
 
----
+一个 ChainStream 账号。如未注册请到[这里](https://www.chainstream.io/dashboard)。
 
-## 前提条件
+## 1. 获取 API Key
 
-- 已注册 ChainStream 账号（[点此注册](https://www.chainstream.io/dashboard)）
-
----
-
-## 第一步：获取 API Key
-
-1. 登录 [ChainStream Dashboard](https://www.chainstream.io/dashboard)
-2. 进入 **Applications**
-3. 点击 **Create New App**
-4. 复制你的 **API Key**（以 `cs_live_...` 开头）
+1. 打开 [ChainStream Dashboard](https://www.chainstream.io/dashboard)。
+2. 进入 **Applications**。
+3. 点击 **Create New App**。
+4. 复制生成的 **API Key**（`cs_live_…` 开头）。
 
 <Tip>
-API Key 是最快的认证方式。如需 OAuth 2.0 JWT 流程，参见[认证](/cn/guides/getting-started/authentication)。
+  API Key 是最快的接入方式。服务间（M2M）请参考 OAuth 2.0 client-credentials——见
+  [API Key 与 OAuth](/cn/docs/platform/authentication/api-keys-oauth)。
 </Tip>
 
----
+## 2. 发起首次请求
 
-## 第二步：发起第一个请求
-
-查询 Solana 上的 SOL 代币元数据。选择你偏好的方式：
+下例取 Solana 上 Wrapped SOL 的元数据。选你要接入的方式：
 
 <Tabs>
   <Tab title="cURL">
 ```bash
-curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+curl "https://api.chainstream.io/v2/token/solana/So11111111111111111111111111111111111111112/metadata" \
   -H "X-API-KEY: your_api_key"
-```
-  </Tab>
-  <Tab title="CLI">
-```bash
-# 使用 npx 一行命令（无需安装）
-npx @chainstream-io/cli token info --chain sol \
-  --address So11111111111111111111111111111111111111112
-```
-
-CLI 首次运行会提示认证。或者提前设置 key：
-
-```bash
-npx @chainstream-io/cli config set --key apiKey --value your_api_key
 ```
   </Tab>
   <Tab title="SDK (TypeScript)">
@@ -70,27 +48,42 @@ const cs = new ChainStreamClient({ apiKey: "your_api_key" });
 
 const token = await cs.token.getToken(
   "So11111111111111111111111111111111111111112",
-  "solana"
+  "solana",
 );
+
 console.log(token.name, token.symbol, token.decimals);
+```
+
+其他语言（Python、Go、Rust）见 [SDK 总览](/cn/sdks/overview)。
+  </Tab>
+  <Tab title="CLI">
+```bash
+# 无需安装，npx 会拉取最新 CLI。
+npx @chainstream-io/cli token info \
+  --chain solana \
+  --address So11111111111111111111111111111111111111112
+```
+
+首次运行会提示输入 Key，也可显式设置：
+
+```bash
+npx @chainstream-io/cli config set --key apiKey --value your_api_key
 ```
   </Tab>
   <Tab title="MCP (AI Agent)">
-将你的 AI Agent 连接到 ChainStream 数据 — 无需编码：
-
 ```bash
 CHAINSTREAM_API_KEY=your_api_key npx @chainstream-io/mcp
 ```
 
-然后向你的 AI 提问：*"Solana 上的 SOL 代币是什么？"*
+之后向你的 Agent 提问 *"What is the SOL token on Solana?"*，它会自动选工具调用。
 
-参见 [MCP Server 设置](/cn/guides/ai-infrastructure/mcp-server/setup-guide) 了解 Claude/Cursor 配置。
+Claude / Cursor / ChatGPT 的具体配置见
+[MCP Server 安装](/cn/docs/ai-agents/mcp-server/setup)。
   </Tab>
   <Tab title="OAuth 2.0 (JWT)">
-适用于使用 OAuth 2.0 Client Credentials 流程的应用：
+OAuth 2.0 Client Credentials 流程：
 
 ```bash
-# 第一步：获取 access token
 curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -100,119 +93,93 @@ curl -X POST "https://dex.asia.auth.chainstream.io/oauth/token" \
     "grant_type": "client_credentials"
   }'
 
-# 第二步：使用 token
-curl "https://api.chainstream.io/v2/token/sol/So11111111111111111111111111111111111111112" \
+curl "https://api.chainstream.io/v2/token/solana/So11111111111111111111111111111111111111112/metadata" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
   </Tab>
 </Tabs>
 
-<Tip>
-将 `YOUR_ACCESS_TOKEN` 替换为你生成的 token。
-</Tip>
-
-### 响应示例
+### 响应
 
 ```json
 {
-  "chain": "sol",
-  "decimals": 9,
+  "chain": "solana",
+  "address": "So11111111111111111111111111111111111111112",
   "name": "Wrapped SOL",
   "symbol": "SOL",
-  "address": "So11111111111111111111111111111111111111112",
+  "decimals": 9,
   "imageUrl": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
   "tokenCreatedAt": 1710417600000
 }
 ```
 
----
-
-## 第三步：理解响应
-
 | 字段 | 类型 | 说明 |
 |:--|:--|:--|
-| `chain` | string | 区块链网络标识 |
-| `decimals` | integer | 代币小数位数 |
-| `name` | string | 代币名称 |
-| `symbol` | string | 代币符号 |
-| `address` | string | 代币合约地址 |
-| `imageUrl` | string | 代币 Logo URL |
-| `tokenCreatedAt` | integer | 代币创建时间戳（毫秒） |
+| `chain` | string | 链标识，小写。 |
+| `address` | string | 合约地址。 |
+| `name` | string | 代币全名。 |
+| `symbol` | string | 代币符号。 |
+| `decimals` | integer | 精度。 |
+| `imageUrl` | string | Logo URL（可能为空）。 |
+| `tokenCreatedAt` | integer | 创建时间戳（ms）。 |
 
-<Note>
-完整字段说明参见 [Token Metadata API 参考](/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-metadata-get)。
-</Note>
+## 3. 选择合适的接入方式
 
----
-
-## 第四步：尝试更多 API
-
-成功完成第一次调用后，试试这些 API：
+上面只是一次简单的请求-响应调用，真实集成通常需要更多：
 
 <CardGroup cols={2}>
-  <Card title="获取代币价格" icon="chart-line" href="/cn/api-reference/endpoint/data/token/v2/token-chain-tokenaddress-price-get">
-    获取实时代币价格
-    
-    `GET /v2/token/{chain}/{tokenAddress}/price`
+  <Card title="REST API" icon="bolt" href="/cn/docs/access-methods/rest-api">
+    按需查询——代币、钱包、池子、交易、合规。
   </Card>
-  <Card title="获取钱包余额" icon="wallet" href="/cn/api-reference/endpoint/data/wallet/v2/wallet-chain-walletaddress-tokens-balance-get">
-    查询钱包代币持仓
-    
-    `GET /v2/wallet/{chain}/{walletAddress}/tokens-balance`
+  <Card title="GraphQL" icon="diagram-project" href="/cn/docs/access-methods/graphql">
+    针对整个链上数据 cube 的灵活分析查询。
+  </Card>
+  <Card title="WebSocket" icon="tower-broadcast" href="/cn/docs/access-methods/websocket">
+    面向实时 UI 与浏览器应用的亚秒级推送。
+  </Card>
+  <Card title="Kafka Streams" icon="bars-staggered" href="/cn/docs/access-methods/kafka-streams/overview">
+    面向后端、索引器、交易引擎的 exactly-once 投递。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/sdks/overview">
+    TypeScript / Python / Go / Rust，内置鉴权的类型化客户端。
+  </Card>
+  <Card title="CLI" icon="terminal" href="/cn/docs/access-methods/cli">
+    脚本、CI/CD，以及 AI Agent 的按次付费调用。
   </Card>
 </CardGroup>
-
----
 
 ## 常见问题
 
 <AccordionGroup>
-  <Accordion title="401 Unauthorized 错误">
-    请检查：
-    - Access Token 是否正确且未过期？
-    - Header 格式是否为 `Authorization: Bearer YOUR_ACCESS_TOKEN` 或 `X-API-KEY: your_key`？
-    - 尝试使用 Client ID 和 Client Secret 重新生成 token
+  <Accordion title="401 Unauthorized">
+    - 确认请求头中 `X-API-KEY` 或 `Authorization: Bearer …` 拼写正确。
+    - Key 被轮换过请重新生成。
+    - OAuth 模式下检查 token 是否过期（默认 TTL 1 小时）。
   </Accordion>
-  <Accordion title="429 Too Many Requests 错误">
-    你已达到请求速率限制。免费版限制为每秒 10 次请求。你可以升级套餐以提高限制。
-    
-    详见 [API 安全](/cn/guides/data-concepts/api-security)。
+  <Accordion title="429 Too Many Requests">
+    达到套餐限速。免费套餐为 10 次/秒，请升级或按指数回退。
+    详见 [计费与额度](/cn/docs/platform/billing-payments/plans-and-units)。
   </Accordion>
-  <Accordion title="如何查询其他链上的代币？">
-    修改 URL 中的 chain 参数，例如：
-    
-    `GET /v2/token/ethereum/{address}` 查询以太坊
-    
-    `GET /v2/token/bsc/{address}` 查询 BSC
-    
-    参见[支持的链](/cn/guides/getting-started/supported-chains)获取完整列表。
+  <Accordion title="如何查询其他链的代币？">
+    替换 URL 中的链标识即可：`solana`、`ethereum`、`bsc`、`base`、`polygon`、
+    `arbitrum`、`optimism`、`avalanche`、`zksync`、`tron`。
+    完整列表见 [支持的链](/cn/docs/supported-chains)。
   </Accordion>
 </AccordionGroup>
 
----
-
 ## 下一步
 
-根据你的使用场景选择学习路径：
-
 <CardGroup cols={2}>
-  <Card title="数据开发者" icon="database" href="/cn/guides/data-concepts/realtime-streaming">
-    前往数据概念了解数据模型
+  <Card title="浏览数据目录" icon="boxes-stacked" href="/cn/docs/data-products/overview">
+    我们发布的每个数据集与覆盖范围、刷新频率。
   </Card>
-  <Card title="GraphQL API" icon="diagram-project" href="/cn/graphql/getting-started/overview">
-    探索 OLAP 分析型 GraphQL API，灵活查询链上数据
+  <Card title="启动实时流" icon="tower-broadcast" href="/cn/docs/access-methods/websocket">
+    订阅实时交易、价格、转账、池子事件。
   </Card>
-  <Card title="合规用户" icon="shield" href="/cn/guides/security-compliance/overview">
-    前往安全合规了解 KYT/KYA
+  <Card title="运行合规检查" icon="shield-halved" href="/cn/docs/compliance/overview">
+    对转账、提现、对手方的 KYT / KYA。
   </Card>
-  <Card title="AI 开发者" icon="robot" href="/cn/guides/ai-infrastructure/overview">
-    前往 AI 基础设施了解 MCP 和 Agent Skills
-  </Card>
-  <Card title="CLI" icon="terminal" href="/cn/guides/cli/overview">
-    使用 CLI 进行脚本、CI/CD 和 AI Agent 工作流
+  <Card title="构建 AI Agent" icon="robot" href="/cn/docs/ai-agents/overview">
+    通过 MCP + Agent Skills 接入 Claude、Cursor、ChatGPT。
   </Card>
 </CardGroup>
-
-<Info>
-遇到问题？查看[常见问题](/cn/guides/getting-started/faq)或联系技术支持。
-</Info>

@@ -1,9 +1,65 @@
 ---
 title: "Candles (OHLC)"
-description: "OHLC candlestick data at multiple intervals for token or pair or pool."
+description: "Multi-interval OHLC bars for tokens, pairs and pools — pre-aggregated from the full trade stream."
+icon: "chart-column"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The **Candles (OHLC)** data product is the pre-aggregated bars (Open / High / Low / Close / Volume) you'd otherwise have to compute from [Trades](/en/docs/data-products/trades) yourself. Bars are available at multiple intervals, for tokens, trading pairs and specific pools.
+
+## What's inside
+
+| Field | Description |
+|:--|:--|
+| `open`, `high`, `low`, `close` | USD or quote-token denominated, configurable |
+| `volumeUsd`, `volumeBase`, `volumeQuote` | Volumes per side |
+| `trades` | Trade count in the bar |
+| `buyers`, `sellers` | Unique address counts (where available) |
+| `timestamp` | Bar open-time, UTC |
+
+## Intervals
+
+| Interval | Earliest lookback | Typical use |
+|:--|:--|:--|
+| `1s` | recent hours | Scalping, live charts |
+| `1m`, `5m`, `15m` | days | Intraday charts and alerts |
+| `1h`, `4h` | months | Swing-trading dashboards |
+| `1d`, `1w` | project lifetime | Long-term analytics |
+
+## Access
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/en/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/candles`, `pools/{address}/candles`, `pairs/{address}/candles`.
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/en/api-reference/endpoint/websocket/connection">
+    `candles.{interval}` channel — receive bar updates as trades close them.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/graphql/getting-started/overview">
+    Fetch bars alongside token metadata in one query.
+  </Card>
+  <Card title="SDK" icon="box" href="/en/sdks/overview">
+    `client.tokens.candles(address, interval)` returns typed arrays.
+  </Card>
+</CardGroup>
+
+## Common use cases
+
+- Render TradingView-style price charts
+- Feed backtesting engines with historical OHLC
+- Compute technical indicators (RSI, MACD, VWAP) downstream
+- Drive time-series anomaly alerts
+
+## Billing
+
+REST / GraphQL: pagination-priced per bar returned. WebSocket: per-bar-update.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Trades (tick-level)" icon="right-left" href="/en/docs/data-products/trades">
+    Use if you need tick-level granularity or custom aggregation.
+  </Card>
+  <Card title="DEX Pools" icon="droplet" href="/en/docs/data-products/dex-pools">
+    Pool-specific OHLC is derived from pool trades.
+  </Card>
+</CardGroup>

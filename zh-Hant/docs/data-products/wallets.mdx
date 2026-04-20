@@ -1,9 +1,68 @@
 ---
-title: "錢包"
-description: "錢包餘額、PnL、持倉、轉帳與淨值演變。"
+title: "Wallets 錢包"
+description: "任意鏈上地址的餘額、PnL、淨值曲線、轉賬歷史與活躍度。"
+icon: "wallet"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Wallets** 資料產品把任何一個鏈上地址變成可查詢的檔案——當前持倉、歷史 PnL、活躍度、首筆交易時間——覆蓋所有支援鏈，你不用自己拼多個 RPC。
+
+## 包含什麼
+
+| 欄位組 | 舉例 |
+|:--|:--|
+| 身份 | `chainId`, `address`, `ens`/`sns`, `tags`, `firstSeenAt` |
+| 持倉 | `holdings[]`：`token`, `balance`, `valueUsd`, `costBasisUsd`, `unrealizedPnlUsd` |
+| 淨值 | `netWorthUsd`、小時 / 日粒度的 `netWorthHistory[]` |
+| 活躍度 | `txCount24h`, `tradeCount30d`, `avgTradeSizeUsd`, `activeChains[]` |
+| 分類 | `walletType` (EOA / 合約 / 交易所 / smart-money)、`riskScore` |
+
+## 覆蓋與新鮮度
+
+- **跨鏈**：預設按所有支援鏈聚合餘額與 PnL；需要時按鏈過濾。
+- **新鮮度**：持倉在命中的轉賬 / 交易之後秒級重新整理；淨值歷史按小時快照。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `wallets/{address}/profile`、`/holdings`、`/trades`、`/pnl`、`/transfers`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    一次請求返回持倉 + 交易的 JOIN 結果。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/connection">
+    `wallet.activity` 按地址訂閱。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/zh-Hant/api-reference/kafka-topics/evm">
+    消費 `*.transfer` + `*.dex.trade` 主題並按地址過濾構建。
+  </Card>
+  <Card title="SDK" icon="box" href="/zh-Hant/sdks/overview">
+    `client.wallets.profile()`、`.holdings()`、`.pnl()`。
+  </Card>
+  <Card title="MCP" icon="robot" href="/zh-Hant/docs/ai-agents/mcp-server/introduction">
+    Agent 用 `wallets_profile`、`wallets_activity`。
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 零售使用者的資產總覽
+- 大戶 / smart money 跟單 feed
+- "這個錢包是誰？"的輕量級預覽
+- 活動歸因（空投、獎勵）
+- 作為合規初篩輸入（配合 [KYA](/zh-Hant/docs/compliance/kya-concepts)）
+
+## 計費
+
+檔案與持倉端點 **1 read unit**；時間序列 PnL 與歷史按返回範圍計費。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Smart Money 聰明錢" icon="brain" href="/zh-Hant/docs/data-products/smart-money">
+    基於 Wallets 精選的高勝率錢包 cohort。
+  </Card>
+  <Card title="KYA——Know Your Address" icon="user-shield" href="/zh-Hant/docs/compliance/kya-concepts">
+    地址畫像與風險分。
+  </Card>
+</CardGroup>

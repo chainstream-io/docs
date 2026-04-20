@@ -1,9 +1,50 @@
 ---
-title: "블록체인 코어"
-description: "Raw blocks, transactions and chain-level metrics."
+title: "Blockchain Core"
+description: "원시 블록, 트랜잭션, 가스 메트릭, 체인 레벨 상태 — 정규화 제품의 저변."
+icon: "cube"
 ---
 
+**Blockchain Core** 데이터 제품은 ChainStream이 발행하는 다른 모든 데이터의 아래 있는 원시 데이터입니다. 상위 제품 (Tokens / Trades / Wallets)에서 표현할 수 없는 사실이 필요할 때 또는 검증/감사가 필요할 때 사용합니다.
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  대부분의 통합은 Tokens / Trades / Wallets부터 시작해야 합니다 —
+  상위 제품이 더 저렴하고 이미 노이즈가 제거되어 있습니다.
 </Note>
+
+## 데이터셋
+
+| 데이터셋 | 주요 필드 |
+|:--|:--|
+| Blocks | `number`, `hash`, `parentHash`, `timestamp`, `gasUsed`, `baseFeePerGas` |
+| Transactions | `hash`, `from`, `to`, `value`, `input`, `status`, `gasUsed` |
+| Logs / Events | `txHash`, `logIndex`, `address`, `topics[]`, `data` |
+| Gas metrics | `blockGasUsage`, `chainGasOracle` |
+| Chain state | `latestBlock`, `finality`, `reorgsLast1h` |
+
+## 접근
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/ko/api-reference/endpoint/data/tokens/search">
+    `blocks/{number}`, `transactions/{hash}`, `logs`.
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/ko/api-reference/kafka-topics/evm">
+    `*.block`, `*.tx`, `*.log` (Protobuf).
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/ko/graphql/getting-started/overview">
+    블록 + 트랜잭션 + 디코드 이벤트 JOIN.
+  </Card>
+  <Card title="SDK" icon="box" href="/ko/sdks/overview">
+    타입 래퍼.
+  </Card>
+</CardGroup>
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="Kafka 토픽 카탈로그" icon="tower-broadcast" href="/ko/api-reference/kafka-topics/evm">
+    체인별 원시 토픽과 스키마.
+  </Card>
+  <Card title="데이터 신선도 & SLA" icon="gauge-high" href="/ko/docs/data-products/data-freshness">
+    체인/표면별 지연 기대값.
+  </Card>
+</CardGroup>

@@ -1,9 +1,61 @@
 ---
-title: "DEX 池子"
-description: "流動性池狀態、儲備、手續費與快照。"
+title: "DEX Pools 池子"
+description: "每個 AMM / CLMM 的池子狀態、儲備、費率檔、TVL 與流動性快照。"
+icon: "droplet"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**DEX Pools** 資料產品給你 ChainStream 索引的每個流動性池的狀態——經典 Uniswap v2 恆積池、v3/v4 集中流動性池、Solana AMM 等——欄位已規整。
+
+## 包含什麼
+
+| 欄位組 | 舉例 |
+|:--|:--|
+| 身份 | `chainId`, `poolAddress`, `dex`, `pairType`（v2/v3/v4/CLMM/StableSwap） |
+| 代幣 | `token0`, `token1`, `decimals0`, `decimals1`, `reserve0`, `reserve1` |
+| 經濟 | `tvlUsd`, `volume24hUsd`, `feeTierBps`, `apy7d` |
+| 狀態 | `priceToken0InToken1`, `sqrtPriceX96`, `tick`, `liquidity` |
+| 來源 | `createdAtBlock`, `factoryAddress`, `initCodeHash` |
+
+## 覆蓋與新鮮度
+
+- 池子建立按區塊檢測；狀態欄位在每次 swap / add / remove 之後更新（通常秒級）。
+- 歷史 TVL 與成交量按 1h、1d 聚合。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `pools/{address}`、`pools/search`、`pools/{address}/trades`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    一個查詢把 Pools 與 Tokens、Trades JOIN。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/connection">
+    `pools.state`、`pools.created` 頻道。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/zh-Hant/api-reference/kafka-topics/evm">
+    各鏈 `*.pool.created`、`*.pool.sync` 主題。
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 構建按 TVL / 成交量篩選的 all-pools 看板
+- 抓新池 / 打新告警
+- swap 前檢查具體池子深度
+- 驅動需要實時儲備的路由層
+
+## 計費
+
+單池查詢 **1 read unit**；搜尋與列表按 `limit` 計費。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Trades 交易" icon="right-left" href="/zh-Hant/docs/data-products/trades">
+    流經這些池子的成交流。
+  </Card>
+  <Card title="Candles (OHLC) K 線" icon="chart-column" href="/zh-Hant/docs/data-products/candles-ohlc">
+    想要 K 線而不是狀態快照時用。
+  </Card>
+</CardGroup>

@@ -1,9 +1,62 @@
 ---
 title: "GraphQL"
-description: "Flexible analytical queries across blocks, transactions, trades and balances."
+description: "柔軟な分析クエリ — 複数のデータプロダクトを 1 リクエストで JOIN。"
+icon: "diagram-project"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+GraphQL エンドポイントは **レスポンスの形を決めたい** ときに適しています — 複数プロダクトにまたがって必要なフィールドだけを 1 リクエストで取得できます。REST が「この 1 つを取得する」なら、GraphQL は「この 1 つの分析質問に答える」です。
+
+## エンドポイント
+
+```
+POST https://graphql.chainstream.io/v1/query
+```
+
+または [GraphQL IDE](https://graphql.chainstream.io) でインタラクティブに探索。
+
+## 認証
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+```
+
+## 最初のクエリ
+
+```graphql
+query TopSolanaTokens {
+  tokens(chain: SOLANA, orderBy: VOLUME_24H_DESC, limit: 5) {
+    address
+    symbol
+    priceUsd
+    marketCap
+    recentTrades(limit: 3) {
+      timestamp
+      sizeUsd
+      side
+    }
+  }
+}
+```
+
+1 リクエストでトークン・メタデータ・直近取引が返ります — N+1 なし。
+
+## いつ使うか
+
+- 複数プロダクトにまたがる分析クエリ
+- 多フィールドなダッシュボード (オーバーフェッチなし)
+- レポート / BI
+- SSR でレスポンスを事前整形
+
+**向かない**: リアルタイムストリーム、REST キャッシュが安いホットリード。
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="Schema 概要" icon="diagram-project" href="/jp/graphql/schema/schema-overview">
+    型と関係。
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/jp/graphql/getting-started/overview">
+    最初のクエリの手順。
+  </Card>
+</CardGroup>

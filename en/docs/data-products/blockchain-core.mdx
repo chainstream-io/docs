@@ -1,9 +1,66 @@
 ---
 title: "Blockchain Core"
-description: "Raw blocks, transactions and chain-level metrics."
+description: "Raw blocks, transactions, gas metrics and chain-level state — when you need the facts beneath the normalized products."
+icon: "cube"
 ---
 
+The **Blockchain Core** data product is the raw substrate beneath everything else ChainStream publishes. Use it when you need facts that aren't expressed in the higher-level products (Tokens, Trades, Wallets), or when you're verifying / auditing something end-to-end.
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  Most integrations should start with Tokens / Trades / Wallets rather than here —
+  the higher-level products are cheaper to query and already de-noised.
 </Note>
+
+## What's inside
+
+| Dataset | Key fields |
+|:--|:--|
+| Blocks | `number`, `hash`, `parentHash`, `timestamp`, `gasUsed`, `baseFeePerGas`, `miner` |
+| Transactions | `hash`, `from`, `to`, `value`, `input`, `status`, `gasUsed`, `effectiveGasPrice` |
+| Logs / Events | `txHash`, `logIndex`, `address`, `topics[]`, `data`, `removed` |
+| Gas metrics | `blockGasUsage`, `chainGasOracle` (EIP-1559 base / priority fees) |
+| Chain state | `latestBlock`, `finality`, `reorgsLast1h` |
+
+## Coverage & freshness
+
+- Raw data from every supported chain, back-filled to genesis where possible.
+- Latency: blocks and logs delivered within 1–2 s of finalization.
+
+## Access
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/en/api-reference/endpoint/data/tokens/search">
+    `blocks/{number}`, `transactions/{hash}`, `logs?filters=…`.
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/en/api-reference/kafka-topics/evm">
+    `*.block`, `*.tx`, `*.log` topics per chain (Protobuf).
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/graphql/getting-started/overview">
+    Query blocks joined with transactions and decoded events.
+  </Card>
+  <Card title="SDK" icon="box" href="/en/sdks/overview">
+    Typed wrappers for blocks/transactions/logs.
+  </Card>
+</CardGroup>
+
+## Common use cases
+
+- Independent verification of a higher-level data point
+- Custom indexing pipelines that need raw logs
+- Gas-price oracles and fee-estimation services
+- Chain-health dashboards (reorgs, uncle rate, base-fee drift)
+
+## Billing
+
+Raw-data endpoints charge per item returned. Kafka topics priced per delivered message, discounted in streaming tiers.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Kafka topic catalog" icon="tower-broadcast" href="/en/api-reference/kafka-topics/evm">
+    Per-chain list of raw topics and schemas.
+  </Card>
+  <Card title="Data freshness & SLA" icon="gauge-high" href="/en/docs/data-products/data-freshness">
+    Latency expectations per chain and per surface.
+  </Card>
+</CardGroup>

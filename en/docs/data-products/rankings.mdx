@@ -1,9 +1,59 @@
 ---
 title: "Rankings"
-description: "Curated lists of hot / new / migrated / final-stretch tokens per chain."
+description: "Curated token lists — hot, new, migrated, final-stretch, stock-like — ready for discovery UIs and agents."
+icon: "trophy"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The **Rankings** data product is a set of opinionated, continuously-recomputed token lists. Each list is a discovery surface: the logic behind it is documented so you can decide whether it fits your use case.
+
+## Available lists
+
+| List | What it surfaces | Refresh |
+|:--|:--|:--|
+| `hot` | Tokens with the fastest growth in unique buyers + volume in the last 1h / 24h | 1 min |
+| `new` | Freshly-created tokens passing minimum liquidity and holder checks | block-level |
+| `migrated` | Tokens that recently migrated from a launchpad to a full DEX | 1 min |
+| `final-stretch` | Launchpad tokens approaching migration thresholds | 1 min |
+| `stock-like` | Tokens with behaviour profiles similar to traditional equities (low vol, steady accumulation) | hourly |
+| `top-gainers`, `top-losers` | Price movers over 1h / 24h / 7d windows | 5 min |
+
+See [API Reference → rankings](/en/api-reference/endpoint/data/tokens/search) for the full list and parameters.
+
+## Access
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/en/api-reference/endpoint/data/tokens/search">
+    `rankings/{list}?chain=&window=`
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/en/api-reference/endpoint/websocket/connection">
+    `rankings.{list}` — receive membership changes in real time.
+  </Card>
+  <Card title="MCP" icon="robot" href="/en/docs/ai-agents/mcp-server/introduction">
+    `rankings_get` tool — common entry-point for discovery agents.
+  </Card>
+  <Card title="CLI" icon="terminal" href="/en/docs/access-methods/cli">
+    `chainstream rankings hot --chain solana`
+  </Card>
+</CardGroup>
+
+## Common use cases
+
+- "What's hot right now?" home-page widget
+- New-token sniper feeds
+- Agent-driven daily-digest reports
+- Seeding backtests with real historical lists (via the replay endpoint)
+
+## Billing
+
+Each list call is **1 read unit** regardless of list size (lists are capped).
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Tokens" icon="coins" href="/en/docs/data-products/tokens">
+    Look up each ranked token for full metadata and security.
+  </Card>
+  <Card title="Price-alert bot tutorial" icon="graduation-cap" href="/en/docs/tutorials/build-price-alert-bot">
+    Uses Rankings + WebSocket end-to-end.
+  </Card>
+</CardGroup>

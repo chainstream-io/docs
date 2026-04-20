@@ -1,9 +1,73 @@
 ---
 title: "GraphQL"
-description: "跨區塊、交易、交易記錄與餘額的彈性分析查詢。"
+description: "靈活、分析型的查詢——一次請求裡跨資料產品 JOIN 出你要的答案。"
+icon: "diagram-project"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+GraphQL 端點適合你想 **塑形響應** 的場景——在一次請求裡精確挑選跨多個資料產品的欄位。如果 REST 是"取這一個東西"，GraphQL 就是"回答這一個分析問題"。
+
+## 端點
+
+```
+POST https://graphql.chainstream.io/v1/query
+```
+
+或者在 [GraphQL IDE](https://graphql.chainstream.io) 裡互動式探索。
+
+## 鑑權
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+```
+
+## 第一個查詢
+
+```graphql
+query TopSolanaTokens {
+  tokens(chain: SOLANA, orderBy: VOLUME_24H_DESC, limit: 5) {
+    address
+    symbol
+    priceUsd
+    marketCap
+    recentTrades(limit: 3) {
+      timestamp
+      sizeUsd
+      side
+    }
+  }
+}
+```
+
+一次請求返回代幣、後設資料與最近成交——沒有 N+1 迴環。
+
+## 什麼時候用
+
+- 跨多個資料產品的分析型查詢
+- 欄位多又不想過度抓取的看板
+- 報表 / BI 負載
+- 服務端渲染，預先塑形響應
+
+**不建議用** 的場景：實時流（用 WebSocket/Kafka）、REST 快取更便宜的熱讀。
+
+## Schema
+
+<CardGroup cols={2}>
+  <Card title="Schema 總覽" icon="diagram-project" href="/zh-Hant/graphql/schema/schema-overview">
+    型別、關係與約定。
+  </Card>
+  <Card title="入門" icon="rocket" href="/zh-Hant/graphql/getting-started/overview">
+    第一個查詢的完整走讀。
+  </Card>
+</CardGroup>
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="GraphQL IDE" icon="terminal" href="https://graphql.chainstream.io">
+    互動式探索 schema 與跑查詢。
+  </Card>
+  <Card title="SDK" icon="box" href="/zh-Hant/docs/access-methods/sdks">
+    透過 codegen 的型別化 GraphQL 封裝。
+  </Card>
+</CardGroup>

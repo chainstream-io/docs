@@ -1,9 +1,66 @@
 ---
 title: "REST API"
-description: "HTTPS endpoints for on-demand lookups of tokens, wallets, trades and more."
+description: "Lookup, snapshot and analytical endpoints over plain HTTP — the default surface for most apps."
+icon: "database"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The REST API is the simplest way to pull data from ChainStream. Every [data product](/en/docs/data-products/overview) is exposed as a JSON endpoint, with the same authentication and error envelope.
+
+## Base URL
+
+```
+https://api.chainstream.io
+```
+
+## Authentication
+
+Include one of:
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+# or OAuth token
+-H "Authorization: Bearer $OAUTH_TOKEN"
+# or x402 micropayment (see Platform / Billing)
+-H "X-PAYMENT: <signed payload>"
+```
+
+See [Authentication](/en/api-reference/authentication/authenticate) for the full matrix.
+
+## First request
+
+```bash
+curl -H "Authorization: Bearer $CHAINSTREAM_API_KEY" \
+  "https://api.chainstream.io/v1/tokens/search?chain=solana&q=USDC&limit=5"
+```
+
+## When to use
+
+- Single lookups, snapshots, server-rendered pages
+- Any workload where sub-second latency isn't critical
+- Pairing with [WebSocket](/en/docs/access-methods/websocket) (REST for history, WS for live)
+- Agent tool-calls where each invocation maps to one endpoint
+
+When **not** to: high-frequency streaming workloads (use WebSocket or Kafka) and multi-product JOINs (use GraphQL).
+
+## Conventions
+
+- Pagination: `limit` + `cursor` (cursor-based) on list endpoints
+- Rate limits: per-plan; see response headers `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- Errors: RFC 7807-style JSON with `code`, `message`, `requestId`
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/en/api-reference/overview">
+    Every REST endpoint with request/response examples.
+  </Card>
+  <Card title="SDKs" icon="box" href="/en/docs/access-methods/sdks">
+    Typed REST wrappers for TS / Py / Go / Rust.
+  </Card>
+  <Card title="Rate limits" icon="gauge" href="/en/docs/platform/billing-payments/plans-and-units">
+    Per-plan throughput and how to plan for it.
+  </Card>
+  <Card title="Authentication" icon="key" href="/en/api-reference/authentication/authenticate">
+    API keys, OAuth, wallet-auth, x402.
+  </Card>
+</CardGroup>

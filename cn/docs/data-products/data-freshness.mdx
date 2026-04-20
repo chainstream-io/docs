@@ -1,9 +1,64 @@
 ---
 title: "数据新鲜度与 SLA"
-description: "每个数据集的延迟保障、刷新间隔与回填行为。"
+description: "每个数据产品的延迟、刷新间隔与回填行为，按链、按接入面。"
+icon: "gauge-high"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+本页是每个数据产品"有多新"的唯一事实源。你在做交易机器人、合规告警、Agent 反馈环路的容量规划时，看这里就对了。
+
+## 端到端延迟模型
+
+```
+[链上事件] → [接入] → [规整] → [Kafka] → [REST / WS / GraphQL 缓存]
+     ~0      <200ms    <200ms    <500ms       +50–500ms
+```
+
+## 分接入面延迟
+
+| 接入面 | 目标 p50 | 目标 p99 | 说明 |
+|:--|:--|:--|:--|
+| Kafka Streams | 800 ms | 2 s | 最接近源头；低延迟管道 |
+| WebSocket | 1.0 s | 3 s | 与 Kafka 同源，多一层扇出 |
+| REST（带缓存） | 1.5 s | 5 s | 缓存 TTL 见各端点 |
+| REST（无缓存） | 3 s | 10 s | 少见，用于深度历史查询 |
+| GraphQL | 2 s | 6 s | 跨产品 JOIN，多一次规划时间 |
+
+## 分数据产品刷新
+
+| 产品 | 实时？ | 快照节奏 |
+|:--|:--|:--|
+| Tokens——行情 | 是 | 每笔成交一次价格 tick |
+| Tokens——安全 | 延迟 | 创建后数分钟 |
+| Trades | 是 | 按区块 |
+| Pools | 是 | 按事件 |
+| Wallets——持仓 | 是 | 转账后秒级 |
+| Wallets——净值历史 | 否 | 每小时 |
+| Candles (OHLC) | 是 | 周期结束时关 bar |
+| Holders（持币表） | 是 | 按转账 |
+| Holders（分布指标） | 否 | 每 5 分钟 |
+| Smart Money（cohort 成员） | 否 | 每周一 UTC 00:00 |
+| Smart Money（资金流事件） | 是 | 按成交 |
+| Blockchain Core | 是 | 按区块 |
+| Rankings | 多数实时 | 1 分钟 / 区块级 |
+| 合规 (KYT / KYA) | 是 | 按请求 |
+
+## 回填行为
+
+- **Solana / EVM** 尽可能回填到 genesis。
+- **新接入链** 上线时回填 ≥ 30 天，90 天内把完整历史流完。
+- **重组** 会改写下游流里相应 slot / block；消费者应按 `(chainId, txHash)` + `logIndex` 幂等处理。
+
+## 故障与状态
+
+实时故障与历史可用率见 [status.chainstream.io](https://status.chainstream.io)（链接待定）。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="限流" icon="gauge" href="/cn/docs/platform/billing-payments/plans-and-units">
+    各套餐的吞吐上限与响应头。
+  </Card>
+  <Card title="Kafka 主题目录" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    各链的主题名与保留策略。
+  </Card>
+</CardGroup>

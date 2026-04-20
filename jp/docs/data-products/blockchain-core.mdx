@@ -1,9 +1,50 @@
 ---
-title: "ブロックチェーン基盤データ"
-description: "Raw blocks, transactions and chain-level metrics."
+title: "Blockchain Core"
+description: "生ブロック、トランザクション、Gas メトリクス、チェーンレベル状態 — 正規化プロダクトの底層。"
+icon: "cube"
 ---
 
+**Blockchain Core** データプロダクトは、他のすべての ChainStream プロダクトの下にある生データです。上位プロダクト (Tokens / Trades / Wallets) で表現できない事実が必要なとき、または検証・監査したいときに使います。
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  ほとんどの統合は Tokens / Trades / Wallets から始めるべきです — 上位プロダクトは
+  より安価で、既にノイズが除去されています。
 </Note>
+
+## データセット
+
+| データセット | 主なフィールド |
+|:--|:--|
+| Blocks | `number`, `hash`, `parentHash`, `timestamp`, `gasUsed`, `baseFeePerGas` |
+| Transactions | `hash`, `from`, `to`, `value`, `input`, `status`, `gasUsed` |
+| Logs / Events | `txHash`, `logIndex`, `address`, `topics[]`, `data` |
+| Gas metrics | `blockGasUsage`, `chainGasOracle` |
+| Chain state | `latestBlock`, `finality`, `reorgsLast1h` |
+
+## アクセス
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/jp/api-reference/endpoint/data/tokens/search">
+    `blocks/{number}`, `transactions/{hash}`, `logs`。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/jp/api-reference/kafka-topics/evm">
+    `*.block`, `*.tx`, `*.log` トピック (Protobuf)。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/jp/graphql/getting-started/overview">
+    ブロック + トランザクション + デコード済みイベントの JOIN。
+  </Card>
+  <Card title="SDK" icon="box" href="/jp/sdks/overview">
+    型付きラッパー。
+  </Card>
+</CardGroup>
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="Kafka トピックカタログ" icon="tower-broadcast" href="/jp/api-reference/kafka-topics/evm">
+    チェーン別の生トピックとスキーマ。
+  </Card>
+  <Card title="データ鮮度 & SLA" icon="gauge-high" href="/jp/docs/data-products/data-freshness">
+    チェーン / サーフェスごとの遅延期待値。
+  </Card>
+</CardGroup>

@@ -1,9 +1,69 @@
 ---
-title: "交易"
-description: "DEX 交易流——在 Solana、Ethereum、BSC 等鏈上標準化的每一筆 swap。"
+title: "Trades 交易"
+description: "跨鏈規整的 DEX swap 事件——價格、數量、maker/taker、路由、滑點。"
+icon: "right-left"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Trades** 資料產品是 ChainStream 索引的每一筆 DEX swap 的規整版本——你可以按代幣、錢包、池子、路由器查詢，不用關心事件來自哪個 AMM。
+
+## 包含什麼
+
+| 欄位組 | 舉例 |
+|:--|:--|
+| 身份 | `chainId`, `txHash`, `logIndex`, `blockNumber`, `timestamp` |
+| 雙方 | `makerAddress`, `takerAddress`, `router`, `dex` |
+| 經濟 | `tokenIn`, `tokenOut`, `amountIn`, `amountOut`, `priceUsd`, `sizeUsd` |
+| 上下文 | `poolAddress`, `feeTier`, `slippageBps`, `gasUsedUsd` |
+| 分類 | `side` (buy/sell)、`type` (open/close/add/remove)、`isFirstBuy` |
+
+## 覆蓋與新鮮度
+
+- **鏈**：[支援的鏈](/zh-Hant/docs/supported-chains) 裡全部。
+- **DEX**：Uniswap v2/v3/v4、Raydium、Meteora、PancakeSwap、Aerodrome、Jupiter 路由等——詳見 [分鏈支援表](/zh-Hant/api-reference/kafka-topics/evm)。
+- **延遲**：區塊級——Kafka 在確認後 1–2s 投遞，REST 5–10s。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/trades`、`wallets/{address}/trades`、`pools/{address}/trades`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    靈活過濾器；Trades 可與 Tokens、Wallets JOIN。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/connection">
+    `trades.token`、`trades.wallet`、`trades.pool` 實時頻道。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/zh-Hant/api-reference/kafka-topics/evm">
+    各鏈 `*.dex.trade` 主題，Protobuf 編碼。
+  </Card>
+  <Card title="SDK / CLI" icon="terminal" href="/zh-Hant/docs/access-methods/cli">
+    `client.trades.stream()`、`chainstream trades tail`。
+  </Card>
+  <Card title="MCP" icon="robot" href="/zh-Hant/docs/ai-agents/mcp-server/introduction">
+    Agent 用 `trades_list`、`trades_stream` 工具。
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 渲染某代幣的實時成交 tape
+- 計算錢包的已實現 PnL
+- 在首筆買入 / 大單上觸發告警
+- 為交易機器人提供 maker/taker 上下文
+- 自定義週期聚合成 OHLC（或直接用 [Candles](/zh-Hant/docs/data-products/candles-ohlc)）
+
+## 計費
+
+REST / GraphQL 按 `limit` 分頁計費；WebSocket 與 Kafka 按投遞條數，流量越大階梯折扣越多。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Candles (OHLC) K 線" icon="chart-column" href="/zh-Hant/docs/data-products/candles-ohlc">
+    不需要 tick 級粒度時用預聚合好的 K 線。
+  </Card>
+  <Card title="Smart Money 聰明錢" icon="brain" href="/zh-Hant/docs/data-products/smart-money">
+    篩選到高勝率錢包的那部分交易。
+  </Card>
+</CardGroup>

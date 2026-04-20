@@ -1,9 +1,61 @@
 ---
-title: "持币人"
-description: "代币持仓分布、顶级持币人、持币变化。"
+title: "Holders 持币人"
+description: "任意代币的顶级持币人、分布、集中度与时间变化。"
+icon: "users"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Holders** 数据产品对外暴露每个代币的持币人表与分布指标——你可以回答"谁持有这个代币"、"集中度有多高"、"谁刚刚动了"，不用去抓浏览器。
+
+## 包含什么
+
+| 字段组 | 举例 |
+|:--|:--|
+| 持币表 | `rank`, `address`, `balance`, `shareOfSupply`, `entityLabel`, `costBasisUsd` |
+| 分布 | `giniCoefficient`, `top10Share`, `top100Share` |
+| 变化 | `changesLast24h`（新增、退出、排名变化） |
+| 分类 | `bucket`——大户 / 散户 / 合约 / 交易所 / 流动性池 |
+
+## 覆盖与新鲜度
+
+- 覆盖 [支持的链](/cn/docs/supported-chains) 全部。
+- 持币余额在命中转账事件之后秒级刷新。
+- 分布指标每 5 分钟重算。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/holders`、`tokens/{address}/distribution`。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    `holders.changed`——Top-N 变化实时推送。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    Holders 与 Wallets JOIN 得到富化行。
+  </Card>
+  <Card title="SDK / MCP" icon="robot" href="/cn/docs/ai-agents/mcp-server/introduction">
+    Agent 用 `tokens_holders`、`tokens_distribution`。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 检测大户吸筹 / 派发
+- 空投资格快照
+- 代币尽调的集中度风险评分
+- Top-10 占比随时间的图表
+
+## 计费
+
+每次调用 **1 read unit**；大持币表分页返回。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Wallets 钱包" icon="wallet" href="/cn/docs/data-products/wallets">
+    从任意持币人切进去看完整档案与 PnL。
+  </Card>
+  <Card title="Smart Money 聪明钱" icon="brain" href="/cn/docs/data-products/smart-money">
+    聪明钱出现在持币表上时发现。
+  </Card>
+</CardGroup>

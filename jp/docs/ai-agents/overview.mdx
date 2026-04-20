@@ -1,111 +1,62 @@
 ---
-title: 'AIインフラストラクチャ概要'
-description: 'AIエージェントにオンチェーンデータ機能を提供'
-icon: "microchip"
+title: "AI Agents"
+description: "AI Agent 向けの ChainStream のデータと実行サーフェス — MCP Server、Agent Skills、CLI、従量課金マイクロペイメント。"
+icon: "robot"
 ---
 
-## 概要
+ChainStream が AI Agent に公開する [データプロダクト](/jp/docs/data-products/overview) と実行プリミティブは、他のクライアントに公開するものと同一です。Agent に必要な認証、ツール探索、従量課金のパターンを加えただけです。
 
-ChainStreamは、AIアプリケーション向けに特別に設計されたインフラストラクチャを提供し、AIエージェントがオンチェーンデータの直接クエリ、市場情報の分析、さらには取引操作の実行を可能にします。
+<Note>
+  **AI Agents は消費面であり、独立した製品ではありません。** Agent ができることはすべて、
+  REST、GraphQL、WebSocket、Kafka、SDK、CLI 経由でも実現できます。
+</Note>
+
+## 2 つの主要サーフェス
 
 <CardGroup cols={2}>
-  <Card title="MCP Server" icon="robot" color="#9333EA" href="/jp/guides/ai-infrastructure/mcp-server/introduction">
-    AIモデルがChainStream APIを直接呼び出すためのModel Context Protocolサービス
+  <Card title="MCP Server" icon="robot" href="/jp/docs/ai-agents/mcp-server/introduction">
+    ホスト型 (セルフホスト可) の Model Context Protocol サーバ。
+    Claude、Cursor、ChatGPT、Windsurf などの MCP 対応クライアントに即接続。
   </Card>
-  <Card title="Agent Skills" icon="brain" color="#4D9CFF" href="/jp/guides/ai-infrastructure/agent-skills/introduction">
-    Cursor、Claude Code、Codexなど向けの構造化されたAI機能パッケージ（SKILL.md）
-  </Card>
-  <Card title="CLI" icon="terminal" color="#10B981" href="/jp/guides/cli/overview">
-    ウォレットとx402決済を内蔵したデータクエリとDeFi実行のためのコマンドラインツール
-  </Card>
-  <Card title="x402決済" icon="credit-card" color="#F59E0B" href="/jp/guides/cli/x402-payment">
-    HTTPネイティブのマイクロペイメント — AIエージェントがUSDCで支払い、アカウント登録不要
+  <Card title="Agent Skills" icon="brain" href="/jp/docs/ai-agents/agent-skills/introduction">
+    ChainStream の使い方を Agent に教えるインストール可能な SKILL.md パッケージ。
+    トークン分析、Smart Money 追跡、DeFi 実行などのパターン。
   </Card>
 </CardGroup>
 
-## なぜAIにオンチェーンデータが必要なのか
+## どれを選ぶか
 
-従来のAIモデル（ChatGPT、Claudeなど）にはナレッジカットオフがあり、リアルタイムのオンチェーン情報にアクセスできません。ChainStream AIインフラストラクチャはこれを解決します：
+| ケース | サーフェス |
+|:--|:--|
+| Claude / Cursor / ChatGPT で ChainStream ツールを使う | [MCP Server](/jp/docs/ai-agents/mcp-server/introduction) |
+| 既製の Skill をインストールしてトークン調査したい | [Agent Skills](/jp/docs/ai-agents/agent-skills/chainstream-data) |
+| Python / TS で Agent を自作する | [SDK](/jp/sdks/overview) |
+| アカウントなしで USDC 従量課金したい | [x402 支払い](/jp/docs/platform/billing-payments/x402-payments) |
 
-<AccordionGroup>
-  <Accordion title="リアルタイムデータアクセス" icon="bolt">
-    AIは最新の情報にアクセスできます：
-    - トークン価格と取引量
-    - ウォレット残高と保有資産
-    - DEXの流動性と取引
-    - 市場ランキング
-  </Accordion>
-  
-  <Accordion title="オンチェーン分析" icon="chart-mixed">
-    AIは以下の分析を実行できます：
-    - トークンセキュリティチェック
-    - ウォレットPnL計算
-    - Smart Moneyトラッキング
-    - リスク評価
-  </Accordion>
-  
-  <Accordion title="取引アシスタンス" icon="right-left">
-    AIはユーザーを支援できます：
-    - 最適な取引ルートのクエリ
-    - ガス代の見積もり
-    - トランザクションの構築（ユーザー確認が必要）
-  </Accordion>
-</AccordionGroup>
+## Agent 向け Quickstart
 
-## MCP（Model Context Protocol）
+<Steps>
+  <Step title="MCP Server を起動">
+    ```bash
+    CHAINSTREAM_API_KEY=your_api_key npx @chainstream-io/mcp
+    ```
+  </Step>
+  <Step title="Agent を接続">
+    Claude Desktop、Cursor、ChatGPT の設定例は
+    [MCP Server セットアップ](/jp/docs/ai-agents/mcp-server/setup)。
+  </Step>
+  <Step title="質問する">
+    *「過去 24 時間の Solana 出来高トップ 10 トークンを、KYT アラートがあるものを強調して表示して」*
+  </Step>
+</Steps>
 
-MCPは、AIモデルが外部データソースやツールと対話するためのオープンプロトコルです。ChainStreamは主要なAIモデルをサポートするMCP Serverの実装を提供しています。
-
-### 対応モデル
-
-| モデル | サポート状況 | 備考 |
-|-------|------------|------|
-| Claude | ネイティブサポート | Anthropic公式MCPサポート |
-| GPT-4 | Function Calling経由 | OpenAI function calling |
-| Cursor AI | ネイティブサポート | IDE内蔵MCP |
-| その他 | 対応中 | 詳細はお問い合わせください |
-
-## ユースケース
-
-<Tabs>
-  <Tab title="投資リサーチアシスタント">
-    AIにトークン分析を依頼しましょう：
-    
-    **ユーザー**: 「BONKトークンの価格トレンド、保有者分布、セキュリティリスクを分析して」
-    
-    **AIの機能**：
-    - リアルタイム価格と過去のローソク足をクエリ
-    - 保有者データと集中度を取得
-    - セキュリティチェックを実行
-    - 推奨を含む総合的な分析
-  </Tab>
-  
-  <Tab title="ウォレット管理アシスタント">
-    AIにウォレット管理を依頼しましょう：
-    
-    **ユーザー**: 「ウォレット内の全トークンと現在の価値、最近のPnLを表示して」
-    
-    **AIの機能**：
-    - ウォレット残高のクエリ
-    - トークン価値の計算
-    - 保有PnLの分析
-    - ポートフォリオレポートの生成
-  </Tab>
-</Tabs>
-
-## 次のステップ
+## 次へ
 
 <CardGroup cols={2}>
-  <Card title="MCP入門" icon="robot" href="/jp/guides/ai-infrastructure/mcp-server/introduction">
-    MCPプロトコルの詳細
+  <Card title="MCP Server" icon="robot" href="/jp/docs/ai-agents/mcp-server/introduction">
+    MCP サーバの構造と公開されるツール。
   </Card>
-  <Card title="Agent Skills" icon="brain" href="/jp/guides/ai-infrastructure/agent-skills/introduction">
-    Cursor、Claude Codeなど向けのスキルをインストール
-  </Card>
-  <Card title="CLI概要" icon="terminal" href="/jp/guides/cli/overview">
-    コマンドラインからのデータクエリとDeFi操作
-  </Card>
-  <Card title="ツールカタログ" icon="wrench" href="/jp/guides/ai-infrastructure/mcp-server/tools-catalog">
-    利用可能な全MCPツールを確認
+  <Card title="Agent Skills" icon="brain" href="/jp/docs/ai-agents/agent-skills/introduction">
+    Skill とは何か、インストール方法、自作方法。
   </Card>
 </CardGroup>

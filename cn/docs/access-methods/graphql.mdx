@@ -1,9 +1,73 @@
 ---
 title: "GraphQL"
-description: "跨区块、交易、交易记录与余额的灵活分析查询。"
+description: "灵活、分析型的查询——一次请求里跨数据产品 JOIN 出你要的答案。"
+icon: "diagram-project"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+GraphQL 端点适合你想 **塑形响应** 的场景——在一次请求里精确挑选跨多个数据产品的字段。如果 REST 是"取这一个东西"，GraphQL 就是"回答这一个分析问题"。
+
+## 端点
+
+```
+POST https://graphql.chainstream.io/v1/query
+```
+
+或者在 [GraphQL IDE](https://graphql.chainstream.io) 里交互式探索。
+
+## 鉴权
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+```
+
+## 第一个查询
+
+```graphql
+query TopSolanaTokens {
+  tokens(chain: SOLANA, orderBy: VOLUME_24H_DESC, limit: 5) {
+    address
+    symbol
+    priceUsd
+    marketCap
+    recentTrades(limit: 3) {
+      timestamp
+      sizeUsd
+      side
+    }
+  }
+}
+```
+
+一次请求返回代币、元数据与最近成交——没有 N+1 回环。
+
+## 什么时候用
+
+- 跨多个数据产品的分析型查询
+- 字段多又不想过度抓取的看板
+- 报表 / BI 负载
+- 服务端渲染，预先塑形响应
+
+**不建议用** 的场景：实时流（用 WebSocket/Kafka）、REST 缓存更便宜的热读。
+
+## Schema
+
+<CardGroup cols={2}>
+  <Card title="Schema 总览" icon="diagram-project" href="/cn/graphql/schema/schema-overview">
+    类型、关系与约定。
+  </Card>
+  <Card title="入门" icon="rocket" href="/cn/graphql/getting-started/overview">
+    第一个查询的完整走读。
+  </Card>
+</CardGroup>
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="GraphQL IDE" icon="terminal" href="https://graphql.chainstream.io">
+    交互式探索 schema 与跑查询。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/docs/access-methods/sdks">
+    通过 codegen 的类型化 GraphQL 封装。
+  </Card>
+</CardGroup>

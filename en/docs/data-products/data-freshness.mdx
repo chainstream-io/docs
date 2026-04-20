@@ -1,9 +1,64 @@
 ---
 title: "Data Freshness & SLA"
-description: "Latency guarantees, refresh intervals and backfill behaviour per dataset."
+description: "Latency, refresh intervals and backfill behaviour for every data product, per chain and per surface."
+icon: "gauge-high"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+This page is the single source of truth for **how fresh** each data product is. If you're sizing a trading bot, a compliance alerting system or an agent feedback loop, these numbers are what matters.
+
+## End-to-end latency model
+
+```
+[chain event] → [ingestion] → [normalization] → [Kafka] → [REST / WS / GraphQL cache]
+        ~0            <200ms         <200ms         <500ms         +50–500ms
+```
+
+## Per-surface latency
+
+| Surface | Target p50 | Target p99 | Notes |
+|:--|:--|:--|:--|
+| Kafka Streams | 800 ms | 2 s | Closest to source; used for low-latency pipelines |
+| WebSocket | 1.0 s | 3 s | Same source as Kafka; adds fan-out overhead |
+| REST (cached) | 1.5 s | 5 s | Cache TTLs vary per endpoint — see each one |
+| REST (uncached) | 3 s | 10 s | Rare; for deep historical lookups |
+| GraphQL | 2 s | 6 s | Joins multiple products; adds planning time |
+
+## Per-product refresh
+
+| Product | Real-time? | Snapshot cadence |
+|:--|:--|:--|
+| Tokens — market | yes | price tick every trade |
+| Tokens — security | delayed | minutes after creation |
+| Trades | yes | per block |
+| Pools | yes | per event |
+| Wallets — holdings | yes | seconds after transfer |
+| Wallets — net worth history | no | hourly |
+| Candles (OHLC) | yes | bar closes at interval |
+| Holders (table) | yes | per transfer |
+| Holders (distribution metrics) | no | every 5 min |
+| Smart Money (cohort membership) | no | weekly (Mon 00:00 UTC) |
+| Smart Money (flow events) | yes | per trade |
+| Blockchain Core | yes | per block |
+| Rankings | yes (most) | 1 min / block-level |
+| Compliance (KYT / KYA) | yes | on request |
+
+## Backfill behaviour
+
+- **Solana / EVM** archival data backfilled from genesis where feasible.
+- **New chains** start with ≥ 30 days of backfill at launch, full history streamed in within the first 90 days.
+- **Reorgs** cause rewrites of the affected slot/block in all downstream streams; consumers should be idempotent on `(chainId, txHash)` + `logIndex`.
+
+## Incidents & status
+
+Current incidents and historical uptime live at [status.chainstream.io](https://status.chainstream.io) (link to be finalized).
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Rate limits" icon="gauge" href="/en/docs/platform/billing-payments/plans-and-units">
+    Per-plan throughput limits and headers.
+  </Card>
+  <Card title="Kafka topic catalog" icon="tower-broadcast" href="/en/api-reference/kafka-topics/evm">
+    Exact topic names and retention per chain.
+  </Card>
+</CardGroup>

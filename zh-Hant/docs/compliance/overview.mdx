@@ -1,237 +1,68 @@
 ---
-title: '安全與合規概述'
-description: 'ChainStream 安全合規能力介紹'
+title: "合規 (KYT / KYA)"
+description: "與資料介面完全同源的 Know-Your-Transaction 與 Know-Your-Address 能力。"
 icon: "shield-halved"
 ---
 
-## 概述
-
-隨著加密貨幣的主流化，合規要求日益嚴格。ChainStream 提供完整的安全與合規解決方案，幫助企業滿足監管要求、識別風險交易、保護使用者資產。
+合規檢查和資料本身在同一個 ChainStream API 裡——不需要第二家供應商、第二張發票、第二份資料出域。給某一筆轉賬打風險分、給某個地址做畫像、給某筆提現做放款前複核、匯出 Travel Rule 所需的摘要——都在你現有的那套整合裡完成。
 
 <CardGroup cols={2}>
-  <Card title="KYT - 瞭解你的交易" icon="magnifying-glass-dollar" color="#4D9CFF">
-    實時分析交易的資金來源和去向，識別高風險關聯
+  <Card title="KYT——Know Your Transaction" icon="receipt" href="/zh-Hant/docs/compliance/kyt-concepts">
+    對任意入金或出金交易進行風險打分，返回風險等級、暴露類目、告警碼與推理鏈路。
   </Card>
-  <Card title="KYA - 瞭解你的地址" icon="user-shield" color="#16A34A">
-    評估錢包地址的風險等級和關聯實體
+  <Card title="KYA——Know Your Address" icon="user-shield" href="/zh-Hant/docs/compliance/kya-concepts">
+    給對手方地址做畫像——實體標籤、風險等級、制裁命中、歷史行為。
   </Card>
 </CardGroup>
 
-## 為什麼需要鏈上合規
+## 什麼時候需要它
 
 <AccordionGroup>
-  <Accordion title="監管要求" icon="gavel">
-    全球主要司法管轄區（美國、歐盟、新加坡、香港等）對加密貨幣交易所和服務商有明確的 AML/CFT 合規要求，包括：
-    - 交易監控
-    - 可疑活動報告 (SAR)
-    - 制裁篩查
-    - 記錄儲存
+  <Accordion title="交易所入金篩查">
+    所有入金在入賬前跑一遍 KYT，命中制裁、Mixer、暗網市場則攔截或凍結。
   </Accordion>
-  
-  <Accordion title="風險控制" icon="shield-halved">
-    識別和阻止：
-    - 駭客攻擊關聯資金
-    - 勒索軟體支付
-    - 混幣器和隱私協議關聯
-    - 詐騙和釣魚地址
+  <Accordion title="交易所出金篩查">
+    提現場景用專用介面拿到欺詐評估分數與對手方地址的網路歸屬分解，放款前看一眼。
   </Accordion>
-  
-  <Accordion title="使用者保護" icon="user-shield">
-    - 防止使用者與高風險地址互動
-    - 提供代幣安全檢查
-    - 識別蜜罐和 Rug Pull
+  <Accordion title="錢包入口風險">
+    錢包入口在允許 swap、質押、存入之前，先對對手方地址做畫像。
+  </Accordion>
+  <Accordion title="Travel Rule 報告">
+    按監管要求匯出每筆轉賬的摘要，欄位與 FATF Travel Rule 報文對齊。
+  </Accordion>
+  <Accordion title="DeFi 前端盡責">
+    簽名前提示使用者：對手方池子、代幣建立者、收款地址的風險等級是多少。
   </Accordion>
 </AccordionGroup>
 
-## ChainStream 合規能力
+## 合規怎麼和資料拼起來
 
-### KYT (Know Your Transaction)
+KYT 與 KYA 本質上就是另一類資料產品——查詢方式和 tokens、trades、wallets 完全一致。這帶來幾個實用效果：
 
-針對**單筆交易**進行風險評估：
+- 可以把 KYT 結果掛到你已有 **Trades / Transfers** 流水的每一行上
+- **Wallets / Smart Money** 結果可以直接 join 上 KYA 實體標籤
+- 同一個 **GraphQL** 查詢裡就能把業務資料和合規過濾寫在一起
+- **Kafka** 轉賬主題可以和 REST 風險評分並行消費
 
-```mermaid
-flowchart TD
-    tx[交易] --> register[注册交易]
-    register --> analyze[风险分析]
-    analyze --> source[资金来源追溯]
-    analyze --> dest[资金去向分析]
-    analyze --> entity[实体识别]
-    source --> score[风险评分]
-    dest --> score
-    entity --> score
-    score --> result[查询评估结果]
-```
-
-**核心功能**：
-- 交易風險評分
-- 資金來源/去向追溯
-- 關聯實體識別
-- 風險告警生成
-
-詳見 [KYT 核心概念](/zh-Hant/guides/data-concepts/kyt-concepts)
-
-### KYA (Know Your Address)
-
-針對**錢包地址**進行風險評估：
-
-**核心功能**：
-- 地址風險評級
-- 歷史行為分析
-- 關聯實體識別
-- 標籤分類
-
-詳見 [KYA 核心概念](/zh-Hant/guides/data-concepts/kya-concepts)
-
-## 覆蓋範圍
-
-### 支援的鏈
-
-| 鏈 | KYT | KYA | 說明 |
-|----|-----|-----|------|
-| Ethereum | 完整支援 | 完整支援 | 包含 ERC-20 |
-| BSC | 完整支援 | 完整支援 | 包含 BEP-20 |
-| Polygon | 完整支援 | 完整支援 | |
-| Arbitrum | 完整支援 | 完整支援 | |
-| Solana | 完整支援 | 完整支援 | SPL 代幣 |
-| Tron | 完整支援 | 完整支援 | TRC-20 |
-| Bitcoin | 部分支援 | 部分支援 | 主網 |
-
-### 風險類別
-
-ChainStream 可識別以下風險類別：
-
-| 類別 | 說明 | 風險等級 |
-|------|------|----------|
-| Sanctions | 受制裁實體/地址 | 嚴重 |
-| Darknet | 暗網市場關聯 | 嚴重 |
-| Ransomware | 勒索軟體關聯 | 嚴重 |
-| Hacking | 駭客攻擊關聯 | 嚴重 |
-| Fraud | 詐騙/釣魚關聯 | 高 |
-| Mixer | 混幣器/隱私協議 | 高 |
-| Gambling | 賭博平臺 | 中 |
-| High Risk Exchange | 高風險交易所 | 中 |
-
-## 整合方式
-
-KYT/KYA 採用**註冊 + 查詢**的兩步模式：先註冊交易或地址，系統完成風險分析後，再查詢評估結果。
-
-<Tabs>
-  <Tab title="交易風險評估 (KYT)">
-    **步驟 1：註冊交易**
-    
-    ```bash
-    POST /v1/kyt/transfer
-    {
-      "network": "ethereum",
-      "asset": "ETH",
-      "transferReference": "your-unique-reference",
-      "direction": "received",
-      "transferTimestamp": "2024-01-15T10:30:00Z",
-      "txHash": "0x...",
-      "outputAddress": "0x..."
-    }
-    ```
-    
-    **步驟 2：查詢評估結果**
-    
-    ```bash
-    # 获取风险摘要
-    GET /v1/kyt/transfers/{transferId}/summary
-    
-    # 获取风险告警
-    GET /v1/kyt/transfers/{transferId}/alerts
-    
-    # 获取直接风险暴露
-    GET /v1/kyt/transfers/{transferId}/exposures/direct
-    ```
-  </Tab>
-  
-  <Tab title="地址風險評估 (KYA)">
-    **步驟 1：註冊地址**
-    
-    ```bash
-    POST /v1/kyt/address
-    {
-      "network": "ethereum",
-      "address": "0x...",
-      "asset": "ETH"
-    }
-    ```
-    
-    **步驟 2：查詢風險評級**
-    
-    ```bash
-    GET /v1/kyt/addresses/{address}/risk
-    ```
-  </Tab>
-  
-  <Tab title="整合示例">
-    將 KYT 整合到充值流程中：
-    
-    ```javascript
-    import { ChainStreamClient } from '@chainstream-io/sdk';
-    
-    const client = new ChainStreamClient(process.env.CHAINSTREAM_ACCESS_TOKEN);
-    
-    async function processDeposit(txHash, toAddress) {
-      // 步骤 1：注册交易
-      const transfer = await client.kyt.registerTransfer({
-        network: 'ethereum',
-        asset: 'ETH',
-        transferReference: `deposit-${txHash}`,
-        direction: 'received',
-        transferTimestamp: new Date().toISOString(),
-        txHash: txHash,
-        outputAddress: toAddress
-      });
-      
-      // 步骤 2：查询风险摘要
-      const summary = await client.kyt.getTransferSummary(transfer.transferId);
-      
-      // 步骤 3：根据风险等级决策
-      if (summary.rating === 'highRisk' || summary.rating === 'severe') {
-        // 获取详细告警信息
-        const alerts = await client.kyt.getTransferAlerts(transfer.transferId);
-        await flagForReview(txHash, alerts);
-        return { status: 'pending_review', alerts };
-      }
-      
-      return { status: 'approved', rating: summary.rating };
-    }
-    ```
-  </Tab>
-</Tabs>
-
-## 使用場景
-
-<CardGroup cols={2}>
-  <Card title="交易所充值監控" icon="arrow-down-to-arc">
-    在使用者充值時評估資金來源風險，阻止問題資金入金
-  </Card>
-  
-  <Card title="提款前檢查" icon="arrow-up-from-arc">
-    在使用者提款前評估目標地址風險，防止資金流向制裁實體
-  </Card>
-  
-  <Card title="錢包風險篩查" icon="wallet">
-    在使用者註冊或 KYC 時檢查其錢包歷史風險
-  </Card>
-  
-  <Card title="合規報告" icon="file-lines">
-    生成符合監管要求的交易監控報告
-  </Card>
-</CardGroup>
-
-## 下一步
+## 從這裡開始
 
 <CardGroup cols={3}>
-  <Card title="KYT 概念" icon="magnifying-glass-dollar" href="/zh-Hant/guides/data-concepts/kyt-concepts">
-    深入瞭解交易風險評估
+  <Card title="KYT 概念" icon="receipt" href="/zh-Hant/docs/compliance/kyt-concepts">
+    KYT 返回什麼、風險怎麼算出來的、每個欄位什麼意思。
   </Card>
-  <Card title="KYA 概念" icon="user-shield" href="/zh-Hant/guides/data-concepts/kya-concepts">
-    深入瞭解地址風險評估
+  <Card title="KYA 概念" icon="user-shield" href="/zh-Hant/docs/compliance/kya-concepts">
+    地址畫像是怎麼生成的、ChainStream 會給地址打哪些標籤。
   </Card>
-  <Card title="整合指南" icon="plug" href="/zh-Hant/guides/data-concepts/compliance-integration">
-    瞭解如何整合合規 API
+  <Card title="整合指南" icon="plug" href="/zh-Hant/docs/compliance/integration-guide">
+    接入入金、出金、鏈上流程的分步指南。
+  </Card>
+  <Card title="KYT API Reference" icon="code" href="/zh-Hant/api-reference/overview">
+    所有端點——地址、轉賬、提現、告警、暴露明細。
+  </Card>
+  <Card title="Deposit-Check 教程" icon="graduation-cap" href="/zh-Hant/docs/tutorials/integrate-deposit-check">
+    端到端教程：把 KYT 接進真實的入金流程。
+  </Card>
+  <Card title="資料隱私" icon="shield" href="/zh-Hant/docs/platform/security/data-privacy">
+    合規資料的資料處理與保留策略。
   </Card>
 </CardGroup>

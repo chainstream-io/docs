@@ -1,9 +1,59 @@
 ---
-title: "榜单"
-description: "每条链上热门、新发、迁移、冲线代币的精选榜单。"
+title: "Rankings 榜单"
+description: "持续重算的精选代币榜单——热门 / 新发 / 迁移 / 冲线 / 蓝筹风格——给发现场景和 Agent 用。"
+icon: "trophy"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Rankings** 数据产品是一组有观点、持续重算的代币榜单。每个榜单都是一个发现入口，背后逻辑对外透明，你可以按需选用。
+
+## 可用榜单
+
+| 榜单 | 呈现什么 | 刷新 |
+|:--|:--|:--|
+| `hot` | 过去 1h / 24h 独立买家数 + 成交量增速最快的代币 | 1 分钟 |
+| `new` | 通过最低流动性与持币人检查的新发代币 | 区块级 |
+| `migrated` | 刚从 launchpad 迁到完整 DEX 的代币 | 1 分钟 |
+| `final-stretch` | 接近迁移阈值的 launchpad 代币 | 1 分钟 |
+| `stock-like` | 行为特征接近传统股票（低波动 / 稳步吸筹）的代币 | 每小时 |
+| `top-gainers`、`top-losers` | 1h / 24h / 7d 涨跌幅榜 | 5 分钟 |
+
+完整列表与参数见 [API Reference → rankings](/cn/api-reference/endpoint/data/tokens/search)。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `rankings/{list}?chain=&window=`
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    `rankings.{list}`——榜单成员变动实时推送。
+  </Card>
+  <Card title="MCP" icon="robot" href="/cn/docs/ai-agents/mcp-server/introduction">
+    `rankings_get`——Agent 的常用发现入口。
+  </Card>
+  <Card title="CLI" icon="terminal" href="/cn/docs/access-methods/cli">
+    `chainstream rankings hot --chain solana`
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 首页 "现在什么最热" 挂件
+- 抓新代币的 sniper feed
+- Agent 驱动的每日简报
+- 用真实的历史榜单数据喂回测（配合 replay 端点）
+
+## 计费
+
+每个榜单调用 **1 read unit**，不按条数（榜单长度有上限）。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Tokens 代币" icon="coins" href="/cn/docs/data-products/tokens">
+    榜上代币的完整元数据与安全信息。
+  </Card>
+  <Card title="价格告警教程" icon="graduation-cap" href="/cn/docs/tutorials/build-price-alert-bot">
+    端到端示例：Rankings + WebSocket。
+  </Card>
+</CardGroup>

@@ -1,9 +1,56 @@
 ---
 title: "REST API"
-description: "HTTPS endpoints for on-demand lookups of tokens, wallets, trades and more."
+description: "일반 HTTP 위의 조회/스냅샷/분석 엔드포인트 — 대부분의 앱의 기본 표면."
+icon: "database"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+REST API는 ChainStream에서 데이터를 가져오는 가장 간단한 방법입니다. 모든 [데이터 제품](/ko/docs/data-products/overview)이 JSON 엔드포인트로 노출되며, 인증과 오류 봉투는 공통입니다.
+
+## Base URL
+
+```
+https://api.chainstream.io
+```
+
+## 인증
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Authorization: Bearer $OAUTH_TOKEN"
+-H "X-PAYMENT: <signed payload>"
+```
+
+자세한 내용은 [인증](/ko/api-reference/authentication/authenticate).
+
+## 첫 요청
+
+```bash
+curl -H "Authorization: Bearer $CHAINSTREAM_API_KEY" \
+  "https://api.chainstream.io/v1/tokens/search?chain=solana&q=USDC&limit=5"
+```
+
+## 언제 사용할까
+
+- 단일 조회, 스냅샷, SSR
+- 서브초 지연이 중요하지 않은 워크로드
+- [WebSocket](/ko/docs/access-methods/websocket)과 함께 사용 (이력=REST, 실시간=WS)
+- Agent 도구 호출
+
+**부적합**: 고빈도 스트리밍 (WebSocket/Kafka), 다중 제품 JOIN (GraphQL).
+
+## 관례
+
+- 페이징: `limit` + `cursor`
+- 속도 제한: 플랜별. `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- 오류: `code`, `message`, `requestId`의 RFC 7807 스타일 JSON
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/ko/api-reference/overview">
+    모든 REST 엔드포인트.
+  </Card>
+  <Card title="SDK" icon="box" href="/ko/docs/access-methods/sdks">
+    TS / Py / Go / Rust 타입 래퍼.
+  </Card>
+</CardGroup>

@@ -1,9 +1,69 @@
 ---
 title: "Trades"
-description: "DEX trade stream — every swap normalized across Solana, Ethereum, BSC and more."
+description: "Normalized DEX swap events across all supported chains — price, size, maker/taker, router, slippage."
+icon: "right-left"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The **Trades** data product is every DEX swap that ChainStream indexes, normalized so you can query by token, wallet, pool or router without caring which AMM emitted the event.
+
+## What's inside
+
+| Field group | Examples |
+|:--|:--|
+| Identity | `chainId`, `txHash`, `logIndex`, `blockNumber`, `timestamp` |
+| Parties | `makerAddress`, `takerAddress`, `router`, `dex` |
+| Economics | `tokenIn`, `tokenOut`, `amountIn`, `amountOut`, `priceUsd`, `sizeUsd` |
+| Context | `poolAddress`, `feeTier`, `slippageBps`, `gasUsedUsd` |
+| Classification | `side` (buy/sell), `type` (open/close/add/remove), `isFirstBuy` |
+
+## Coverage & freshness
+
+- **Chains**: every chain in [Supported Chains](/en/docs/supported-chains).
+- **DEXes**: Uniswap v2/v3/v4, Raydium, Meteora, PancakeSwap, Aerodrome, Jupiter-routed, + more — see [per-chain support tables](/en/api-reference/kafka-topics/evm).
+- **Latency**: block-level — Kafka delivers within 1–2 s of finalization, REST within 5–10 s.
+
+## Access
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/en/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/trades`, `wallets/{address}/trades`, `pools/{address}/trades`.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/graphql/getting-started/overview">
+    Flexible filters: join Trades with Tokens and Wallets.
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/en/api-reference/endpoint/websocket/connection">
+    `trades.token`, `trades.wallet`, `trades.pool` live channels.
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/en/api-reference/kafka-topics/evm">
+    `*.dex.trade` topics per chain, Protobuf-encoded.
+  </Card>
+  <Card title="SDK / CLI" icon="terminal" href="/en/docs/access-methods/cli">
+    `client.trades.stream()`, `chainstream trades tail`.
+  </Card>
+  <Card title="MCP" icon="robot" href="/en/docs/ai-agents/mcp-server/introduction">
+    `trades_list`, `trades_stream` tools for agents.
+  </Card>
+</CardGroup>
+
+## Common use cases
+
+- Render a live trade tape for a token
+- Compute realized PnL for a wallet
+- Trigger alerts on first-buy or large-trade events
+- Feed a trading bot with maker/taker context
+- Aggregate to OHLC at custom intervals (or use [Candles](/en/docs/data-products/candles-ohlc))
+
+## Billing
+
+REST / GraphQL: per-page cost scales with `limit`. WebSocket and Kafka charge per delivered message, discounted for high-volume tiers.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Candles (OHLC)" icon="chart-column" href="/en/docs/data-products/candles-ohlc">
+    Pre-aggregated price bars if you don't need tick-level detail.
+  </Card>
+  <Card title="Smart Money" icon="brain" href="/en/docs/data-products/smart-money">
+    Trades filtered to high-performing wallet cohorts.
+  </Card>
+</CardGroup>

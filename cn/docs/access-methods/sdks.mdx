@@ -1,9 +1,77 @@
 ---
 title: "SDK"
-description: "TypeScript、Python、Go 与 Rust 的类型化客户端库。"
+description: "TypeScript / Python / Go / Rust 的类型化客户端库——对 REST、GraphQL、WebSocket 的地道封装。"
+icon: "box"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream SDK 给你一套人体工程学良好的方式，从你选的语言里调用每一个数据产品。底下还是同样的 [数据产品](/cn/docs/data-products/overview) 与 [接入方式](/cn/docs/access-methods/overview)——只是加了类型、重试、默认配置。
+
+## 语言
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/cn/sdks/typescript">
+    `@chainstream-io/sdk`——浏览器与 Node 都是一等公民。
+  </Card>
+  <Card title="Python" icon="python" href="/cn/sdks/python">
+    `chainstream`——async 优先，笔记本与机器人友好。
+  </Card>
+  <Card title="Go" icon="golang" href="/cn/sdks/go">
+    `github.com/chainstream-io/chainstream-go`——地道的 Go。
+  </Card>
+  <Card title="Rust" icon="rust" href="/cn/sdks/rust">
+    `chainstream` crate——给延迟敏感的消费者。
+  </Card>
+</CardGroup>
+
+## 安装
+
+```bash
+npm install @chainstream-io/sdk          # TypeScript
+pip install chainstream                  # Python
+go get github.com/chainstream-io/chainstream-go
+cargo add chainstream                    # Rust
+```
+
+## 第一次调用——TypeScript
+
+```ts
+import { ChainStream } from "@chainstream-io/sdk";
+
+const cs = new ChainStream({ apiKey: process.env.CHAINSTREAM_API_KEY! });
+
+const results = await cs.tokens.search({
+  chain: "solana",
+  query: "USDC",
+  limit: 5,
+});
+
+for (const t of results) {
+  console.log(t.symbol, t.priceUsd);
+}
+```
+
+## 常见模式
+
+- **REST**：`cs.tokens.*`、`cs.wallets.*`、`cs.trades.*`……
+- **WebSocket**：`cs.subscribe("trades.token", { address }, msg => ...)`
+- **GraphQL**：`cs.gql(query, variables)`——通过 codegen 返回完整类型化结果
+- **CLI 桥接**：`cs.cli("rankings", "hot")` 与 `chainstream rankings hot` 等价
+
+## 什么时候用
+
+- 集成进应用——基本上都是首选
+- 希望类型、重试、错误映射、分页都处理好
+- 希望同一份资源在 REST 与 WebSocket 之间切换不用重写
+
+**不建议用** 的场景：一次性任务，`curl` + REST 更快（或用 CLI）。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="SDK 目录" icon="box" href="/cn/sdks/overview">
+    各语言指南与发布说明。
+  </Card>
+  <Card title="Reference" icon="code" href="/cn/api-reference/overview">
+    底层 REST / GraphQL / WebSocket 接入面。
+  </Card>
+</CardGroup>

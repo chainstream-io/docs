@@ -1,111 +1,98 @@
 ---
-title: 'AI Infrastructure Overview'
-description: 'Providing on-chain data capabilities for AI Agents'
-icon: "microchip"
+title: "AI Agents"
+description: "ChainStream's data and execution surfaces for AI agents — MCP Server, Agent Skills, CLI, and pay-per-call micropayments."
+icon: "robot"
 ---
 
-## Overview
+ChainStream exposes the same [data products](/en/docs/data-products/overview) and execution primitives to AI agents as to any other client — but with the authentication, tool discovery and pay-per-call patterns that agents actually need.
 
-ChainStream provides infrastructure specifically designed for AI applications, enabling AI Agents to directly query on-chain data, analyze market information, and even execute trading operations.
+<Note>
+  **AI Agents is a consumer surface, not a separate product.** Everything an
+  agent can do is also available over REST, GraphQL, WebSocket, Kafka, the
+  SDKs and the CLI. The pages in this section describe the shapes that make
+  the catalog usable from LLMs.
+</Note>
+
+## Two main surfaces
 
 <CardGroup cols={2}>
-  <Card title="MCP Server" icon="robot" color="#9333EA" href="/en/guides/ai-infrastructure/mcp-server/introduction">
-    Model Context Protocol service enabling AI models to directly call ChainStream APIs
+  <Card title="MCP Server" icon="robot" href="/en/docs/ai-agents/mcp-server/introduction">
+    A hosted (and self-hostable) Model Context Protocol server that exposes
+    ChainStream's catalog as typed tools. Works out-of-the-box with Claude,
+    Cursor, ChatGPT, Windsurf and any MCP-compatible client.
   </Card>
-  <Card title="Agent Skills" icon="brain" color="#4D9CFF" href="/en/guides/ai-infrastructure/agent-skills/introduction">
-    Structured AI capability packages (SKILL.md) for Cursor, Claude Code, Codex, and more
-  </Card>
-  <Card title="CLI" icon="terminal" color="#10B981" href="/en/guides/cli/overview">
-    Command-line tool for data queries and DeFi execution with built-in wallet and x402 payment
-  </Card>
-  <Card title="x402 Payment" icon="credit-card" color="#F59E0B" href="/en/guides/cli/x402-payment">
-    HTTP-native micropayments — AI agents pay with USDC, no account registration needed
+  <Card title="Agent Skills" icon="brain" href="/en/docs/ai-agents/agent-skills/introduction">
+    Installable SKILL.md packs that teach an agent <em>how</em> to use
+    ChainStream — patterns for token analysis, Smart-Money tracking, DeFi
+    execution, and more. Ships ready for Cursor, Claude Code and Codex.
   </Card>
 </CardGroup>
 
-## Why AI Needs On-chain Data
+## Why this matters for agents
 
-Traditional AI models (like ChatGPT, Claude) have knowledge cutoffs and cannot access real-time on-chain information. ChainStream AI infrastructure solves this:
+Traditional LLM access to blockchains fails in three ways: the model has a knowledge cutoff, it has no authenticated data source, and it cannot pay for reads without a pre-registered account. ChainStream solves each:
 
 <AccordionGroup>
-  <Accordion title="Real-time Data Access" icon="bolt">
-    AI can access latest:
-    - Token prices and trading volume
-    - Wallet balances and holdings
-    - DEX liquidity and trades
-    - Market rankings
+  <Accordion title="Live data, typed for tool use" icon="bolt">
+    Every data product is reachable as a structured tool call with a JSON
+    schema. The agent gets canonical IDs, not screen-scraped text — so it can
+    chain calls without re-parsing on every step.
   </Accordion>
-  
-  <Accordion title="On-chain Analysis" icon="chart-mixed">
-    AI can perform:
-    - Token security checks
-    - Wallet PnL calculations
-    - Smart Money tracking
-    - Risk assessments
+  <Accordion title="Authenticated access that fits agent loops" icon="shield-halved">
+    API keys work, OAuth works, and for autonomous agents there is
+    [x402 / MPP](/en/docs/platform/billing-payments/x402-payments) — a
+    per-call HTTP payment scheme that means an agent can pay in USDC and
+    call immediately, with no prior account setup.
   </Accordion>
-  
-  <Accordion title="Trade Assistance" icon="right-left">
-    AI can help users:
-    - Query optimal trade routes
-    - Estimate gas fees
-    - Build transactions (requires user confirmation)
+  <Accordion title="Optional write paths with user-level guardrails" icon="right-left">
+    DEX quotes, routing and swap submission are all available. Writes still
+    require a signed transaction from a user-controlled wallet — agents can
+    prepare transactions but not silently send from someone else's funds.
   </Accordion>
 </AccordionGroup>
 
-## MCP (Model Context Protocol)
+## Which surface should I pick?
 
-MCP is an open protocol allowing AI models to interact with external data sources and tools. ChainStream provides an MCP Server implementation supporting major AI models.
+| Situation | Surface |
+|:--|:--|
+| You are using Claude / Cursor / ChatGPT and want ChainStream tools | [MCP Server](/en/docs/ai-agents/mcp-server/introduction) |
+| You want to install a ready-made agent skill for token research | [Agent Skills](/en/docs/ai-agents/agent-skills/chainstream-data) |
+| You are writing your own agent in Python / TS and want direct access | [SDKs](/en/sdks/overview) |
+| You want pay-per-call with USDC and no signup | [x402 Payments](/en/docs/platform/billing-payments/x402-payments) |
+| You want to pay with Tempo / Stripe / stablecoins | [MPP Payments](/en/docs/platform/billing-payments/mpp-payments) |
+| You want shell-native tools the agent can orchestrate | [CLI](/en/docs/access-methods/cli) |
 
-### Supported Models
+## Quickstart for agents
 
-| Model | Support Status | Notes |
-|-------|----------------|-------|
-| Claude | Native Support | Official Anthropic MCP support |
-| GPT-4 | Via Function Calling | OpenAI function calling |
-| Cursor AI | Native Support | IDE built-in MCP |
-| Others | In Progress | Contact us for details |
+<Steps>
+  <Step title="Start the MCP Server">
+    ```bash
+    CHAINSTREAM_API_KEY=your_api_key npx @chainstream-io/mcp
+    ```
+  </Step>
+  <Step title="Point your agent at it">
+    Full configuration snippets for Claude Desktop, Cursor and ChatGPT are in
+    [MCP Server Setup](/en/docs/ai-agents/mcp-server/setup).
+  </Step>
+  <Step title="Ask a question">
+    *"Show me the top 10 Solana tokens by 24h volume and highlight any with
+    KYT warnings."* The agent picks the right tools and chains the calls.
+  </Step>
+</Steps>
 
-## Use Cases
-
-<Tabs>
-  <Tab title="Investment Research Assistant">
-    Let AI help you analyze tokens:
-    
-    **User**: "Analyze the BONK token including price trends, holder distribution, and security risks"
-    
-    **AI capabilities**:
-    - Query real-time prices and historical candles
-    - Get holder data and concentration
-    - Execute security checks
-    - Comprehensive analysis with recommendations
-  </Tab>
-  
-  <Tab title="Wallet Management Assistant">
-    Let AI help manage your wallet:
-    
-    **User**: "Show me all tokens in my wallet with current values and recent PnL"
-    
-    **AI capabilities**:
-    - Query wallet balances
-    - Calculate token values
-    - Analyze holding PnL
-    - Generate portfolio reports
-  </Tab>
-</Tabs>
-
-## Next Steps
+## Next
 
 <CardGroup cols={2}>
-  <Card title="MCP Introduction" icon="robot" href="/en/guides/ai-infrastructure/mcp-server/introduction">
-    Deep dive into MCP protocol
+  <Card title="MCP Server introduction" icon="robot" href="/en/docs/ai-agents/mcp-server/introduction">
+    How the MCP Server is organized and what tools it exposes.
   </Card>
-  <Card title="Agent Skills" icon="brain" href="/en/guides/ai-infrastructure/agent-skills/introduction">
-    Install skills for Cursor, Claude Code, and more
+  <Card title="Agent Skills introduction" icon="brain" href="/en/docs/ai-agents/agent-skills/introduction">
+    What Skills are, how they are installed and how to author new ones.
   </Card>
-  <Card title="CLI Overview" icon="terminal" href="/en/guides/cli/overview">
-    Data queries and DeFi from the command line
+  <Card title="x402 Payments" icon="credit-card" href="/en/docs/platform/billing-payments/x402-payments">
+    HTTP-native micropayments for agent workloads.
   </Card>
-  <Card title="Tools Catalog" icon="wrench" href="/en/guides/ai-infrastructure/mcp-server/tools-catalog">
-    View all available MCP tools
+  <Card title="AI Agent tutorial" icon="graduation-cap" href="/en/docs/tutorials/ai-agent-with-mcp">
+    Build an agent end-to-end using ChainStream.
   </Card>
 </CardGroup>

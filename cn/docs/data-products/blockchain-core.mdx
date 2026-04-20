@@ -1,9 +1,65 @@
 ---
-title: "区块链底层数据"
-description: "原始区块、交易与链级指标。"
+title: "Blockchain Core 底层数据"
+description: "原始区块、交易、gas 指标与链级状态——当规整数据产品不够用时。"
+icon: "cube"
 ---
 
+**Blockchain Core** 数据产品是 ChainStream 发布的所有其他数据的底层基础。当规整产品（Tokens、Trades、Wallets）表达不了你要的事实，或者你需要端到端核对 / 审计时，用它。
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  多数集成应该先从 Tokens / Trades / Wallets 入手——上层产品更便宜、已经去噪。
 </Note>
+
+## 包含什么
+
+| 数据集 | 关键字段 |
+|:--|:--|
+| Blocks | `number`, `hash`, `parentHash`, `timestamp`, `gasUsed`, `baseFeePerGas`, `miner` |
+| Transactions | `hash`, `from`, `to`, `value`, `input`, `status`, `gasUsed`, `effectiveGasPrice` |
+| Logs / Events | `txHash`, `logIndex`, `address`, `topics[]`, `data`, `removed` |
+| Gas 指标 | `blockGasUsage`, `chainGasOracle`（EIP-1559 base / priority 费） |
+| 链状态 | `latestBlock`, `finality`, `reorgsLast1h` |
+
+## 覆盖与新鲜度
+
+- 所有支持链的原始数据，尽可能回填到 genesis。
+- 延迟：区块与日志在最终确认后 1–2s 内投递。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `blocks/{number}`、`transactions/{hash}`、`logs?filters=…`。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    各链 `*.block`、`*.tx`、`*.log` 主题（Protobuf）。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    区块 + 交易 + 解码后的事件 JOIN 查询。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/sdks/overview">
+    blocks / transactions / logs 的类型化封装。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 独立核对某个上层数据点
+- 需要原始日志的自定义索引管道
+- gas price 预言机与手续费估算服务
+- 链健康看板（重组率、叔块率、base fee 漂移）
+
+## 计费
+
+原始数据端点按条数计费。Kafka 主题按投递条数计费，流处理档位有折扣。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Kafka 主题目录" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    各链原始主题与 schema。
+  </Card>
+  <Card title="数据新鲜度与 SLA" icon="gauge-high" href="/cn/docs/data-products/data-freshness">
+    各链、各接入面的延迟预期。
+  </Card>
+</CardGroup>

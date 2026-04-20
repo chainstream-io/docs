@@ -1,9 +1,58 @@
 ---
-title: "データ鮮度と SLA"
-description: "Latency guarantees, refresh intervals and backfill behaviour per dataset."
+title: "データ鮮度 & SLA"
+description: "すべてのデータプロダクトの遅延・リフレッシュ間隔・バックフィル挙動を、チェーン / サーフェス別に。"
+icon: "gauge-high"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+本ページは各データプロダクトが「どれくらい新鮮か」の唯一の事実ソースです。取引ボット、コンプライアンスアラート、Agent フィードバックループのサイジングに使う数字はここに集約されています。
+
+## エンドツーエンド遅延
+
+```
+[チェーンイベント] → [取込] → [正規化] → [Kafka] → [REST / WS / GraphQL キャッシュ]
+       ~0           <200ms    <200ms      <500ms       +50–500ms
+```
+
+## サーフェス別遅延
+
+| サーフェス | p50 | p99 | 備考 |
+|:--|:--|:--|:--|
+| Kafka Streams | 800 ms | 2 s | ソース最寄り |
+| WebSocket | 1.0 s | 3 s | Kafka と同源、ファンアウト分加算 |
+| REST (cached) | 1.5 s | 5 s | エンドポイントごとに TTL |
+| GraphQL | 2 s | 6 s | JOIN プランニング分 |
+
+## プロダクト別リフレッシュ
+
+| プロダクト | リアルタイム | スナップショット |
+|:--|:--|:--|
+| Tokens マーケット | yes | 取引ごと |
+| Tokens セキュリティ | 遅延 | 作成後数分 |
+| Trades | yes | ブロック単位 |
+| Pools | yes | イベント単位 |
+| Wallets 保有 | yes | 送受信後秒単位 |
+| Wallets ネットワース履歴 | no | 1 時間 |
+| Candles (OHLC) | yes | バー確定時 |
+| Holders テーブル | yes | 送受信単位 |
+| Holders 分布 | no | 5 分 |
+| Smart Money コホート | no | 毎週月曜 UTC 00:00 |
+| Blockchain Core | yes | ブロック単位 |
+| Rankings | 多くは yes | 1 分 / ブロック |
+| Compliance | yes | リクエスト単位 |
+
+## バックフィル
+
+- Solana / EVM は可能な限り genesis まで。
+- 新規チェーンは 30 日以上から開始、90 日以内に完全履歴。
+- Reorg 発生時は該当 slot/block を下流すべてで書き換え。コンシューマは `(chainId, txHash)` + `logIndex` で冪等に。
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="レート制限" icon="gauge" href="/jp/docs/platform/billing-payments/plans-and-units">
+    プラン別スループット。
+  </Card>
+  <Card title="Kafka トピックカタログ" icon="tower-broadcast" href="/jp/api-reference/kafka-topics/evm">
+    チェーン別トピックと保持期間。
+  </Card>
+</CardGroup>

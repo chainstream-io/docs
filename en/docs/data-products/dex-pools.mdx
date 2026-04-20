@@ -1,9 +1,61 @@
 ---
 title: "DEX Pools"
-description: "Liquidity pool state, reserves, swap fees and snapshots."
+description: "Pool state, reserves, fee tiers, TVL and liquidity snapshots over time for every indexed AMM and CLMM."
+icon: "droplet"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The **DEX Pools** data product gives you the state of every liquidity pool ChainStream indexes — from classic Uniswap-v2 constant-product pools to concentrated-liquidity v3/v4 pools, Solana AMMs and more — with normalized fields.
+
+## What's inside
+
+| Field group | Examples |
+|:--|:--|
+| Identity | `chainId`, `poolAddress`, `dex`, `pairType` (v2/v3/v4/CLMM/StableSwap) |
+| Tokens | `token0`, `token1`, `decimals0`, `decimals1`, `reserve0`, `reserve1` |
+| Economics | `tvlUsd`, `volume24hUsd`, `feeTierBps`, `apy7d` |
+| State | `priceToken0InToken1`, `sqrtPriceX96`, `tick`, `liquidity` |
+| Provenance | `createdAtBlock`, `factoryAddress`, `initCodeHash` |
+
+## Coverage & freshness
+
+- Pool creations detected at block-level; state fields update on every swap, add or remove event (typically seconds).
+- Historical TVL and volume series aggregated at 1h and 1d granularities.
+
+## Access
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/en/api-reference/endpoint/data/tokens/search">
+    `pools/{address}`, `pools/search`, `pools/{address}/trades`.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/graphql/getting-started/overview">
+    Join pools with tokens and trades in one query.
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/en/api-reference/endpoint/websocket/connection">
+    `pools.state`, `pools.created` channels.
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/en/api-reference/kafka-topics/evm">
+    `*.pool.created`, `*.pool.sync` topics per chain.
+  </Card>
+</CardGroup>
+
+## Common use cases
+
+- Build an "all-pools" screener with TVL / volume filters
+- Detect brand-new pools for snipe / launch alerts
+- Monitor specific pool depth before submitting a swap
+- Drive a routing layer that requires up-to-date reserves
+
+## Billing
+
+Per-pool lookups: **1 read unit**. Search and list calls scale with `limit`.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Trades" icon="right-left" href="/en/docs/data-products/trades">
+    The trade stream that flows through these pools.
+  </Card>
+  <Card title="Candles (OHLC)" icon="chart-column" href="/en/docs/data-products/candles-ohlc">
+    Pool-level OHLC if you want bars instead of state snapshots.
+  </Card>
+</CardGroup>

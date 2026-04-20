@@ -1,9 +1,64 @@
 ---
 title: "REST API"
-description: "用於按需查詢代幣、錢包、交易等資料的 HTTPS 介面。"
+description: "基於 HTTP 的查詢、快照、分析端點——多數應用的預設接入面。"
+icon: "database"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+REST API 是從 ChainStream 拿資料最簡單的方式。每個 [資料產品](/zh-Hant/docs/data-products/overview) 都以 JSON 端點形式暴露，共享同一套鑑權與錯誤信封。
+
+## Base URL
+
+```
+https://api.chainstream.io
+```
+
+## 鑑權
+
+使用以下任意一種：
+
+```bash
+-H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+-H "Authorization: Bearer $OAUTH_TOKEN"
+-H "X-PAYMENT: <signed payload>"
+```
+
+完整矩陣見 [鑑權](/zh-Hant/api-reference/authentication/authenticate)。
+
+## 第一次請求
+
+```bash
+curl -H "Authorization: Bearer $CHAINSTREAM_API_KEY" \
+  "https://api.chainstream.io/v1/tokens/search?chain=solana&q=USDC&limit=5"
+```
+
+## 什麼時候用
+
+- 單次查詢、快照、服務端渲染頁面
+- 亞秒級延遲不是關鍵的場景
+- 與 [WebSocket](/zh-Hant/docs/access-methods/websocket) 搭配（REST 查歷史、WS 跑實時）
+- Agent 工具呼叫——每次呼叫對應一個端點
+
+**不建議用** 的場景：高頻流式（用 WebSocket 或 Kafka）、跨產品 JOIN（用 GraphQL）。
+
+## 約定
+
+- 分頁：列表端點使用 `limit` + `cursor`（基於遊標）
+- 限流：按套餐；響應頭 `X-RateLimit-Remaining`、`X-RateLimit-Reset`
+- 錯誤：RFC 7807 風格 JSON，包含 `code`、`message`、`requestId`
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/zh-Hant/api-reference/overview">
+    所有 REST 端點，帶請求 / 響應示例。
+  </Card>
+  <Card title="SDK" icon="box" href="/zh-Hant/docs/access-methods/sdks">
+    TS / Py / Go / Rust 的型別化封裝。
+  </Card>
+  <Card title="限流" icon="gauge" href="/zh-Hant/docs/platform/billing-payments/plans-and-units">
+    各套餐吞吐上限與規劃方法。
+  </Card>
+  <Card title="鑑權" icon="key" href="/zh-Hant/api-reference/authentication/authenticate">
+    API Key、OAuth、錢包登入、x402。
+  </Card>
+</CardGroup>

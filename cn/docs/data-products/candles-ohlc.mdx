@@ -1,9 +1,65 @@
 ---
-title: "K线 (OHLC)"
-description: "代币 / 交易对 / 池子的多周期 OHLC K 线数据。"
+title: "Candles (OHLC) K 线"
+description: "代币 / 交易对 / 池子的多周期 K 线——基于完整成交流预聚合。"
+icon: "chart-column"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Candles (OHLC)** 数据产品就是你本来要自己从 [Trades](/cn/docs/data-products/trades) 聚合出来的 K 线（Open / High / Low / Close / Volume）。支持多周期，覆盖代币、交易对与具体池子。
+
+## 字段
+
+| 字段 | 说明 |
+|:--|:--|
+| `open`, `high`, `low`, `close` | USD 或 quote 代币计价，可配置 |
+| `volumeUsd`, `volumeBase`, `volumeQuote` | 分方向成交量 |
+| `trades` | 该 bar 的成交笔数 |
+| `buyers`, `sellers` | 独立地址数（部分场景可用） |
+| `timestamp` | bar 开始时间，UTC |
+
+## 周期
+
+| 周期 | 最早回溯 | 典型用途 |
+|:--|:--|:--|
+| `1s` | 最近数小时 | 高频 / 实时图 |
+| `1m`、`5m`、`15m` | 天级 | 日内图表与告警 |
+| `1h`、`4h` | 月级 | 波段交易看板 |
+| `1d`、`1w` | 项目生命周期 | 长期分析 |
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/candles`、`pools/{address}/candles`、`pairs/{address}/candles`。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    `candles.{interval}`——每根 bar 更新推送。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    一次查询同时取 K 线与代币元数据。
+  </Card>
+  <Card title="SDK" icon="box" href="/cn/sdks/overview">
+    `client.tokens.candles(address, interval)` 返回类型化数组。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 渲染 TradingView 风格的价格图
+- 历史 OHLC 喂回测引擎
+- 下游计算 RSI / MACD / VWAP 等指标
+- 驱动时序异常告警
+
+## 计费
+
+REST / GraphQL 按返回 bar 数分页计费；WebSocket 按 bar 更新条数。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Trades（tick 级）" icon="right-left" href="/cn/docs/data-products/trades">
+    需要 tick 粒度或自定义聚合时用。
+  </Card>
+  <Card title="DEX Pools 池子" icon="droplet" href="/cn/docs/data-products/dex-pools">
+    池子级 K 线来自池子的成交。
+  </Card>
+</CardGroup>

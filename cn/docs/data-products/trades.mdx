@@ -1,9 +1,69 @@
 ---
-title: "交易"
-description: "DEX 交易流——在 Solana、Ethereum、BSC 等链上标准化的每一笔 swap。"
+title: "Trades 交易"
+description: "跨链规整的 DEX swap 事件——价格、数量、maker/taker、路由、滑点。"
+icon: "right-left"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Trades** 数据产品是 ChainStream 索引的每一笔 DEX swap 的规整版本——你可以按代币、钱包、池子、路由器查询，不用关心事件来自哪个 AMM。
+
+## 包含什么
+
+| 字段组 | 举例 |
+|:--|:--|
+| 身份 | `chainId`, `txHash`, `logIndex`, `blockNumber`, `timestamp` |
+| 双方 | `makerAddress`, `takerAddress`, `router`, `dex` |
+| 经济 | `tokenIn`, `tokenOut`, `amountIn`, `amountOut`, `priceUsd`, `sizeUsd` |
+| 上下文 | `poolAddress`, `feeTier`, `slippageBps`, `gasUsedUsd` |
+| 分类 | `side` (buy/sell)、`type` (open/close/add/remove)、`isFirstBuy` |
+
+## 覆盖与新鲜度
+
+- **链**：[支持的链](/cn/docs/supported-chains) 里全部。
+- **DEX**：Uniswap v2/v3/v4、Raydium、Meteora、PancakeSwap、Aerodrome、Jupiter 路由等——详见 [分链支持表](/cn/api-reference/kafka-topics/evm)。
+- **延迟**：区块级——Kafka 在确认后 1–2s 投递，REST 5–10s。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/cn/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/trades`、`wallets/{address}/trades`、`pools/{address}/trades`。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/cn/graphql/getting-started/overview">
+    灵活过滤器；Trades 可与 Tokens、Wallets JOIN。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/cn/api-reference/endpoint/websocket/connection">
+    `trades.token`、`trades.wallet`、`trades.pool` 实时频道。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/cn/api-reference/kafka-topics/evm">
+    各链 `*.dex.trade` 主题，Protobuf 编码。
+  </Card>
+  <Card title="SDK / CLI" icon="terminal" href="/cn/docs/access-methods/cli">
+    `client.trades.stream()`、`chainstream trades tail`。
+  </Card>
+  <Card title="MCP" icon="robot" href="/cn/docs/ai-agents/mcp-server/introduction">
+    Agent 用 `trades_list`、`trades_stream` 工具。
+  </Card>
+</CardGroup>
+
+## 常见用例
+
+- 渲染某代币的实时成交 tape
+- 计算钱包的已实现 PnL
+- 在首笔买入 / 大单上触发告警
+- 为交易机器人提供 maker/taker 上下文
+- 自定义周期聚合成 OHLC（或直接用 [Candles](/cn/docs/data-products/candles-ohlc)）
+
+## 计费
+
+REST / GraphQL 按 `limit` 分页计费；WebSocket 与 Kafka 按投递条数，流量越大阶梯折扣越多。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Candles (OHLC) K 线" icon="chart-column" href="/cn/docs/data-products/candles-ohlc">
+    不需要 tick 级粒度时用预聚合好的 K 线。
+  </Card>
+  <Card title="Smart Money 聪明钱" icon="brain" href="/cn/docs/data-products/smart-money">
+    筛选到高胜率钱包的那部分交易。
+  </Card>
+</CardGroup>

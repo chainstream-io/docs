@@ -1,9 +1,59 @@
 ---
-title: "榜單"
-description: "每條鏈上熱門、新發、遷移、衝線代幣的精選榜單。"
+title: "Rankings 榜單"
+description: "持續重算的精選代幣榜單——熱門 / 新發 / 遷移 / 衝線 / 藍籌風格——給發現場景和 Agent 用。"
+icon: "trophy"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Rankings** 資料產品是一組有觀點、持續重算的代幣榜單。每個榜單都是一個發現入口，背後邏輯對外透明，你可以按需選用。
+
+## 可用榜單
+
+| 榜單 | 呈現什麼 | 重新整理 |
+|:--|:--|:--|
+| `hot` | 過去 1h / 24h 獨立買家數 + 成交量增速最快的代幣 | 1 分鐘 |
+| `new` | 透過最低流動性與持幣人檢查的新發代幣 | 區塊級 |
+| `migrated` | 剛從 launchpad 遷到完整 DEX 的代幣 | 1 分鐘 |
+| `final-stretch` | 接近遷移閾值的 launchpad 代幣 | 1 分鐘 |
+| `stock-like` | 行為特徵接近傳統股票（低波動 / 穩步吸籌）的代幣 | 每小時 |
+| `top-gainers`、`top-losers` | 1h / 24h / 7d 漲跌幅榜 | 5 分鐘 |
+
+完整列表與引數見 [API Reference → rankings](/zh-Hant/api-reference/endpoint/data/tokens/search)。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `rankings/{list}?chain=&window=`
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/connection">
+    `rankings.{list}`——榜單成員變動實時推送。
+  </Card>
+  <Card title="MCP" icon="robot" href="/zh-Hant/docs/ai-agents/mcp-server/introduction">
+    `rankings_get`——Agent 的常用發現入口。
+  </Card>
+  <Card title="CLI" icon="terminal" href="/zh-Hant/docs/access-methods/cli">
+    `chainstream rankings hot --chain solana`
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 首頁 "現在什麼最熱" 掛件
+- 抓新代幣的 sniper feed
+- Agent 驅動的每日簡報
+- 用真實的歷史榜單資料喂回測（配合 replay 端點）
+
+## 計費
+
+每個榜單呼叫 **1 read unit**，不按條數（榜單長度有上限）。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Tokens 代幣" icon="coins" href="/zh-Hant/docs/data-products/tokens">
+    榜上代幣的完整後設資料與安全資訊。
+  </Card>
+  <Card title="價格告警教程" icon="graduation-cap" href="/zh-Hant/docs/tutorials/build-price-alert-bot">
+    端到端示例：Rankings + WebSocket。
+  </Card>
+</CardGroup>

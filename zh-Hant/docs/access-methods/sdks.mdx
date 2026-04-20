@@ -1,9 +1,77 @@
 ---
 title: "SDK"
-description: "TypeScript、Python、Go 與 Rust 的型別化用戶端函式庫。"
+description: "TypeScript / Python / Go / Rust 的型別化客戶端庫——對 REST、GraphQL、WebSocket 的地道封裝。"
+icon: "box"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream SDK 給你一套人體工程學良好的方式，從你選的語言裡呼叫每一個資料產品。底下還是同樣的 [資料產品](/zh-Hant/docs/data-products/overview) 與 [接入方式](/zh-Hant/docs/access-methods/overview)——只是加了型別、重試、預設配置。
+
+## 語言
+
+<CardGroup cols={2}>
+  <Card title="TypeScript" icon="js" href="/zh-Hant/sdks/typescript">
+    `@chainstream-io/sdk`——瀏覽器與 Node 都是一等公民。
+  </Card>
+  <Card title="Python" icon="python" href="/zh-Hant/sdks/python">
+    `chainstream`——async 優先，筆記本與機器人友好。
+  </Card>
+  <Card title="Go" icon="golang" href="/zh-Hant/sdks/go">
+    `github.com/chainstream-io/chainstream-go`——地道的 Go。
+  </Card>
+  <Card title="Rust" icon="rust" href="/zh-Hant/sdks/rust">
+    `chainstream` crate——給延遲敏感的消費者。
+  </Card>
+</CardGroup>
+
+## 安裝
+
+```bash
+npm install @chainstream-io/sdk          # TypeScript
+pip install chainstream                  # Python
+go get github.com/chainstream-io/chainstream-go
+cargo add chainstream                    # Rust
+```
+
+## 第一次呼叫——TypeScript
+
+```ts
+import { ChainStream } from "@chainstream-io/sdk";
+
+const cs = new ChainStream({ apiKey: process.env.CHAINSTREAM_API_KEY! });
+
+const results = await cs.tokens.search({
+  chain: "solana",
+  query: "USDC",
+  limit: 5,
+});
+
+for (const t of results) {
+  console.log(t.symbol, t.priceUsd);
+}
+```
+
+## 常見模式
+
+- **REST**：`cs.tokens.*`、`cs.wallets.*`、`cs.trades.*`……
+- **WebSocket**：`cs.subscribe("trades.token", { address }, msg => ...)`
+- **GraphQL**：`cs.gql(query, variables)`——透過 codegen 返回完整型別化結果
+- **CLI 橋接**：`cs.cli("rankings", "hot")` 與 `chainstream rankings hot` 等價
+
+## 什麼時候用
+
+- 整合進應用——基本上都是首選
+- 希望型別、重試、錯誤對映、分頁都處理好
+- 希望同一份資源在 REST 與 WebSocket 之間切換不用重寫
+
+**不建議用** 的場景：一次性任務，`curl` + REST 更快（或用 CLI）。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="SDK 目錄" icon="box" href="/zh-Hant/sdks/overview">
+    各語言指南與釋出說明。
+  </Card>
+  <Card title="Reference" icon="code" href="/zh-Hant/api-reference/overview">
+    底層 REST / GraphQL / WebSocket 接入面。
+  </Card>
+</CardGroup>

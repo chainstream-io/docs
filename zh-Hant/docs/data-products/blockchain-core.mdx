@@ -1,9 +1,65 @@
 ---
-title: "區塊鏈底層資料"
-description: "原始區塊、交易與鏈級指標。"
+title: "Blockchain Core 底層資料"
+description: "原始區塊、交易、gas 指標與鏈級狀態——當規整資料產品不夠用時。"
+icon: "cube"
 ---
 
+**Blockchain Core** 資料產品是 ChainStream 釋出的所有其他資料的底層基礎。當規整產品（Tokens、Trades、Wallets）表達不了你要的事實，或者你需要端到端核對 / 審計時，用它。
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  多數整合應該先從 Tokens / Trades / Wallets 入手——上層產品更便宜、已經去噪。
 </Note>
+
+## 包含什麼
+
+| 資料集 | 關鍵欄位 |
+|:--|:--|
+| Blocks | `number`, `hash`, `parentHash`, `timestamp`, `gasUsed`, `baseFeePerGas`, `miner` |
+| Transactions | `hash`, `from`, `to`, `value`, `input`, `status`, `gasUsed`, `effectiveGasPrice` |
+| Logs / Events | `txHash`, `logIndex`, `address`, `topics[]`, `data`, `removed` |
+| Gas 指標 | `blockGasUsage`, `chainGasOracle`（EIP-1559 base / priority 費） |
+| 鏈狀態 | `latestBlock`, `finality`, `reorgsLast1h` |
+
+## 覆蓋與新鮮度
+
+- 所有支援鏈的原始資料，儘可能回填到 genesis。
+- 延遲：區塊與日誌在最終確認後 1–2s 內投遞。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `blocks/{number}`、`transactions/{hash}`、`logs?filters=…`。
+  </Card>
+  <Card title="Kafka" icon="tower-broadcast" href="/zh-Hant/api-reference/kafka-topics/evm">
+    各鏈 `*.block`、`*.tx`、`*.log` 主題（Protobuf）。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    區塊 + 交易 + 解碼後的事件 JOIN 查詢。
+  </Card>
+  <Card title="SDK" icon="box" href="/zh-Hant/sdks/overview">
+    blocks / transactions / logs 的型別化封裝。
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 獨立核對某個上層資料點
+- 需要原始日誌的自定義索引管道
+- gas price 預言機與手續費估算服務
+- 鏈健康看板（重組率、叔塊率、base fee 漂移）
+
+## 計費
+
+原始資料端點按條數計費。Kafka 主題按投遞條數計費，流處理檔位有折扣。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Kafka 主題目錄" icon="tower-broadcast" href="/zh-Hant/api-reference/kafka-topics/evm">
+    各鏈原始主題與 schema。
+  </Card>
+  <Card title="資料新鮮度與 SLA" icon="gauge-high" href="/zh-Hant/docs/data-products/data-freshness">
+    各鏈、各接入面的延遲預期。
+  </Card>
+</CardGroup>

@@ -1,9 +1,61 @@
 ---
-title: "持幣人"
-description: "代幣持倉分布、頂級持幣人、持幣變化。"
+title: "Holders 持幣人"
+description: "任意代幣的頂級持幣人、分佈、集中度與時間變化。"
+icon: "users"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+**Holders** 資料產品對外暴露每個代幣的持幣人表與分佈指標——你可以回答"誰持有這個代幣"、"集中度有多高"、"誰剛剛動了"，不用去抓瀏覽器。
+
+## 包含什麼
+
+| 欄位組 | 舉例 |
+|:--|:--|
+| 持幣表 | `rank`, `address`, `balance`, `shareOfSupply`, `entityLabel`, `costBasisUsd` |
+| 分佈 | `giniCoefficient`, `top10Share`, `top100Share` |
+| 變化 | `changesLast24h`（新增、退出、排名變化） |
+| 分類 | `bucket`——大戶 / 散戶 / 合約 / 交易所 / 流動性池 |
+
+## 覆蓋與新鮮度
+
+- 覆蓋 [支援的鏈](/zh-Hant/docs/supported-chains) 全部。
+- 持幣餘額在命中轉賬事件之後秒級重新整理。
+- 分佈指標每 5 分鐘重算。
+
+## 接入方式
+
+<CardGroup cols={2}>
+  <Card title="REST" icon="database" href="/zh-Hant/api-reference/endpoint/data/tokens/search">
+    `tokens/{address}/holders`、`tokens/{address}/distribution`。
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/zh-Hant/api-reference/endpoint/websocket/connection">
+    `holders.changed`——Top-N 變化實時推送。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/graphql/getting-started/overview">
+    Holders 與 Wallets JOIN 得到富化行。
+  </Card>
+  <Card title="SDK / MCP" icon="robot" href="/zh-Hant/docs/ai-agents/mcp-server/introduction">
+    Agent 用 `tokens_holders`、`tokens_distribution`。
+  </Card>
+</CardGroup>
+
+## 常見用例
+
+- 檢測大戶吸籌 / 派發
+- 空投資格快照
+- 代幣盡調的集中度風險評分
+- Top-10 佔比隨時間的圖表
+
+## 計費
+
+每次呼叫 **1 read unit**；大持幣表分頁返回。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Wallets 錢包" icon="wallet" href="/zh-Hant/docs/data-products/wallets">
+    從任意持幣人切進去看完整檔案與 PnL。
+  </Card>
+  <Card title="Smart Money 聰明錢" icon="brain" href="/zh-Hant/docs/data-products/smart-money">
+    聰明錢出現在持幣表上時發現。
+  </Card>
+</CardGroup>

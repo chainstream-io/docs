@@ -1,9 +1,159 @@
 ---
 title: "CLI Commands Reference"
 description: "Full list of chainstream CLI commands, flags and output formats."
+icon: "terminal"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+The `chainstream` CLI exposes every data product, GraphQL cube and DeFi primitive over a single binary. This page is the authoritative command reference — for narrative usage and installation see [Access Methods → CLI](/en/docs/access-methods/cli).
+
+## Install
+
+```bash
+# Global install (recommended for interactive use)
+npm install -g @chainstream-io/cli
+
+# Zero-install, always-latest (recommended for agents and CI)
+npx @chainstream-io/cli <command>
+```
+
+Either invocation works everywhere below. The short form `chainstream <cmd>` is used throughout this reference and is equivalent to `npx @chainstream-io/cli <cmd>`.
+
+## Global flags
+
+| Flag | Purpose |
+|------|---------|
+| `--version` | Print the CLI version and exit |
+| `--json` | Emit single-line machine-readable JSON (default output is pretty-printed JSON) |
+| `--help` | Print help for the current command or group |
+
+## Environment variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `CHAINSTREAM_API_KEY` | API key used in lieu of `config.json` | unset |
+| `CHAINSTREAM_API_URL` | Override REST base URL | `https://api.chainstream.io` |
+| `CHAINSTREAM_AUTH_URL` | Override Auth service URL | production default |
+| `CHAINSTREAM_GRAPHQL_URL` | Override GraphQL endpoint | `https://graphql.chainstream.io/graphql` |
+| `SOLANA_RPC_URL` | Override Solana RPC for wallet / balance reads | public RPC |
+| `BASE_RPC_URL` | Override Base RPC | public RPC |
+
+Config is persisted to `~/.config/chainstream/config.json`; P-256 wallet keys live in `~/.config/chainstream/keys/`. `chainstream logout` clears the wallet config but preserves the keys.
+
+## Authentication commands (top-level)
+
+These commands are registered at the program root (no sub-group).
+
+| Command | Purpose | Arguments / Options |
+|---------|---------|---------------------|
+| `login` | Create a TEE-backed wallet (default) or start an email OTP flow. Auto-grants the **nano trial** (50K CU, 30 days) on first login | `[email]`; `--key`; `--email` |
+| `verify` | Complete an email OTP login started by `login --email` | `--otp-id`; `--code`; `--email` |
+| `logout` | Clear the session (keeps keys on disk) | — |
+| `bind-email` | Bind an email to an existing wallet | `[email]` |
+| `bind-email-verify` | Finish the email-bind OTP flow (non-interactive) | `--otp-id`; `--code`; `--email` |
+
+## `token` — Token information and analytics
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `search` | Search tokens by keyword | `--keyword` (required); `--chain` (required); `--limit` |
+| `info` | Get full token detail | `--chain`; `--address` |
+| `security` | Security report (honeypot, mint authority, freeze authority, etc.) | `--chain`; `--address` |
+| `holders` | Top token holders | `--chain`; `--address`; `--limit` |
+| `candles` | OHLCV candlesticks | `--chain`; `--address`; `--resolution`; `--from`; `--to`; `--limit` |
+| `pools` | Liquidity pools for a token | `--chain`; `--address` |
+
+## `market` — Market data and discovery
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `trending` | Hot / trending tokens by window | `--chain`; `--duration`; `--limit` |
+| `new` | Newly created tokens | `--chain`; `--limit` |
+| `trades` | Recent trades, optionally filtered to a token | `--chain`; `--token`; `--limit` |
+
+## `wallet` — Wallet analytics, management, and signing
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `sign` | Sign a serialized transaction with the on-host wallet | `--chain`; `--tx` |
+| `profile` | PnL + net worth + top holdings in one call | `--chain`; `--address` |
+| `pnl` | PnL detail | `--chain`; `--address` |
+| `holdings` | Token balances | `--chain`; `--address`; `--limit` |
+| `activity` | Transfer history | `--chain`; `--address`; `--limit` |
+| `address` | Show current wallet addresses | — |
+| `balance` | Native + USDC balance (single request) | `--chain` (`sol` \| `base`) |
+| `set-raw` | Import a raw private key (dev / testing only) | `--chain` (`base` \| `sol`) |
+| `link` | Link a wallet address to your subscription | `--chain` (`evm` \| `solana`) |
+| `pricing` | List available x402 plans and prices | — |
+
+## `dex` — DEX route, swap, and token creation
+
+All commands return **unsigned** transactions built server-side; signing happens on the host wallet.
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `route` | Aggregated route + unsigned swap transaction | `--chain`; `--from`; `--input-token`; `--output-token`; `--amount`; `--slippage`; `--dex`; `--recipient`; `--anti-mev`; `--gas-price`; `--gas-limit`; `--max-fee-per-gas`; `--max-priority-fee-per-gas` |
+| `swap` | Unsigned swap transaction (direct, no aggregation) | `--chain`; `--from`; `--input-token`; `--output-token`; `--amount`; `--slippage`; `--dex` |
+| `create` | Unsigned launchpad token creation transaction | `--chain`; `--from`; `--name`; `--symbol`; `--dex`; `--uri`; `--image` |
+
+## `tx` — Broadcast and gas
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `send` | Broadcast a signed transaction | `--chain`; `--signed-tx`; `--submit-type`; `--anti-mev` |
+| `gas-price` | Current gas price (EVM only) | `--chain` (`eth` \| `bsc`) |
+| `estimate-gas` | Estimate gas limit for an EVM call | `--chain`; `--from`; `--to`; `--data`; `--value` |
+
+## `job` — Async job polling
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `status` | Check the status of a long-running job | `--id`; `--wait`; `--timeout` |
+
+## `graphql` — GraphQL schema and queries
+
+See the full usage guide in [Access Methods → CLI → GraphQL subcommand](/en/docs/access-methods/cli#graphql-subcommand) and the Agent Skill at [chainstream-graphql](/en/docs/ai-agents/agent-skills/chainstream-graphql).
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `schema` | Discover schema (cubes, types, fields) | `--summary`; `--type <cube>`; `--full`; `--refresh` |
+| `query` | Execute a GraphQL query | `--query <gql>`; `--file <path>`; `--var <json>` |
+
+## `plan` — Subscription and x402 auto-pay
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `status` | Current plan, remaining quota and usage | `--chain`; `--address` |
+| `purchase` | Purchase a plan via x402 / MPP (auto-saves the returned API key to `config.json`) | `--plan` |
+
+## `config` — Local configuration
+
+| Subcommand | Purpose | Options |
+|-----------|---------|---------|
+| `set` | Set a configuration value | `--key` (`apiKey` \| `baseUrl` \| `walletChain`); `--value` |
+| `get` | Show current configuration | `--key` (optional) |
+| `auth` | Show current authentication status | — |
+
+## Exit behaviour
+
+- `0` — success (or empty result)
+- `1` — user-facing error with JSON payload on stdout (unless `--json` is off, in which case a formatted error is printed)
+- Non-zero exit on auth failure (`401`), payment-required (`402`), or network error
+
+On 402 from any data/GraphQL command, the CLI prints a pointer to `wallet pricing` and `plan purchase`. `plan purchase` itself handles x402 auto-pay transparently.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Access Methods → CLI" icon="terminal" href="/en/docs/access-methods/cli">
+    Narrative usage: install, auth, first commands, GraphQL subcommand.
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/en/docs/ai-agents/agent-skills/introduction">
+    How AI agents should drive the CLI.
+  </Card>
+  <Card title="x402 Payments" icon="credit-card" href="/en/docs/platform/billing-payments/x402-payments">
+    How `plan purchase` and on-the-fly 402 handling work.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/en/docs/access-methods/graphql">
+    Endpoint, schema and authentication for the GraphQL surface.
+  </Card>
+</CardGroup>

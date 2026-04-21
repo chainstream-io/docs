@@ -1,9 +1,116 @@
 ---
-title: "Solana Kafka Topics"
-description: "Solana 链 Kafka topic 名称、key 与 payload schema 参考。"
+title: "Solana Kafka 主题"
+description: "Solana Kafka 主题名称、分区键和 payload schema 的参考列表。"
+icon: "sun"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream 为 Solana 发布的 Kafka 主题的权威列表。所有主题都以 `sol.` 为前缀。
+
+端到端连接细节、SASL 凭证与 SDK 示例请参考 [接入方式 → Kafka Streams → Solana Streams](/cn/docs/access-methods/kafka-streams/solana-streams)。权威的 Protobuf 定义见 [github.com/chainstream-io/streaming_protobuf/solana](https://github.com/chainstream-io/streaming_protobuf/tree/main/solana)。
+
+## 分区
+
+- **Mint 地址**（32 字节 pubkey，base58 编码）——代币维度的主题（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`、`token-market-caps`、`trade-stats`、`token-holdings`）
+- **账户地址**——账户维度的主题（`balances`、`transfers`）
+
+同一 mint 或账户的事件按 slot 顺序落入同一分区。
+
+## 主题矩阵
+
+### DEX 成交
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.dex.trades` | `TradeEvents` | `solana/trade_event.proto` | 原始 DEX swap（Raydium、Meteora、Pump.fun、Jupiter 路由等） |
+| `sol.dex.trades.processed` | `TradeEvents` | `solana/trade_event.proto` | 叠加 USD / SOL 价格、路由解析、可疑标志 |
+
+### 代币
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.tokens` | `TokenEvents` | `solana/token_event.proto` | 代币生命周期事件（mint、元数据更新、权限变更） |
+| `sol.tokens.created` | `TokenEvents` | `solana/token_event.proto` | 只包含 mint 创建事件的过滤流 |
+| `sol.tokens.processed` | `TokenEvents` | `solana/token_event.proto` | 代币 + 元数据 JSON、图片、社交 |
+
+### 代币级统计
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.token-prices` | `TokenPriceEvent` | `solana/token_price_event.proto` | 聚合价格更新（USD + SOL） |
+| `sol.token-supplies` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | Mint 供应量变化（mint / burn） |
+| `sol.token-supplies.processed` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | 供应量（按 decimal 规整 + USD 计价） |
+| `sol.token-market-caps.processed` | `TokenMarketCapEvent` | `solana/token_market_cap_event.proto` | 市值（流通量 × 价格） |
+| `sol.token-holdings` | `TokenHoldingEvent` | `solana/token_holding_event.proto` | 持币人数、Top-N 集中度 |
+| `sol.trade-stats` | `TradeStatEvent` | `solana/trade_stat_event.proto` | 成交次数、成交量、独立买卖方 |
+
+### 余额
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.balances` | `BalanceEvents` | `solana/balance_event.proto` | 各账户原始余额变更事件 |
+| `sol.balances.processed` | `BalanceEvents` | `solana/balance_event.proto` | 余额事件 + USD / SOL 计价 |
+
+### DEX 池子
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.dex.pools` | `DexPoolEvents` | `solana/dex_pool_event.proto` | 池子创建 / 更新 / sync 事件（含 CLMM tick） |
+| `sol.dex.pools.processed` | `DexPoolEvents` | `solana/dex_pool_event.proto` | 池事件 + USD / SOL 流动性、费率档 |
+
+### 转账
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.transfers` | `TransferEvents` | `solana/transfer_event.proto` | 全量 SPL + 原生币转账（含 program 调用的转账） |
+| `sol.transfers.processed` | `TransferProcessedEvents` | `solana/transfer_processed_event.proto` | 转账 + slot 时刻价格 + USD 计价 |
+
+### K 线
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `sol.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 多周期预聚合 OHLC |
+
+## 示例消费者
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.solana.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["sol.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+Go 与 JavaScript 对应实现见 [Solana Streams 指南](/cn/docs/access-methods/kafka-streams/solana-streams)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka 主题" icon="ethereum" href="/cn/api-reference/kafka-topics/evm">
+    Ethereum、BSC、Base、Polygon 等的主题列表
+  </Card>
+  <Card title="Tron Kafka 主题" icon="bolt" href="/cn/api-reference/kafka-topics/tron">
+    Tron 的主题列表
+  </Card>
+  <Card title="Kafka Streams 总览" icon="server" href="/cn/docs/access-methods/kafka-streams/overview">
+    连接、认证、分区模型
+  </Card>
+  <Card title="Solana Streams 指南" icon="book" href="/cn/docs/access-methods/kafka-streams/solana-streams">
+    字段定义与消费者示例
+  </Card>
+</CardGroup>

@@ -1,12 +1,12 @@
 ---
-title: "Chain Groups"
-description: "How Cubes are organized into EVM, Solana, and Trading Chain Groups"
+title: "鏈分組"
+description: "Cubes 如何被組織到 EVM、Solana 與 Trading Chain Groups 中"
 icon: "layer-group"
 ---
 
-## 概覽
+## 概述
 
-ChainStream GraphQL 將 25 個 Cube 分為三個 **Chain Group（鏈群組）**。每個群組代表一條區塊鏈生態，並決定可用的 Cube、`network` 參數的行為，以及有哪些鏈專屬欄位。
+ChainStream GraphQL 將其 25 個 Cube 劃分為三個 **鏈組（Chain Groups）**。每個組代表一類區塊鏈生態，決定可用的 Cube、`network` 引數如何生效，以及存在哪些鏈特有欄位。
 
 ```graphql
 type ChainStream {
@@ -20,7 +20,7 @@ type ChainStream {
 
 ## EVM
 
-**EVM** 群組包含所有 EVM 相容鏈的 Cube。查詢時**必須**提供 `network` 引數以指定要查哪條鏈。
+**EVM** 組包含適用於所有 EVM 相容鏈的 Cube。查詢時 **必須** 提供 `network` 引數以指定鏈。
 
 ### 可用網路
 
@@ -31,7 +31,7 @@ type ChainStream {
 | `polygon` | Polygon |
 
 <Warning>
-**Polygon 資料可用性：** 目前僅 **Prediction Markets** 相關 Cube（`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`）在 Polygon 有資料。其餘 Cube（DEXTrades、Blocks、Transfers 等）仍在部署中——對它們下查詢可能回傳錯誤。
+**Polygon 資料可用性：** 目前僅有 **預測市場** 相關 Cube（`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`）在 Polygon 上有資料。其他 Cube（DEXTrades、Blocks、Transfers 等）正在部署中 —— 對它們的查詢可能返回錯誤。
 </Warning>
 
 ### Cubes
@@ -41,15 +41,15 @@ type ChainStream {
 
 **僅 EVM：**
 - `Events` — 智慧合約事件日誌（已解碼的 topic 與 data）
-- `Calls` — 內部呼叫 trace（CALL、DELEGATECALL、CREATE 等）
-- `MinerRewards` — 區塊獎勵明細（static、dynamic、uncle、burned fees）
-- `DEXPoolSlippages` — 流動池價格滑點分析
-- `Uncles` — Uncle 區塊資料（主要為 Ethereum PoW 歷史）
-- `PredictionTrades` — 預測市場成交 *(主要為 Polygon)*
-- `PredictionManagements` — 預測市場管理事件 *(主要為 Polygon)*
-- `PredictionSettlements` — 預測市場結算 *(主要為 Polygon)*
+- `Calls` — 內部呼叫追蹤（CALL、DELEGATECALL、CREATE 等）
+- `MinerRewards` — 出塊獎勵明細（靜態、動態、叔塊、銷燬手續費等）
+- `DEXPoolSlippages` — 池子價格滑點分析
+- `Uncles` — 叔塊資料（主要為以太坊 PoW 歷史）
+- `PredictionTrades` — 預測市場交易 *（主要為 Polygon）*
+- `PredictionManagements` — 預測市場管理事件 *（主要為 Polygon）*
+- `PredictionSettlements` — 預測市場結算 *（主要為 Polygon）*
 
-### 查詢範例
+### 示例查詢
 
 ```graphql
 query {
@@ -74,7 +74,7 @@ query {
 
 ## Solana
 
-**Solana** 群組包含 Solana 鏈的 Cube。網路為隱式（`sol`）——**不需要** `network` 引數。
+**Solana** 組包含 Solana 鏈上的 Cube。網路為隱式（`sol`）— 無需 `network` 引數。
 
 ### Cubes
 
@@ -82,12 +82,12 @@ query {
 `DEXTrades`、`DEXTradeByTokens`、`Transfers`、`BalanceUpdates`、`DEXPoolEvents`、`TokenSupplyUpdates`、`Blocks`、`Transactions`、`TransactionBalances`、`DEXPools`、`TokenHolders`、`WalletTokenPnL`
 
 **僅 Solana：**
-- `Instructions` — 程式 instruction 資料（程式位址、方法、帳戶、log）
-- `InstructionBalanceUpdates` — instruction 層級的餘額變動
+- `Instructions` — 程式指令資料（程式地址、方法、賬戶、日誌）
+- `InstructionBalanceUpdates` — 指令級別的餘額變動
 - `Rewards` — 驗證者與質押獎勵
-- `DEXOrders` — DEX 訂單簿事件（限價單、取消、成交）
+- `DEXOrders` — DEX 訂單簿事件（限價單、撤單、成交）
 
-### 查詢範例
+### 示例查詢
 
 ```graphql
 query {
@@ -110,38 +110,38 @@ query {
 
 ### 跨鏈欄位命名
 
-下表為各鏈慣用的欄位名稱。不過 Record 型別會以**超集**包含**所有鏈**的欄位——每個 Cube 的 Record 都同時有 `MintAddress` 與 `SmartContract`，且對應同一底層資料。在任何鏈上都可任選其一使用。
+下表列出各鏈的慣用欄位名。但 Record 型別會包含 **所有鏈欄位的並集** —— 每個 Cube 的 Record 中同時存在 `MintAddress` 與 `SmartContract`，底層資料一致。任意鏈上均可使用其中任一名稱。
 
-| 概念 | 慣用（Solana） | 慣用（EVM） | 跨鏈？ |
+| 概念 | 慣用（Solana） | 慣用（EVM） | 跨鏈通用？ |
 |:--------|:---------------------|:-------------------|:-------------|
-| 代幣位址 | `MintAddress` | `SmartContract` | 兩者在所有鏈皆可用 |
-| 交易 ID | `Signature` / `Hash` | `Hash` | 兩者在所有鏈皆可用 |
-| 區塊識別 | `Slot` | `Number` | 兩者在所有鏈皆可用 |
-| 程式／合約 | `ProgramAddress` | `SmartContract` | 兩者在所有鏈皆可用 |
-| 付費者 | `FeePayer` | `From` | 兩者在所有鏈皆可用 |
+| 代幣地址 | `MintAddress` | `SmartContract` | 各鏈均可 |
+| 交易 ID | `Signature` / `Hash` | `Hash` | 各鏈均可 |
+| 區塊標識 | `Slot` | `Number` | 各鏈均可 |
+| 程式/合約 | `ProgramAddress` | `SmartContract` | 各鏈均可 |
+| 手續費支付方 | `FeePayer` | `From` | 各鏈均可 |
 
 <Tip>
-這表示你可以用**同一套查詢範本**套用到所有鏈，而不必改欄位名稱。例如 `Currency { MintAddress }` 在 Solana 與 EVM 查詢都能用。
+因此你可以用 **同一套查詢模板** 跨鏈查詢而無需改欄位名。例如 `Currency { MintAddress }` 在 Solana 與 EVM 查詢中均可使用。
 </Tip>
 
 ---
 
 ## Trading
 
-**Trading** 群組提供**跨鏈預先彙總**的交易分析。它將所有支援鏈的資料合併到具備 `chain` 維度、可篩選的統一 materialized view。
+**Trading** 組提供 **跨鏈預聚合** 的交易分析資料。它將各支援鏈的資料合併為統一物化檢視，並透過 `chain` 維度做篩選。
 
 ### Cubes
 
-- `Pairs` — OHLC K 線（開／高／低／收、成交量、成交筆數）
-- `Tokens` — 單一代幣交易統計（成交量、買賣拆分、不重複交易者數）
+- `Pairs` — OHLC K 線（開高低收、成交量、成交筆數）
+- `Tokens` — 按代幣的交易統計（成交量、買賣拆分、獨立交易者數）
 
-### 與 EVM／Solana 群組的主要差異
+### 與 EVM / Solana 組的主要區別
 
-1. **沒有 `network` 引數** — Trading 群組跨鏈合併資料。請在資料內用 `chain` 維度依網路篩選。
-2. **跨鏈資料** — 單一查詢可同時回傳 `sol`、`eth`、`bsc` 等資料。
-3. **預先彙總** — 資料由 DWM 層以分鐘粒度物化。
+1. **無 `network` 引數** — Trading 組跨鏈彙總資料，請在資料內用 `chain` 維度按網路過濾。
+2. **跨鏈資料** — 單次查詢可同時返回 `sol`、`eth`、`bsc` 等。
+3. **預聚合** — 資料來自 DWM 層，按分鐘粒度物化。
 
-### 範例：跨鏈 OHLC
+### 示例：跨鏈 OHLC
 
 ```graphql
 query {
@@ -162,7 +162,7 @@ query {
 }
 ```
 
-### 範例：依鏈的代幣交易統計
+### 示例：按鏈的代幣成交統計
 
 ```graphql
 query {
@@ -185,25 +185,25 @@ query {
 
 ---
 
-## Chain Group 對照
+## 鏈組對比
 
 | 特性 | EVM | Solana | Trading |
 |:--------|:----|:-------|:--------|
 | **`network` 引數** | 必填（`eth`、`bsc`、`polygon`） | 不需要（隱式 `sol`） | 不需要（跨鏈） |
 | **獨有 Cube** | Events、Calls、MinerRewards、Uncles、DEXPoolSlippages、Prediction* | Instructions、InstructionBalanceUpdates、Rewards、DEXOrders | Pairs、Tokens |
-| **資料粒度** | 單筆事件（DWD）+ 彙總（DWM／DWS） | 單筆事件 + instruction 層級 | 預先彙總（DWM） |
-| **`dataset` 支援** | 有（多數 Cube） | 有（多數 Cube） | 有 |
-| **`aggregates` 支援** | 有 | 有 | 有 |
+| **資料粒度** | 逐事件（DWD）+ 聚合（DWM/DWS） | 逐事件 + 指令級 | 預聚合（DWM） |
+| **`dataset` 支援** | 是（多數 Cube） | 是（多數 Cube） | 是 |
+| **`aggregates` 支援** | 是 | 是 | 是 |
 
 ---
 
 ## 相關文件
 
 <CardGroup cols={2}>
-  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
-    全部 25 個 Cube 的欄位結構與使用情境說明。
+  <Card title="資料 Cubes" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+    全部 25 個 Cube 的欄位結構與使用場景詳解。
   </Card>
   <Card title="Dataset 與 Aggregates" icon="database" href="/zh-Hant/graphql/schema/dataset-aggregates">
-    控制資料來源範圍與預先彙總行為。
+    控制資料來源範圍與預聚合行為。
   </Card>
 </CardGroup>

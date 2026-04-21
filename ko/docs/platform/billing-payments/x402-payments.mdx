@@ -189,12 +189,7 @@ const x402Fetch = createX402Fetch({
 
 // 일반 fetch처럼 사용 — 402 결제가 자동으로 처리됩니다
 const response = await x402Fetch(
-  "https://api.chainstream.io/v1/tokens/analyze",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tokenAddress: "0x1234...abcd", chain: "ethereum" }),
-  }
+  "https://api.chainstream.io/v2/token/eth/0x1234abcd"
 );
 
 const data = await response.json();
@@ -209,12 +204,8 @@ console.log(data);
 import { parsePaymentHeaders, createPaymentProof } from "@x402/core";
 import { sendPayment } from "@x402/evm";
 
-// 1. 초기 요청 보내기
-const response = await fetch("https://api.chainstream.io/v1/tokens/analyze", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ tokenAddress: "0x1234...abcd" }),
-});
+// 1. 초기 요청 보내기 (인증/결제 없음)
+const response = await fetch("https://api.chainstream.io/v2/token/eth/0x1234abcd");
 
 if (response.status === 402) {
   // 2. 헤더에서 결제 세부 정보 파싱

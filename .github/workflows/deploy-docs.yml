@@ -1,0 +1,76 @@
+name: Deploy Docs (tag → mintlify-deploy)
+
+# Mintlify auto-deploys whenever its tracked branch receives a commit.
+# Instead of letting every push to `main` trigger a deploy, we point
+# Mintlify at a dedicated branch (`mintlify-deploy`) and only fast-forward
+# that branch when a release tag is pushed from any branch.
+#
+# Usage:
+#   git tag release-2026.04.20     # or v1.2.3
+#   git push origin release-2026.04.20
+#
+# Tag patterns accepted:
+#   - release-*   (e.g. release-2026.04.20, release-v3-hotfix)
+#   - v*          (e.g. v1.2.3)
+#
+# One-time setup in Mintlify dashboard:
+#   Settings → Git → change "Deployment branch" from `main` to `mintlify-deploy`.
+
+on:
+  push:
+    tags:
+      - "release-*"
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or commit SHA to deploy"
+        required: true
+        default: "main"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mintlify-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Fast-forward mintlify-deploy to ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Resolve commit SHA
+        id: sha
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Deploying commit: $SHA"
+          git log -1 --format='%h %s%n  author: %an <%ae>%n  date: %ai'
+
+      - name: Push commit to mintlify-deploy branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git push --force origin "${{ steps.sha.outputs.sha }}:refs/heads/mintlify-deploy"
+
+      - name: Summary
+        run: |
+          TAG_OR_REF="${{ github.event.inputs.ref || github.ref_name }}"
+          SHA="${{ steps.sha.outputs.sha }}"
+          {
+            echo "## Mintlify deploy triggered"
+            echo ""
+            echo "- Source ref: \`$TAG_OR_REF\`"
+            echo "- Commit:     \`$SHA\`"
+            echo "- Pushed to:  \`mintlify-deploy\`"
+            echo ""
+            echo "Mintlify will rebuild the site automatically."
+          } >> "$GITHUB_STEP_SUMMARY"

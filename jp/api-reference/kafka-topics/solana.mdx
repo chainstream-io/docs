@@ -1,9 +1,116 @@
 ---
-title: "Solana Kafka Topics"
-description: "Reference list of Solana Kafka topic names, keys and payload schemas."
+title: "Solana Kafka トピック"
+description: "Solana の Kafka トピック名、パーティションキー、ペイロードスキーマの正式な一覧。"
+icon: "sun"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+Solana で配信される Kafka トピックの正式な一覧です。すべてのトピックは `sol.` プレフィックスを使用します。
+
+エンドツーエンドの接続方法、SASL 認証情報、SDK の例については [アクセス方法 → Kafka ストリーム → Solana ストリーム](/jp/docs/access-methods/kafka-streams/solana-streams) を参照してください。正式な Protobuf 定義は [github.com/chainstream-io/streaming_protobuf/solana](https://github.com/chainstream-io/streaming_protobuf/tree/main/solana) を参照してください。
+
+## パーティショニング
+
+- **Mint アドレス**（32 バイト pubkey、base58 エンコード） — トークン中心のトピック（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`、`token-market-caps`、`trade-stats`、`token-holdings`）
+- **アカウントアドレス** — アカウント中心のトピック（`balances`、`transfers`）
+
+同じ mint／アカウントのイベントは同じパーティションに slot 順で到達します。
+
+## トピックマトリックス
+
+### DEX トレード
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.dex.trades` | `TradeEvents` | `solana/trade_event.proto` | 生の DEX スワップ（Raydium、Meteora、Pump.fun、Jupiter ルートなど） |
+| `sol.dex.trades.processed` | `TradeEvents` | `solana/trade_event.proto` | USD／SOL 価格、ルーター解決、不審フラグを付与したもの |
+
+### トークン
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.tokens` | `TokenEvents` | `solana/token_event.proto` | トークンライフサイクルイベント（mint、メタデータ更新、authority 変更） |
+| `sol.tokens.created` | `TokenEvents` | `solana/token_event.proto` | mint 作成イベントのみにフィルタしたストリーム |
+| `sol.tokens.processed` | `TokenEvents` | `solana/token_event.proto` | メタデータ JSON、image、socials を付与したトークン |
+
+### トークンレベル統計
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.token-prices` | `TokenPriceEvent` | `solana/token_price_event.proto` | 集計済み価格更新（USD ＋ SOL） |
+| `sol.token-supplies` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | Mint の supply 変化（mint／burn） |
+| `sol.token-supplies.processed` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | 小数正規化と USD 換算を付与した supply |
+| `sol.token-market-caps.processed` | `TokenMarketCapEvent` | `solana/token_market_cap_event.proto` | 時価総額（流通量 × 価格） |
+| `sol.token-holdings` | `TokenHoldingEvent` | `solana/token_holding_event.proto` | 保有者数、トップ N 集中度 |
+| `sol.trade-stats` | `TradeStatEvent` | `solana/trade_stat_event.proto` | 取引数、出来高、ユニーク買い手／売り手 |
+
+### 残高
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.balances` | `BalanceEvents` | `solana/balance_event.proto` | アカウントごとの生の残高変動イベント |
+| `sol.balances.processed` | `BalanceEvents` | `solana/balance_event.proto` | USD ＋ SOL 換算を付与した残高イベント |
+
+### DEX プール
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.dex.pools` | `DexPoolEvents` | `solana/dex_pool_event.proto` | プールの作成／更新／同期イベント（CLMM tick を含む） |
+| `sol.dex.pools.processed` | `DexPoolEvents` | `solana/dex_pool_event.proto` | 流動性 USD ＋ SOL 換算と fee tier を付与したプールイベント |
+
+### トランスファー
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.transfers` | `TransferEvents` | `solana/transfer_event.proto` | すべての SPL ＋ネイティブ転送（プログラム経由の転送を含む） |
+| `sol.transfers.processed` | `TransferProcessedEvents` | `solana/transfer_processed_event.proto` | slot 時点の価格と USD 換算を付与した転送 |
+
+### ローソク足
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `sol.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 複数解像度で事前集計された OHLC |
+
+## コンシューマ例
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.solana.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["sol.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+Go および JavaScript の等価例は [Solana ストリームガイド](/jp/docs/access-methods/kafka-streams/solana-streams) を参照してください。
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka トピック" icon="ethereum" href="/jp/api-reference/kafka-topics/evm">
+    Ethereum、BSC、Base、Polygon などのトピック一覧
+  </Card>
+  <Card title="Tron Kafka トピック" icon="bolt" href="/jp/api-reference/kafka-topics/tron">
+    Tron のトピック一覧
+  </Card>
+  <Card title="Kafka ストリーム概要" icon="server" href="/jp/docs/access-methods/kafka-streams/overview">
+    接続、認証、パーティションモデル
+  </Card>
+  <Card title="Solana ストリームガイド" icon="book" href="/jp/docs/access-methods/kafka-streams/solana-streams">
+    フィールド定義とコンシューマ例
+  </Card>
+</CardGroup>

@@ -39,9 +39,9 @@ import { ChainStream } from "@chainstream-io/sdk";
 
 const cs = new ChainStream({ apiKey: process.env.CHAINSTREAM_API_KEY! });
 
-const results = await cs.tokens.search({
+const results = await cs.token.search({
   chain: "solana",
-  query: "USDC",
+  keyword: "USDC",
   limit: 5,
 });
 
@@ -49,6 +49,21 @@ for (const t of results) {
   console.log(t.symbol, t.priceUsd);
 }
 ```
+
+## よくあるパターン
+
+- **REST** — `cs.token.*`, `cs.wallet.*`, `cs.trade.*`, `cs.ranking.*`, `cs.dex.*` ...
+- **WebSocket** — `cs.stream.subscribeTokenTrade({ chain, tokenAddress, callback })`（candles / stats / holders / wallets / rankings / pools にも対応メソッドあり）
+- **GraphQL** — `cs.gql(query, variables)` は codegen により完全型付けされた結果を返します
+- **CLI ブリッジ** — `cs.cli("market", "trending", { chain: "sol", duration: "24h" })` は `chainstream market trending --chain sol --duration 24h` と同じロジックを実行します
+
+## 使いどころ
+
+- アプリケーションに組み込むとき — ほぼ常にこれが既定の選択肢
+- 型、リトライ、エラーマッピング、ページネーションを SDK 任せにしたいとき
+- 同じリソースを REST ↔ WebSocket で書き換えずに切り替えたいとき
+
+**適さない**ケース：`curl` + REST のほうが早い単発ケース（または CLI）。
 
 ## 次へ
 

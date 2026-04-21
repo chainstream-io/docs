@@ -1,9 +1,116 @@
 ---
 title: "Solana Kafka Topics"
-description: "Reference list of Solana Kafka topic names, keys and payload schemas."
+description: "Reference list of Solana Kafka topic names, partition keys and payload schemas."
+icon: "sun"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+Authoritative list of Kafka topics published for Solana. All topics use the `sol.` prefix.
+
+For end-to-end connection details, SASL credentials, and SDK examples see [Access Methods → Kafka Streams → Solana Streams](/en/docs/access-methods/kafka-streams/solana-streams). For the authoritative Protobuf definitions see [github.com/chainstream-io/streaming_protobuf/solana](https://github.com/chainstream-io/streaming_protobuf/tree/main/solana).
+
+## Partitioning
+
+- **Mint address** (32-byte pubkey, base58-encoded) — for token-centric topics (`tokens`, `dex.trades`, `dex.pools`, `candlesticks`, `token-prices`, `token-supplies`, `token-market-caps`, `trade-stats`, `token-holdings`)
+- **Account address** — for account-centric topics (`balances`, `transfers`)
+
+Events for the same mint or account land on the same partition in slot order.
+
+## Topic matrix
+
+### DEX trades
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.dex.trades` | `TradeEvents` | `solana/trade_event.proto` | Raw DEX swaps (Raydium, Meteora, Pump.fun, Jupiter routes, etc.) |
+| `sol.dex.trades.processed` | `TradeEvents` | `solana/trade_event.proto` | Enriched with USD / SOL price, router resolution, suspect flags |
+
+### Tokens
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.tokens` | `TokenEvents` | `solana/token_event.proto` | Token lifecycle events (mint, metadata update, authority change) |
+| `sol.tokens.created` | `TokenEvents` | `solana/token_event.proto` | Filtered stream of mint-creation events only |
+| `sol.tokens.processed` | `TokenEvents` | `solana/token_event.proto` | Tokens enriched with metadata JSON, image, socials |
+
+### Token-level statistics
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.token-prices` | `TokenPriceEvent` | `solana/token_price_event.proto` | Aggregated price updates (USD + SOL) |
+| `sol.token-supplies` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | Mint supply changes (mint/burn) |
+| `sol.token-supplies.processed` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | Supplies normalized with decimals + USD value |
+| `sol.token-market-caps.processed` | `TokenMarketCapEvent` | `solana/token_market_cap_event.proto` | Market cap (circulating × price) |
+| `sol.token-holdings` | `TokenHoldingEvent` | `solana/token_holding_event.proto` | Holder count, top-N concentration |
+| `sol.trade-stats` | `TradeStatEvent` | `solana/trade_stat_event.proto` | Trade counts, volume, unique buyers / sellers |
+
+### Balances
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.balances` | `BalanceEvents` | `solana/balance_event.proto` | Raw balance-change events per account |
+| `sol.balances.processed` | `BalanceEvents` | `solana/balance_event.proto` | Balance events with USD + SOL value |
+
+### DEX pools
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.dex.pools` | `DexPoolEvents` | `solana/dex_pool_event.proto` | Pool create / update / sync events (including CLMM ticks) |
+| `sol.dex.pools.processed` | `DexPoolEvents` | `solana/dex_pool_event.proto` | Pool events enriched with liquidity USD + SOL and fee tier |
+
+### Transfers
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.transfers` | `TransferEvents` | `solana/transfer_event.proto` | All SPL + native transfers including program-invoked transfers |
+| `sol.transfers.processed` | `TransferProcessedEvents` | `solana/transfer_processed_event.proto` | Transfers enriched with price-at-slot + USD value |
+
+### Candlesticks
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `sol.candlesticks` | `CandlestickEvents` | `candlestick.proto` | Pre-aggregated OHLC across multiple resolutions |
+
+## Example consumer
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.solana.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["sol.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+See the [Solana Streams guide](/en/docs/access-methods/kafka-streams/solana-streams) for Go and JavaScript equivalents.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka Topics" icon="ethereum" href="/en/api-reference/kafka-topics/evm">
+    Topic list for Ethereum, BSC, Base, Polygon and more
+  </Card>
+  <Card title="Tron Kafka Topics" icon="bolt" href="/en/api-reference/kafka-topics/tron">
+    Topic list for Tron
+  </Card>
+  <Card title="Kafka Streams overview" icon="server" href="/en/docs/access-methods/kafka-streams/overview">
+    Connection, auth, partition model
+  </Card>
+  <Card title="Solana Streams guide" icon="book" href="/en/docs/access-methods/kafka-streams/solana-streams">
+    Field definitions and consumer examples
+  </Card>
+</CardGroup>

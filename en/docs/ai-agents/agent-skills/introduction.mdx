@@ -8,12 +8,15 @@ icon: "brain"
 
 Agent Skills are structured instruction packages (`SKILL.md` files) that teach AI coding assistants how to use ChainStream's on-chain data and DeFi capabilities. Unlike raw API docs, skills provide **decision trees, workflows, safety rules, and error recovery** — everything an AI agent needs to operate autonomously.
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="chainstream-data" icon="magnifying-glass" color="#4D9CFF">
     **Tool pattern** — read-only on-chain data: token analytics, market trends, wallet profiling, WebSocket streams
   </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" color="#10B981">
+    **Tool pattern** — custom GraphQL analytics over 27 cubes: cross-cube JOINs, aggregations, time-series
+  </Card>
   <Card title="chainstream-defi" icon="right-left" color="#9333EA">
-    **Process pattern** — irreversible DeFi execution: swap, bridge, launchpad, transaction broadcast
+    **Process pattern** — irreversible DeFi execution: swap, launchpad, transaction broadcast
   </Card>
 </CardGroup>
 
@@ -32,15 +35,19 @@ Skills sit at the **highest abstraction layer** — they reference MCP tools and
 
 ```mermaid
 flowchart TD
-  Start["User request"] --> IsData{"Reading data?"}
-  IsData -->|Yes| DataSkill["chainstream-data"]
-  IsData -->|No| IsDefi{"Executing transaction?"}
-  IsDefi -->|Yes| DefiSkill["chainstream-defi"]
-  IsDefi -->|No| NotCovered["Not a ChainStream task"]
+  Start["User request"] --> IsExec{"Executing transaction?"}
+  IsExec -->|Yes| DefiSkill["chainstream-defi"]
+  IsExec -->|No| IsData{"Reading data?"}
+  IsData -->|No| NotCovered["Not a ChainStream task"]
+  IsData -->|Yes| Custom{"Needs JOINs / custom<br/>aggregation / time-series?"}
+  Custom -->|Yes| GraphqlSkill["chainstream-graphql"]
+  Custom -->|No| DataSkill["chainstream-data"]
 
   DataSkill --> HasMCP{"MCP configured?"}
   HasMCP -->|Yes| UseMCP["Use MCP tools"]
   HasMCP -->|No| UseCLI["Use CLI commands"]
+
+  GraphqlSkill --> Schema["graphql schema --summary<br/>graphql query --file ..."]
 
   DefiSkill --> HasWallet{"Wallet available?"}
   HasWallet -->|Yes| UseCLIDeFi["Use CLI for signing"]
@@ -49,18 +56,19 @@ flowchart TD
 
 ## Skill Comparison
 
-| Aspect | chainstream-data | chainstream-defi |
-|--------|-----------------|-----------------|
-| Pattern | Tool (read-only) | Process (execute) |
-| Risk Level | Low | High (irreversible) |
-| Wallet Required | No (API Key sufficient) | Yes (signing needed) |
-| MCP Support | Full (17 tools) | Tools available, but execution requires wallet on host |
-| User Confirmation | Not required | **Mandatory** before every transaction |
-| Typical Actions | Search, analyze, track, stream | Swap, bridge, create, broadcast |
+| Aspect | chainstream-data | chainstream-graphql | chainstream-defi |
+|--------|------------------|---------------------|------------------|
+| Pattern | Tool (read-only) | Tool (read-only) | Process (execute) |
+| Risk Level | Low | Low | High (irreversible) |
+| Wallet Required | No (API Key sufficient) | No (API Key sufficient) | Yes (signing needed) |
+| MCP Support | Full (17 tools) | CLI-driven | Tools available, but execution requires wallet on host |
+| User Confirmation | Not required | Not required | **Mandatory** before every transaction |
+| Typical Actions | Search, analyze, track, stream | JOIN, aggregate, time-series, complex WHERE | Swap, create token, broadcast |
+| Best For | Standard analytics via pre-built endpoints | Custom analytics that REST doesn't expose | Trading, launching tokens, signing |
 
 ## Shared Resources
 
-Both skills share common reference documents:
+All skills share common reference documents:
 
 | Resource | Content |
 |----------|---------|
@@ -90,7 +98,10 @@ See [Installation Guide](/en/docs/ai-agents/agent-skills/installation) for setup
     Set up skills on your platform
   </Card>
   <Card title="chainstream-data" icon="magnifying-glass" href="/en/docs/ai-agents/agent-skills/chainstream-data">
-    Data queries and analytics
+    Standard data queries and analytics
+  </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" href="/en/docs/ai-agents/agent-skills/chainstream-graphql">
+    Custom GraphQL analytics, JOINs, aggregations
   </Card>
   <Card title="chainstream-defi" icon="right-left" href="/en/docs/ai-agents/agent-skills/chainstream-defi">
     DeFi execution workflows

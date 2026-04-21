@@ -39,9 +39,9 @@ import { ChainStream } from "@chainstream-io/sdk";
 
 const cs = new ChainStream({ apiKey: process.env.CHAINSTREAM_API_KEY! });
 
-const results = await cs.tokens.search({
+const results = await cs.token.search({
   chain: "solana",
-  query: "USDC",
+  keyword: "USDC",
   limit: 5,
 });
 
@@ -52,10 +52,10 @@ for (const t of results) {
 
 ## 常見模式
 
-- **REST**：`cs.tokens.*`、`cs.wallets.*`、`cs.trades.*`……
-- **WebSocket**：`cs.subscribe("trades.token", { address }, msg => ...)`
+- **REST**：`cs.token.*`、`cs.wallet.*`、`cs.trade.*`、`cs.ranking.*`、`cs.dex.*`……
+- **WebSocket**：`cs.stream.subscribeTokenTrade({ chain, tokenAddress, callback })`（candles / stats / holders / wallets / rankings / pools 等有對應方法）
 - **GraphQL**：`cs.gql(query, variables)`——透過 codegen 返回完整型別化結果
-- **CLI 橋接**：`cs.cli("rankings", "hot")` 與 `chainstream rankings hot` 等價
+- **CLI 橋接**：`cs.cli("market", "trending", { chain: "sol", duration: "24h" })` 與 `chainstream market trending --chain sol --duration 24h` 等價
 
 ## 什麼時候用
 

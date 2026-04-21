@@ -1,9 +1,190 @@
 ---
 title: "MCP ツールリファレンス"
-description: "Complete tool catalog exposed by the ChainStream MCP Server."
+description: "ChainStream MCP サーバーが公開する完全なツールカタログ。"
+icon: "plug"
 ---
 
+ChainStream [MCP サーバー](/jp/docs/ai-agents/mcp-server/introduction) は、完全なデータカタログと DeFi プリミティブを Model Context Protocol ツールとして公開します。このページは正式なリファレンスです — Claude、Cursor、その他のクライアントへの登録方法は [MCP サーバーセットアップ](/jp/docs/ai-agents/mcp-server/setup) を参照してください。
+
+## エンドポイント
+
+- **URL**: `https://mcp.chainstream.io/mcp`
+- **トランスポート**: Streamable HTTP（水平スケーリング＋進捗レポート）
+- **認証**: Bearer トークン（`X-API-KEY`）**または** x402 マイクロペイメント（Base / Solana の USDC）
+
+## 2 種類のツール表面
+
+ChainStream の MCP サーバーは 2 つの形態で提供されます。エージェントのワークフローに合わせて選択してください。
+
+| 表面 | 命名 | 用途 |
+|---------|--------|-------------|
+| **Outcome 指向ツール** | `tokens_search`, `dex_swap`（アンダースコア） | ユーザー向けタスクを行うエージェント向け — 各ツールが複数の REST 呼び出しをオーケストレーションしてキュレーションされた結果を返します。[Agent Skills](/jp/docs/ai-agents/agent-skills/introduction) が参照しているのはこちらです。 |
+| **Playground ツール** | `getToken`, `createEndpoint`（camelCase） | REST API を 1:1 でカバー — REST と同じ入出力で、テストや低レベル自動化に最適 |
+
+以下の 17 個の outcome 指向ツールが本番 MCP カタログで公開されているものです。Playground ツールは REST の全表面を MCP ツールとして再公開したもので、このページの下部にリストします。
+
+## リソース
+
+| URI | 内容 |
+|-----|---------|
+| `chainstream://chains` | サポートチェーンとステータス |
+| `chainstream://chains/{chain}/dexes` | チェーンごとの DEX プロトコル |
+| `chainstream://docs/api_reference` | 完全な REST API リファレンス（すべての `/v2/*` エンドポイント） |
+| `chainstream://docs/query_examples` | エージェント向けの共通クエリパターン |
+
+## リスクモデル
+
+各ツールにはリスクレベルが付与されています。クライアントはレベル L2 以上のツールには明示的な確認 UI を介して呼び出すようにしてください。
+
+| レベル | 意味 |
+|-------|---------|
+| **L0** | 読み取り専用・ステートレス — 自動呼び出し可 |
+| **L1** | 読み取り専用・ユーザースコープ（ウォレットプロフィール、Webhook 一覧など） — 安全だが個人データを含む |
+| **L2** | 読み取り専用だが計算コストが大きい（バックテストなど） — コストが発生する可能性あり |
+| **L3** | **書き込み／署名／ブロードキャスト** — 常にユーザーの明示的確認が必要 |
+
+## Outcome 指向ツール（17 個）
+
+### トークンインテリジェンス
+
+| ツール | 説明 | 主なパラメータ | リスク |
+|------|-------------|------------|------|
+| `tokens_search` | 名称、シンボル、アドレスで全サポートチェーンのトークンを検索 | `query`, `chain?` | L0 |
+| `tokens_analyze` | 包括的なトークン分析：価格、出来高、保有者、セキュリティ、流動性 | `chain`, `address` | L0 |
+| `tokens_price_history` | チャート作成・テクニカル分析用の OHLCV ローソク足データ | `chain`, `address`, `resolution`, `from?`, `to?` | L0 |
+| `tokens_discover` | オンチェーン指標（出来高、価格変動、取引数）でトークンを発見 | `chain`, フィルタ | L0 |
+| `tokens_compare` | 最大 5 トークンの横並び比較 | `chain`, `addresses[]` | L0 |
+
+### ウォレットインテリジェンス
+
+| ツール | 説明 | 主なパラメータ | リスク |
+|------|-------------|------------|------|
+| `wallets_profile` | 完全なウォレットプロフィール — 保有、PnL、純資産を一度に取得 | `chain`, `address` | L1 |
+| `wallets_activity` | 直近のウォレット送金と残高変動 | `chain`, `address`, `limit?` | L1 |
+
+### マーケットディスカバリ
+
+| ツール | 説明 | 主なパラメータ | リスク |
+|------|-------------|------------|------|
+| `market_trending` | カテゴリ別のトレンドトークン（`hot`, `new`, `migrated`, `graduating`, `stocks`） | `chain`, `category`, `duration` | L0 |
+| `trades_recent` | トークンまたはウォレットの直近オンチェーン取引 | `chain`, `token?`, `wallet?`, `limit?` | L0 |
+
+### DEX とトレーディング
+
+| ツール | 説明 | 主なパラメータ | リスク |
+|------|-------------|------------|------|
+| `dex_quote` | 期待出力、価格インパクト、手数料を含むスワップ見積もり（読み取り専用） | `chain`, `from`, `to`, `amount` | L0 |
+| `dex_swap` | DEX でトークンスワップを実行 | `chain`, `from`, `to`, `amount`, `slippage` | **L3** |
+| `dex_create_token` | launchpad でトークンを作成 | `chain`, `name`, `symbol`, `dex`, `uri` | **L3** |
+| `trading_backtest` | 履歴データに対する戦略のバックテスト | 戦略仕様 | L2 |
+| `trading_execute` | 戦略取引を実行 | `chain`, `strategy`, `params` | **L3** |
+| `transaction_send` | 署名済みトランザクションをブロードキャスト | `chain`, `signed_tx` | **L3** |
+
+### 運用
+
+| ツール | 説明 | 主なパラメータ | リスク |
+|------|-------------|------------|------|
+| `webhooks_manage` | Webhook エンドポイント管理（一覧、作成、削除） | `action`, エンドポイント仕様 | L1 |
+| `blockchain_info` | サポートチェーンと DEX プロトコル | — | L0 |
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  KYT／コンプライアンスは outcome ツールとしては公開していません — `/v1/kyt/*` 配下の REST API を直接呼び出してください。[KYT コンセプト](/jp/docs/compliance/kyt-concepts) を参照してください。
 </Note>
+
+## Playground ツール（REST パリティ）
+
+Playground 表面は REST API を 1:1 で MCP ツールとして公開したものです。各ツールは対応する REST エンドポイントと同じ JSON パラメータを受け取り、`content[0].text` に生レスポンスを JSON 文字列として返します。REST のプログラマブルパリティを MCP 経由で利用したいときに使ってください。
+
+<AccordionGroup>
+  <Accordion title="blockchain" icon="link">
+    `getBlockchainList`, `getBlockchainLatestBlock`
+  </Accordion>
+  <Accordion title="token" icon="coins">
+    `getToken`, `getTokens`, `searchTokens`, `getTokenMetadata`, `getTokensMetadata`, `getTokenLiquidityPools`, `getTokenStats`, `getTokensStats`, `getTokenHolders`, `getTokenHoldersMulti`, `getTokenCandles`, `getTokenTopHolders`, `getTokenMarketData`, `getTokensMarketData`, `getTokenPrices`, `getTokenPriceByTime`, `getTokenCreation`, `getTokenMintBurn`, `getTokenSecurity`, `getTokenListFiltered`, `getDevTokens`, `getTokenTraders`, `getTokenLiquiditySnapshots`, `getTokenTransfers`, `getTokenTransferTotal`, `getPairCandles`, `getPoolCandles`
+  </Accordion>
+  <Accordion title="wallet" icon="wallet">
+    `getTokensBalance`, `getPnl`, `getPnlDetails`, `getPnlByToken`, `getPnlByWallet`, `calculatePnl`, `getNetWorth`, `getNetWorthDetails`, `getNetWorthChart`, `getNetWorthByTokens`, `getNetWorthSummary`, `getBalanceUpdates`, `getWalletTransfers`, `getWalletTransferTotal`, `getWalletFirstTx`
+  </Accordion>
+  <Accordion title="trade" icon="right-left">
+    `getTradeList`, `getTradeTopTraders`, `getTradeGainersLosers`, `getTradeActivityList`
+  </Accordion>
+  <Accordion title="ranking" icon="trophy">
+    `getHotTokens`, `getRankingNewTokens`, `getRankingStocksTokens`, `getRankingFinalStretchTokens`, `getRankingMigratedTokens`
+  </Accordion>
+  <Accordion title="dexpool" icon="droplet">
+    `getDexpoolDetail`, `getDexpoolSnapshots`
+  </Accordion>
+  <Accordion title="dex" icon="arrow-right-arrow-left">
+    `getDexList`, `getQuote`, `getRoute`, `swap`, `createToken`
+  </Accordion>
+  <Accordion title="defi" icon="rocket">
+    `pumpfunCreateToken`, `moonshotCreateToken`
+  </Accordion>
+  <Accordion title="transaction" icon="paper-plane">
+    `sendTransaction`, `getGasPrice`, `estimateGasLimit`
+  </Accordion>
+  <Accordion title="kyt" icon="shield-halved">
+    `registerTransfer`, `getTransferSummary`, `getTransferAlerts`, `getTransferDirectExposure`, `getTransferNetworkIdentifications`, `registerWithdrawal`, `getWithdrawalSummary`, `getWithdrawalAlerts`, `getWithdrawalDirectExposure`, `getWithdrawalFraudAssessment`, `getWithdrawalAddressIdentifications`, `getWithdrawalNetworkIdentifications`, `registerAddress`, `getAddressRisk`
+  </Accordion>
+  <Accordion title="webhook" icon="bell">
+    `listEndpoints`, `createEndpoint`, `getEndpoint`, `updateEndpoint`, `deleteEndpoint`, `getEndpointSecret`, `rotateEndpointSecret`
+  </Accordion>
+  <Accordion title="redpacket" icon="gift">
+    `getRedpacketCreate`, `getRedpacketClaim`, `getRedpacketGet`, `getRedpacketGetClaims`, `getRedpacketGetList`, `getRedpacketGetClaimsByAddress`, `getRedpacketGetByAddress`, `getRedpacketSend`
+  </Accordion>
+  <Accordion title="watchlist" icon="eye">
+    `watchlistAdd`
+  </Accordion>
+  <Accordion title="ipfs" icon="cloud-arrow-up">
+    `presign`
+  </Accordion>
+</AccordionGroup>
+
+各 Playground ツールの入出力スキーマは、[API リファレンス](/jp/api-reference/overview) の対応する REST エンドポイントを参照してください — JSON の形状は完全に同一です。
+
+## クライアント設定例
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "transport": "streamable-http",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="MCP サーバーの概要" icon="plug" href="/jp/docs/ai-agents/mcp-server/introduction">
+    MCP とは何か、ChainStream がどのように公開しているか。
+  </Card>
+  <Card title="MCP サーバーセットアップ" icon="gear" href="/jp/docs/ai-agents/mcp-server/setup">
+    Cursor、Claude Desktop などへの組み込み。
+  </Card>
+  <Card title="x402 ペイメント" icon="credit-card" href="/jp/docs/platform/billing-payments/x402-payments">
+    自律エージェント向けの呼び出し課金認証。
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/jp/docs/ai-agents/agent-skills/introduction">
+    MCP と CLI の上に載る高レベル SKILL.md パッケージ。
+  </Card>
+</CardGroup>

@@ -1,9 +1,109 @@
 ---
 title: "Tron Kafka Topics"
-description: "Reference list of Tron Kafka topic names, keys and payload schemas."
+description: "Reference list of Tron Kafka topic names, partition keys and payload schemas."
+icon: "bolt"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+Authoritative list of Kafka topics published for Tron. All topics use the `tron.` prefix.
+
+For end-to-end connection details, SASL credentials, and SDK examples see [Access Methods → Kafka Streams → Tron Streams](/en/docs/access-methods/kafka-streams/tron-streams). For the authoritative Protobuf definitions see [github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron).
+
+## Partitioning
+
+- **Token address** (base58-encoded TRC-20 contract address) — for token-centric topics (`tokens`, `dex.trades`, `dex.pools`, `candlesticks`, `token-prices`, `token-supplies`)
+- **Account address** — for account-centric topics (`balances`, `v1.transfers.proto`)
+
+Events for the same contract or account land on the same partition in block order.
+
+## Topic matrix
+
+### DEX trades
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.dex.trades` | `TradeEvents` | `tron/trade_event.proto` | Raw DEX swaps (SunSwap, JustSwap, etc.) |
+| `tron.dex.trades.processed` | `TradeEvents` | `tron/trade_event.proto` | Enriched with USD / TRX price, suspect flags |
+
+### Tokens
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.tokens` | `TokenEvents` | `tron/token_event.proto` | Token lifecycle events |
+| `tron.tokens.processed` | `TokenEvents` | `tron/token_event.proto` | Tokens enriched with description, image, social links |
+
+### Token-level statistics
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.token-prices` | `TokenPriceEvent` | `tron/token_price_event.proto` | Aggregated price updates (USD + TRX) |
+| `tron.token-supplies` | `TokenSupplyEvent` | `tron/token_supply_event.proto` | Circulating + total supply changes |
+
+### Balances
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.balances` | `BalanceEvents` | `tron/balance_event.proto` | Raw balance-change events per account |
+
+### DEX pools
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.dex.pools` | `DexPoolEvents` | `tron/dex_pool_event.proto` | Pool create / update / sync events |
+
+### Transfers
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.v1.transfers.proto` | `TransfersMessage` | `tron/transfers_message.proto` | All TRC-10 + TRC-20 + native transfers |
+| `tron.v1.transfers.processed.proto` | `TransfersMessage` | `tron/transfers_message.proto` | Transfers enriched with price-at-block + USD value |
+
+### Candlesticks
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `tron.candlesticks` | `CandlestickEvents` | `candlestick.proto` | Pre-aggregated OHLC across multiple resolutions |
+
+## Example consumer
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.tron.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["tron.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+See the [Tron Streams guide](/en/docs/access-methods/kafka-streams/tron-streams) for additional consumer examples.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka Topics" icon="ethereum" href="/en/api-reference/kafka-topics/evm">
+    Topic list for Ethereum, BSC, Base, Polygon and more
+  </Card>
+  <Card title="Solana Kafka Topics" icon="sun" href="/en/api-reference/kafka-topics/solana">
+    Topic list for Solana
+  </Card>
+  <Card title="Kafka Streams overview" icon="server" href="/en/docs/access-methods/kafka-streams/overview">
+    Connection, auth, partition model
+  </Card>
+  <Card title="Tron Streams guide" icon="book" href="/en/docs/access-methods/kafka-streams/tron-streams">
+    Field definitions and consumer examples
+  </Card>
+</CardGroup>

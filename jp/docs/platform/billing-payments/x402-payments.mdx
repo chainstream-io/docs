@@ -189,12 +189,7 @@ const x402Fetch = createX402Fetch({
 
 // 通常の fetch と同じように使用 — 402 支払いは自動処理
 const response = await x402Fetch(
-  "https://api.chainstream.io/v1/tokens/analyze",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tokenAddress: "0x1234...abcd", chain: "ethereum" }),
-  }
+  "https://api.chainstream.io/v2/token/eth/0x1234abcd"
 );
 
 const data = await response.json();
@@ -209,12 +204,8 @@ console.log(data);
 import { parsePaymentHeaders, createPaymentProof } from "@x402/core";
 import { sendPayment } from "@x402/evm";
 
-// 1. 初期リクエストを送信
-const response = await fetch("https://api.chainstream.io/v1/tokens/analyze", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ tokenAddress: "0x1234...abcd" }),
-});
+// 1. 初期リクエスト送信（認証・支払いなし）
+const response = await fetch("https://api.chainstream.io/v2/token/eth/0x1234abcd");
 
 if (response.status === 402) {
   // 2. ヘッダーから支払い詳細をパース

@@ -141,18 +141,23 @@ ChainStream WebSocket supports multiple data subscription types:
 
 | Category | Channel Prefix | Description |
 |:--|:--|:--|
-| Candles | `dex-candle:` | Token price candles |
-| Token Stats | `dex-token-stats:` | Token market statistics |
-| Holder Stats | `dex-token-holders-stats:` | Token holder distribution |
-| New Tokens | `dex-token-new:` | Newly launched tokens |
-| Token Trades | `dex-token-trade:` | Token trade records |
-| Wallet Balance | `dex-wallet-balance:` | Wallet asset changes |
-| Wallet Trades | `dex-wallet-trade:` | Wallet trade records |
-| Rankings | `dex-ranking-token-stats:` | Token ranking statistics |
-| DEX Pools | `dex-dex-pool-balance:` | DEX liquidity pool data |
+| Candles (USD) | `dex-candle:` | Token candles (token / pool / pair variants) |
+| Candles (native) | `dex-candle-in-native:` | Same as above, priced in the chain's native asset |
+| Pool Candles | `dex-pool-candle:` / `dex-pair-candle:` | Pool-scoped or pair-scoped candles |
+| Token Stats | `dex-token-stats:` | Multi-window trade stats (1m, 5m, ... 1W, 1M) |
+| Holder Stats | `dex-token-holding:` | Holder distribution and balance tags |
+| Token Supply | `dex-token-supply:` | Supply and market cap updates |
+| Liquidity | `dex-token-liquidity:` / `dex-token-total-liquidity:` | Largest-pool / total liquidity |
+| New Tokens | `dex-new-token:` / `dex-new-tokens:` / `dex-new-tokens-metadata:` | New listings (single event / batch / metadata) |
+| Token Trades | `dex-trade:` | Trades filtered by token address |
+| Wallet Balance | `dex-wallet-balance:` | Wallet token-balance changes |
+| Wallet Trades | `dex-wallet-trade:` | Trades filtered by wallet address |
+| Wallet PnL | `dex-wallet-token-pnl:` / `dex-wallet-pnl-list:` | Per-token / aggregate wallet PnL |
+| Rankings | `dex-ranking-list:` / `dex-ranking-token-stats-list:` / `dex-ranking-token-holding-list:` / `dex-ranking-token-supply-list:` / `dex-ranking-token-bounding-curve-list:` | Ranking membership + per-token stats |
+| DEX Pools | `dex-pool-balance:` | Pool liquidity snapshots |
 
 <Tip>
-For complete subscription types, parameters, and response formats, see the [WebSocket API documentation](/en/api-reference/endpoint/websocket/api).
+For complete subscription types, parameters, and response formats, see the [WebSocket API reference](/en/api-reference/endpoint/websocket/api). The SDKs (`client.stream.subscribeTokenCandles`, `subscribeTokenStats`, `subscribeTokenTrade`, ...) wrap these channel strings so you don't have to build them by hand.
 </Tip>
 
 ### Subscription Format Examples
@@ -177,7 +182,7 @@ ws.send(JSON.stringify({
 // Subscribe to new tokens
 ws.send(JSON.stringify({
   subscribe: {
-    channel: 'dex-token-new:sol'
+    channel: 'dex-new-token:sol'
   },
   id: 4
 }));
@@ -436,7 +441,7 @@ client.connect();
 // Subscribe after connection is established
 setTimeout(() => {
   client.subscribe('dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m');
-  client.subscribe('dex-token-new:sol');
+  client.subscribe('dex-new-token:sol');
 }, 1000);
 ```
 
@@ -517,7 +522,7 @@ async def main():
     
     # Pre-add subscriptions
     client.subscriptions.add("dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m")
-    client.subscriptions.add("dex-token-new:sol")
+    client.subscriptions.add("dex-new-token:sol")
     
     await client.connect()
 

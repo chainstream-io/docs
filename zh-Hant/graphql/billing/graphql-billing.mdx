@@ -1,22 +1,22 @@
 ---
-title: "Billing & Credits"
-description: "Understand how GraphQL API queries are billed using the Credit Unit system"
+title: "計費與額度"
+description: "了解 GraphQL API 查詢如何透過 Credit Unit 系統計費"
 icon: "credit-card"
 ---
 
-## 概覽
+## 概述
 
-每筆 GraphQL 查詢都會依查詢複雜度動態計算並消耗 **Credit Unit（CU，點數單位）**。點數從與 REST API **相同**的計費方案扣除——同一把 API Key 兩邊通用。
+每條 GraphQL 查詢會消耗根據查詢複雜度動態計算的 **Credit Units（CU，信用單位）**。額度與 REST Data API 共用同一計費計劃 —— 同一 API Key 即可訪問兩者。
 
 <Info>
-GraphQL API 與 REST Data API 共用同一組 API Key 與計費方案。GraphQL 查詢消耗的點數會計入整體用量。
+GraphQL API 與 REST Data API 共用 API Key 與計費計劃。GraphQL 查詢消耗的額度計入總用量。
 </Info>
 
 ---
 
-## 點數計算公式
+## 額度計算公式
 
-點數依 Cube 以 **五因子公式**計算。最終 CU 取決於你查哪些 Cube、要幾列、是否彙總、納入幾個 metric，以及選了幾個欄位。
+按 Cube 採用 **五因子公式** 計算額度。最終 CU 取決於查詢內容、請求行數、是否聚合、指標數量以及選中欄位數。
 
 ```
 CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × ComplexityFactor) / 100
@@ -24,20 +24,20 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
 
 | 因子 | 計算方式 | 說明 |
 |:-------|:-----------|:------------|
-| **BaseCost** | 各 Cube 內部值 | 反映底層表大小與掃描成本。每個 Cube 的 base cost 不同。 |
-| **LimitFactor** | `ceil(limit / 100)`，至少為 1 | 與請求的列數線性成長。1–100 列成本相同；101–200 為 2 倍，以此類推。 |
-| **AggregationFactor** | 1.0（無）、1.5（GROUP BY）、2.0（HAVING） | 使用彙總或彙總後篩選（`selectWhere`）時較高。 |
-| **MetricFactor** | `1.0 + (aggregate_count × 0.1)` | 每多一個彙總函式（`count`、`sum`、`avg` 等）成本約增加 10%。 |
-| **ComplexityFactor** | `min(1.0 + min(select_count, 250) / 50 × 0.2, 1.5)` | 選越多欄位成本越高，上限 1.5×。約 5 個欄位的簡單查詢因子約 1.02。 |
+| **BaseCost** | 各 Cube 內部基準值 | 反映底層表規模與掃描成本，不同 Cube 不同。 |
+| **LimitFactor** | `ceil(limit / 100)`，最小為 1 | 與請求行數近似線性；1–100 行同價；101–200 為 2×，以此類推。 |
+| **AggregationFactor** | 1.0（無）、1.5（GROUP BY）、2.0（HAVING） | 使用聚合或聚合後過濾（`selectWhere`）時更高。 |
+| **MetricFactor** | `1.0 + (aggregate_count × 0.1)` | 每多一個聚合函式（`count`、`sum`、`avg` 等）約增加 10% 成本。 |
+| **ComplexityFactor** | `min(1.0 + min(select_count, 250) / 50 × 0.2, 1.5)` | 選中欄位越多成本越高，上限 1.5×；約 5 個欄位的簡單查詢因子約 1.02。 |
 
 <Note>
-**零列查詢免費。** 若查詢未回傳任何列，不論其他因子為何都不扣點。
+**零行查詢不扣費。** 若查詢無返回行，無論其他因子如何均不計費。
 </Note>
 
-### 計算範例
+### 計算示例
 
 <AccordionGroup>
-  <Accordion title="簡單查詢：10 列、5 個欄位">
+  <Accordion title="簡單查詢：10 行，5 個欄位">
     ```
     BaseCost = 2000 (internal), LimitFactor = ceil(10/100) = 1
     AggregationFactor = 1.0, MetricFactor = 1.0
@@ -46,7 +46,7 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
     CU = 2040 / 100 = 20.40 CU
     ```
   </Accordion>
-  <Accordion title="大型查詢：500 列、5 個欄位">
+  <Accordion title="較大查詢：500 行，5 個欄位">
     ```
     BaseCost = 2000, LimitFactor = ceil(500/100) = 5
     AggregationFactor = 1.0, MetricFactor = 1.0
@@ -55,7 +55,7 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
     CU = 10200 / 100 = 102.00 CU
     ```
   </Accordion>
-  <Accordion title="彙總查詢：GROUP BY + 2 個 metric、500 列">
+  <Accordion title="聚合查詢：GROUP BY + 2 個指標，500 行">
     ```
     BaseCost = 2000, LimitFactor = ceil(500/100) = 5
     AggregationFactor = 1.5 (GROUP BY)
@@ -65,7 +65,7 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
     CU = 18360 / 100 = 183.60 CU
     ```
   </Accordion>
-  <Accordion title="複雜查詢：選取大量欄位">
+  <Accordion title="複雜查詢：選中大量欄位">
     ```
     BaseCost = 2000, LimitFactor = 1
     AggregationFactor = 1.0, MetricFactor = 1.0
@@ -77,14 +77,14 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
 </AccordionGroup>
 
 <Tip>
-由於 CU 為動態計算，要知道確切成本，最可靠的方式是查看回應中的 `extensions.credits` 欄位，或監看 IDE 狀態列上的 CU 指示。
+由於 CU 為動態計算，最準確的方式是檢視響應中的 `extensions.credits` 欄位，或關注 IDE 狀態列中的 CU 指示。
 </Tip>
 
 ---
 
-## 回應：`extensions.credits`
+## 響應：`extensions.credits`
 
-每筆 GraphQL 回應都會在 `extensions` 中附上點數消耗資訊：
+每條 GraphQL 響應在 `extensions` 中包含額度消耗詳情：
 
 ```json
 {
@@ -111,40 +111,40 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
 
 | 欄位 | 型別 | 說明 |
 |:------|:-----|:------------|
-| `total` | `Float` | 整筆查詢消耗的 CU 總計 |
-| `unit` | `String` | 固定為 `"CU"` |
-| `cubes` | `Array` | 依 Cube 拆分 |
-| `cubes[].cube` | `String` | 計費引擎使用的 Cube 名稱 |
-| `cubes[].credits` | `Float` | 該 Cube 計收的 CU |
-| `cubes[].row_count` | `Int` | 回傳列數 |
+| `total` | `Float` | 整條查詢消耗的總 CU |
+| `unit` | `String` | 恆為 `"CU"` |
+| `cubes` | `Array` | 按 Cube 拆分 |
+| `cubes[].cube` | `String` | 計費引擎使用的 Cube 名 |
+| `cubes[].credits` | `Float` | 該 Cube 計費的 CU |
+| `cubes[].row_count` | `Int` | 返回行數 |
 
 <Note>
-有扣點時（即 `total > 0`）才會出現 `extensions.credits`。零列查詢不計費。
+在產生扣費時會出現 `extensions.credits`（即 `total > 0`）。零行返回的查詢不計費。
 </Note>
 
 ---
 
 ## 在 IDE 中監控用量
 
-[GraphQL IDE](https://ide.chainstream.io) 狀態列會在每筆查詢後顯示點數消耗：
+[GraphQL IDE](https://ide.chainstream.io) 狀態列會在每次查詢後顯示額度消耗：
 
-- **CU 指示**：顯示該次查詢消耗的 CU 總量
-- **Latency**：請求耗時（毫秒）
-- **Response size**：回應本文大小
+- **CU 指示**：顯示本次消耗的總 CU
+- **延遲**：請求耗時（毫秒）
+- **響應大小**：載荷體積
 
 ---
 
-## 優化點數使用的建議
+## 最佳化額度使用的建議
 
 <CardGroup cols={3}>
   <Card title="少選欄位" icon="minimize">
-    只請求需要的維度。ComplexityFactor 會隨選取欄位數增加。
+    只請求需要的維度。ComplexityFactor 隨選中欄位數增加。
   </Card>
-  <Card title="適當的 limit" icon="gauge">
-    在可接受範圍內盡量降低 `limit.count`。LimitFactor 每多 100 列會加倍。
+  <Card title="合理 limit" icon="gauge">
+    在可接受範圍內儘量降低 `limit.count`。LimitFactor 每多 100 行約翻倍。
   </Card>
-  <Card title="善用預先彙總 Cube" icon="layer-group">
-    需要彙總資料時，優先使用 DWM／DWS Cube（Pairs、Tokens、TokenHolders），而非在 DWD Cube（DEXTrades）上跑 metric。
+  <Card title="優先預聚合 Cube" icon="layer-group">
+    需要彙總資料時，優先使用 DWM/DWS Cube（Pairs、Tokens、TokenHolders），而非在 DWD Cube（DEXTrades）上跑指標。
   </Card>
 </CardGroup>
 
@@ -153,10 +153,10 @@ CU = ceil(BaseCost × LimitFactor × AggregationFactor × MetricFactor × Comple
 ## 相關文件
 
 <CardGroup cols={2}>
-  <Card title="計費與用量單位" icon="receipt" href="/zh-Hant/docs/platform/billing-payments/plans-and-units">
-    ChainStream 計費方案、單位配額與付款方式總覽。
+  <Card title="計費與單位（總覽）" icon="receipt" href="/zh-Hant/docs/platform/billing-payments/plans-and-units">
+    ChainStream 計費計劃、額度配額與支付方式概覽。
   </Card>
-  <Card title="Metrics 與彙總" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
-    了解彙總 metric 如何影響查詢點數。
+  <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
+    瞭解聚合指標如何影響查詢額度。
   </Card>
 </CardGroup>

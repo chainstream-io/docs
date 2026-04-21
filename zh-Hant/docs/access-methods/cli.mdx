@@ -1,57 +1,121 @@
 ---
 title: "CLI"
-description: "`chainstream` 命令列——以 shell 原語的形式訪問每一個資料產品與 DeFi 原語。"
+description: "`chainstream` 命令列介面——以 shell 原生方式訪問所有資料產品、GraphQL 和 DeFi 原語。"
 icon: "terminal"
 ---
 
-ChainStream CLI 是你透過 SDK、REST、GraphQL 能訪問的那些 [資料產品](/zh-Hant/docs/data-products/overview) 的命令列門面。它按 "和 `jq`、shell 管道、以及開 shell 的 AI Agent 一起用" 的思路設計。
+ChainStream CLI 是訪問 [資料產品](/zh-Hant/docs/data-products/overview) 的命令列入口，覆蓋與 SDK、REST、GraphQL、WebSocket 同樣的目錄。它被設計為與 `jq`、shell 管道和驅動 shell 的 AI Agent 無縫組合。
 
 ## 安裝
 
 ```bash
-# macOS / Linux——Homebrew
-brew install chainstream-io/tap/chainstream
-
-# npm
+# 方式 A —— 全局安装（推荐交互式使用）
 npm install -g @chainstream-io/cli
 
-# 直接下二进制
-curl -fsSL https://chainstream.io/install.sh | sh
+# 方式 B —— 零安装、始终最新（推荐给 Agent 与 CI）
+npx @chainstream-io/cli <command>
 ```
 
-## 登入
+<Note>
+  下文示例中的 `chainstream <cmd>` 等價於 `npx @chainstream-io/cli <cmd>`，按環境選擇即可。
+</Note>
+
+## 鑑權
+
+CLI 有兩條鑑權路徑。兩者都能讓 REST API、GraphQL 和 DeFi 命令從同一份配置檔案取到憑證。
 
 ```bash
-chainstream auth login          # 浏览器 OAuth
-# 或
-export CHAINSTREAM_API_KEY=...  # 脚本里用环境变量
+# 创建宿主侧钱包，自动授予 nano 试用（50K CU，30 天）
+chainstream login
+
+# …或显式设置已有 API Key
+chainstream config set --key apiKey --value <your-api-key>
+
+# 脚本里用环境变量
+export CHAINSTREAM_API_KEY=...
 ```
 
-## 上手命令
+配置位於 `~/.config/chainstream/config.json`；錢包金鑰位於 `~/.config/chainstream/keys/`。`chainstream logout` 只清除錢包配置，保留磁碟上的金鑰檔案。
+
+## 命令分組
+
+| 分組 | 用途 |
+|------|------|
+| `token` | `search`、`info`、`security`、`holders`、`candles`、`pools` |
+| `market` | `trending`、`new`、`trades` |
+| `wallet` | `profile`、`pnl`、`holdings`、`activity`、`address`、`balance`、`pricing`、`sign`、`set-raw`、`link` |
+| `dex` | `route`、`swap`、`create` —— 構造**未簽名**交易，交給宿主錢包簽名 |
+| `tx` | `send`、`gas-price`、`estimate-gas` |
+| `graphql` | `schema`、`query` —— 見下 |
+| `plan` | `status`、`purchase` —— 使用 x402 自動付費並返回 API Key |
+| `config` | `set`、`get`、`auth` |
+| `job` | `status` |
+| 頂層 | `login`、`logout`、`verify`、`bind-email`、`bind-email-verify` |
+
+全域性開關：`--json` 輸出單行機讀 JSON（預設輸出格式化 JSON）。
+
+## 首發命令
 
 ```bash
-chainstream tokens search --chain solana --query USDC --limit 5
-chainstream trades tail --chain ethereum --token 0xA0b8...
-chainstream rankings hot --chain solana --window 24h
-chainstream defi quote --chain solana --from SOL --to USDC --amount 1
+chainstream token search --chain sol --keyword PUMP --limit 5
+chainstream token security --chain sol --address <addr>
+chainstream market trending --chain sol --duration 1h --limit 20
+chainstream wallet pnl --chain sol --address <wallet>
+chainstream dex route --chain sol --from SOL --to USDC --amount 1
 ```
 
-預設輸出 JSON；人類可讀加 `--format=table`。
+## GraphQL 子命令
 
-## 什麼時候用
+`graphql` 分組暴露 ChainStream 的鏈上資料倉儲（27 個 cube，分佈在 `Solana`、`EVM`、`Trading` 三個鏈組）——在 REST / MCP 端點不夠靈活時派上用場（跨 cube JOIN、自定義聚合、時間序列、多條件過濾）。預設端點：`https://graphql.chainstream.io/graphql`。
 
-- 快速探索（"現在發生什麼？"）
-- 指令碼、cron、GitHub Actions
-- 給 AI Agent 一套可執行的 ChainStream 原語
-- 透過管道把 ChainStream 輸出餵給其他 CLI 工具
+### 發現 schema
+
+```bash
+chainstream graphql schema --summary              # 所有 27 个 cube 的紧凑目录
+chainstream graphql schema --type DEXTrades       # 钻取某个 cube 的字段
+chainstream graphql schema --full                 # 完整参考（Agent 友好）
+chainstream graphql schema --summary --refresh    # 跳过缓存，重新拉取
+```
+
+### 執行查詢
+
+```bash
+# 内联查询
+chainstream graphql query \
+  --query 'query { Solana { DEXTrades(limit:{count:5}) { Block { Time } } } }' \
+  --json
+
+# 从文件执行并带变量
+chainstream graphql query --file ./query.graphql --var '{"chain":"sol"}'
+```
+
+鑑權自動處理：若已設 API Key（透過 `config set --key apiKey` 或 `CHAINSTREAM_API_KEY`），CLI 會走 `X-API-KEY`；否則會用宿主錢包簽出 SIWX 令牌。GraphQL 與 REST API 共享同一套 API Key 與訂閱池——**無需單獨購買**。
+
+<Note>
+  遇到 402，`graphql query` 會返回帶說明的錯誤。跑 `chainstream plan status`，然後 `chainstream plan purchase`（處理 x402 自動付費並儲存 API Key），再重試。
+</Note>
+
+## 何時使用
+
+- 快速探索（"現在正發生什麼？"）
+- 指令碼、定時任務、GitHub Actions
+- 給 AI Agent 提供可在 shell 裡執行的 ChainStream 原語
+- 不想寫任何客戶端程式碼就做自定義 GraphQL 分析
+- 為使用者控制的錢包準備未簽名 DeFi 交易
 
 ## 下一步
 
 <CardGroup cols={2}>
   <Card title="CLI 參考" icon="code" href="/zh-Hant/api-reference/cli-commands/overview">
-    所有命令、引數與退出碼。
+    所有命令、開關與退出碼
   </Card>
-  <Card title="Agent Skills" icon="brain" href="/zh-Hant/docs/ai-agents/agent-skills/introduction">
-    AI Agent 該怎麼用 CLI。
+  <Card title="GraphQL 訪問方式" icon="diagram-project" href="/zh-Hant/docs/access-methods/graphql">
+    端點、schema、查詢正規化
+  </Card>
+  <Card title="chainstream-graphql 技能" icon="brain" href="/zh-Hant/docs/ai-agents/agent-skills/chainstream-graphql">
+    AI Agent 如何使用 `graphql schema` / `query`
+  </Card>
+  <Card title="Agent Skills" icon="robot" href="/zh-Hant/docs/ai-agents/agent-skills/introduction">
+    AI Agent 如何使用 CLI
   </Card>
 </CardGroup>

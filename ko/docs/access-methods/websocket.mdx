@@ -141,18 +141,23 @@ ChainStream WebSocket은 다양한 데이터 구독 유형을 지원합니다:
 
 | 카테고리 | 채널 접두사 | 설명 |
 |:--|:--|:--|
-| 캔들 | `dex-candle:` | 토큰 가격 캔들 |
-| 토큰 통계 | `dex-token-stats:` | 토큰 시장 통계 |
-| 홀더 통계 | `dex-token-holders-stats:` | 토큰 홀더 분포 |
-| 새 토큰 | `dex-token-new:` | 새로 출시된 토큰 |
-| 토큰 거래 | `dex-token-trade:` | 토큰 거래 기록 |
-| 지갑 잔액 | `dex-wallet-balance:` | 지갑 자산 변동 |
-| 지갑 거래 | `dex-wallet-trade:` | 지갑 거래 기록 |
-| 랭킹 | `dex-ranking-token-stats:` | 토큰 랭킹 통계 |
-| DEX 풀 | `dex-dex-pool-balance:` | DEX 유동성 풀 데이터 |
+| 캔들 (USD) | `dex-candle:` | 토큰 캔들 (토큰 / 풀 / 페어 변형) |
+| 캔들 (네이티브) | `dex-candle-in-native:` | 위와 동일하나 체인의 네이티브 자산으로 가격 표시 |
+| 풀 캔들 | `dex-pool-candle:` / `dex-pair-candle:` | 풀 기준 또는 페어 기준 캔들 |
+| 토큰 통계 | `dex-token-stats:` | 다중 시간 창 거래 통계 (1m, 5m, ... 1W, 1M) |
+| 홀더 통계 | `dex-token-holding:` | 홀더 분포 및 잔고 태그 |
+| 토큰 공급 | `dex-token-supply:` | 공급량 및 시가총액 업데이트 |
+| 유동성 | `dex-token-liquidity:` / `dex-token-total-liquidity:` | 최대 풀 / 전체 유동성 |
+| 신규 토큰 | `dex-new-token:` / `dex-new-tokens:` / `dex-new-tokens-metadata:` | 신규 상장 (개별 이벤트 / 배치 / 메타데이터) |
+| 토큰 거래 | `dex-trade:` | 토큰 주소로 필터링된 거래 |
+| 지갑 잔고 | `dex-wallet-balance:` | 지갑 토큰 잔고 변동 |
+| 지갑 거래 | `dex-wallet-trade:` | 지갑 주소로 필터링된 거래 |
+| 지갑 PnL | `dex-wallet-token-pnl:` / `dex-wallet-pnl-list:` | 토큰별 / 집계 지갑 PnL |
+| 랭킹 | `dex-ranking-list:` / `dex-ranking-token-stats-list:` / `dex-ranking-token-holding-list:` / `dex-ranking-token-supply-list:` / `dex-ranking-token-bounding-curve-list:` | 랭킹 멤버십 + 토큰별 통계 |
+| DEX 풀 | `dex-pool-balance:` | 풀 유동성 스냅샷 |
 
 <Tip>
-전체 구독 유형, 파라미터, 응답 형식은 [WebSocket API 문서](/ko/api-reference/endpoint/websocket/api)를 참고하세요.
+전체 구독 유형, 파라미터, 응답 형식은 [WebSocket API 레퍼런스](/ko/api-reference/endpoint/websocket/api)를 참고하세요. SDK(`client.stream.subscribeTokenCandles`, `subscribeTokenStats`, `subscribeTokenTrade`, ...)는 이러한 채널 문자열을 래핑하므로 직접 구성할 필요가 없습니다.
 </Tip>
 
 ### 구독 형식 예시
@@ -177,7 +182,7 @@ ws.send(JSON.stringify({
 // 새 토큰 구독
 ws.send(JSON.stringify({
   subscribe: {
-    channel: 'dex-token-new:sol'
+    channel: 'dex-new-token:sol'
   },
   id: 4
 }));
@@ -436,7 +441,7 @@ client.connect();
 // 연결 수립 후 구독
 setTimeout(() => {
   client.subscribe('dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m');
-  client.subscribe('dex-token-new:sol');
+  client.subscribe('dex-new-token:sol');
 }, 1000);
 ```
 
@@ -517,7 +522,7 @@ async def main():
     
     # 구독 사전 추가
     client.subscriptions.add("dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m")
-    client.subscriptions.add("dex-token-new:sol")
+    client.subscriptions.add("dex-new-token:sol")
     
     await client.connect()
 

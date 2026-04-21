@@ -1,9 +1,109 @@
 ---
-title: "Tron Kafka Topics"
-description: "Reference list of Tron Kafka topic names, keys and payload schemas."
+title: "Tron Kafka トピック"
+description: "Tron の Kafka トピック名、パーティションキー、ペイロードスキーマの正式な一覧。"
+icon: "bolt"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+Tron で配信される Kafka トピックの正式な一覧です。すべてのトピックは `tron.` プレフィックスを使用します。
+
+エンドツーエンドの接続方法、SASL 認証情報、SDK の例については [アクセス方法 → Kafka ストリーム → Tron ストリーム](/jp/docs/access-methods/kafka-streams/tron-streams) を参照してください。正式な Protobuf 定義は [github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron) を参照してください。
+
+## パーティショニング
+
+- **トークンアドレス**（base58 エンコードの TRC-20 コントラクトアドレス） — トークン中心のトピック（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`）
+- **アカウントアドレス** — アカウント中心のトピック（`balances`、`v1.transfers.proto`）
+
+同じコントラクト／アカウントのイベントは同じパーティションにブロック順で到達します。
+
+## トピックマトリックス
+
+### DEX トレード
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.dex.trades` | `TradeEvents` | `tron/trade_event.proto` | 生の DEX スワップ（SunSwap、JustSwap など） |
+| `tron.dex.trades.processed` | `TradeEvents` | `tron/trade_event.proto` | USD／TRX 価格と不審フラグを付与したもの |
+
+### トークン
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.tokens` | `TokenEvents` | `tron/token_event.proto` | トークンライフサイクルイベント |
+| `tron.tokens.processed` | `TokenEvents` | `tron/token_event.proto` | description、image、social link を付与したトークン |
+
+### トークンレベル統計
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.token-prices` | `TokenPriceEvent` | `tron/token_price_event.proto` | 集計済み価格更新（USD ＋ TRX） |
+| `tron.token-supplies` | `TokenSupplyEvent` | `tron/token_supply_event.proto` | 流通量＋総供給量の変化 |
+
+### 残高
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.balances` | `BalanceEvents` | `tron/balance_event.proto` | アカウントごとの生の残高変動イベント |
+
+### DEX プール
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.dex.pools` | `DexPoolEvents` | `tron/dex_pool_event.proto` | プールの作成／更新／同期イベント |
+
+### トランスファー
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.v1.transfers.proto` | `TransfersMessage` | `tron/transfers_message.proto` | すべての TRC-10 ＋ TRC-20 ＋ネイティブ転送 |
+| `tron.v1.transfers.processed.proto` | `TransfersMessage` | `tron/transfers_message.proto` | ブロック時点の価格と USD 換算を付与した転送 |
+
+### ローソク足
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `tron.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 複数解像度で事前集計された OHLC |
+
+## コンシューマ例
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.tron.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["tron.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+さらなるコンシューマ例は [Tron ストリームガイド](/jp/docs/access-methods/kafka-streams/tron-streams) を参照してください。
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka トピック" icon="ethereum" href="/jp/api-reference/kafka-topics/evm">
+    Ethereum、BSC、Base、Polygon などのトピック一覧
+  </Card>
+  <Card title="Solana Kafka トピック" icon="sun" href="/jp/api-reference/kafka-topics/solana">
+    Solana のトピック一覧
+  </Card>
+  <Card title="Kafka ストリーム概要" icon="server" href="/jp/docs/access-methods/kafka-streams/overview">
+    接続、認証、パーティションモデル
+  </Card>
+  <Card title="Tron ストリームガイド" icon="book" href="/jp/docs/access-methods/kafka-streams/tron-streams">
+    フィールド定義とコンシューマ例
+  </Card>
+</CardGroup>

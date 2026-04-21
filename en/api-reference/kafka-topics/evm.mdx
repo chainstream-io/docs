@@ -1,9 +1,120 @@
 ---
 title: "EVM Kafka Topics"
-description: "Reference list of EVM-chain Kafka topic names, keys and payload schemas."
+description: "Reference list of EVM-chain Kafka topic names, partition keys and payload schemas."
+icon: "ethereum"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+Authoritative list of Kafka topics published for every EVM chain ChainStream indexes. Topic naming uses the `{chain}` prefix — substitute `eth`, `bsc`, `base`, `polygon`, `optimism`, `arbitrum`, `avalanche`, or `zksync` for the network you want to consume.
+
+For end-to-end connection details, SASL credentials, and SDK examples see [Access Methods → Kafka Streams → EVM Streams](/en/docs/access-methods/kafka-streams/evm-streams). For the authoritative Protobuf definitions see [github.com/chainstream-io/streaming_protobuf/evm](https://github.com/chainstream-io/streaming_protobuf/tree/main/evm).
+
+## Partitioning
+
+All EVM topics are partitioned by one of:
+
+- **Token address** (bytes20) — for token-centric topics (`tokens`, `dex.trades`, `dex.pools`, `candlesticks`, `token-prices`, `token-supplies`, `token-market-caps`, `trade-stats`, `token-holdings`)
+- **Account address** (bytes20) — for account-centric topics (`balances`, `v1.transfers.proto`)
+
+Events for the same address land on the same partition in block order — safe to scale consumers horizontally by partition.
+
+## Topic matrix
+
+`{chain}` ∈ `eth` \| `bsc` \| `base` \| `polygon` \| `optimism` \| `arbitrum` \| `avalanche` \| `zksync` (see the chain availability matrix in [EVM Streams](/en/docs/access-methods/kafka-streams/evm-streams)).
+
+### DEX trades
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.dex.trades` | `TradeEvents` | `evm/trade_event.proto` | Raw DEX swaps emitted as they are confirmed |
+| `{chain}.dex.trades.processed` | `TradeEvents` | `evm/trade_event.proto` | Same events enriched with USD / native price, suspect flags, and dedupe |
+
+### Tokens
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.tokens` | `TokenEvents` | `evm/token_event.proto` | Token lifecycle events (create, update, migrate) |
+| `{chain}.tokens.created` | `TokenEvents` | `evm/token_event.proto` | Filtered stream of token-creation events only |
+| `{chain}.tokens.processed` | `TokenEvents` | `evm/token_event.proto` | Tokens enriched with description, image, social links |
+
+### Token-level statistics
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.token-prices` | `TokenPriceEvent` | `evm/token_price_event.proto` | Aggregated price updates (USD + native) |
+| `{chain}.token-supplies` | `TokenSupplyEvent` | `evm/token_supply_event.proto` | Circulating + total supply changes |
+| `{chain}.token-supplies.processed` | `TokenSupplyEvent` | `evm/token_supply_event.proto` | Supplies with decimal normalization + USD value |
+| `{chain}.token-market-caps.processed` | `TokenMarketCapEvent` | `evm/token_market_cap_event.proto` | Market cap (circulating × price) |
+| `{chain}.token-holdings` | `TokenHoldingEvent` | `evm/token_holding_event.proto` | Holder count, top-N concentration |
+| `{chain}.trade-stats` | `TradeStatEvent` | `evm/trade_stat_event.proto` | Trade counts, volume, buyers / sellers |
+
+### Balances
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.balances` | `BalanceEvents` | `evm/balance_event.proto` | Raw balance-change events per account |
+| `{chain}.balances.processed` | `BalanceEvents` | `evm/balance_event.proto` | Balance events enriched with USD + native value |
+
+### DEX pools
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.dex.pools` | `DexPoolEvents` | `evm/dex_pool_event.proto` | Pool create / update / sync events |
+| `{chain}.dex.pools.processed` | `DexPoolEvents` | `evm/dex_pool_event.proto` | Pool events enriched with liquidity USD + native, fee tier |
+
+### Transfers
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.v1.transfers.proto` | `TransfersMessage` | `evm/transfers_message.proto` | All token + native transfers (ERC-20 / ERC-721 / ERC-1155 / native) |
+| `{chain}.v1.transfers.processed.proto` | `TransfersMessage` | `evm/transfers_message.proto` | Transfers enriched with price at block-time + USD value |
+
+### Candlesticks
+
+| Topic | Proto message | Schema file | Description |
+|-------|---------------|-------------|-------------|
+| `{chain}.candlesticks` | `CandlestickEvents` | `candlestick.proto` | Pre-aggregated OHLC across multiple resolutions |
+
+## Example consumer
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.evm.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["eth.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+See the [EVM Streams guide](/en/docs/access-methods/kafka-streams/evm-streams) for JavaScript and Go equivalents.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Solana Kafka Topics" icon="sun" href="/en/api-reference/kafka-topics/solana">
+    Topic list for Solana
+  </Card>
+  <Card title="Tron Kafka Topics" icon="bolt" href="/en/api-reference/kafka-topics/tron">
+    Topic list for Tron
+  </Card>
+  <Card title="Kafka Streams overview" icon="server" href="/en/docs/access-methods/kafka-streams/overview">
+    Connection, auth, partition model
+  </Card>
+  <Card title="EVM Streams guide" icon="book" href="/en/docs/access-methods/kafka-streams/evm-streams">
+    Field definitions and consumer examples
+  </Card>
+</CardGroup>

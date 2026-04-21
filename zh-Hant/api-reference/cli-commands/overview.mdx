@@ -1,9 +1,159 @@
 ---
 title: "CLI 命令參考"
 description: "chainstream CLI 全部命令、引數與輸出格式。"
+icon: "terminal"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+`chainstream` CLI 透過單個二進位制暴露了每個資料產品、GraphQL cube 與 DeFi 原語。本頁是權威的命令參考——敘述式使用說明與安裝步驟見 [接入方式 → CLI](/zh-Hant/docs/access-methods/cli)。
+
+## 安裝
+
+```bash
+# 全局安装（推荐交互式使用）
+npm install -g @chainstream-io/cli
+
+# 零安装、始终最新（推荐给 Agent 与 CI）
+npx @chainstream-io/cli <command>
+```
+
+兩種呼叫方式在下文中都適用。本參考統一使用短形式 `chainstream <cmd>`，與 `npx @chainstream-io/cli <cmd>` 等價。
+
+## 全域性開關
+
+| 開關 | 用途 |
+|------|---------|
+| `--version` | 列印 CLI 版本並退出 |
+| `--json` | 輸出單行機讀 JSON（預設輸出為格式化 JSON） |
+| `--help` | 列印當前命令或分組的幫助 |
+
+## 環境變數
+
+| 變數 | 用途 | 預設 |
+|----------|---------|---------|
+| `CHAINSTREAM_API_KEY` | 取代 `config.json` 的 API Key | 未設定 |
+| `CHAINSTREAM_API_URL` | 覆蓋 REST base URL | `https://api.chainstream.io` |
+| `CHAINSTREAM_AUTH_URL` | 覆蓋 Auth 服務 URL | 生產環境預設 |
+| `CHAINSTREAM_GRAPHQL_URL` | 覆蓋 GraphQL 端點 | `https://graphql.chainstream.io/graphql` |
+| `SOLANA_RPC_URL` | 覆蓋錢包 / 餘額讀取用的 Solana RPC | 公共 RPC |
+| `BASE_RPC_URL` | 覆蓋 Base RPC | 公共 RPC |
+
+配置持久化在 `~/.config/chainstream/config.json`；P-256 錢包金鑰位於 `~/.config/chainstream/keys/`。`chainstream logout` 清除錢包配置，但會保留金鑰檔案。
+
+## 鑑權命令（頂層）
+
+這些命令註冊在程式根（沒有子分組）。
+
+| 命令 | 用途 | 引數 / 選項 |
+|---------|---------|---------------------|
+| `login` | 建立 TEE 支援的錢包（預設）或啟動郵件 OTP 流程。首次登入自動授予 **nano 試用**（50K CU，30 天） | `[email]`；`--key`；`--email` |
+| `verify` | 完成 `login --email` 啟動的郵件 OTP 登入 | `--otp-id`；`--code`；`--email` |
+| `logout` | 清除會話（保留磁碟上的金鑰） | — |
+| `bind-email` | 為已有錢包繫結郵箱 | `[email]` |
+| `bind-email-verify` | 完成郵箱繫結的 OTP 流程（非互動） | `--otp-id`；`--code`；`--email` |
+
+## `token` —— 代幣資訊與分析
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `search` | 按關鍵字搜尋代幣 | `--keyword`（必填）；`--chain`（必填）；`--limit` |
+| `info` | 獲取代幣完整資訊 | `--chain`；`--address` |
+| `security` | 安全報告（honeypot、mint 許可權、freeze 許可權等） | `--chain`；`--address` |
+| `holders` | 代幣頂級持幣人 | `--chain`；`--address`；`--limit` |
+| `candles` | OHLCV K 線 | `--chain`；`--address`；`--resolution`；`--from`；`--to`；`--limit` |
+| `pools` | 某代幣的流動性池 | `--chain`；`--address` |
+
+## `market` —— 市場資料與發現
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `trending` | 按視窗看熱門 / 趨勢代幣 | `--chain`；`--duration`；`--limit` |
+| `new` | 最新建立的代幣 | `--chain`；`--limit` |
+| `trades` | 最近成交，可按代幣過濾 | `--chain`；`--token`；`--limit` |
+
+## `wallet` —— 錢包分析、管理與簽名
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `sign` | 用宿主錢包簽署已序列化的交易 | `--chain`；`--tx` |
+| `profile` | 一次呼叫拿到 PnL + 淨值 + Top 持倉 | `--chain`；`--address` |
+| `pnl` | PnL 明細 | `--chain`；`--address` |
+| `holdings` | 代幣餘額 | `--chain`；`--address`；`--limit` |
+| `activity` | 轉賬歷史 | `--chain`；`--address`；`--limit` |
+| `address` | 顯示當前錢包地址 | — |
+| `balance` | 單次請求拿到原生幣 + USDC 餘額 | `--chain`（`sol` \| `base`） |
+| `set-raw` | 匯入原始私鑰（僅開發 / 測試） | `--chain`（`base` \| `sol`） |
+| `link` | 把錢包地址繫結到你的訂閱 | `--chain`（`evm` \| `solana`） |
+| `pricing` | 列出可用的 x402 套餐與價格 | — |
+
+## `dex` —— DEX 路由、兌換與發幣
+
+所有命令返回服務端構造的**未簽名**交易；簽名在宿主錢包完成。
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `route` | 聚合路由 + 未簽名兌換交易 | `--chain`；`--from`；`--input-token`；`--output-token`；`--amount`；`--slippage`；`--dex`；`--recipient`；`--anti-mev`；`--gas-price`；`--gas-limit`；`--max-fee-per-gas`；`--max-priority-fee-per-gas` |
+| `swap` | 未簽名兌換交易（直接、無聚合） | `--chain`；`--from`；`--input-token`；`--output-token`；`--amount`；`--slippage`；`--dex` |
+| `create` | 未簽名 Launchpad 發幣交易 | `--chain`；`--from`；`--name`；`--symbol`；`--dex`；`--uri`；`--image` |
+
+## `tx` —— 廣播與 gas
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `send` | 廣播已簽名的交易 | `--chain`；`--signed-tx`；`--submit-type`；`--anti-mev` |
+| `gas-price` | 當前 gas 價格（僅 EVM） | `--chain`（`eth` \| `bsc`） |
+| `estimate-gas` | 估算 EVM 呼叫的 gas 上限 | `--chain`；`--from`；`--to`；`--data`；`--value` |
+
+## `job` —— 非同步 Job 輪詢
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `status` | 檢查長任務的狀態 | `--id`；`--wait`；`--timeout` |
+
+## `graphql` —— GraphQL schema 與查詢
+
+完整使用指南見 [接入方式 → CLI → GraphQL 子命令](/zh-Hant/docs/access-methods/cli#graphql-subcommand) 以及 [chainstream-graphql](/zh-Hant/docs/ai-agents/agent-skills/chainstream-graphql) Agent Skill。
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `schema` | 發現 schema（cube、型別、欄位） | `--summary`；`--type <cube>`；`--full`；`--refresh` |
+| `query` | 執行 GraphQL 查詢 | `--query <gql>`；`--file <path>`；`--var <json>` |
+
+## `plan` —— 訂閱與 x402 自動付費
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `status` | 當前套餐、剩餘配額與用量 | `--chain`；`--address` |
+| `purchase` | 透過 x402 / MPP 購買套餐（自動將返回的 API Key 存入 `config.json`） | `--plan` |
+
+## `config` —— 本地配置
+
+| 子命令 | 用途 | 選項 |
+|-----------|---------|---------|
+| `set` | 設定一個配置值 | `--key`（`apiKey` \| `baseUrl` \| `walletChain`）；`--value` |
+| `get` | 顯示當前配置 | `--key`（可選） |
+| `auth` | 顯示當前認證狀態 | — |
+
+## 退出行為
+
+- `0` —— 成功（或結果為空）
+- `1` —— 面向使用者的錯誤，stdout 輸出 JSON 負載（除非 `--json` 關閉，這種情況下列印格式化錯誤）
+- 鑑權失敗（`401`）、需要付費（`402`）或網路錯誤時以非零退出
+
+資料 / GraphQL 命令遇到 402 時，CLI 會提示 `wallet pricing` 和 `plan purchase`。`plan purchase` 自身透明處理 x402 自動付費。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="接入方式 → CLI" icon="terminal" href="/zh-Hant/docs/access-methods/cli">
+    敘述式使用說明：安裝、鑑權、首發命令、GraphQL 子命令。
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/zh-Hant/docs/ai-agents/agent-skills/introduction">
+    AI Agent 如何驅動 CLI。
+  </Card>
+  <Card title="x402 支付" icon="credit-card" href="/zh-Hant/docs/platform/billing-payments/x402-payments">
+    `plan purchase` 與現場 402 處理的原理。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/zh-Hant/docs/access-methods/graphql">
+    GraphQL 介面的端點、schema 與鑑權。
+  </Card>
+</CardGroup>

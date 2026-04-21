@@ -1,9 +1,120 @@
 ---
-title: "EVM Kafka Topics"
-description: "EVM 链 Kafka topic 名称、key 与 payload schema 参考。"
+title: "EVM Kafka 主题"
+description: "EVM 链 Kafka 主题名称、分区键和 payload schema 的参考列表。"
+icon: "ethereum"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream 为每条 EVM 链发布的 Kafka 主题的权威列表。主题名以 `{chain}` 开头——把它替换成你要消费的网络：`eth`、`bsc`、`base`、`polygon`、`optimism`、`arbitrum`、`avalanche` 或 `zksync`。
+
+端到端连接细节、SASL 凭证与 SDK 示例请参考 [接入方式 → Kafka Streams → EVM Streams](/cn/docs/access-methods/kafka-streams/evm-streams)。权威的 Protobuf 定义见 [github.com/chainstream-io/streaming_protobuf/evm](https://github.com/chainstream-io/streaming_protobuf/tree/main/evm)。
+
+## 分区
+
+所有 EVM 主题按以下之一进行分区：
+
+- **代币地址**（bytes20）——代币维度的主题（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`、`token-market-caps`、`trade-stats`、`token-holdings`）
+- **账户地址**（bytes20）——账户维度的主题（`balances`、`v1.transfers.proto`）
+
+同一地址的事件按区块顺序落入同一分区——按分区水平扩展消费者是安全的。
+
+## 主题矩阵
+
+`{chain}` ∈ `eth` \| `bsc` \| `base` \| `polygon` \| `optimism` \| `arbitrum` \| `avalanche` \| `zksync`（各链的可用性见 [EVM Streams](/cn/docs/access-methods/kafka-streams/evm-streams)）。
+
+### DEX 成交
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.dex.trades` | `TradeEvents` | `evm/trade_event.proto` | 确认后立即推出的原始 DEX swap |
+| `{chain}.dex.trades.processed` | `TradeEvents` | `evm/trade_event.proto` | 同样的事件，叠加 USD / 原生币价格、可疑标志与去重 |
+
+### 代币
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.tokens` | `TokenEvents` | `evm/token_event.proto` | 代币生命周期事件（创建、更新、迁移） |
+| `{chain}.tokens.created` | `TokenEvents` | `evm/token_event.proto` | 只包含代币创建事件的过滤流 |
+| `{chain}.tokens.processed` | `TokenEvents` | `evm/token_event.proto` | 代币 + 描述、图像、社交链接等增强字段 |
+
+### 代币级统计
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.token-prices` | `TokenPriceEvent` | `evm/token_price_event.proto` | 聚合后的价格更新（USD + 原生币） |
+| `{chain}.token-supplies` | `TokenSupplyEvent` | `evm/token_supply_event.proto` | 流通量 + 总供应量变化 |
+| `{chain}.token-supplies.processed` | `TokenSupplyEvent` | `evm/token_supply_event.proto` | 供应量（按 decimal 规整 + USD 计价） |
+| `{chain}.token-market-caps.processed` | `TokenMarketCapEvent` | `evm/token_market_cap_event.proto` | 市值（流通量 × 价格） |
+| `{chain}.token-holdings` | `TokenHoldingEvent` | `evm/token_holding_event.proto` | 持币人数、Top-N 集中度 |
+| `{chain}.trade-stats` | `TradeStatEvent` | `evm/trade_stat_event.proto` | 成交次数、成交量、买卖方数 |
+
+### 余额
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.balances` | `BalanceEvents` | `evm/balance_event.proto` | 各账户原始余额变更事件 |
+| `{chain}.balances.processed` | `BalanceEvents` | `evm/balance_event.proto` | 余额事件 + USD / 原生币计价 |
+
+### DEX 池子
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.dex.pools` | `DexPoolEvents` | `evm/dex_pool_event.proto` | 池子创建 / 更新 / sync 事件 |
+| `{chain}.dex.pools.processed` | `DexPoolEvents` | `evm/dex_pool_event.proto` | 池事件 + USD / 原生币流动性、费率档 |
+
+### 转账
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.v1.transfers.proto` | `TransfersMessage` | `evm/transfers_message.proto` | 全量代币 + 原生币转账（ERC-20 / ERC-721 / ERC-1155 / 原生币） |
+| `{chain}.v1.transfers.processed.proto` | `TransfersMessage` | `evm/transfers_message.proto` | 转账 + 区块时价格 + USD 计价 |
+
+### K 线
+
+| 主题 | Proto 消息 | Schema 文件 | 说明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 多周期预聚合 OHLC |
+
+## 示例消费者
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.evm.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["eth.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+JavaScript 与 Go 对应实现见 [EVM Streams 指南](/cn/docs/access-methods/kafka-streams/evm-streams)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="Solana Kafka 主题" icon="sun" href="/cn/api-reference/kafka-topics/solana">
+    Solana 的主题列表
+  </Card>
+  <Card title="Tron Kafka 主题" icon="bolt" href="/cn/api-reference/kafka-topics/tron">
+    Tron 的主题列表
+  </Card>
+  <Card title="Kafka Streams 总览" icon="server" href="/cn/docs/access-methods/kafka-streams/overview">
+    连接、认证、分区模型
+  </Card>
+  <Card title="EVM Streams 指南" icon="book" href="/cn/docs/access-methods/kafka-streams/evm-streams">
+    字段定义与消费者示例
+  </Card>
+</CardGroup>

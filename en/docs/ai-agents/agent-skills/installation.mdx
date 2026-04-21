@@ -6,16 +6,63 @@ icon: "download"
 
 ## Installation Methods
 
-ChainStream skills can be installed through multiple channels depending on your agent platform.
+ChainStream skills can be installed through multiple channels depending on your agent platform. The `npx skills add` route is the fastest — one command, works across Cursor, Claude Code, Codex, OpenCode and OpenClaw.
 
-| Platform | Method | Setup Time |
-|----------|--------|------------|
-| [ClawHub](#clawhub) | Marketplace install | ~30 seconds |
-| [Cursor](#cursor) | Plugin auto-discovery | ~1 minute |
-| [Claude Code](#claude-code) | Plugin install | ~30 seconds |
-| [Codex](#codex) | Git clone | ~1 minute |
-| [OpenCode](#opencode) | Git clone | ~1 minute |
-| [Gemini CLI](#gemini-cli) | Extension install | ~30 seconds |
+| Method | What it does | Setup Time |
+|--------|--------------|------------|
+| [`npx skills add` (recommended)](#npx-skills-add-recommended) | Cross-platform installer: adds all three ChainStream skills to the target agent | ~20 seconds |
+| [ClawHub](#clawhub) | Marketplace install via `openclaw skills install` | ~30 seconds |
+| [Cursor](#cursor) | Clone repo + `.cursor-plugin/` auto-discovery | ~1 minute |
+| [Claude Code](#claude-code) | `/plugin install chainstream` | ~30 seconds |
+| [Codex](#codex) | Git clone + symlink into `~/.agents/skills/` | ~1 minute |
+| [OpenCode](#opencode) | Git clone + symlink into `~/.agents/skills/` | ~1 minute |
+| [Gemini CLI](#gemini-cli) | `gemini extensions install` | ~30 seconds |
+
+---
+
+## `npx skills add` (recommended)
+
+A single command installs all three ChainStream skills (`chainstream-data`, `chainstream-graphql`, `chainstream-defi`) into the target agent. Use `-a <agent>` to pick which agent to install into.
+
+<Tabs>
+  <Tab title="Cursor">
+    ```bash
+    npx skills add chainstream-io/skills -a cursor
+    ```
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    npx skills add chainstream-io/skills -a claude-code
+    ```
+  </Tab>
+  <Tab title="OpenClaw">
+    ```bash
+    npx skills add chainstream-io/skills -a openclaw
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    npx skills add chainstream-io/skills -a codex
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    npx skills add chainstream-io/skills -a opencode
+    ```
+  </Tab>
+</Tabs>
+
+After install, configure the API Key so the CLI and MCP tools work:
+
+```bash
+npx @chainstream-io/cli login                               # create wallet + get nano trial (50K CU)
+# or, if you already have a key:
+npx @chainstream-io/cli config set --key apiKey --value <your-api-key>
+```
+
+<Note>
+  `npx skills add` pulls the latest version of the skills on every run, so re-running it also updates. See the full OpenClaw install flow (skill verification, multi-agent targeting) in [Ecosystem → OpenClaw → Skills Install](/en/docs/ecosystem/openclaw/skills-install).
+</Note>
 
 ---
 
@@ -26,11 +73,13 @@ ChainStream skills are published on [ClawHub](https://clawhub.ai), the OpenClaw 
 | Skill | ClawHub URL | Version |
 |-------|------------|---------|
 | chainstream-data | [clawhub.ai/chainstream-data](https://clawhub.ai/chainstream-data) | Latest |
+| chainstream-graphql | [clawhub.ai/chainstream-graphql](https://clawhub.ai/chainstream-graphql) | Latest |
 | chainstream-defi | [clawhub.ai/chainstream-defi](https://clawhub.ai/chainstream-defi) | Latest |
 
 ```bash
 # Install via ClawHub CLI
 openclaw skills install chainstream-data
+openclaw skills install chainstream-graphql
 openclaw skills install chainstream-defi
 ```
 
@@ -181,9 +230,15 @@ npx @chainstream-io/cli token search --keyword PUMP --chain sol
 
 <CardGroup cols={2}>
   <Card title="chainstream-data" icon="magnifying-glass" href="/en/docs/ai-agents/agent-skills/chainstream-data">
-    Data query capabilities: token, market, wallet
+    Data queries: token, market, wallet
+  </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" href="/en/docs/ai-agents/agent-skills/chainstream-graphql">
+    Custom GraphQL analytics and JOINs
   </Card>
   <Card title="chainstream-defi" icon="right-left" href="/en/docs/ai-agents/agent-skills/chainstream-defi">
     DeFi execution: swap, launchpad, transaction
+  </Card>
+  <Card title="OpenClaw Skills Install" icon="cube" href="/en/docs/ecosystem/openclaw/skills-install">
+    Full `npx skills` flags and multi-agent targeting
   </Card>
 </CardGroup>

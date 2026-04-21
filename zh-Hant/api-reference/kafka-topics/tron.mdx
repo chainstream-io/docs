@@ -1,9 +1,109 @@
 ---
-title: "Tron Kafka Topics"
+title: "Tron Kafka 主題"
 description: "Tron 鏈 Kafka topic 名稱、key 與 payload schema 參考。"
+icon: "bolt"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream 為 Tron 釋出的 Kafka topic 權威列表。所有 topic 使用 `tron.` 字首。
+
+端到端的連線細節、SASL 憑證與 SDK 示例見 [接入方式 → Kafka Streams → Tron Streams](/zh-Hant/docs/access-methods/kafka-streams/tron-streams)。權威的 Protobuf 定義見 [github.com/chainstream-io/streaming_protobuf/tron](https://github.com/chainstream-io/streaming_protobuf/tree/main/tron)。
+
+## 分割槽
+
+- **代幣地址**（TRC-20 合約地址的 base58 編碼）—— 用於代幣中心的 topic（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`）
+- **賬戶地址** —— 用於賬戶中心的 topic（`balances`、`v1.transfers.proto`）
+
+同一合約或賬戶的事件按區塊順序落到同一分割槽。
+
+## Topic 矩陣
+
+### DEX 成交
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.dex.trades` | `TradeEvents` | `tron/trade_event.proto` | 原始 DEX 成交（SunSwap、JustSwap 等） |
+| `tron.dex.trades.processed` | `TradeEvents` | `tron/trade_event.proto` | 附帶 USD / TRX 價格、可疑標記 |
+
+### 代幣
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.tokens` | `TokenEvents` | `tron/token_event.proto` | 代幣生命週期事件 |
+| `tron.tokens.processed` | `TokenEvents` | `tron/token_event.proto` | 補充描述、圖片、社交連結後的代幣 |
+
+### 代幣級統計
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.token-prices` | `TokenPriceEvent` | `tron/token_price_event.proto` | 聚合的價格更新（USD + TRX） |
+| `tron.token-supplies` | `TokenSupplyEvent` | `tron/token_supply_event.proto` | 流通供給 + 總供給變化 |
+
+### 餘額
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.balances` | `BalanceEvents` | `tron/balance_event.proto` | 每個賬戶的原始餘額變化事件 |
+
+### DEX 池
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.dex.pools` | `DexPoolEvents` | `tron/dex_pool_event.proto` | 池建立 / 更新 / sync 事件 |
+
+### 轉賬
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.v1.transfers.proto` | `TransfersMessage` | `tron/transfers_message.proto` | 所有 TRC-10 + TRC-20 + 原生幣轉賬 |
+| `tron.v1.transfers.processed.proto` | `TransfersMessage` | `tron/transfers_message.proto` | 附帶出塊時價格 + USD 數值的轉賬 |
+
+### K 線
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `tron.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 多解析度預聚合的 OHLC |
+
+## 消費者示例
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.tron.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["tron.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+更多消費者示例見 [Tron Streams 指南](/zh-Hant/docs/access-methods/kafka-streams/tron-streams)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka Topics" icon="ethereum" href="/zh-Hant/api-reference/kafka-topics/evm">
+    Ethereum、BSC、Base、Polygon 等鏈的 topic 列表
+  </Card>
+  <Card title="Solana Kafka Topics" icon="sun" href="/zh-Hant/api-reference/kafka-topics/solana">
+    Solana 的 topic 列表
+  </Card>
+  <Card title="Kafka Streams 總覽" icon="server" href="/zh-Hant/docs/access-methods/kafka-streams/overview">
+    連線、鑑權、分割槽模型
+  </Card>
+  <Card title="Tron Streams 指南" icon="book" href="/zh-Hant/docs/access-methods/kafka-streams/tron-streams">
+    欄位定義與消費者示例
+  </Card>
+</CardGroup>

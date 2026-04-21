@@ -18,9 +18,9 @@ from chainstream import ChainStreamClient
 client = ChainStreamClient(access_token='YOUR_ACCESS_TOKEN')
 ```
 
-## REST API 範例
+## REST API 示例
 
-查詢代幣元資料：
+查詢代幣後設資料：
 
 ```python
 import asyncio
@@ -32,39 +32,39 @@ ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
 BASE_URL = 'https://api.chainstream.io'
 
 async def main():
-    # 設定 API 用戶端
+    # 配置 API 客户端
     config = Configuration(
         host=BASE_URL,
         access_token=ACCESS_TOKEN,
     )
     
     async with ApiClient(config) as api_client:
-        # 建立 Token API 實例
+        # 创建 token API 实例
         token_api = TokenApi(api_client)
         
         chain = ChainSymbol.SOL
         token_address = 'So11111111111111111111111111111111111111112'  # SOL
         
-        print(f'查詢代幣: {chain.value}/{token_address}')
+        print(f'查询代币: {chain.value}/{token_address}')
         
-        # 取得代幣元資料
+        # 获取代币元数据
         result = await token_api.get_metadata(
             chain=chain,
             token_address=token_address,
         )
         
-        print('代幣元資料:')
-        print(f'  名稱: {result.name}')
-        print(f'  符號: {result.symbol}')
+        print('代币元数据:')
+        print(f'  名称: {result.name}')
+        print(f'  符号: {result.symbol}')
         print(f'  精度: {result.decimals}')
 
 if __name__ == '__main__':
     asyncio.run(main())
 ```
 
-## WebSocket 範例
+## WebSocket 示例
 
-訂閱即時代幣 K 線資料：
+訂閱實時代幣 K 線資料：
 
 ```python
 import asyncio
@@ -81,8 +81,8 @@ async def main():
     token_address = 'So11111111111111111111111111111111111111112'  # SOL
     resolution = Resolution.S1
 
-    print(f'訂閱代幣 K 線: {chain}/{token_address}')
-    print('監聽中... (按 Ctrl+C 停止)\n')
+    print(f'订阅代币 K 线: {chain}/{token_address}')
+    print('监听中... (按 Ctrl+C 停止)\n')
 
     message_count = 0
 
@@ -101,12 +101,12 @@ async def main():
         callback=on_candle,
     )
 
-    # 建立事件等待 Ctrl+C
+    # 创建事件等待 Ctrl+C
     stop_event = asyncio.Event()
 
     def signal_handler(sig, frame):
-        print(f'\n收到 {message_count} 則訊息')
-        print('關閉連線...')
+        print(f'\n收到 {message_count} 条消息')
+        print('关闭连接...')
         stop_event.set()
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     asyncio.run(main())
 ```
 
-## 更多範例
+## 更多示例
 
 ### 搜尋代幣
 
@@ -131,7 +131,7 @@ for t in results:
     print(f'{t.symbol}: {t.address}')
 ```
 
-### 取得錢包損益（PnL）
+### 獲取錢包盈虧（PnL）
 
 ```python
 from chainstream.openapi_client.api.wallet_api import WalletApi
@@ -145,7 +145,7 @@ async with ApiClient(config) as api_client:
     print(f'Total PnL: {pnl.total_pnl_usd}')
 ```
 
-### 取得交易列表
+### 獲取交易列表
 
 ```python
 from chainstream.openapi_client.api.trade_api import TradeApi
@@ -198,6 +198,6 @@ except ApiException as e:
     檢視原始碼
   </Card>
   <Card title="PyPI" icon="python" href="https://pypi.org/project/chainstream-sdk">
-    套件管理器
+    包管理器
   </Card>
 </CardGroup>

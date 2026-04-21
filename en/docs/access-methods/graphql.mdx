@@ -9,17 +9,26 @@ The GraphQL endpoint is the right choice when you want to **shape your response*
 ## Endpoint
 
 ```
-POST https://graphql.chainstream.io/v1/query
+POST https://graphql.chainstream.io/graphql
 ```
 
 Or use the [GraphQL IDE](https://graphql.chainstream.io) to explore interactively.
 
 ## Authentication
 
+Two equivalent paths — pick whichever fits your client:
+
 ```bash
--H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+# API Key (browser, server, most clients)
+-H "X-API-KEY: $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+
+# SIWX wallet token (agents / on-host wallets)
+-H "Authorization: SIWX <token>"
 -H "Content-Type: application/json"
 ```
+
+GraphQL and REST share the same API Key and subscription quota — no separate purchase.
 
 ## First query
 
@@ -50,6 +59,19 @@ One request returns tokens, metadata and their recent trades — no N+1 roundtri
 
 When **not** to: real-time streams (use WebSocket/Kafka) and hot-path reads where REST caching is cheaper.
 
+## Invoke from CLI
+
+The [`chainstream` CLI](/en/docs/access-methods/cli) ships with `graphql schema` (for discovery) and `graphql query` (for execution) — no need to wire up a client library for quick checks or shell automation:
+
+```bash
+# Discover the 27 cubes
+chainstream graphql schema --summary
+chainstream graphql schema --type DEXTrades
+
+# Run a query from a file
+chainstream graphql query --file ./query.graphql --json
+```
+
 ## Schema
 
 <CardGroup cols={2}>
@@ -66,6 +88,12 @@ When **not** to: real-time streams (use WebSocket/Kafka) and hot-path reads wher
 <CardGroup cols={2}>
   <Card title="GraphQL IDE" icon="terminal" href="https://graphql.chainstream.io">
     Explore the schema and run queries interactively.
+  </Card>
+  <Card title="chainstream-graphql skill" icon="brain" href="/en/docs/ai-agents/agent-skills/chainstream-graphql">
+    Structured Agent Skill for GraphQL workflows.
+  </Card>
+  <Card title="CLI `graphql` subcommand" icon="terminal" href="/en/docs/access-methods/cli#graphql-subcommand">
+    `chainstream graphql schema` and `query` reference.
   </Card>
   <Card title="SDKs" icon="box" href="/en/docs/access-methods/sdks">
     Typed GraphQL wrappers via codegen.

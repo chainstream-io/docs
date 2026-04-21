@@ -1,9 +1,120 @@
 ---
-title: "EVM Kafka Topics"
-description: "Reference list of EVM-chain Kafka topic names, keys and payload schemas."
+title: "EVM Kafka トピック"
+description: "EVM チェーンの Kafka トピック名、パーティションキー、ペイロードスキーマの正式な一覧。"
+icon: "ethereum"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream がインデックスする各 EVM チェーンで配信される Kafka トピックの正式な一覧です。トピック名は `{chain}` プレフィックスを使用します — 対象ネットワークに応じて `eth`、`bsc`、`base`、`polygon`、`optimism`、`arbitrum`、`avalanche`、`zksync` に置き換えてください。
+
+エンドツーエンドの接続方法、SASL 認証情報、SDK の例については [アクセス方法 → Kafka ストリーム → EVM ストリーム](/jp/docs/access-methods/kafka-streams/evm-streams) を参照してください。正式な Protobuf 定義は [github.com/chainstream-io/streaming_protobuf/evm](https://github.com/chainstream-io/streaming_protobuf/tree/main/evm) を参照してください。
+
+## パーティショニング
+
+すべての EVM トピックは次のいずれかでパーティショニングされます：
+
+- **トークンアドレス**（bytes20） — トークン中心のトピック（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`、`token-market-caps`、`trade-stats`、`token-holdings`）
+- **アカウントアドレス**（bytes20） — アカウント中心のトピック（`balances`、`v1.transfers.proto`）
+
+同じアドレスのイベントは同じパーティションにブロック順で到達するため、パーティション単位でコンシューマを水平スケールしても安全です。
+
+## トピックマトリックス
+
+`{chain}` ∈ `eth` \| `bsc` \| `base` \| `polygon` \| `optimism` \| `arbitrum` \| `avalanche` \| `zksync`（チェーン提供状況は [EVM ストリーム](/jp/docs/access-methods/kafka-streams/evm-streams) のマトリックスを参照）。
+
+### DEX トレード
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.dex.trades` | `TradeEvents` | `evm/trade_event.proto` | 確定時に送出される生の DEX スワップ |
+| `{chain}.dex.trades.processed` | `TradeEvents` | `evm/trade_event.proto` | 上記に USD／ネイティブ価格、不審フラグ、重複排除を加えたもの |
+
+### トークン
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.tokens` | `TokenEvents` | `evm/token_event.proto` | トークンライフサイクルイベント（create、update、migrate） |
+| `{chain}.tokens.created` | `TokenEvents` | `evm/token_event.proto` | トークン作成イベントのみにフィルタしたストリーム |
+| `{chain}.tokens.processed` | `TokenEvents` | `evm/token_event.proto` | description、image、social link を付与したトークン |
+
+### トークンレベル統計
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.token-prices` | `TokenPriceEvent` | `evm/token_price_event.proto` | 集計済み価格更新（USD ＋ネイティブ） |
+| `{chain}.token-supplies` | `TokenSupplyEvent` | `evm/token_supply_event.proto` | 流通量＋総供給量の変化 |
+| `{chain}.token-supplies.processed` | `TokenSupplyEvent` | `evm/token_supply_event.proto` | 小数正規化と USD 換算を付与した supply |
+| `{chain}.token-market-caps.processed` | `TokenMarketCapEvent` | `evm/token_market_cap_event.proto` | 時価総額（流通量 × 価格） |
+| `{chain}.token-holdings` | `TokenHoldingEvent` | `evm/token_holding_event.proto` | 保有者数、トップ N 集中度 |
+| `{chain}.trade-stats` | `TradeStatEvent` | `evm/trade_stat_event.proto` | 取引数、出来高、買い手／売り手 |
+
+### 残高
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.balances` | `BalanceEvents` | `evm/balance_event.proto` | アカウントごとの生の残高変動イベント |
+| `{chain}.balances.processed` | `BalanceEvents` | `evm/balance_event.proto` | USD ＋ネイティブ換算を付与した残高イベント |
+
+### DEX プール
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.dex.pools` | `DexPoolEvents` | `evm/dex_pool_event.proto` | プールの作成／更新／同期イベント |
+| `{chain}.dex.pools.processed` | `DexPoolEvents` | `evm/dex_pool_event.proto` | 流動性 USD ＋ネイティブ換算、fee tier を付与したプールイベント |
+
+### トランスファー
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.v1.transfers.proto` | `TransfersMessage` | `evm/transfers_message.proto` | すべてのトークン＋ネイティブ転送（ERC-20 / ERC-721 / ERC-1155 / native） |
+| `{chain}.v1.transfers.processed.proto` | `TransfersMessage` | `evm/transfers_message.proto` | ブロック時点の価格と USD 換算を付与した転送 |
+
+### ローソク足
+
+| トピック | Proto メッセージ | スキーマファイル | 説明 |
+|-------|---------------|-------------|-------------|
+| `{chain}.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 複数解像度で事前集計された OHLC |
+
+## コンシューマ例
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.evm.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["eth.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+JavaScript や Go の等価例は [EVM ストリームガイド](/jp/docs/access-methods/kafka-streams/evm-streams) を参照してください。
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="Solana Kafka トピック" icon="sun" href="/jp/api-reference/kafka-topics/solana">
+    Solana のトピック一覧
+  </Card>
+  <Card title="Tron Kafka トピック" icon="bolt" href="/jp/api-reference/kafka-topics/tron">
+    Tron のトピック一覧
+  </Card>
+  <Card title="Kafka ストリーム概要" icon="server" href="/jp/docs/access-methods/kafka-streams/overview">
+    接続、認証、パーティションモデル
+  </Card>
+  <Card title="EVM ストリームガイド" icon="book" href="/jp/docs/access-methods/kafka-streams/evm-streams">
+    フィールド定義とコンシューマ例
+  </Card>
+</CardGroup>

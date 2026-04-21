@@ -186,12 +186,7 @@ const x402Fetch = createX402Fetch({
 });
 
 const response = await x402Fetch(
-  "https://api.chainstream.io/v1/tokens/analyze",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tokenAddress: "0x1234...abcd", chain: "eth" }),
-  }
+  "https://api.chainstream.io/v2/token/eth/0x1234abcd"
 );
 
 const data = await response.json();
@@ -206,12 +201,8 @@ console.log(data);
 import { parsePaymentHeaders, createPaymentProof } from "@x402/core";
 import { sendPayment } from "@x402/evm";
 
-// 1. 发起初始请求
-const response = await fetch("https://api.chainstream.io/v1/tokens/analyze", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ tokenAddress: "0x1234...abcd" }),
-});
+// 1. 发起初始请求（无认证、无支付）
+const response = await fetch("https://api.chainstream.io/v2/token/eth/0x1234abcd");
 
 if (response.status === 402) {
   // 2. 从响应头解析支付详情

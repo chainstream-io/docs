@@ -1,18 +1,18 @@
 ---
-title: "Ordering & Pagination"
-description: "Sort query results with the orderBy input object and paginate with limit — naming conventions, defaults, and offset-based pagination"
+title: "排序與分頁"
+description: "使用 orderBy 輸入物件對查詢結果排序，並以 limit 分頁 — 命名慣例、預設值與基於 offset 的分頁"
 icon: "arrow-down-1-9"
 ---
 
 ## orderBy InputObject
 
-每個 Cube 會產生 `{Cube}OrderBy` 輸入物件，含 `ascending` 與 `descending` 欄位。各欄位接受 `CompareFields` 列舉值，命名為維度路徑以底線連接：
+每個 Cube 會生成 `{Cube}OrderBy` 輸入物件，包含 `ascending` 與 `descending` 欄位。每個欄位接受 `CompareFields` 列舉值，命名規則為維度路徑以下劃線連線：
 
 ```
 {DimensionGroup}_{DimensionField}
 ```
 
-巢狀維度則逐層連接：
+巢狀維度逐級拼接：
 
 ```
 Block_Time
@@ -27,25 +27,25 @@ orderBy: {descending: Block_Time}      # newest first
 orderBy: {ascending: Trade_Buy_Amount}  # smallest amount first
 ```
 
-### 常見 CompareFields 值
+### 常見 CompareFields 取值
 
 <div style={{ overflowX: 'auto', width: '100%' }}>
 
-| CompareFields 值 | 範例用法 | Cube | 說明 |
+| CompareFields 值 | 示例用法 | Cube | 說明 |
 |:-----------|:--------|:--------|:------------|
-| `Block_Time` | `orderBy: {descending: Block_Time}` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 最新的在前 |
-| `Block_Time` | `orderBy: {ascending: Block_Time}` | DEXTrades、Transfers、BalanceUpdates、DEXPools、TokenSupplyUpdates、Pairs、Tokens | 最舊的在前 |
-| `Interval_Time_Start` | `orderBy: {ascending: Interval_Time_Start}` | Pairs、Tokens | 最舊的在前（區間起始時間） |
+| `Block_Time` | `orderBy: {descending: Block_Time}` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 最新的在前 |
+| `Block_Time` | `orderBy: {ascending: Block_Time}` | DEXTrades, Transfers, BalanceUpdates, DEXPools, TokenSupplyUpdates, Pairs, Tokens | 最舊的在前 |
+| `Interval_Time_Start` | `orderBy: {ascending: Interval_Time_Start}` | Pairs, Tokens | 最舊的在前（區間起始時間） |
 | `Trade_Buy_Amount` | `orderBy: {descending: Trade_Buy_Amount}` | DEXTrades | 買入量大的在前 |
-| `Trade_Buy_PriceInUSD` | `orderBy: {descending: Trade_Buy_PriceInUSD}` | DEXTrades | USD 價高者在前 |
-| `Transfer_AmountInUSD` | `orderBy: {descending: Transfer_AmountInUSD}` | Transfers | USD 轉帳金額大者在前 |
-| `LatestBalanceUSD` | `orderBy: {descending: LatestBalanceUSD}` | TokenHolders | 持倉大者在前 |
-| `BuyVolumeUSDState` | `orderBy: {descending: BuyVolumeUSDState}` | WalletTokenPnL | 買入量高者在前 |
+| `Trade_Buy_PriceInUSD` | `orderBy: {descending: Trade_Buy_PriceInUSD}` | DEXTrades | USD 價高的在前 |
+| `Transfer_AmountInUSD` | `orderBy: {descending: Transfer_AmountInUSD}` | Transfers | USD 轉賬額大的在前 |
+| `LatestBalanceUSD` | `orderBy: {descending: LatestBalanceUSD}` | TokenHolders | 持倉 USD 大的在前 |
+| `BuyVolumeUSDState` | `orderBy: {descending: BuyVolumeUSDState}` | WalletTokenPnL | 買入量 USD 高的在前 |
 
 </div>
 
 <Tip>
-在 [GraphQL IDE](https://ide.chainstream.io) 使用自動完成即可探索某 Cube 所有可用的 `CompareFields`——輸入 `orderBy: {descending:` 後 IDE 會列出可用欄位。
+在 [GraphQL IDE](https://ide.chainstream.io) 中用自動補全檢視某 Cube 可用的全部 `CompareFields`——輸入 `orderBy: {descending:` 後 IDE 會列出可選欄位。
 </Tip>
 
 ### 用法
@@ -67,14 +67,14 @@ query {
 ```
 
 <Note>
-`orderBy` 僅接受**單一**方向／欄位組合。不支援多欄排序——查詢一次只依一個維度排序。
+`orderBy` 僅接受**單一**方向/欄位對。不支援多列排序——查詢每次只按一個維度排序。
 </Note>
 
 ---
 
-## limit 參數
+## limit 引數
 
-`limit` 控制回傳列數，並支援以 offset 為基礎的分頁：
+`limit` 控制返回行數，並支援基於 offset 的分頁：
 
 ```graphql
 input LimitInput {
@@ -83,9 +83,9 @@ input LimitInput {
 }
 ```
 
-### 預設與上限
+### 預設與最大限制
 
-每個 Cube 在省略 `limit` 時會套用**預設**筆數，並有**最大**上限：
+每個 Cube 在省略 `limit` 時有**預設**行數，並有**最大**上限：
 
 | Cube | 預設 `count` | 最大 `count` |
 |:-----|:----------------|:----------------|
@@ -101,20 +101,20 @@ input LimitInput {
 | WalletTokenPnL | 25 | 10,000 |
 
 <Info>
-若請求的 `count` 超過上限，伺服器會靜默裁切為最大值。
+若請求的 `count` 超過最大值，服務端會靜默截斷為最大允許值。
 </Info>
 
 ---
 
-## 以 offset 分頁
+## 基於 Offset 的分頁
 
-使用 `offset` 逐頁讀取結果集，模式很直觀：
+使用 `offset` 翻頁，模式很直接：
 
 - **第 1 頁**：`limit: { count: 50, offset: 0 }`
 - **第 2 頁**：`limit: { count: 50, offset: 50 }`
 - **第 3 頁**：`limit: { count: 50, offset: 100 }`
 
-### 範例：代幣持有者分頁
+### 示例：代幣持有者分頁
 
 <Tabs>
   <Tab title="第 1 頁">
@@ -156,24 +156,24 @@ query {
 ### 分頁建議
 
 <AccordionGroup>
-  <Accordion title="分頁時務必搭配 orderBy">
-    若無穩定排序，各頁之間列順序可能漂移。請一律將 `limit` 與能產生決定性順序的 `orderBy` 併用。
+  <Accordion title="分頁務必配合 orderBy">
+    沒有穩定排序時，行間順序可能在翻頁時變化。請始終將 `limit` 與能產生確定順序的 `orderBy` 一起使用。
   </Accordion>
-  <Accordion title="避免過深的 offset">
-    過大的 `offset`（例如 50,000+）可能拖慢查詢，因為資料庫須掃描並略過列。對超大資料集，宜以 `where` 縮小範圍，而非深度分頁。
+  <Accordion title="避免過大 offset">
+    很大的 `offset`（例如 50,000+）可能拖慢查詢，因為資料庫需掃描並跳過行。對超大結果集，優先用 `where` 收窄查詢，而非深度 offset 翻頁。
   </Accordion>
-  <Accordion title="以筆數判斷是否到底">
-    若某頁回傳列數少於請求的 `count`，表示已到資料末尾。亦可事先使用 `count` 指標欄取得總列數。
+  <Accordion title="用 count 判斷是否到底">
+    若某頁返回行數少於請求的 `count`，說明已到達結果末尾。也可事先用 `count` 指標欄位獲取總行數。
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 實務範例
+## 實用示例
 
 ### 最新大額成交
 
-取得 Solana 上最近 10 筆買入價值超過 10,000 美元的 DEX 成交：
+獲取 Solana 上最近 10 筆買入名義價值超過 10,000 美元的 DEX 成交：
 
 ```graphql
 query {
@@ -201,7 +201,7 @@ query {
 
 ### OHLC K 線——最近 60 分鐘
 
-取得某代幣 1 分鐘 K 線，依時間正序：
+獲取某代幣 1 分鐘 K 線，按時間正序：
 
 ```graphql
 query {
@@ -226,9 +226,9 @@ query {
 }
 ```
 
-### 前 50 名代幣持有者
+### Top 50 代幣持有者
 
-依 USD 餘額排序取得前 50 名持有者：
+按 USD 餘額排序取前 50 名持有者：
 
 ```graphql
 query {
@@ -254,9 +254,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="篩選" icon="filter" href="/zh-Hant/graphql/schema/filtering">
-    將排序與篩選結合，建構精準的分析查詢。
+    將排序與篩選結合，構建精確的分析查詢。
   </Card>
   <Card title="指標與聚合" icon="chart-simple" href="/zh-Hant/graphql/schema/metrics-aggregation">
-    以 count、sum、avg、min、max、uniq 聚合已排序的資料。
+    使用 count、sum、avg、min、max、uniq 對已排序資料聚合。
   </Card>
 </CardGroup>

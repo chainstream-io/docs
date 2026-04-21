@@ -1,6 +1,6 @@
 ---
 title: 'chainstream-defi Skill'
-description: '不可逆 DeFi 執行 — 兌換、跨鏈橋、Launchpad、交易廣播'
+description: '不可逆 DeFi 執行 — 兌換、Launchpad、交易廣播'
 icon: "right-left"
 ---
 
@@ -10,7 +10,7 @@ icon: "right-left"
 
 ## 概述
 
-`chainstream-defi` skill 處理 Solana、BSC 和 Ethereum 上的鏈上 DeFi 執行，涵蓋代幣兌換、跨鏈橋、Launchpad 發幣和交易廣播。
+`chainstream-defi` skill 處理 Solana、BSC 和 Ethereum 上的鏈上 DeFi 執行，涵蓋 DEX 代幣兌換、Launchpad 發幣和已簽名交易廣播。
 
 - **模式**：Process（破壞性，需要簽名）
 - **CLI**：`npx @chainstream-io/cli`（主要執行路徑）
@@ -35,31 +35,31 @@ DeFi 操作需要能夠簽名交易的錢包：
 
 ```mermaid
 sequenceDiagram
-  participant User as 用户
+  participant User as 使用者
   participant Agent as AI Agent
   participant CLI
   participant API as ChainStream API
-  participant Chain as 区块链
+  participant Chain as 區塊鏈
 
   Agent->>CLI: dex route
   CLI->>API: POST /v2/dex/{chain}/route
-  API-->>CLI: 报价（价格、费用、路由）
-  CLI-->>Agent: 报价详情
+  API-->>CLI: 報價（價格、費用、路由）
+  CLI-->>Agent: 報價詳情
 
-  Agent->>User: "兑换 1 SOL 约得 X 代币。手续费：Y。确认？"
-  User-->>Agent: "确认"
+  Agent->>User: "兌換 1 SOL 約得 X 代幣。手續費：Y。確認？"
+  User-->>Agent: "確認"
 
   Agent->>CLI: dex swap --from wallet ...
   CLI->>API: POST /v2/dex/{chain}/swap
-  API-->>CLI: 未签名交易
-  CLI->>Chain: 签名 + 发送交易
-  Chain-->>CLI: 交易哈希
+  API-->>CLI: 未簽名交易
+  CLI->>Chain: 簽名 + 發送交易
+  Chain-->>CLI: 交易雜湊
   CLI->>API: POST /v2/transaction/{chain}/send
   API-->>CLI: Job ID
 
-  CLI->>API: 轮询 Job 状态
+  CLI->>API: 輪詢 Job 狀態
   API-->>CLI: { status: "completed", hash: "..." }
-  CLI-->>Agent: 成功 + 浏览器链接
+  CLI-->>Agent: 成功 + 瀏覽器連結
 ```
 
 ### 階段 1：報價
@@ -176,7 +176,7 @@ chainstream job status --id <job_id> --wait --timeout 60000
 graph LR
   Research["chainstream-data"] --> Security["token security"]
   Security --> Quote["dex route"]
-  Quote --> Confirm["用户确认"]
+  Quote --> Confirm["使用者確認"]
   Confirm --> Swap["dex swap"]
   Swap --> Monitor["job status"]
 ```
@@ -186,6 +186,9 @@ graph LR
 <CardGroup cols={2}>
   <Card title="chainstream-data" icon="magnifying-glass" href="/zh-Hant/docs/ai-agents/agent-skills/chainstream-data">
     交易前研究代幣
+  </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" href="/zh-Hant/docs/ai-agents/agent-skills/chainstream-graphql">
+    透過自定義 GraphQL 做深入分析
   </Card>
   <Card title="CLI 命令" icon="terminal" href="/zh-Hant/api-reference/cli-commands/overview">
     完整 CLI 命令參考

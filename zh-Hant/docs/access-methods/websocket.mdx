@@ -141,18 +141,23 @@ ChainStream WebSocket 支援多種資料訂閱型別：
 
 | 類別 | 訂閱頻道字首 | 說明 |
 |:--|:--|:--|
-| K線資料 | `dex-candle:` | 代幣價格 K 線 |
-| 代幣統計 | `dex-token-stats:` | 代幣市場統計 |
-| 持有者統計 | `dex-token-holders-stats:` | 代幣持有者分佈 |
-| 新代幣 | `dex-token-new:` | 新上線代幣 |
-| 代幣交易 | `dex-token-trade:` | 代幣交易記錄 |
-| 錢包餘額 | `dex-wallet-balance:` | 錢包資產變化 |
-| 錢包交易 | `dex-wallet-trade:` | 錢包交易記錄 |
-| 排名資料 | `dex-ranking-token-stats:` | 代幣排名統計 |
-| 流動池 | `dex-dex-pool-balance:` | DEX 流動池資料 |
+| K 線（USD） | `dex-candle:` | 代幣 K 線（代幣 / 池 / 交易對變體） |
+| K 線（原生幣計價） | `dex-candle-in-native:` | 同上，以該鏈原生資產計價 |
+| 池 K 線 | `dex-pool-candle:` / `dex-pair-candle:` | 池級或交易對級 K 線 |
+| 代幣統計 | `dex-token-stats:` | 多視窗成交統計（1m、5m…1W、1M） |
+| 持有者統計 | `dex-token-holding:` | 持幣分佈與餘額標籤 |
+| 代幣供給 | `dex-token-supply:` | 供給與市值更新 |
+| 流動性 | `dex-token-liquidity:` / `dex-token-total-liquidity:` | 最大池 / 總流動性 |
+| 新代幣 | `dex-new-token:` / `dex-new-tokens:` / `dex-new-tokens-metadata:` | 新上線（單條 / 批次 / 後設資料） |
+| 代幣交易 | `dex-trade:` | 按代幣地址過濾的成交 |
+| 錢包餘額 | `dex-wallet-balance:` | 錢包代幣餘額變動 |
+| 錢包交易 | `dex-wallet-trade:` | 按錢包地址過濾的成交 |
+| 錢包 PnL | `dex-wallet-token-pnl:` / `dex-wallet-pnl-list:` | 逐幣 / 聚合錢包 PnL |
+| 排名 | `dex-ranking-list:` / `dex-ranking-token-stats-list:` / `dex-ranking-token-holding-list:` / `dex-ranking-token-supply-list:` / `dex-ranking-token-bounding-curve-list:` | 榜單成員 + 逐幣統計 |
+| DEX 池 | `dex-pool-balance:` | 池流動性快照 |
 
 <Tip>
-完整的訂閱型別、引數說明和響應格式請參考 [WebSocket API 文件](/zh-Hant/api-reference/endpoint/websocket/api)。
+完整的訂閱型別、引數說明和響應格式請參考 [WebSocket API 文件](/zh-Hant/api-reference/endpoint/websocket/api)。SDK（`client.stream.subscribeTokenCandles`、`subscribeTokenStats`、`subscribeTokenTrade`……）已封裝好這些頻道字串，不必手工拼接。
 </Tip>
 
 ### 訂閱格式示例
@@ -177,7 +182,7 @@ ws.send(JSON.stringify({
 // 新代币订阅
 ws.send(JSON.stringify({
   subscribe: {
-    channel: 'dex-token-new:sol'
+    channel: 'dex-new-token:sol'
   },
   id: 4
 }));
@@ -436,7 +441,7 @@ client.connect();
 // 等待连接成功后订阅
 setTimeout(() => {
   client.subscribe('dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m');
-  client.subscribe('dex-token-new:sol');
+  client.subscribe('dex-new-token:sol');
 }, 1000);
 ```
 
@@ -517,7 +522,7 @@ async def main():
     
     # 预先添加订阅
     client.subscriptions.add("dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m")
-    client.subscriptions.add("dex-token-new:sol")
+    client.subscriptions.add("dex-new-token:sol")
     
     await client.connect()
 

@@ -1,49 +1,107 @@
 ---
 title: "CLI"
-description: "The `chainstream` command-line interface — shell-native access to every data product and DeFi primitive."
+description: "The `chainstream` command-line interface — shell-native access to every data product, GraphQL and DeFi primitive."
 icon: "terminal"
 ---
 
-The ChainStream CLI is the command-line front door to the same [data products](/en/docs/data-products/overview) you'd hit via SDK, REST or GraphQL. It's designed to compose with `jq`, shell pipelines and AI agents that drive shells.
+The ChainStream CLI is the command-line front door to the same [data products](/en/docs/data-products/overview) you'd hit via SDK, REST, GraphQL or WebSocket. It's designed to compose with `jq`, shell pipelines and AI agents that drive shells.
 
 ## Install
 
 ```bash
-# macOS / Linux — via Homebrew
-brew install chainstream-io/tap/chainstream
-
-# npm
+# Option A — global install (recommended for interactive use)
 npm install -g @chainstream-io/cli
 
-# Direct binary
-curl -fsSL https://chainstream.io/install.sh | sh
+# Option B — zero-install, always-latest (recommended for agents and CI)
+npx @chainstream-io/cli <command>
 ```
+
+<Note>
+  In the examples below, `chainstream <cmd>` is equivalent to `npx @chainstream-io/cli <cmd>`. Pick whichever invocation style matches your environment.
+</Note>
 
 ## Authenticate
 
+The CLI has two authentication paths. Both grant access to the REST API, GraphQL and DeFi commands from the same config file.
+
 ```bash
-chainstream auth login          # opens browser for OAuth
-# or
-export CHAINSTREAM_API_KEY=...  # use env var for scripts
+# Create an on-host wallet and auto-grant the nano trial (50K CU, 30 days)
+chainstream login
+
+# …or set an existing API Key explicitly
+chainstream config set --key apiKey --value <your-api-key>
+
+# Scripts can pass it via env var instead
+export CHAINSTREAM_API_KEY=...
 ```
+
+Config lives in `~/.config/chainstream/config.json`; wallet keys live under `~/.config/chainstream/keys/`. `chainstream logout` clears the wallet config but keeps the key files on disk.
+
+## Command groups
+
+| Group | Purpose |
+|-------|---------|
+| `token` | `search`, `info`, `security`, `holders`, `candles`, `pools` |
+| `market` | `trending`, `new`, `trades` |
+| `wallet` | `profile`, `pnl`, `holdings`, `activity`, `address`, `balance`, `pricing`, `sign`, `set-raw`, `link` |
+| `dex` | `route`, `swap`, `create` — build **unsigned** transactions for a host-managed wallet to sign |
+| `tx` | `send`, `gas-price`, `estimate-gas` |
+| `graphql` | `schema`, `query` — see below |
+| `plan` | `status`, `purchase` — uses x402 auto-pay, returns API Key |
+| `config` | `set`, `get`, `auth` |
+| `job` | `status` |
+| top-level | `login`, `logout`, `verify`, `bind-email`, `bind-email-verify` |
+
+Global flag: `--json` prints single-line machine-readable JSON (default output is pretty-printed JSON).
 
 ## First commands
 
 ```bash
-chainstream tokens search --chain solana --query USDC --limit 5
-chainstream trades tail --chain ethereum --token 0xA0b8...
-chainstream rankings hot --chain solana --window 24h
-chainstream defi quote --chain solana --from SOL --to USDC --amount 1
+chainstream token search --chain sol --keyword PUMP --limit 5
+chainstream token security --chain sol --address <addr>
+chainstream market trending --chain sol --duration 1h --limit 20
+chainstream wallet pnl --chain sol --address <wallet>
+chainstream dex route --chain sol --from SOL --to USDC --amount 1
 ```
 
-Output is JSON by default; pass `--format=table` for humans.
+## GraphQL subcommand
+
+The `graphql` group exposes ChainStream's on-chain data warehouse (27 cubes across `Solana`, `EVM`, `Trading`) — useful when REST/MCP endpoints aren't flexible enough (cross-cube JOINs, custom aggregations, time-series, multi-condition filters). Default endpoint: `https://graphql.chainstream.io/graphql`.
+
+### Discover the schema
+
+```bash
+chainstream graphql schema --summary              # compact catalog of all 27 cubes
+chainstream graphql schema --type DEXTrades       # drill into one cube's fields
+chainstream graphql schema --full                 # complete reference (best for agents)
+chainstream graphql schema --summary --refresh    # bypass cache, re-fetch
+```
+
+### Execute a query
+
+```bash
+# Inline query
+chainstream graphql query \
+  --query 'query { Solana { DEXTrades(limit:{count:5}) { Block { Time } } } }' \
+  --json
+
+# Query from file with variables
+chainstream graphql query --file ./query.graphql --var '{"chain":"sol"}'
+```
+
+Auth is automatic: if an API Key is set (`config set --key apiKey` or `CHAINSTREAM_API_KEY`), the CLI sends it via `X-API-KEY`; otherwise it signs a SIWX token from the on-host wallet. GraphQL shares the same API Key and subscription pool as the REST API — no separate purchase.
+
+<Note>
+  On 402, `graphql query` returns a descriptive error. Run `chainstream plan status`, then `chainstream plan purchase` (which handles x402 auto-pay and saves the resulting API Key) and retry.
+</Note>
 
 ## When to use
 
 - Quick exploration ("what's happening right now?")
 - Scripts, cron jobs, GitHub Actions
 - Giving an AI agent shell-executable ChainStream primitives
-- Combining ChainStream output with other CLI tools via pipes
+- Custom GraphQL analytics without writing any client code
+- Preparing unsigned DeFi transactions for a user-controlled wallet to sign
 
 ## Next
 
@@ -51,7 +109,13 @@ Output is JSON by default; pass `--format=table` for humans.
   <Card title="CLI reference" icon="code" href="/en/api-reference/cli-commands/overview">
     Every command, flag and exit code.
   </Card>
-  <Card title="Agent Skills" icon="brain" href="/en/docs/ai-agents/agent-skills/introduction">
+  <Card title="GraphQL access method" icon="diagram-project" href="/en/docs/access-methods/graphql">
+    Endpoint, schema, query patterns.
+  </Card>
+  <Card title="chainstream-graphql skill" icon="brain" href="/en/docs/ai-agents/agent-skills/chainstream-graphql">
+    How AI agents should use `graphql schema` / `query`.
+  </Card>
+  <Card title="Agent Skills" icon="robot" href="/en/docs/ai-agents/agent-skills/introduction">
     How AI agents should use the CLI.
   </Card>
 </CardGroup>

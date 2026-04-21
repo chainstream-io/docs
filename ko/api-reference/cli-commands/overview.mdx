@@ -1,9 +1,159 @@
 ---
 title: "CLI 명령어 레퍼런스"
-description: "Full list of chainstream CLI commands, flags and output formats."
+description: "chainstream CLI 명령어, 플래그, 출력 형식 전체 목록."
+icon: "terminal"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+`chainstream` CLI는 모든 데이터 제품, GraphQL 큐브, DeFi 프리미티브를 단일 바이너리로 노출합니다. 이 페이지는 권위 있는 명령어 레퍼런스입니다 — 서술형 사용법과 설치는 [접근 방식 → CLI](/ko/docs/access-methods/cli)를 참고하세요.
+
+## 설치
+
+```bash
+# 전역 설치 (대화형 사용 권장)
+npm install -g @chainstream-io/cli
+
+# 설치 없이 항상 최신 버전 (에이전트 및 CI 권장)
+npx @chainstream-io/cli <command>
+```
+
+아래의 모든 호출은 두 방식 모두 동작합니다. 이 레퍼런스 전반에서는 짧은 형태 `chainstream <cmd>`를 사용하며, 이는 `npx @chainstream-io/cli <cmd>`와 동일합니다.
+
+## 전역 플래그
+
+| 플래그 | 용도 |
+|------|---------|
+| `--version` | CLI 버전을 출력하고 종료 |
+| `--json` | 한 줄 머신 판독 JSON 출력 (기본은 보기 좋게 포매팅된 JSON) |
+| `--help` | 현재 명령 또는 그룹의 도움말 출력 |
+
+## 환경 변수
+
+| 변수 | 용도 | 기본값 |
+|----------|---------|---------|
+| `CHAINSTREAM_API_KEY` | `config.json` 대신 사용할 API 키 | 설정 안 됨 |
+| `CHAINSTREAM_API_URL` | REST 베이스 URL 재정의 | `https://api.chainstream.io` |
+| `CHAINSTREAM_AUTH_URL` | Auth 서비스 URL 재정의 | 프로덕션 기본값 |
+| `CHAINSTREAM_GRAPHQL_URL` | GraphQL 엔드포인트 재정의 | `https://graphql.chainstream.io/graphql` |
+| `SOLANA_RPC_URL` | 지갑 / 잔고 조회용 Solana RPC 재정의 | 퍼블릭 RPC |
+| `BASE_RPC_URL` | Base RPC 재정의 | 퍼블릭 RPC |
+
+설정은 `~/.config/chainstream/config.json`에 저장되며, P-256 지갑 키는 `~/.config/chainstream/keys/`에 있습니다. `chainstream logout`은 지갑 설정을 지우지만 키는 보존합니다.
+
+## 인증 명령 (최상위)
+
+이 명령들은 프로그램 루트(서브 그룹 없음)에 등록되어 있습니다.
+
+| 명령 | 용도 | 인수 / 옵션 |
+|---------|---------|---------------------|
+| `login` | TEE 기반 지갑 생성(기본) 또는 이메일 OTP 플로우 시작. 최초 로그인 시 **nano trial**(50K CU, 30일)을 자동 지급 | `[email]`; `--key`; `--email` |
+| `verify` | `login --email`로 시작된 이메일 OTP 로그인 완료 | `--otp-id`; `--code`; `--email` |
+| `logout` | 세션 삭제 (디스크의 키는 보존) | — |
+| `bind-email` | 기존 지갑에 이메일 바인딩 | `[email]` |
+| `bind-email-verify` | 이메일 바인딩 OTP 플로우 완료 (비대화형) | `--otp-id`; `--code`; `--email` |
+
+## `token` — 토큰 정보 및 분석
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `search` | 키워드로 토큰 검색 | `--keyword`(필수); `--chain`(필수); `--limit` |
+| `info` | 토큰 전체 상세 조회 | `--chain`; `--address` |
+| `security` | 보안 리포트 (honeypot, mint authority, freeze authority 등) | `--chain`; `--address` |
+| `holders` | 상위 토큰 홀더 | `--chain`; `--address`; `--limit` |
+| `candles` | OHLCV 캔들스틱 | `--chain`; `--address`; `--resolution`; `--from`; `--to`; `--limit` |
+| `pools` | 토큰의 유동성 풀 | `--chain`; `--address` |
+
+## `market` — 시장 데이터 및 발견
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `trending` | 시간 창별 핫 / 트렌딩 토큰 | `--chain`; `--duration`; `--limit` |
+| `new` | 신규 생성된 토큰 | `--chain`; `--limit` |
+| `trades` | 최근 거래, 선택적으로 토큰 필터 | `--chain`; `--token`; `--limit` |
+
+## `wallet` — 지갑 분석, 관리, 서명
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `sign` | 호스트 지갑으로 직렬화된 트랜잭션 서명 | `--chain`; `--tx` |
+| `profile` | PnL + 순자산 + 상위 보유 한 번의 호출로 | `--chain`; `--address` |
+| `pnl` | PnL 상세 | `--chain`; `--address` |
+| `holdings` | 토큰 잔고 | `--chain`; `--address`; `--limit` |
+| `activity` | 전송 내역 | `--chain`; `--address`; `--limit` |
+| `address` | 현재 지갑 주소 표시 | — |
+| `balance` | 네이티브 + USDC 잔고 (단일 요청) | `--chain` (`sol` \| `base`) |
+| `set-raw` | 원시 프라이빗 키 가져오기 (개발 / 테스트 전용) | `--chain` (`base` \| `sol`) |
+| `link` | 구독에 지갑 주소 연결 | `--chain` (`evm` \| `solana`) |
+| `pricing` | 사용 가능한 x402 플랜과 가격 조회 | — |
+
+## `dex` — DEX 라우트, 스왑, 토큰 생성
+
+모든 명령은 서버 측에서 구축된 **서명되지 않은** 트랜잭션을 반환합니다; 서명은 호스트 지갑에서 이루어집니다.
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `route` | 집계된 라우트 + 서명되지 않은 스왑 트랜잭션 | `--chain`; `--from`; `--input-token`; `--output-token`; `--amount`; `--slippage`; `--dex`; `--recipient`; `--anti-mev`; `--gas-price`; `--gas-limit`; `--max-fee-per-gas`; `--max-priority-fee-per-gas` |
+| `swap` | 서명되지 않은 스왑 트랜잭션 (직접, 집계 없음) | `--chain`; `--from`; `--input-token`; `--output-token`; `--amount`; `--slippage`; `--dex` |
+| `create` | 서명되지 않은 런치패드 토큰 생성 트랜잭션 | `--chain`; `--from`; `--name`; `--symbol`; `--dex`; `--uri`; `--image` |
+
+## `tx` — 브로드캐스트 및 가스
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `send` | 서명된 트랜잭션 브로드캐스트 | `--chain`; `--signed-tx`; `--submit-type`; `--anti-mev` |
+| `gas-price` | 현재 가스 가격 (EVM만) | `--chain` (`eth` \| `bsc`) |
+| `estimate-gas` | EVM 호출의 가스 한도 추정 | `--chain`; `--from`; `--to`; `--data`; `--value` |
+
+## `job` — 비동기 잡 폴링
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `status` | 장시간 실행 잡의 상태 확인 | `--id`; `--wait`; `--timeout` |
+
+## `graphql` — GraphQL 스키마 및 쿼리
+
+전체 사용법 가이드는 [접근 방식 → CLI → GraphQL 서브명령](/ko/docs/access-methods/cli#graphql-서브명령)과 Agent Skill [chainstream-graphql](/ko/docs/ai-agents/agent-skills/chainstream-graphql)을 참고하세요.
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `schema` | 스키마 탐색 (큐브, 타입, 필드) | `--summary`; `--type <cube>`; `--full`; `--refresh` |
+| `query` | GraphQL 쿼리 실행 | `--query <gql>`; `--file <path>`; `--var <json>` |
+
+## `plan` — 구독 및 x402 자동 결제
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `status` | 현재 플랜, 남은 쿼터, 사용량 | `--chain`; `--address` |
+| `purchase` | x402 / MPP로 플랜 구매 (반환된 API 키를 `config.json`에 자동 저장) | `--plan` |
+
+## `config` — 로컬 설정
+
+| 서브명령 | 용도 | 옵션 |
+|-----------|---------|---------|
+| `set` | 설정 값 지정 | `--key` (`apiKey` \| `baseUrl` \| `walletChain`); `--value` |
+| `get` | 현재 설정 표시 | `--key` (선택) |
+| `auth` | 현재 인증 상태 표시 | — |
+
+## 종료 동작
+
+- `0` — 성공 (또는 빈 결과)
+- `1` — 사용자 대면 오류, stdout에 JSON 페이로드 (`--json`이 꺼져 있지 않은 한, 꺼진 경우 포매팅된 오류 출력)
+- 인증 실패(`401`), 결제 필요(`402`), 네트워크 오류 시 0이 아닌 종료 코드
+
+데이터 / GraphQL 명령에서 402가 발생하면 CLI는 `wallet pricing`과 `plan purchase`로의 포인터를 출력합니다. `plan purchase` 자체가 x402 자동 결제를 투명하게 처리합니다.
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="접근 방식 → CLI" icon="terminal" href="/ko/docs/access-methods/cli">
+    서술형 사용법: 설치, 인증, 첫 명령, GraphQL 서브명령.
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/ko/docs/ai-agents/agent-skills/introduction">
+    AI 에이전트가 CLI를 구동하는 방법.
+  </Card>
+  <Card title="x402 결제" icon="credit-card" href="/ko/docs/platform/billing-payments/x402-payments">
+    `plan purchase`와 실시간 402 처리 방식.
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/ko/docs/access-methods/graphql">
+    GraphQL 표면의 엔드포인트, 스키마, 인증.
+  </Card>
+</CardGroup>

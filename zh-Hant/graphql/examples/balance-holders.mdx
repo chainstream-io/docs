@@ -1,24 +1,24 @@
 ---
-title: "Balances & Holders"
-description: "Query examples for wallet balances, balance history, and token holders"
+title: "餘額與持有人"
+description: "錢包餘額、餘額歷史與代幣持有人的查詢範例"
 icon: "wallet"
 ---
 
-本頁涵蓋下列用於錢包與持倉者分析的 Cube：
+本文介紹用於錢包與持幣者分析的 Cube：
 
-- **BalanceUpdates**（DWD）— 錢包逐事件的餘額變動
-- **TokenHolders**（DWS）— 代幣目前的持倉快照
-- **WalletTokenPnL**（DWS）— 錢包各代幣的損益
+- **BalanceUpdates**（DWD）— 錢包維度的逐事件餘額變動
+- **TokenHolders**（DWS）— 代幣當前持幣者快照
+- **WalletTokenPnL**（DWS）— 錢包按代幣的盈虧（PnL）
 
 <Note>
-以下範例皆使用 `network: sol`（Solana）。若為其他支援鏈，請改為 `eth`、`bsc` 或 `polygon`。
+以下示例均使用 `network: sol`（Solana）。其他支援的鏈可改為 `eth`、`bsc` 或 `polygon`。
 </Note>
 
 ---
 
-## 如何取得錢包的代幣餘額？
+## 如何獲取錢包的代幣餘額？
 
-取得錢包目前的代幣餘額。此查詢回傳該錢包持有各代幣的最新一筆餘額更新事件。
+查詢錢包當前代幣餘額。以下查詢返回該錢包持有的每種代幣的最新一條餘額更新事件。
 
 ```graphql
 query {
@@ -40,34 +40,34 @@ query {
 ```
 
 <Tip>
-[在 GraphQL IDE 開啟](https://ide.chainstream.io) — 貼上上方查詢即可互動執行，並享有自動完成與 schema 探索。
+[在 GraphQL IDE 中開啟](https://ide.chainstream.io) — 將上方查詢貼上進去即可互動執行，並享受自動補全與 schema 瀏覽。
 </Tip>
 
 <Tip>
-請將 `WALLET_ADDRESS` 換成要檢視的錢包。`ownerAddress` 選擇器會依錢包擁有者篩選餘額更新事件。
+將 `WALLET_ADDRESS` 替換為要檢視的錢包。`ownerAddress` 選擇器按錢包所有者過濾餘額更新事件。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `BalanceUpdate.Currency.MintAddress` | 代幣地址 |
-    | `BalanceUpdate.Account.Owner` | 錢包擁有者地址 |
+    | `BalanceUpdate.Account.Owner` | 錢包所有者地址 |
     | `BalanceUpdate.PostBalance` | 更新後的代幣餘額 |
-    | `BalanceUpdate.PostBalanceInUSD` | 餘額的美元價值 |
-    | `Block.Time` | 餘額更新的時間戳 |
+    | `BalanceUpdate.PostBalanceInUSD` | 餘額的 USD 價值 |
+    | `Block.Time` | 餘額更新時間戳 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **提高 limit**：設 `count: 200` 以取得更多代幣（持倉較多的錢包）
-    - **依價值篩選**：加上 `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}` 排除碎額餘額
+  <Accordion title="自定義提示">
+    - **提高 limit**：將 `count` 設為 `200` 以覆蓋更多代幣（持倉較多的錢包）
+    - **按價值過濾**：新增 `where: {BalanceUpdate: {PostBalanceInUSD: {gt: 1}}}` 排除粉塵餘額
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 如何取得餘額變動歷史？
+## 如何獲取餘額變動歷史？
 
-追蹤某錢包對特定代幣的餘額如何隨時間變化。
+跟蹤某錢包對特定代幣的餘額如何隨時間變化。
 
 ```graphql
 query {
@@ -91,31 +91,31 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `BalanceUpdate.PreBalance` | 事件前的餘額 |
     | `BalanceUpdate.PostBalance` | 事件後的餘額 |
-    | `BalanceUpdate.PostBalanceInUSD` | 更新後餘額的美元價值 |
-    | `Block.Time` | 餘額變動時間 |
-    | `Transaction.Hash` | 造成變動的交易 |
+    | `BalanceUpdate.PostBalanceInUSD` | 更新後餘額的 USD 價值 |
+    | `Block.Time` | 餘額變動發生時間 |
+    | `Transaction.Hash` | 導致變動的交易 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **判斷累積**：比較 `PreBalance` 與 `PostBalance` — 當 `PostBalance > PreBalance` 表示錢包在累積
-    - **時間範圍**：加上 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定區間
-    - **更長歷史**：將 `count` 提高到最多 `10000` 以取得完整餘額歷史
+  <Accordion title="自定義提示">
+    - **識別累積**：對比 `PreBalance` 與 `PostBalance` — 當 `PostBalance > PreBalance` 時表示在累積
+    - **時間範圍**：新增 `where: {Block: {Time: {since: "2025-03-01T00:00:00Z"}}}` 限定時段
+    - **更長曆史**：將 `count` 提高到最多 `10000` 以獲取完整餘額歷史
   </Accordion>
 </AccordionGroup>
 
 <Info>
-`PostBalance` 與 `PreBalance` 的差額即每筆事件的淨變動。正數表示代幣流入；負數表示流出。
+`PostBalance` 與 `PreBalance` 的差值表示該事件的淨變動。正增量表示代幣流入；負增量表示流出。
 </Info>
 
 ---
 
-## 如何取得代幣的大戶持倉？
+## 如何獲取代幣頭部持幣者？
 
-依餘額排序取得代幣的頂部持倉者。
+按餘額排序獲取某代幣的頭部持幣者。
 
 ```graphql
 query {
@@ -136,32 +136,32 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `Token.Address` | 代幣地址 |
-    | `Holder.Address` | 持倉者錢包地址 |
-    | `LatestBalance` | 目前代幣餘額 |
-    | `LatestBalanceUSD` | 目前餘額的美元價值 |
-    | `FirstSeen` | 該持倉者首次取得此代幣的時間 |
-    | `LastSeen` | 涉及此代幣的最近一筆交易 |
+    | `Holder.Address` | 持幣者錢包地址 |
+    | `LatestBalance` | 當前代幣餘額 |
+    | `LatestBalanceUSD` | 當前餘額的 USD 價值 |
+    | `FirstSeen` | 該持幣者首次持有該代幣的時間 |
+    | `LastSeen` | 涉及該代幣的最近一筆交易時間 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **大戶門檻**：加上 `where: {LatestBalanceUSD: {gt: 10000}}` 僅顯示大額持倉者
-    - **活躍持倉者**：加上 `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}` 篩選近期仍有活動者
-    - **持倉人數**：使用 `count` 指標取得總持倉者數
+  <Accordion title="自定義提示">
+    - **巨鯨閾值**：新增 `where: {LatestBalanceUSD: {gt: 10000}}` 僅顯示大額持幣者
+    - **活躍持幣者**：新增 `where: {LastSeen: {after: "2025-03-01T00:00:00Z"}}` 過濾近期仍活躍的持幣者
+    - **持幣者數量**：使用 `count` 指標獲取持幣者總數
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-**TokenHolders** Cube 屬於 DWS（Summary）層資料表 — 已預先彙總，查詢遠比掃描單筆餘額更新快。適合用於持倉排名與分佈分析。
+**TokenHolders** Cube 屬於 DWS（彙總）層表 — 已預聚合，查詢比逐條掃餘額更新快得多。適合持幣排名與分佈分析。
 </Tip>
 
 ---
 
-## 如何取得錢包的損益？
+## 如何獲取錢包盈虧（PnL）？
 
-取得錢包各代幣的損益資料，包含買／賣成交量與交易次數。
+獲取錢包按代幣的盈虧資料，包含買賣成交額與成交筆數。
 
 ```graphql
 query {
@@ -184,32 +184,32 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `Wallet.Address` | 錢包地址 |
     | `Token.Address` | 代幣地址 |
-    | `BuyVolumeUSDState` | 買入此代幣累計花費的美元 |
-    | `SellVolumeUSDState` | 賣出此代幣累計收到的美元 |
-    | `BuyCountState` | 買入交易次數 |
-    | `SellCountState` | 賣出交易次數 |
-    | `FirstTradeState` | 首筆交易時間戳 |
-    | `LastTradeState` | 最近一筆交易時間戳 |
+    | `BuyVolumeUSDState` | 買入該代幣累計花費的 USD |
+    | `SellVolumeUSDState` | 賣出該代幣累計收到的 USD |
+    | `BuyCountState` | 買入成交筆數 |
+    | `SellCountState` | 賣出成交筆數 |
+    | `FirstTradeState` | 首筆成交時間戳 |
+    | `LastTradeState` | 最近一筆成交時間戳 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **計算 PnL**：`SellVolumeUSDState - BuyVolumeUSDState` 即各代幣已實現損益
-    - **仍持倉部位**：篩選 `SellCountState < BuyCountState` 可找出錢包仍持有的代幣
-    - **高頻交易代幣**：依 `BuyCountState` 或 `SellCountState` 排序找出最常交易的代幣
+  <Accordion title="自定義提示">
+    - **計算 PnL**：`SellVolumeUSDState - BuyVolumeUSDState` 為各代幣已實現盈虧
+    - **仍在持倉的代幣**：篩選 `SellCountState < BuyCountState` 可找到錢包仍持有的代幣
+    - **高頻交易代幣**：按 `BuyCountState` 或 `SellCountState` 排序可找到交易最頻繁的代幣
   </Accordion>
 </AccordionGroup>
 
 <Info>
-**WalletTokenPnL** Cube 使用 `walletAddress` 選擇器（非 `ownerAddress`）。提供累計交易指標 — 適合投組分析與績效排行榜。
+**WalletTokenPnL** Cube 使用 `walletAddress` 選擇器（不是 `ownerAddress`）。提供累計交易指標 — 適合組合分析與業績排行。
 </Info>
 
 ---
 
-## 多鏈範例
+## 多鏈示例
 
 <Tabs>
   <Tab title="Solana">
@@ -288,19 +288,19 @@ query {
 
 ---
 
-## 下一步
+## 後續步驟
 
 <CardGroup cols={2}>
-  <Card title="DEX 交易" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
-    查詢 DEX 交易資料 — 代幣成交、錢包活動與頂尖交易者。
+  <Card title="DEX 成交" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
+    查詢 DEX 交易資料 — 代幣成交、錢包活動與頭部交易者。
   </Card>
-  <Card title="轉帳" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
-    追蹤錢包之間的鏈上代幣轉帳。
+  <Card title="轉賬" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
+    跟蹤錢包之間的鏈上代幣轉賬。
   </Card>
-  <Card title="資金池與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
-    探索 DEX 資金池與流動性資料。
+  <Card title="池子與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
+    探索 DEX 池子與流動性資料。
   </Card>
   <Card title="OHLC 與統計" icon="chart-candlestick" href="/zh-Hant/graphql/examples/ohlc-stats">
-    取得 K 線、交易統計、TokenSupplyUpdates 與代幣 metadata。
+    獲取 K 線、成交統計、TokenSupplyUpdates 與代幣後設資料。
   </Card>
 </CardGroup>

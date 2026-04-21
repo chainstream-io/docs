@@ -6,16 +6,63 @@ icon: "download"
 
 ## インストール方法
 
-使用するエージェントのプラットフォームに応じて、ChainStream スキルは複数の経路からインストールできます。
+使用するエージェントのプラットフォームに応じて、ChainStream スキルは複数の経路からインストールできます。`npx skills add` 経由が最速です — ワンコマンドで Cursor、Claude Code、Codex、OpenCode、OpenClaw で動作します。
 
-| プラットフォーム | 方法 | 所要時間の目安 |
-|----------|--------|------------|
-| [ClawHub](#clawhub) | マーケットプレイスからインストール | 約 30 秒 |
-| [Cursor](#cursor) | プラグインの自動検出 | 約 1 分 |
-| [Claude Code](#claude-code) | プラグインインストール | 約 30 秒 |
-| [Codex](#codex) | Git クローン | 約 1 分 |
-| [OpenCode](#opencode) | Git クローン | 約 1 分 |
-| [Gemini CLI](#gemini-cli) | 拡張機能インストール | 約 30 秒 |
+| 方法 | 内容 | 所要時間の目安 |
+|--------|--------------|------------|
+| [`npx skills add`（推奨）](#npx-skills-add-でインストール-推奨) | クロスプラットフォームインストーラ：ChainStream の 3 スキルを対象エージェントに追加 | 約 20 秒 |
+| [ClawHub](#clawhub) | `openclaw skills install` でマーケットプレイスからインストール | 約 30 秒 |
+| [Cursor](#cursor) | リポジトリをクローン＋ `.cursor-plugin/` 自動検出 | 約 1 分 |
+| [Claude Code](#claude-code) | `/plugin install chainstream` | 約 30 秒 |
+| [Codex](#codex) | Git クローン＋ `~/.agents/skills/` へのシンボリックリンク | 約 1 分 |
+| [OpenCode](#opencode) | Git クローン＋ `~/.agents/skills/` へのシンボリックリンク | 約 1 分 |
+| [Gemini CLI](#gemini-cli) | `gemini extensions install` | 約 30 秒 |
+
+---
+
+## `npx skills add` でインストール（推奨）
+
+ワンコマンドで ChainStream の 3 つのスキル（`chainstream-data`、`chainstream-graphql`、`chainstream-defi`）を対象エージェントにインストールします。`-a <agent>` でインストール先エージェントを選択します。
+
+<Tabs>
+  <Tab title="Cursor">
+    ```bash
+    npx skills add chainstream-io/skills -a cursor
+    ```
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    npx skills add chainstream-io/skills -a claude-code
+    ```
+  </Tab>
+  <Tab title="OpenClaw">
+    ```bash
+    npx skills add chainstream-io/skills -a openclaw
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    npx skills add chainstream-io/skills -a codex
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    npx skills add chainstream-io/skills -a opencode
+    ```
+  </Tab>
+</Tabs>
+
+インストール後、CLI と MCP ツールを動作させるために API Key を設定してください：
+
+```bash
+npx @chainstream-io/cli login                               # ウォレット作成＋ nano trial（50K CU）取得
+# または、既にキーがある場合：
+npx @chainstream-io/cli config set --key apiKey --value <your-api-key>
+```
+
+<Note>
+  `npx skills add` は実行のたびに最新バージョンのスキルを取得するため、再実行で更新もできます。OpenClaw のフルインストールフロー（スキル検証、マルチエージェントターゲティング）は [エコシステム → OpenClaw → スキルインストール](/jp/docs/ecosystem/openclaw/skills-install) を参照してください。
+</Note>
 
 ---
 
@@ -26,11 +73,13 @@ ChainStream スキルは OpenClaw のスキルマーケットプレイス [ClawH
 | スキル | ClawHub URL | バージョン |
 |-------|------------|---------|
 | chainstream-data | [clawhub.ai/chainstream-data](https://clawhub.ai/chainstream-data) | 最新 |
+| chainstream-graphql | [clawhub.ai/chainstream-graphql](https://clawhub.ai/chainstream-graphql) | 最新 |
 | chainstream-defi | [clawhub.ai/chainstream-defi](https://clawhub.ai/chainstream-defi) | 最新 |
 
 ```bash
 # Install via ClawHub CLI
 openclaw skills install chainstream-data
+openclaw skills install chainstream-graphql
 openclaw skills install chainstream-defi
 ```
 
@@ -181,9 +230,15 @@ npx @chainstream-io/cli token search --keyword PUMP --chain sol
 
 <CardGroup cols={2}>
   <Card title="chainstream-data" icon="magnifying-glass" href="/jp/docs/ai-agents/agent-skills/chainstream-data">
-    データクエリ機能：トークン、市場、ウォレット
+    データクエリ：トークン、市場、ウォレット
+  </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" href="/jp/docs/ai-agents/agent-skills/chainstream-graphql">
+    カスタム GraphQL 分析と JOIN
   </Card>
   <Card title="chainstream-defi" icon="right-left" href="/jp/docs/ai-agents/agent-skills/chainstream-defi">
     DeFi 実行：スワップ、ローンチパッド、トランザクション
+  </Card>
+  <Card title="OpenClaw Skills インストール" icon="cube" href="/jp/docs/ecosystem/openclaw/skills-install">
+    `npx skills` の全フラグとマルチエージェントターゲティング
   </Card>
 </CardGroup>

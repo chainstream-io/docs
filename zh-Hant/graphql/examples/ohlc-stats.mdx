@@ -1,25 +1,25 @@
 ---
-title: "OHLC & Statistics"
-description: "Query examples for K-line data (Pairs), per-token trade statistics (Tokens), supply and valuation (TokenSupplyUpdates), and where to find token metadata"
+title: "OHLC 與統計"
+description: "K 線資料（Pairs）、單代幣交易統計（Tokens）、供應量與估值（TokenSupplyUpdates）的查詢範例，以及代幣 metadata 的取得位置"
 icon: "chart-candlestick"
 ---
 
-本頁說明聚合後的交易與供應量資料。**Cube 名稱**為 **Trading** chain group 底下的 **Pairs** 與 **Tokens**（跨鏈 OHLC 與成交統計）。市值與價格隨時間變化則來自 **Solana** 或 **EVM** 底下的 **TokenSupplyUpdates**。
+本頁介紹聚合交易與供應資料。**Cube 名稱**為 **Trading** 鏈組中的 **Pairs** 與 **Tokens**（跨鏈 OHLC 與成交統計）。市值與價格隨時間變化來自 **Solana** 或 **EVM** 下的 **TokenSupplyUpdates**。
 
-- **Pairs**（Trading，DWM）——每分鐘 K 線／蠟燭圖資料（OHLC、成交量、成交筆數）
-- **Tokens**（Trading，DWM）——每分鐘成交統計，含買／賣拆解與不重複交易人數
-- **TokenSupplyUpdates**（Solana／EVM，DWD）——增發／銷毀事件，含供應量、價格、市值與 FDV 等欄位
-- **Token 中繼資料**——目前沒有獨立的 **TokenSearch** Cube；請在 **Pairs**／**Tokens** 上使用 **Token**（及相關）維度，或搭配 **DEXPools**、**TokenHolders**、**DEXTradeByTokens** 等 Cube 做探索與篩選
+- **Pairs**（Trading，DWM）— 按分鐘的 K 線 / 蠟燭圖資料（OHLC、成交量、成交筆數）
+- **Tokens**（Trading，DWM）— 按分鐘的成交統計，含買賣拆分與獨立交易人數
+- **TokenSupplyUpdates**（Solana / EVM，DWD）— 鑄幣/銷燬事件，含供應量、價格、市值與 FDV 等欄位
+- **代幣後設資料** — 當前沒有單獨的 **TokenSearch** Cube；請在 **Pairs** / **Tokens** 上使用 **Token**（及相關）維度，或使用 **DEXPools**、**TokenHolders**、**DEXTradeByTokens** 等 Cube 做發現與篩選
 
 <Note>
-**Trading** **沒有** `network` 參數。請以 `where: { Market: { Network: { is: "sol" } } }`（或 `eth`、`bsc`、`polygon`）依鏈篩選。**Solana** 與 **EVM** 群組則使用慣用包裝（`Solana { ... }`、`EVM(network: eth) { ... }`）。
+**Trading** **沒有** `network` 引數。請用 `where: { Market: { Network: { is: "sol" } } }`（或 `eth`、`bsc`、`polygon`）按鏈篩選。**Solana** 與 **EVM** 鏈組仍使用各自的包裝（`Solana { ... }`、`EVM(network: eth) { ... }`）。
 </Note>
 
 ---
 
-## 如何取得 K 線（OHLC）蠟燭圖資料？
+## 如何獲取 K 線（OHLC）蠟燭圖資料？
 
-查詢代幣的蠟燭圖資料——每分鐘的開、高、低、收盤價，以及 USD 成交量與成交筆數。請在 **Trading** 內使用 **Pairs** Cube。
+按代幣拉取蠟燭圖資料 — 每分鐘的開、高、低、收價格，以及 USD 成交量與成交筆數。在 **Trading** 內使用 **Pairs** Cube。
 
 ```graphql
 query {
@@ -49,43 +49,43 @@ query {
 ```
 
 <Tip>
-[在 GraphQL IDE 中開啟](https://ide.chainstream.io)——貼上上方查詢即可互動執行，並享有自動完成與 schema 探索。
+[在 GraphQL IDE 中開啟](https://ide.chainstream.io) — 貼上上方查詢即可互動執行，並享受自動補全與 schema 瀏覽。
 </Tip>
 
 <Tip>
-將 `TOKEN_ADDRESS` 換成代幣 mint 或合約位址。每一列代表一分鐘區間——`limit: { count: 60 }` 約一小時，`count: 1440` 約 24 小時。若省略 `Market` 篩選，可於單一結果集中跨所有鏈查詢。
+將 `TOKEN_ADDRESS` 替換為代幣 mint 或合約地址。每一行對應一分鐘桶 — 使用 `limit: { count: 60 }` 約一小時，`count: 1440` 約 24 小時。省略 `Market` 篩選可在單次結果中跨所有鏈查詢。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="重點欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
-    | `Interval.Time.Start` | 分鐘區間起點（與蠟燭時間相同） |
-    | `Token.Address` | 代幣位址 |
-    | `Market.Network` | 鏈識別（`sol`、`eth`、`bsc`、…） |
-    | `Price.Ohlc.Open` | 區間開盤價 |
-    | `Price.Ohlc.High` | 區間內最高價 |
-    | `Price.Ohlc.Low` | 區間內最低價 |
-    | `Price.Ohlc.Close` | 區間收盤價 |
-    | `Volume.Usd` | 本區間 USD 成交總額 |
-    | `Stats.TradeCount` | 本區間成交筆數 |
+    | `Interval.Time.Start` | 分鐘桶起始時間（與蠟燭時間一致） |
+    | `Token.Address` | 代幣地址 |
+    | `Market.Network` | 鏈標識（`sol`、`eth`、`bsc`、…） |
+    | `Price.Ohlc.Open` | 該區間開盤價 |
+    | `Price.Ohlc.High` | 該區間最高價 |
+    | `Price.Ohlc.Low` | 該區間最低價 |
+    | `Price.Ohlc.Close` | 該區間收盤價 |
+    | `Volume.Usd` | 該區間 USD 總成交量 |
+    | `Stats.TradeCount` | 該區間成交筆數 |
   </Accordion>
-  <Accordion title="自訂技巧">
-    - **更長時間範圍**：以較大的 `limit` 多取列，或在客戶端聚合；蠟燭以分鐘粒度儲存
-    - **成交量篩選**：例如 `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }` 略過低量區間
+  <Accordion title="自定義技巧">
+    - **更長週期**：增大 `limit` 請求更多行，或在客戶端聚合；蠟燭以分鐘粒度儲存
+    - **成交量篩選**：例如 `where: { Volume: { Usd: { gt: 100 } }, Market: { Network: { is: "sol" } } }` 以跳過低成交量區間
     - **時間範圍**：例如 `where: { Block: { Time: { since: "2026-03-27T00:00:00Z" } }, Market: { Network: { is: "sol" } } }`
   </Accordion>
 </AccordionGroup>
 
 <Info>
-**Pairs** Cube 為 **DWM**（聚合）模型——資料已預先按分鐘計算。繪圖時比掃描原始成交快得多。
+**Pairs** Cube 為 **DWM**（聚合）模型 — 資料按分鐘預計算。比掃描原始成交構建圖表要快得多。
 </Info>
 
 ---
 
-## 如何取得代幣的成交統計？
+## 如何獲取某代幣的成交統計？
 
-取得每分鐘成交統計，含買／賣筆數、不重複買方／賣方人數與成交量。請在 **Trading** 內使用 **Tokens** Cube。
+獲取按分鐘的成交統計，含買賣筆數、獨立買/賣家人數與成交量。在 **Trading** 內使用 **Tokens** Cube。
 
 ```graphql
 query {
@@ -113,34 +113,34 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="重點欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
-    | `Interval.Time.Start` | 分鐘區間起點（與蠟燭時間相同） |
-    | `Stats.TradeCount` | 本區間總成交筆數 |
+    | `Interval.Time.Start` | 分鐘桶起始時間（與蠟燭時間一致） |
+    | `Stats.TradeCount` | 該區間總成交筆數 |
     | `Stats.BuyCount` | 買方成交筆數 |
     | `Stats.SellCount` | 賣方成交筆數 |
-    | `Volume.Usd` | USD 成交總額 |
-    | `Stats.UniqueBuyers` | 不重複買方錢包數 |
-    | `Stats.UniqueSellers` | 不重複賣方錢包數 |
+    | `Volume.Usd` | USD 總成交量 |
+    | `Stats.UniqueBuyers` | 獨立買家錢包數 |
+    | `Stats.UniqueSellers` | 獨立賣家錢包數 |
   </Accordion>
-  <Accordion title="自訂技巧">
-    - **買賣力道**：比較 `Stats.BuyCount` 與 `Stats.SellCount`
-    - **不重複交易人**：`Stats.UniqueBuyers` 與 `Stats.UniqueSellers` 可看出量是分散或集中
-    - **活動熱度圖**：查詢整天（`count: 1440`）並依 `Interval.Time.Start`（或 `Block.Time`）繪圖
-    - **買賣成交量**：需要 USD 拆解時，**Tokens** 紀錄亦提供 `Volume.BuyVolumeUSD` 與 `Volume.SellVolumeUSD`
+  <Accordion title="自定義技巧">
+    - **買賣壓力**：對比 `Stats.BuyCount` 與 `Stats.SellCount`
+    - **獨立交易者**：`Stats.UniqueBuyers` 與 `Stats.UniqueSellers` 反映成交量是分散還是集中
+    - **活動熱力圖**：查詢一整天（`count: 1440`）並按 `Interval.Time.Start`（或 `Block.Time`）製圖
+    - **買賣成交量**：需要 USD 拆分時，**Tokens** 記錄還提供 `Volume.BuyVolumeUSD` 與 `Volume.SellVolumeUSD`
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-對同一代幣、鏈與時間窗同時查 **Pairs** 與 **Tokens**，可組儀表板——OHLC 搭配流量與參與者指標。
+對同一代幣、鏈與時間視窗同時查詢 **Pairs** 與 **Tokens**，可搭建儀表盤 — OHLC 與資金流、參與者指標並列展示。
 </Tip>
 
 ---
 
-## 如何取得市值、價格與供應量隨時間變化？
+## 如何獲取市值、價格與供應量隨時間變化？
 
-舊版摘要 Cube **TokenMarketCap** 已不在目前 schema 使用。請改以 **TokenSupplyUpdates**（Solana 或 EVM）：每一列對應影響供應的事件，**TokenSupplyUpdate** 指標含價格、市值、FDV 與總供應量。
+當前 schema 不再使用舊的 **TokenMarketCap** 彙總 Cube。請使用 **TokenSupplyUpdates**（Solana 或 EVM）：每一行對應影響供應量的事件，**TokenSupplyUpdate** 指標含價格、市值、FDV 與總供應量等。
 
 ### Solana
 
@@ -203,43 +203,43 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="重點欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `Block.Time` | 事件時間 |
-    | `TokenSupplyUpdate.Currency.*` | 代幣識別（mint／合約、decimals、symbol、name） |
+    | `TokenSupplyUpdate.Currency.*` | 代幣標識（mint/合約、小數位、符號、名稱） |
     | `TokenSupplyUpdate.PriceInUSD` | 本次更新時的 USD 價格 |
     | `TokenSupplyUpdate.MarketCapInUSD` | 市值 |
     | `TokenSupplyUpdate.TotalSupply` | 總供應量 |
     | `TokenSupplyUpdate.FDVInUSD` | 完全稀釋估值（FDV） |
-    | `TokenSupplyUpdate.PostBalance` | 事件後與供應相關的餘額 |
+    | `TokenSupplyUpdate.PostBalance` | 事件後的供應相關餘額 |
   </Accordion>
-  <Accordion title="自訂技巧">
-    - **最新快照**：`limit: { count: 1 }` 並 `orderBy: { descending: Block_Time }`
-    - **跨鏈比較**：在 `Solana` 與 `EVM(network: bsc)`（或其他支援網路）下執行相同查詢形狀
-    - **更多脈絡**：供應量與流動性相關範例亦可參考 [流動性池與流動性](/zh-Hant/graphql/examples/pools-liquidity#how-do-i-get-token-supply-and-market-cap)
+  <Accordion title="自定義技巧">
+    - **最新快照**：`limit: { count: 1 }` 配合 `orderBy: { descending: Block_Time }`
+    - **跨鏈對比**：在 `Solana` 與 `EVM(network: bsc)`（或其他支援的網路）下執行相同結構
+    - **更多上下文**：另見 [池子與流動性](/zh-Hant/graphql/examples/pools-liquidity#how-do-i-get-token-supply-and-market-cap) 中與供應量及池子相關的示例
   </Accordion>
 </AccordionGroup>
 
 <Info>
-**TokenSupplyUpdates** 為 **DWD**（事件層級）。適合與 mint／burn 活動相關的歷史估值與供應變化，而非單一靜態「市值」摘要列。
+**TokenSupplyUpdates** 為 **DWD**（事件級）。適合與鑄幣/銷燬相關的歷史估值與供應變化，而不是單一靜態「市值」彙總行。
 </Info>
 
 ---
 
-## 代幣搜尋／中繼資料在哪裡？
+## 代幣搜尋 / 後設資料在哪裡？
 
-**TokenSearch** Cube **並非**目前 API 的一部分。若要取得代幣脈絡：
+**TokenSearch** Cube **不是**當前 API 的一部分。獲取代幣上下文時：
 
-- **Pairs** 與 **Tokens** 會一併暴露 **Token** 維度（例如 **Token.Address**）與 OHLC／統計——已知位址且要聚合交易資料時可使用。
-- 若要更豐富的中繼資料、持有人數、池子或探索，請依鏈在 **Solana** 或 **EVM** 下使用 **DEXPools**、**TokenHolders**、**DEXTradeByTokens** 等 Cube。
+- **Pairs** 與 **Tokens** 暴露 **Token** 維度（例如 **Token.Address**），與 OHLC 和統計並列 — 在已知地址且需要聚合交易資料時使用。
+- 需要更豐富的後設資料、持有人數、池子或發現能力時，在 **Solana** 或 **EVM** 下使用 **DEXPools**、**TokenHolders**、**DEXTradeByTokens** 等 Cube，視鏈而定。
 
 ---
 
-## 多鏈範例
+## 多鏈示例
 
 <Tabs>
-  <Tab title="Solana（Trading）">
+  <Tab title="Solana (Trading)">
 ```graphql
 query {
   Trading {
@@ -262,7 +262,7 @@ query {
 }
 ```
   </Tab>
-  <Tab title="Ethereum（Trading）">
+  <Tab title="Ethereum (Trading)">
 ```graphql
 query {
   Trading {
@@ -285,7 +285,7 @@ query {
 }
 ```
   </Tab>
-  <Tab title="BSC（Trading）">
+  <Tab title="BSC (Trading)">
 ```graphql
 query {
   Trading {
@@ -316,15 +316,15 @@ query {
 
 <CardGroup cols={2}>
   <Card title="DEX 成交" icon="arrow-right-arrow-left" href="/zh-Hant/graphql/examples/dex-trades">
-    查詢 DEX 交易資料——代幣成交、錢包活動與頂尖交易者。
+    查詢 DEX 交易資料 — 代幣成交、錢包活動與頭部交易者。
   </Card>
-  <Card title="轉帳" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
-    追蹤鏈上代幣在錢包間的轉移。
+  <Card title="轉賬" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
+    追蹤鏈上錢包之間的代幣轉賬。
   </Card>
   <Card title="餘額與持有人" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
-    查詢錢包餘額、餘額歷史與大戶持有人。
+    查詢錢包餘額、餘額歷史與頭部持有人。
   </Card>
-  <Card title="流動性池與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
-    探索 DEX 流動性池與流動性資料。
+  <Card title="池子與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
+    探索 DEX 池子與流動性資料。
   </Card>
 </CardGroup>

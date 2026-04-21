@@ -1,9 +1,190 @@
 ---
 title: "MCP 도구 레퍼런스"
-description: "Complete tool catalog exposed by the ChainStream MCP Server."
+description: "ChainStream MCP Server가 노출하는 전체 도구 카탈로그."
+icon: "plug"
 ---
 
+ChainStream [MCP Server](/ko/docs/ai-agents/mcp-server/introduction)는 전체 데이터 카탈로그와 DeFi 프리미티브를 Model Context Protocol 도구로 노출합니다. 이 페이지는 권위 있는 레퍼런스입니다 — Claude, Cursor 또는 다른 클라이언트에 서버를 등록하는 방법은 [MCP Server 설정](/ko/docs/ai-agents/mcp-server/setup)을 참고하세요.
+
+## 엔드포인트
+
+- **URL**: `https://mcp.chainstream.io/mcp`
+- **전송(Transport)**: Streamable HTTP (수평 스케일링 + 진행 상황 리포팅)
+- **인증**: Bearer 토큰 (`X-API-KEY`) **또는** x402 마이크로페이먼트 (Base / Solana의 USDC)
+
+## 두 가지 도구 표면
+
+ChainStream은 MCP 서버를 두 가지 형태로 제공합니다. 에이전트 워크플로우에 맞는 것을 선택하세요.
+
+| 표면 | 명명 규칙 | 사용 시점 |
+|---------|--------|-------------|
+| **결과 지향 도구(Outcome-oriented tools)** | `tokens_search`, `dex_swap` (언더스코어) | 사용자 대면 작업을 수행하는 에이전트용 — 각 도구가 여러 REST 호출을 오케스트레이션하여 큐레이션된 결과를 반환합니다. [Agent Skills](/ko/docs/ai-agents/agent-skills/introduction)가 참조하는 도구입니다. |
+| **플레이그라운드 도구(Playground tools)** | `getToken`, `createEndpoint` (camelCase) | 프로그래머틱 사용을 위한 REST API 1:1 커버리지 — REST와 동일한 입출력, 테스트와 저수준 자동화에 이상적 |
+
+아래 17개 결과 지향 도구는 프로덕션 MCP 카탈로그에서 볼 수 있는 도구입니다. 플레이그라운드 도구는 전체 REST 표면을 MCP 도구로 재노출한 것이며 하단에 나열되어 있습니다.
+
+## 리소스
+
+| URI | 내용 |
+|-----|---------|
+| `chainstream://chains` | 지원 체인 및 상태 |
+| `chainstream://chains/{chain}/dexes` | 체인의 DEX 프로토콜 |
+| `chainstream://docs/api_reference` | 전체 REST API 레퍼런스 (모든 `/v2/*` 엔드포인트) |
+| `chainstream://docs/query_examples` | 에이전트용 공통 쿼리 패턴 |
+
+## 리스크 모델
+
+각 도구는 리스크 레벨로 태그되어 있습니다. 클라이언트는 L2 이상의 도구를 명시적 확인 UI 뒤에 노출해야 합니다.
+
+| 레벨 | 의미 |
+|-------|---------|
+| **L0** | 읽기 전용, 무상태 — 자동 호출 안전 |
+| **L1** | 읽기 전용, 사용자 범위 (지갑 프로필, 웹훅 리스트) — 안전하나 개인적 |
+| **L2** | 읽기 전용이나 연산 비용이 큼 (백테스트) — 비용 발생 가능 |
+| **L3** | **쓰기 / 서명 / 브로드캐스트** — 명시적 사용자 확인 필수 |
+
+## 결과 지향 도구 (17개)
+
+### 토큰 인텔리전스
+
+| 도구 | 설명 | 주요 파라미터 | 리스크 |
+|------|-------------|------------|------|
+| `tokens_search` | 지원되는 모든 체인에서 이름, 심볼, 주소로 토큰 검색 | `query`, `chain?` | L0 |
+| `tokens_analyze` | 종합적 토큰 분석: 가격, 거래량, 홀더, 보안, 유동성 | `chain`, `address` | L0 |
+| `tokens_price_history` | 차트와 기술적 분석을 위한 OHLCV 캔들스틱 데이터 | `chain`, `address`, `resolution`, `from?`, `to?` | L0 |
+| `tokens_discover` | 온체인 메트릭(거래량, 가격 변동, 거래 횟수)으로 토큰 발견 | `chain`, 필터 | L0 |
+| `tokens_compare` | 최대 5개 토큰의 병렬 비교 | `chain`, `addresses[]` | L0 |
+
+### 지갑 인텔리전스
+
+| 도구 | 설명 | 주요 파라미터 | 리스크 |
+|------|-------------|------------|------|
+| `wallets_profile` | 전체 지갑 프로필 — 보유, PnL, 순자산을 한 번의 호출로 | `chain`, `address` | L1 |
+| `wallets_activity` | 최근 지갑 전송 및 잔고 변동 | `chain`, `address`, `limit?` | L1 |
+
+### 시장 탐색
+
+| 도구 | 설명 | 주요 파라미터 | 리스크 |
+|------|-------------|------------|------|
+| `market_trending` | 카테고리별 트렌딩 토큰 (`hot`, `new`, `migrated`, `graduating`, `stocks`) | `chain`, `category`, `duration` | L0 |
+| `trades_recent` | 토큰 또는 지갑의 최근 온체인 거래 | `chain`, `token?`, `wallet?`, `limit?` | L0 |
+
+### DEX 및 트레이딩
+
+| 도구 | 설명 | 주요 파라미터 | 리스크 |
+|------|-------------|------------|------|
+| `dex_quote` | 예상 출력, 가격 영향, 수수료 포함 스왑 견적 (읽기 전용) | `chain`, `from`, `to`, `amount` | L0 |
+| `dex_swap` | DEX에서 토큰 스왑 실행 | `chain`, `from`, `to`, `amount`, `slippage` | **L3** |
+| `dex_create_token` | 런치패드에 토큰 생성 | `chain`, `name`, `symbol`, `dex`, `uri` | **L3** |
+| `trading_backtest` | 히스토리 데이터에 대해 전략 백테스트 | 전략 명세 | L2 |
+| `trading_execute` | 전략 거래 실행 | `chain`, `strategy`, `params` | **L3** |
+| `transaction_send` | 서명된 트랜잭션 브로드캐스트 | `chain`, `signed_tx` | **L3** |
+
+### 운영(Ops)
+
+| 도구 | 설명 | 주요 파라미터 | 리스크 |
+|------|-------------|------------|------|
+| `webhooks_manage` | 웹훅 엔드포인트 관리 (조회, 생성, 삭제) | `action`, 엔드포인트 명세 | L1 |
+| `blockchain_info` | 지원 체인 및 DEX 프로토콜 | — | L0 |
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  KYT / 컴플라이언스는 결과 지향 도구로 래핑되어 있지 않습니다 — `/v1/kyt/*` 아래의 REST API를 직접 호출하세요. [KYT 개념](/ko/docs/compliance/kyt-concepts)을 참고하세요.
 </Note>
+
+## 플레이그라운드 도구 (REST 동등)
+
+플레이그라운드 표면은 REST API를 MCP 도구로 1:1 미러링합니다. 모든 도구는 해당 REST 엔드포인트와 동일한 JSON 파라미터를 받아 원시 응답을 담은 `content[0].text` JSON 문자열을 반환합니다. REST와의 프로그래머틱 동등성이 필요하지만 MCP 경로로 라우팅하고 싶을 때 사용하세요.
+
+<AccordionGroup>
+  <Accordion title="blockchain" icon="link">
+    `getBlockchainList`, `getBlockchainLatestBlock`
+  </Accordion>
+  <Accordion title="token" icon="coins">
+    `getToken`, `getTokens`, `searchTokens`, `getTokenMetadata`, `getTokensMetadata`, `getTokenLiquidityPools`, `getTokenStats`, `getTokensStats`, `getTokenHolders`, `getTokenHoldersMulti`, `getTokenCandles`, `getTokenTopHolders`, `getTokenMarketData`, `getTokensMarketData`, `getTokenPrices`, `getTokenPriceByTime`, `getTokenCreation`, `getTokenMintBurn`, `getTokenSecurity`, `getTokenListFiltered`, `getDevTokens`, `getTokenTraders`, `getTokenLiquiditySnapshots`, `getTokenTransfers`, `getTokenTransferTotal`, `getPairCandles`, `getPoolCandles`
+  </Accordion>
+  <Accordion title="wallet" icon="wallet">
+    `getTokensBalance`, `getPnl`, `getPnlDetails`, `getPnlByToken`, `getPnlByWallet`, `calculatePnl`, `getNetWorth`, `getNetWorthDetails`, `getNetWorthChart`, `getNetWorthByTokens`, `getNetWorthSummary`, `getBalanceUpdates`, `getWalletTransfers`, `getWalletTransferTotal`, `getWalletFirstTx`
+  </Accordion>
+  <Accordion title="trade" icon="right-left">
+    `getTradeList`, `getTradeTopTraders`, `getTradeGainersLosers`, `getTradeActivityList`
+  </Accordion>
+  <Accordion title="ranking" icon="trophy">
+    `getHotTokens`, `getRankingNewTokens`, `getRankingStocksTokens`, `getRankingFinalStretchTokens`, `getRankingMigratedTokens`
+  </Accordion>
+  <Accordion title="dexpool" icon="droplet">
+    `getDexpoolDetail`, `getDexpoolSnapshots`
+  </Accordion>
+  <Accordion title="dex" icon="arrow-right-arrow-left">
+    `getDexList`, `getQuote`, `getRoute`, `swap`, `createToken`
+  </Accordion>
+  <Accordion title="defi" icon="rocket">
+    `pumpfunCreateToken`, `moonshotCreateToken`
+  </Accordion>
+  <Accordion title="transaction" icon="paper-plane">
+    `sendTransaction`, `getGasPrice`, `estimateGasLimit`
+  </Accordion>
+  <Accordion title="kyt" icon="shield-halved">
+    `registerTransfer`, `getTransferSummary`, `getTransferAlerts`, `getTransferDirectExposure`, `getTransferNetworkIdentifications`, `registerWithdrawal`, `getWithdrawalSummary`, `getWithdrawalAlerts`, `getWithdrawalDirectExposure`, `getWithdrawalFraudAssessment`, `getWithdrawalAddressIdentifications`, `getWithdrawalNetworkIdentifications`, `registerAddress`, `getAddressRisk`
+  </Accordion>
+  <Accordion title="webhook" icon="bell">
+    `listEndpoints`, `createEndpoint`, `getEndpoint`, `updateEndpoint`, `deleteEndpoint`, `getEndpointSecret`, `rotateEndpointSecret`
+  </Accordion>
+  <Accordion title="redpacket" icon="gift">
+    `getRedpacketCreate`, `getRedpacketClaim`, `getRedpacketGet`, `getRedpacketGetClaims`, `getRedpacketGetList`, `getRedpacketGetClaimsByAddress`, `getRedpacketGetByAddress`, `getRedpacketSend`
+  </Accordion>
+  <Accordion title="watchlist" icon="eye">
+    `watchlistAdd`
+  </Accordion>
+  <Accordion title="ipfs" icon="cloud-arrow-up">
+    `presign`
+  </Accordion>
+</AccordionGroup>
+
+각 플레이그라운드 도구의 정규 입출력 스키마는 [API 레퍼런스](/ko/api-reference/overview)의 해당 REST 엔드포인트를 참고하세요 — JSON 형태가 동일합니다.
+
+## 클라이언트 설정 예시
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "transport": "streamable-http",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="MCP Server 소개" icon="plug" href="/ko/docs/ai-agents/mcp-server/introduction">
+    MCP란 무엇이며 ChainStream이 어떻게 노출하는지.
+  </Card>
+  <Card title="MCP Server 설정" icon="gear" href="/ko/docs/ai-agents/mcp-server/setup">
+    Cursor, Claude Desktop 등에 서버 연결.
+  </Card>
+  <Card title="x402 결제" icon="credit-card" href="/ko/docs/platform/billing-payments/x402-payments">
+    자율 에이전트를 위한 콜당 과금 인증.
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/ko/docs/ai-agents/agent-skills/introduction">
+    MCP와 CLI 위에 계층화된 상위 레벨 SKILL.md 패키지.
+  </Card>
+</CardGroup>

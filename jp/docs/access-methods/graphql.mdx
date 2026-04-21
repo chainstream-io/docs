@@ -4,22 +4,31 @@ description: "柔軟な分析クエリ — 複数のデータプロダクトを 
 icon: "diagram-project"
 ---
 
-GraphQL エンドポイントは **レスポンスの形を決めたい** ときに適しています — 複数プロダクトにまたがって必要なフィールドだけを 1 リクエストで取得できます。REST が「この 1 つを取得する」なら、GraphQL は「この 1 つの分析質問に答える」です。
+GraphQL エンドポイントは **レスポンスの形を決めたい** ときに適しています — 複数のデータプロダクトから必要なフィールドだけを 1 リクエストで正確に取得できます。REST が「この 1 つを取得する」なら、GraphQL は「この 1 つの分析質問に答える」です。
 
 ## エンドポイント
 
 ```
-POST https://graphql.chainstream.io/v1/query
+POST https://graphql.chainstream.io/graphql
 ```
 
-または [GraphQL IDE](https://graphql.chainstream.io) でインタラクティブに探索。
+または [GraphQL IDE](https://graphql.chainstream.io) でインタラクティブに探索できます。
 
 ## 認証
 
+同等の 2 つのパスがあります — クライアントに合うものを選んでください：
+
 ```bash
--H "Authorization: Bearer $CHAINSTREAM_API_KEY"
+# API Key（ブラウザ、サーバー、ほとんどのクライアント）
+-H "X-API-KEY: $CHAINSTREAM_API_KEY"
+-H "Content-Type: application/json"
+
+# SIWX ウォレットトークン（エージェント／ホスト内ウォレット）
+-H "Authorization: SIWX <token>"
 -H "Content-Type: application/json"
 ```
+
+GraphQL と REST は同じ API Key ＆サブスクリプションクォータを共有します — 別途購入は不要です。
 
 ## 最初のクエリ
 
@@ -39,24 +48,54 @@ query TopSolanaTokens {
 }
 ```
 
-1 リクエストでトークン・メタデータ・直近取引が返ります — N+1 なし。
+1 リクエストでトークン、メタデータ、直近取引が返ります — N+1 なし。
 
 ## いつ使うか
 
 - 複数プロダクトにまたがる分析クエリ
-- 多フィールドなダッシュボード (オーバーフェッチなし)
-- レポート / BI
-- SSR でレスポンスを事前整形
+- オーバーフェッチなしで多フィールドを扱うダッシュボード
+- レポート / BI ワークロード
+- レスポンスを事前整形する SSR
 
-**向かない**: リアルタイムストリーム、REST キャッシュが安いホットリード。
+**向かない**ケース：リアルタイムストリーム（WebSocket／Kafka を使用）、REST キャッシュが安いホットパスの読み取り。
+
+## CLI から呼び出す
+
+[`chainstream` CLI](/jp/docs/access-methods/cli) には `graphql schema`（探索用）と `graphql query`（実行用）が同梱されています — 手早い確認やシェル自動化にクライアントライブラリを組み込む必要はありません：
+
+```bash
+# 27 キューブを探索
+chainstream graphql schema --summary
+chainstream graphql schema --type DEXTrades
+
+# ファイルからクエリを実行
+chainstream graphql query --file ./query.graphql --json
+```
+
+## スキーマ
+
+<CardGroup cols={2}>
+  <Card title="スキーマ概要" icon="diagram-project" href="/jp/graphql/schema/schema-overview">
+    型、関係、規約。
+  </Card>
+  <Card title="Getting Started" icon="rocket" href="/jp/graphql/getting-started/overview">
+    最初のクエリの完全なウォークスルー。
+  </Card>
+</CardGroup>
 
 ## 次へ
 
 <CardGroup cols={2}>
-  <Card title="Schema 概要" icon="diagram-project" href="/jp/graphql/schema/schema-overview">
-    型と関係。
+  <Card title="GraphQL IDE" icon="terminal" href="https://graphql.chainstream.io">
+    スキーマを探索してインタラクティブにクエリを実行。
   </Card>
-  <Card title="Getting Started" icon="rocket" href="/jp/graphql/getting-started/overview">
-    最初のクエリの手順。
+  <Card title="chainstream-graphql スキル" icon="brain" href="/jp/docs/ai-agents/agent-skills/chainstream-graphql">
+    GraphQL ワークフローのための構造化 Agent Skill。
+  </Card>
+  <Card title="CLI `graphql` サブコマンド" icon="terminal" href="/jp/docs/access-methods/cli#graphql-サブコマンド">
+    `chainstream graphql schema` と `query` リファレンス。
+  </Card>
+  <Card title="SDK" icon="box" href="/jp/docs/access-methods/sdks">
+    codegen 経由の型付き GraphQL ラッパー。
   </Card>
 </CardGroup>

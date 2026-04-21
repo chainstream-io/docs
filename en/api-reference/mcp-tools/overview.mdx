@@ -1,9 +1,190 @@
 ---
 title: "MCP Tools Reference"
 description: "Complete tool catalog exposed by the ChainStream MCP Server."
+icon: "plug"
 ---
 
+The ChainStream [MCP Server](/en/docs/ai-agents/mcp-server/introduction) exposes the full data catalog and DeFi primitives as Model Context Protocol tools. This page is the authoritative reference — for how to register the server with Claude, Cursor or other clients see [MCP Server Setup](/en/docs/ai-agents/mcp-server/setup).
+
+## Endpoint
+
+- **URL**: `https://mcp.chainstream.io/mcp`
+- **Transport**: Streamable HTTP (horizontal scaling + progress reporting)
+- **Auth**: Bearer token (`X-API-KEY`) **or** x402 micropayment (USDC on Base / Solana)
+
+## Two tool surfaces
+
+ChainStream ships the MCP server in two flavours. Pick the one that matches your agent's workflow.
+
+| Surface | Naming | When to use |
+|---------|--------|-------------|
+| **Outcome-oriented tools** | `tokens_search`, `dex_swap` (underscore) | Agents doing user-facing tasks — each tool orchestrates several REST calls and returns a curated result. This is what the [Agent Skills](/en/docs/ai-agents/agent-skills/introduction) reference. |
+| **Playground tools** | `getToken`, `createEndpoint` (camelCase) | 1:1 coverage of the REST API for programmatic use — same inputs/outputs as REST, ideal for testing and low-level automation |
+
+The 17 outcome-oriented tools below are what you see in the production MCP catalog. Playground tools are the full REST surface re-exposed as MCP tools — listed at the bottom.
+
+## Resources
+
+| URI | Content |
+|-----|---------|
+| `chainstream://chains` | Supported chains and status |
+| `chainstream://chains/{chain}/dexes` | DEX protocols for a chain |
+| `chainstream://docs/api_reference` | Full REST API reference (all `/v2/*` endpoints) |
+| `chainstream://docs/query_examples` | Common query patterns for agents |
+
+## Risk model
+
+Each tool is tagged with a risk level. Clients should surface tools with level ≥ L2 behind explicit confirmation UI.
+
+| Level | Meaning |
+|-------|---------|
+| **L0** | Read-only, stateless — safe to call automatically |
+| **L1** | Read-only, user-scoped (wallet profile, webhook list) — safe but personal |
+| **L2** | Read-only but computationally expensive (backtest) — may incur cost |
+| **L3** | **Writes / signs / broadcasts** — always requires explicit user confirmation |
+
+## Outcome-oriented tools (17)
+
+### Token intelligence
+
+| Tool | Description | Key params | Risk |
+|------|-------------|------------|------|
+| `tokens_search` | Search tokens by name, symbol or address across every supported chain | `query`, `chain?` | L0 |
+| `tokens_analyze` | Comprehensive token analysis: price, volume, holders, security, liquidity | `chain`, `address` | L0 |
+| `tokens_price_history` | OHLCV candlestick data for charting and technical analysis | `chain`, `address`, `resolution`, `from?`, `to?` | L0 |
+| `tokens_discover` | Find tokens by on-chain metrics (volume, price change, trade count) | `chain`, filters | L0 |
+| `tokens_compare` | Side-by-side comparison of up to 5 tokens | `chain`, `addresses[]` | L0 |
+
+### Wallet intelligence
+
+| Tool | Description | Key params | Risk |
+|------|-------------|------------|------|
+| `wallets_profile` | Complete wallet profile — holdings, PnL and net worth in one call | `chain`, `address` | L1 |
+| `wallets_activity` | Recent wallet transfers and balance changes | `chain`, `address`, `limit?` | L1 |
+
+### Market discovery
+
+| Tool | Description | Key params | Risk |
+|------|-------------|------------|------|
+| `market_trending` | Trending tokens by category (`hot`, `new`, `migrated`, `graduating`, `stocks`) | `chain`, `category`, `duration` | L0 |
+| `trades_recent` | Recent on-chain trades for a token or wallet | `chain`, `token?`, `wallet?`, `limit?` | L0 |
+
+### DEX and trading
+
+| Tool | Description | Key params | Risk |
+|------|-------------|------------|------|
+| `dex_quote` | Swap quote with expected output, price impact and fees (read-only) | `chain`, `from`, `to`, `amount` | L0 |
+| `dex_swap` | Execute a token swap on a DEX | `chain`, `from`, `to`, `amount`, `slippage` | **L3** |
+| `dex_create_token` | Create a token on a launchpad | `chain`, `name`, `symbol`, `dex`, `uri` | **L3** |
+| `trading_backtest` | Backtest a strategy against historical data | strategy spec | L2 |
+| `trading_execute` | Execute a strategy trade | `chain`, `strategy`, `params` | **L3** |
+| `transaction_send` | Broadcast a signed transaction | `chain`, `signed_tx` | **L3** |
+
+### Ops
+
+| Tool | Description | Key params | Risk |
+|------|-------------|------------|------|
+| `webhooks_manage` | Manage webhook endpoints (list, create, delete) | `action`, endpoint spec | L1 |
+| `blockchain_info` | Supported chains and DEX protocols | — | L0 |
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  KYT / compliance is not wrapped as an outcome tool — call the REST API directly under `/v1/kyt/*`. See [KYT concepts](/en/docs/compliance/kyt-concepts).
 </Note>
+
+## Playground tools (REST-parity)
+
+The Playground surface mirrors the REST API 1:1 as MCP tools. Every tool accepts the same JSON parameters as the corresponding REST endpoint and returns a `content[0].text` JSON string with the raw response. Use these when you want programmatic parity with REST but routed through MCP.
+
+<AccordionGroup>
+  <Accordion title="blockchain" icon="link">
+    `getBlockchainList`, `getBlockchainLatestBlock`
+  </Accordion>
+  <Accordion title="token" icon="coins">
+    `getToken`, `getTokens`, `searchTokens`, `getTokenMetadata`, `getTokensMetadata`, `getTokenLiquidityPools`, `getTokenStats`, `getTokensStats`, `getTokenHolders`, `getTokenHoldersMulti`, `getTokenCandles`, `getTokenTopHolders`, `getTokenMarketData`, `getTokensMarketData`, `getTokenPrices`, `getTokenPriceByTime`, `getTokenCreation`, `getTokenMintBurn`, `getTokenSecurity`, `getTokenListFiltered`, `getDevTokens`, `getTokenTraders`, `getTokenLiquiditySnapshots`, `getTokenTransfers`, `getTokenTransferTotal`, `getPairCandles`, `getPoolCandles`
+  </Accordion>
+  <Accordion title="wallet" icon="wallet">
+    `getTokensBalance`, `getPnl`, `getPnlDetails`, `getPnlByToken`, `getPnlByWallet`, `calculatePnl`, `getNetWorth`, `getNetWorthDetails`, `getNetWorthChart`, `getNetWorthByTokens`, `getNetWorthSummary`, `getBalanceUpdates`, `getWalletTransfers`, `getWalletTransferTotal`, `getWalletFirstTx`
+  </Accordion>
+  <Accordion title="trade" icon="right-left">
+    `getTradeList`, `getTradeTopTraders`, `getTradeGainersLosers`, `getTradeActivityList`
+  </Accordion>
+  <Accordion title="ranking" icon="trophy">
+    `getHotTokens`, `getRankingNewTokens`, `getRankingStocksTokens`, `getRankingFinalStretchTokens`, `getRankingMigratedTokens`
+  </Accordion>
+  <Accordion title="dexpool" icon="droplet">
+    `getDexpoolDetail`, `getDexpoolSnapshots`
+  </Accordion>
+  <Accordion title="dex" icon="arrow-right-arrow-left">
+    `getDexList`, `getQuote`, `getRoute`, `swap`, `createToken`
+  </Accordion>
+  <Accordion title="defi" icon="rocket">
+    `pumpfunCreateToken`, `moonshotCreateToken`
+  </Accordion>
+  <Accordion title="transaction" icon="paper-plane">
+    `sendTransaction`, `getGasPrice`, `estimateGasLimit`
+  </Accordion>
+  <Accordion title="kyt" icon="shield-halved">
+    `registerTransfer`, `getTransferSummary`, `getTransferAlerts`, `getTransferDirectExposure`, `getTransferNetworkIdentifications`, `registerWithdrawal`, `getWithdrawalSummary`, `getWithdrawalAlerts`, `getWithdrawalDirectExposure`, `getWithdrawalFraudAssessment`, `getWithdrawalAddressIdentifications`, `getWithdrawalNetworkIdentifications`, `registerAddress`, `getAddressRisk`
+  </Accordion>
+  <Accordion title="webhook" icon="bell">
+    `listEndpoints`, `createEndpoint`, `getEndpoint`, `updateEndpoint`, `deleteEndpoint`, `getEndpointSecret`, `rotateEndpointSecret`
+  </Accordion>
+  <Accordion title="redpacket" icon="gift">
+    `getRedpacketCreate`, `getRedpacketClaim`, `getRedpacketGet`, `getRedpacketGetClaims`, `getRedpacketGetList`, `getRedpacketGetClaimsByAddress`, `getRedpacketGetByAddress`, `getRedpacketSend`
+  </Accordion>
+  <Accordion title="watchlist" icon="eye">
+    `watchlistAdd`
+  </Accordion>
+  <Accordion title="ipfs" icon="cloud-arrow-up">
+    `presign`
+  </Accordion>
+</AccordionGroup>
+
+For the canonical input/output schema of each Playground tool, see the matching REST endpoint in the [API Reference](/en/api-reference/overview) — the JSON shapes are identical.
+
+## Example client config
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "transport": "streamable-http",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="MCP Server introduction" icon="plug" href="/en/docs/ai-agents/mcp-server/introduction">
+    What MCP is and how ChainStream exposes it.
+  </Card>
+  <Card title="MCP Server setup" icon="gear" href="/en/docs/ai-agents/mcp-server/setup">
+    Wiring the server into Cursor, Claude Desktop and others.
+  </Card>
+  <Card title="x402 Payments" icon="credit-card" href="/en/docs/platform/billing-payments/x402-payments">
+    Pay-per-call authentication for autonomous agents.
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/en/docs/ai-agents/agent-skills/introduction">
+    Higher-level SKILL.md packages layered on top of MCP and the CLI.
+  </Card>
+</CardGroup>

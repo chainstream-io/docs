@@ -39,9 +39,9 @@ import { ChainStream } from "@chainstream-io/sdk";
 
 const cs = new ChainStream({ apiKey: process.env.CHAINSTREAM_API_KEY! });
 
-const results = await cs.tokens.search({
+const results = await cs.token.search({
   chain: "solana",
-  query: "USDC",
+  keyword: "USDC",
   limit: 5,
 });
 
@@ -52,10 +52,10 @@ for (const t of results) {
 
 ## Common patterns
 
-- **REST** — `cs.tokens.*`, `cs.wallets.*`, `cs.trades.*`, ...
-- **WebSocket** — `cs.subscribe("trades.token", { address }, msg => ...)`
+- **REST** — `cs.token.*`, `cs.wallet.*`, `cs.trade.*`, `cs.ranking.*`, `cs.dex.*` ...
+- **WebSocket** — `cs.stream.subscribeTokenTrade({ chain, tokenAddress, callback })` (and parallel methods for candles, stats, holders, wallets, rankings, pools)
 - **GraphQL** — `cs.gql(query, variables)` returns a fully typed result via codegen
-- **CLI bridge** — `cs.cli("rankings", "hot")` runs the same logic as `chainstream rankings hot`
+- **CLI bridge** — `cs.cli("market", "trending", { chain: "sol", duration: "24h" })` runs the same logic as `chainstream market trending --chain sol --duration 24h`
 
 ## When to use
 

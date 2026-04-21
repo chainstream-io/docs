@@ -1,9 +1,190 @@
 ---
 title: "MCP 工具参考"
 description: "ChainStream MCP Server 暴露的完整工具目录。"
+icon: "plug"
 ---
 
+ChainStream [MCP Server](/cn/docs/ai-agents/mcp-server/introduction) 将整个数据目录和 DeFi 原语以 Model Context Protocol 工具的形式暴露出来。本页是权威参考——要把该服务器接入 Claude、Cursor 或其他客户端，请参考 [MCP Server 配置](/cn/docs/ai-agents/mcp-server/setup)。
+
+## 端点
+
+- **URL**：`https://mcp.chainstream.io/mcp`
+- **传输**：Streamable HTTP（支持水平扩展与进度上报）
+- **认证**：Bearer token（`X-API-KEY`）**或** x402 微支付（Base / Solana 上的 USDC）
+
+## 两套工具接口
+
+ChainStream 的 MCP Server 提供两种风格的工具接口，按照你的 Agent 工作流选用即可。
+
+| 接口 | 命名方式 | 适用场景 |
+|---------|--------|-------------|
+| **Outcome-oriented 工具** | `tokens_search`、`dex_swap`（下划线） | 做用户侧任务的 Agent——每个工具会编排多次 REST 调用并返回精心整理的结果。[Agent Skills](/cn/docs/ai-agents/agent-skills/introduction) 引用的就是这一套。 |
+| **Playground 工具** | `getToken`、`createEndpoint`（camelCase） | REST API 的 1:1 映射，供程序化使用——输入输出与 REST 完全一致，适合测试与底层自动化 |
+
+下面列出的 17 个 outcome-oriented 工具就是生产 MCP 目录中的全部项。Playground 工具是把整个 REST 接口再次暴露为 MCP 工具，列在页面末尾。
+
+## 资源
+
+| URI | 内容 |
+|-----|---------|
+| `chainstream://chains` | 支持的链及状态 |
+| `chainstream://chains/{chain}/dexes` | 某条链上的 DEX 协议 |
+| `chainstream://docs/api_reference` | 完整的 REST API 参考（全部 `/v2/*` 端点） |
+| `chainstream://docs/query_examples` | 给 Agent 参考的常用查询范式 |
+
+## 风险模型
+
+每个工具都打了风险等级。客户端对 ≥ L2 的工具应当要求用户显式确认。
+
+| 等级 | 含义 |
+|-------|---------|
+| **L0** | 只读、无状态——可以自动调用 |
+| **L1** | 只读但涉及个人数据（钱包档案、webhook 列表）——安全但私密 |
+| **L2** | 只读但计算开销大（回测）——可能产生费用 |
+| **L3** | **写入 / 签名 / 广播**——始终需要用户显式确认 |
+
+## Outcome-oriented 工具（17 个）
+
+### 代币情报
+
+| 工具 | 说明 | 关键参数 | 风险 |
+|------|-------------|------------|------|
+| `tokens_search` | 按名称、符号或地址在所有支持链上搜索代币 | `query`、`chain?` | L0 |
+| `tokens_analyze` | 代币综合分析：价格、成交量、持币人、安全、流动性 | `chain`、`address` | L0 |
+| `tokens_price_history` | OHLCV K 线数据，用于画图与技术分析 | `chain`、`address`、`resolution`、`from?`、`to?` | L0 |
+| `tokens_discover` | 按链上指标（成交量、价格变化、成交次数）筛选代币 | `chain`、过滤条件 | L0 |
+| `tokens_compare` | 最多 5 个代币的并列对比 | `chain`、`addresses[]` | L0 |
+
+### 钱包情报
+
+| 工具 | 说明 | 关键参数 | 风险 |
+|------|-------------|------------|------|
+| `wallets_profile` | 一次调用拿到完整钱包档案——持仓、PnL、净值 | `chain`、`address` | L1 |
+| `wallets_activity` | 最近的钱包转账和余额变动 | `chain`、`address`、`limit?` | L1 |
+
+### 市场发现
+
+| 工具 | 说明 | 关键参数 | 风险 |
+|------|-------------|------------|------|
+| `market_trending` | 按分类（`hot`、`new`、`migrated`、`graduating`、`stocks`）的热门代币 | `chain`、`category`、`duration` | L0 |
+| `trades_recent` | 某代币或某钱包最近的链上交易 | `chain`、`token?`、`wallet?`、`limit?` | L0 |
+
+### DEX 与交易
+
+| 工具 | 说明 | 关键参数 | 风险 |
+|------|-------------|------------|------|
+| `dex_quote` | 带预期产出、价格冲击、费用的兑换报价（只读） | `chain`、`from`、`to`、`amount` | L0 |
+| `dex_swap` | 在 DEX 上执行代币兑换 | `chain`、`from`、`to`、`amount`、`slippage` | **L3** |
+| `dex_create_token` | 在 launchpad 上发币 | `chain`、`name`、`symbol`、`dex`、`uri` | **L3** |
+| `trading_backtest` | 基于历史数据回测策略 | 策略配置 | L2 |
+| `trading_execute` | 执行一笔策略交易 | `chain`、`strategy`、`params` | **L3** |
+| `transaction_send` | 广播已签名的交易 | `chain`、`signed_tx` | **L3** |
+
+### 运维
+
+| 工具 | 说明 | 关键参数 | 风险 |
+|------|-------------|------------|------|
+| `webhooks_manage` | 管理 webhook 端点（列表、创建、删除） | `action`、端点配置 | L1 |
+| `blockchain_info` | 支持的链与 DEX 协议 | — | L0 |
+
 <Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
+  KYT / 合规没有封装成 outcome 工具——直接调用 `/v1/kyt/*` 下的 REST API 即可。参见 [KYT 概念](/cn/docs/compliance/kyt-concepts)。
 </Note>
+
+## Playground 工具（REST 对等）
+
+Playground 接口把 REST API 1:1 映射为 MCP 工具。每个工具接收的 JSON 参数与对应 REST 端点完全相同，返回 `content[0].text` 包裹的原始 JSON 响应。想要走 MCP 但又要 REST 级别的程序化控制时用它。
+
+<AccordionGroup>
+  <Accordion title="blockchain" icon="link">
+    `getBlockchainList`、`getBlockchainLatestBlock`
+  </Accordion>
+  <Accordion title="token" icon="coins">
+    `getToken`、`getTokens`、`searchTokens`、`getTokenMetadata`、`getTokensMetadata`、`getTokenLiquidityPools`、`getTokenStats`、`getTokensStats`、`getTokenHolders`、`getTokenHoldersMulti`、`getTokenCandles`、`getTokenTopHolders`、`getTokenMarketData`、`getTokensMarketData`、`getTokenPrices`、`getTokenPriceByTime`、`getTokenCreation`、`getTokenMintBurn`、`getTokenSecurity`、`getTokenListFiltered`、`getDevTokens`、`getTokenTraders`、`getTokenLiquiditySnapshots`、`getTokenTransfers`、`getTokenTransferTotal`、`getPairCandles`、`getPoolCandles`
+  </Accordion>
+  <Accordion title="wallet" icon="wallet">
+    `getTokensBalance`、`getPnl`、`getPnlDetails`、`getPnlByToken`、`getPnlByWallet`、`calculatePnl`、`getNetWorth`、`getNetWorthDetails`、`getNetWorthChart`、`getNetWorthByTokens`、`getNetWorthSummary`、`getBalanceUpdates`、`getWalletTransfers`、`getWalletTransferTotal`、`getWalletFirstTx`
+  </Accordion>
+  <Accordion title="trade" icon="right-left">
+    `getTradeList`、`getTradeTopTraders`、`getTradeGainersLosers`、`getTradeActivityList`
+  </Accordion>
+  <Accordion title="ranking" icon="trophy">
+    `getHotTokens`、`getRankingNewTokens`、`getRankingStocksTokens`、`getRankingFinalStretchTokens`、`getRankingMigratedTokens`
+  </Accordion>
+  <Accordion title="dexpool" icon="droplet">
+    `getDexpoolDetail`、`getDexpoolSnapshots`
+  </Accordion>
+  <Accordion title="dex" icon="arrow-right-arrow-left">
+    `getDexList`、`getQuote`、`getRoute`、`swap`、`createToken`
+  </Accordion>
+  <Accordion title="defi" icon="rocket">
+    `pumpfunCreateToken`、`moonshotCreateToken`
+  </Accordion>
+  <Accordion title="transaction" icon="paper-plane">
+    `sendTransaction`、`getGasPrice`、`estimateGasLimit`
+  </Accordion>
+  <Accordion title="kyt" icon="shield-halved">
+    `registerTransfer`、`getTransferSummary`、`getTransferAlerts`、`getTransferDirectExposure`、`getTransferNetworkIdentifications`、`registerWithdrawal`、`getWithdrawalSummary`、`getWithdrawalAlerts`、`getWithdrawalDirectExposure`、`getWithdrawalFraudAssessment`、`getWithdrawalAddressIdentifications`、`getWithdrawalNetworkIdentifications`、`registerAddress`、`getAddressRisk`
+  </Accordion>
+  <Accordion title="webhook" icon="bell">
+    `listEndpoints`、`createEndpoint`、`getEndpoint`、`updateEndpoint`、`deleteEndpoint`、`getEndpointSecret`、`rotateEndpointSecret`
+  </Accordion>
+  <Accordion title="redpacket" icon="gift">
+    `getRedpacketCreate`、`getRedpacketClaim`、`getRedpacketGet`、`getRedpacketGetClaims`、`getRedpacketGetList`、`getRedpacketGetClaimsByAddress`、`getRedpacketGetByAddress`、`getRedpacketSend`
+  </Accordion>
+  <Accordion title="watchlist" icon="eye">
+    `watchlistAdd`
+  </Accordion>
+  <Accordion title="ipfs" icon="cloud-arrow-up">
+    `presign`
+  </Accordion>
+</AccordionGroup>
+
+每个 Playground 工具的标准输入输出 schema 请参考 [API Reference](/cn/api-reference/overview) 中对应的 REST 端点——JSON 结构完全一致。
+
+## 客户端配置示例
+
+<Tabs>
+  <Tab title="Cursor / VS Code">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Claude Desktop">
+    ```json
+    {
+      "mcpServers": {
+        "chainstream": {
+          "url": "https://mcp.chainstream.io/mcp",
+          "transport": "streamable-http",
+          "headers": { "X-API-KEY": "<your-api-key>" }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="MCP Server 介绍" icon="plug" href="/cn/docs/ai-agents/mcp-server/introduction">
+    MCP 是什么，以及 ChainStream 如何暴露它。
+  </Card>
+  <Card title="MCP Server 配置" icon="gear" href="/cn/docs/ai-agents/mcp-server/setup">
+    把服务器接入 Cursor、Claude Desktop 等客户端。
+  </Card>
+  <Card title="x402 支付" icon="credit-card" href="/cn/docs/platform/billing-payments/x402-payments">
+    给自主 Agent 的按次付费认证。
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/cn/docs/ai-agents/agent-skills/introduction">
+    叠加在 MCP 与 CLI 之上的更高层 SKILL.md 包。
+  </Card>
+</CardGroup>

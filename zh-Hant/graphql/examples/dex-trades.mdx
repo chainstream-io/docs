@@ -1,20 +1,20 @@
 ---
-title: "DEX Trades"
-description: "Query examples for DEX trading data"
+title: "DEX 交易"
+description: "DEX 交易資料的查詢範例"
 icon: "arrow-right-arrow-left"
 ---
 
-**DEXTrades** Cube 收錄逐筆 DEX 兌換事件，是最細緻的交易資料。可用來查詢單筆交易、分析錢包活動、追蹤代幣價格，以及找出頂尖交易者。
+**DEXTrades** Cube 包含逐筆 DEX 兌換事件，是粒度最細的成交資料。可用於查詢單筆交易、分析錢包行為、跟蹤代幣價格以及查詢頭部交易者。
 
 <Note>
-以下範例皆使用 `network: sol`（Solana）。若為其他支援鏈，請改為 `eth`、`bsc` 或 `polygon`。
+以下示例均使用 `network: sol`（Solana）。其他支援的鏈可改為 `eth`、`bsc` 或 `polygon`。
 </Note>
 
 ---
 
-## 如何取得最新的 DEX 交易？
+## 如何獲取最新的 DEX 成交？
 
-取得 Solana 上最近 10 筆 DEX 交易，包含區塊資訊、交易雜湊、買賣細節與 DEX 協定。
+獲取 Solana 上最近 10 筆 DEX 成交，包含區塊資訊、交易雜湊、買賣明細及 DEX 協議。
 
 ```graphql
 query {
@@ -46,35 +46,35 @@ query {
 ```
 
 <Tip>
-[在 GraphQL IDE 開啟](https://ide.chainstream.io) — 貼上上方查詢即可互動執行，並享有自動完成與 schema 探索。
+[在 GraphQL IDE 中開啟](https://ide.chainstream.io) — 將上方查詢貼上進去即可互動執行，並享受自動補全與 schema 瀏覽。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `Block.Time` | 區塊時間戳（ISO 8601） |
-    | `Block.Slot` | Solana slot 編號（Solana 專用） |
-    | `Transaction.Hash` | 鏈上交易雜湊 — 可用於在瀏覽器查詢該筆交易 |
+    | `Block.Slot` | Solana slot 編號（Solana 特有） |
+    | `Transaction.Hash` | 鏈上交易雜湊 — 可在瀏覽器中用其查詢該筆交易 |
     | `Trade.Buy.Currency.MintAddress` | 買入資產的代幣地址 |
-    | `Trade.Buy.PriceInUSD` | 成交當下買入代幣的美元價格 |
+    | `Trade.Buy.PriceInUSD` | 成交時買入代幣的 USD 價格 |
     | `Trade.Buy.Account.Owner` | 買方錢包地址 |
-    | `Trade.Dex.ProtocolName` | DEX 名稱（例如 Raydium、Orca、Jupiter） |
-    | `Pool.Address` | 該筆交易執行所在的流動性池地址 |
+    | `Trade.Dex.ProtocolName` | DEX 名稱（如 Raydium、Orca、Jupiter） |
+    | `Pool.Address` | 成交所在的流動性池地址 |
   </Accordion>
-  <Accordion title="自訂建議">
+  <Accordion title="自定義提示">
     - **切換鏈**：將 `network: sol` 改為 `network: eth`、`network: bsc` 或 `network: polygon`
-    - **增加筆數**：將 `count: 10` 改為最多 `10000`
-    - **加入時間篩選**：加上 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 以限定時間範圍
-    - **依 DEX 篩選**：加上 `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` 以限定特定協定
+    - **增加條數**：將 `count: 10` 提高到最多 `10000`
+    - **增加時間過濾**：新增 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定時間範圍
+    - **按 DEX 過濾**：新增 `where: {Trade: {Dex: {ProtocolName: {is: "Raydium"}}}}` 限定為某協議
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 如何取得特定代幣的交易？
+## 如何獲取某個代幣的成交？
 
-透過 `tokenAddress` 選擇器傳入代幣地址，即可取得該代幣的交易。
+透過 `tokenAddress` 選擇器傳入代幣地址，即可查詢該代幣相關成交。
 
 ```graphql
 query {
@@ -97,31 +97,31 @@ query {
 ```
 
 <Tip>
-請將 `TOKEN_ADDRESS` 換成實際的代幣 mint 地址（例如 Solana 上 USDC 為 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）。依名稱查地址可參考 [代幣 metadata](/zh-Hant/graphql/examples/ohlc-stats#how-do-i-look-up-token-information)。
+將 `TOKEN_ADDRESS` 替換為實際代幣 mint 地址（例如 Solana 上 USDC 為 `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`）。按名稱查地址見 [代幣後設資料](/zh-Hant/graphql/examples/ohlc-stats#how-do-i-look-up-token-information)。
 </Tip>
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
-    | `Trade.Buy.Amount` | 買入的代幣數量 |
-    | `Trade.Buy.PriceInUSD` | 成交時每單位代幣價格 |
+    | `Trade.Buy.Amount` | 買入代幣數量 |
+    | `Trade.Buy.PriceInUSD` | 成交時的單價（USD） |
     | `Trade.Buy.Account.Owner` | 執行買入的錢包 |
-    | `Trade.Sell.Currency.MintAddress` | 賣出資產的代幣地址（交易對的另一邊） |
-    | `Trade.Dex.ProtocolName` | DEX 協定名稱 |
+    | `Trade.Sell.Currency.MintAddress` | 賣出資產的代幣地址（交易對的另一側） |
+    | `Trade.Dex.ProtocolName` | DEX 協議名稱 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **依最小金額篩選**：加上 `where: {Trade: {Buy: {Amount: {gt: 1000}}}}` 僅顯示大額交易
-    - **依價格區間篩選**：加上 `where: {Trade: {Buy: {PriceInUSD: {gte: 0.001, lte: 1.0}}}}` 限定價格帶
-    - **排除可疑交易**：預設已套用 `IsSuspect = false`，機器人／MEV 交易已排除
+  <Accordion title="自定義提示">
+    - **按最小數量過濾**：新增 `where: {Trade: {Buy: {Amount: {gt: 1000}}}}` 僅看大額成交
+    - **按價格區間過濾**：新增 `where: {Trade: {Buy: {PriceInUSD: {gte: 0.001, lte: 1.0}}}}` 限定價格帶
+    - **排除可疑成交**：預設已應用 `IsSuspect = false` 過濾 — 機器人/MEV 類成交已排除
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 如何取得某錢包的所有交易？
+## 如何獲取某個錢包的全部成交？
 
-依特定錢包地址取得其所有交易。
+按錢包地址查詢其參與的全部成交。
 
 ```graphql
 query {
@@ -144,29 +144,29 @@ query {
 ```
 
 <Info>
-`walletAddress` 選擇器會比對買方或賣方為該錢包的交易。
+`walletAddress` 選擇器會匹配該錢包作為買方或賣方的成交。
 </Info>
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `Trade.Buy.Currency.MintAddress` | 買入的代幣 |
     | `Trade.Sell.Currency.MintAddress` | 賣出的代幣 |
-    | `Transaction.FeeInNative` | 以原生代幣支付的 gas 手續費（Solana 上為 SOL） |
+    | `Transaction.FeeInNative` | 以原生代幣計價的 Gas 費（Solana 上為 SOL） |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **僅限單一代幣**：可與 `tokenAddress: {is: "TOKEN_ADDRESS"}` 併用，只看該錢包對該代幣的交易
-    - **加入時間窗**：加上 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定近期交易
-    - **提高 limit**：設 `count: 100` 可取得更多歷史（上限 10,000）
+  <Accordion title="自定義提示">
+    - **限定單一代幣**：與 `tokenAddress: {is: "TOKEN_ADDRESS"}` 組合，只看該錢包對某代幣的成交
+    - **增加時間視窗**：新增 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定近期成交
+    - **提高 limit**：將 `count` 設為 `100` 以拉取更多歷史（最大 10,000）
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## 如何取得代幣的目前價格？
+## 如何獲取代幣當前價格？
 
-從最近一筆非可疑交易取得代幣最新價格。
+從最近一筆非可疑成交中獲取代幣最新價格。
 
 ```graphql
 query {
@@ -187,28 +187,28 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
-    | `Trade.Buy.PriceInUSD` | 最近一筆交易的美元價格 |
-    | `Trade.Buy.PriceInNative` | 以鏈原生代幣（SOL、ETH、BNB）計價 |
-    | `Block.Time` | 該筆交易時間戳 — 可看出價格有多新 |
+    | `Trade.Buy.PriceInUSD` | 最近一筆成交的 USD 價格 |
+    | `Trade.Buy.PriceInNative` | 以鏈原生代幣（SOL、ETH、BNB）計價的價格 |
+    | `Block.Time` | 成交時間戳 — 反映價格有多新 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **多筆價格**：提高 `count` 可取得多筆近期價格以利平均
-    - **跨鏈**：使用 `network: eth` 可在 Ethereum 取得同一代幣價格（若該鏈有該代幣）
+  <Accordion title="自定義提示">
+    - **多條價格**：增大 `count` 可得到多筆近期價格用於平均等用途
+    - **跨鏈**：使用 `network: eth` 可在以太坊上查詢同一代幣價格（若該鏈存在該代幣）
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-若需要長期可靠的代幣價格，建議改用 [Pairs](/zh-Hant/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cube — 提供預先計算的 K 線，含每分鐘開高低收。
+若需要更可靠的代幣價格時間序列，可考慮使用 [Pairs](/zh-Hant/graphql/examples/ohlc-stats#how-do-i-get-k-line-ohlc-candlestick-data) Cube — 其提供預計算的 K 線資料，含每分鐘 open/high/low/close。
 </Tip>
 
 ---
 
-## 如何找出某代幣的頂尖交易者？
+## 如何查詢某代幣的頭部交易者？
 
-透過彙總找出頂尖交易者。此查詢依買方錢包分組，回傳總買入次數與成交量。
+透過聚合查詢某代幣的頭部交易者。以下查詢按買方錢包分組，返回總買入筆數與成交量。
 
 ```graphql
 query {
@@ -233,29 +233,29 @@ query {
 ```
 
 <AccordionGroup>
-  <Accordion title="主要欄位">
+  <Accordion title="關鍵欄位">
     | 欄位 | 說明 |
     |:------|:------------|
     | `Trade.Buy.Account.Owner` | 錢包地址（分組鍵） |
-    | `count` | 該錢包的交易筆數 |
+    | `count` | 該錢包的成交筆數 |
     | `sum(of: Trade_Buy_Amount)` | 該錢包買入的代幣總量 |
   </Accordion>
-  <Accordion title="自訂建議">
-    - **依成交量排序**：結果會依維度欄位分組 — 選較少維度可得到較高層級的彙總
-    - **限定時段的排行榜**：加上 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定區間
-    - **排除小額交易**：在 `where` 中加上 `Trade: {Buy: {Amount: {gt: 100}}}`
+  <Accordion title="自定義提示">
+    - **按成交量排序**：結果會按維度欄位分組 — 減少維度可得到更高層級的聚合
+    - **限定時間段的排行榜**：新增 `where: {Block: {Time: {after: "2025-03-01T00:00:00Z"}}}` 限定週期
+    - **排除小額成交**：在 `where` 中加入 `Trade: {Buy: {Amount: {gt: 100}}}`
   </Accordion>
 </AccordionGroup>
 
 <Info>
-當指標欄位（`count`、`sum`）與維度欄位並列時，API 會依所選維度自動分組。完整說明見 [Metrics & Aggregation](/zh-Hant/graphql/schema/metrics-aggregation)。
+當指標欄位（`count`、`sum`）與維度欄位同時出現時，API 會按所選維度自動分組。完整說明見 [指標與聚合](/zh-Hant/graphql/schema/metrics-aggregation)。
 </Info>
 
 ---
 
-## 多鏈範例
+## 多鏈示例
 
-以下查詢適用所有支援鏈 — 只需變更 `network` 參數。
+以下查詢在所有支援的鏈上結構相同 — 只需修改 `network` 引數。
 
 <Tabs>
   <Tab title="Solana">
@@ -316,19 +316,19 @@ query {
 
 ---
 
-## 下一步
+## 後續步驟
 
 <CardGroup cols={2}>
-  <Card title="轉帳" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
-    查詢鏈上代幣轉帳資料。
+  <Card title="轉賬" icon="paper-plane" href="/zh-Hant/graphql/examples/transfers">
+    查詢鏈上代幣轉賬資料。
   </Card>
-  <Card title="餘額與持倉者" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
-    查詢錢包餘額、餘額歷史與大戶持倉。
+  <Card title="餘額與持幣者" icon="wallet" href="/zh-Hant/graphql/examples/balance-holders">
+    查詢錢包餘額、餘額歷史與頭部持幣者。
   </Card>
-  <Card title="資金池與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
-    探索 DEX 資金池與流動性資料。
+  <Card title="池子與流動性" icon="droplet" href="/zh-Hant/graphql/examples/pools-liquidity">
+    探索 DEX 池子與流動性資料。
   </Card>
   <Card title="OHLC 與統計" icon="chart-candlestick" href="/zh-Hant/graphql/examples/ohlc-stats">
-    取得 K 線、交易統計、市值與代幣 metadata。
+    獲取 K 線、成交統計、市值與代幣後設資料。
   </Card>
 </CardGroup>

@@ -1,37 +1,107 @@
 ---
 title: "CLI"
-description: "`chainstream` 명령줄 인터페이스 — 셸에서 모든 데이터 제품과 DeFi 프리미티브에 접근."
+description: "`chainstream` 명령줄 인터페이스 — 모든 데이터 제품, GraphQL, DeFi 프리미티브에 셸로 접근."
 icon: "terminal"
 ---
 
-ChainStream CLI는 SDK / REST / GraphQL로 접근하는 [데이터 제품](/ko/docs/data-products/overview)의 CLI 입구입니다. `jq`, 셸 파이프라인, 셸을 구동하는 AI Agent와 조합하도록 설계되었습니다.
+ChainStream CLI는 SDK, REST, GraphQL, WebSocket으로 접근하는 동일한 [데이터 제품](/ko/docs/data-products/overview)의 명령줄 입구입니다. `jq`, 셸 파이프라인, 셸을 구동하는 AI 에이전트와 조합하도록 설계되었습니다.
 
 ## 설치
 
 ```bash
-brew install chainstream-io/tap/chainstream
+# 옵션 A — 전역 설치 (대화형 사용 권장)
 npm install -g @chainstream-io/cli
-curl -fsSL https://chainstream.io/install.sh | sh
+
+# 옵션 B — 설치 없이 항상 최신 버전 (에이전트 및 CI 권장)
+npx @chainstream-io/cli <command>
 ```
+
+<Note>
+  아래 예시의 `chainstream <cmd>`는 `npx @chainstream-io/cli <cmd>`와 동일합니다. 환경에 맞는 호출 방식을 선택하세요.
+</Note>
 
 ## 인증
 
+CLI는 두 가지 인증 경로를 제공합니다. 둘 다 동일한 설정 파일에서 REST API, GraphQL, DeFi 명령에 대한 접근을 부여합니다.
+
 ```bash
-chainstream auth login
-# 또는
+# 호스트 지갑을 생성하고 nano trial(50K CU, 30일) 자동 지급
+chainstream login
+
+# 또는 기존 API Key를 명시적으로 설정
+chainstream config set --key apiKey --value <your-api-key>
+
+# 스크립트에서는 환경 변수로 전달
 export CHAINSTREAM_API_KEY=...
 ```
+
+설정은 `~/.config/chainstream/config.json`에, 지갑 키는 `~/.config/chainstream/keys/` 아래에 저장됩니다. `chainstream logout`은 지갑 설정을 지우지만 키 파일은 디스크에 보존합니다.
+
+## 명령 그룹
+
+| 그룹 | 용도 |
+|-------|---------|
+| `token` | `search`, `info`, `security`, `holders`, `candles`, `pools` |
+| `market` | `trending`, `new`, `trades` |
+| `wallet` | `profile`, `pnl`, `holdings`, `activity`, `address`, `balance`, `pricing`, `sign`, `set-raw`, `link` |
+| `dex` | `route`, `swap`, `create` — 호스트 관리 지갑이 서명할 **서명되지 않은** 트랜잭션 구성 |
+| `tx` | `send`, `gas-price`, `estimate-gas` |
+| `graphql` | `schema`, `query` — 아래 참조 |
+| `plan` | `status`, `purchase` — x402 자동 결제 사용, API Key 반환 |
+| `config` | `set`, `get`, `auth` |
+| `job` | `status` |
+| 최상위 | `login`, `logout`, `verify`, `bind-email`, `bind-email-verify` |
+
+전역 플래그: `--json`은 한 줄 머신 판독 JSON으로 출력합니다 (기본은 보기 좋게 포매팅된 JSON).
 
 ## 첫 명령어
 
 ```bash
-chainstream tokens search --chain solana --query USDC --limit 5
-chainstream trades tail --chain ethereum --token 0xA0b8...
-chainstream rankings hot --chain solana --window 24h
-chainstream defi quote --chain solana --from SOL --to USDC --amount 1
+chainstream token search --chain sol --keyword PUMP --limit 5
+chainstream token security --chain sol --address <addr>
+chainstream market trending --chain sol --duration 1h --limit 20
+chainstream wallet pnl --chain sol --address <wallet>
+chainstream dex quote --chain sol --from SOL --to USDC --amount 1
 ```
 
-기본 출력은 JSON. 사람용은 `--format=table`.
+## GraphQL 서브명령
+
+`graphql` 그룹은 ChainStream의 온체인 데이터 웨어하우스(`Solana`, `EVM`, `Trading`에 걸친 27개 큐브)를 노출합니다 — REST/MCP 엔드포인트로 유연성이 부족한 경우(큐브 간 JOIN, 커스텀 집계, 시계열, 다중 조건 필터)에 유용합니다. 기본 엔드포인트: `https://graphql.chainstream.io/graphql`.
+
+### 스키마 탐색
+
+```bash
+chainstream graphql schema --summary              # 27개 큐브 전체의 압축 카탈로그
+chainstream graphql schema --type DEXTrades       # 하나의 큐브 필드 상세 조회
+chainstream graphql schema --full                 # 완전한 레퍼런스 (에이전트에 최적)
+chainstream graphql schema --summary --refresh    # 캐시 우회, 재조회
+```
+
+### 쿼리 실행
+
+```bash
+# 인라인 쿼리
+chainstream graphql query \
+  --query 'query { Solana { DEXTrades(limit:{count:5}) { Block { Time } } } }' \
+  --json
+
+# 변수와 함께 파일에서 쿼리
+chainstream graphql query --file ./query.graphql --var '{"chain":"sol"}'
+```
+
+인증은 자동입니다: API Key가 설정되어 있으면(`config set --key apiKey` 또는 `CHAINSTREAM_API_KEY`) CLI가 `X-API-KEY`로 전송하고, 그렇지 않으면 호스트 지갑에서 SIWX 토큰에 서명합니다. GraphQL은 REST API와 동일한 API Key 및 구독 풀을 공유합니다 — 별도 구매가 필요 없습니다.
+
+<Note>
+  402가 발생하면 `graphql query`는 설명적 오류를 반환합니다. `chainstream plan status`를 실행한 후 `chainstream plan purchase`(x402 자동 결제를 처리하고 결과 API Key를 저장)를 실행한 뒤 재시도하세요.
+</Note>
+
+## 언제 사용해야 할까
+
+- 빠른 탐색 ("지금 무슨 일이 일어나고 있는가?")
+- 스크립트, 크론 잡, GitHub Actions
+- AI 에이전트에게 셸 실행 가능한 ChainStream 프리미티브 제공
+- 클라이언트 코드 작성 없이 커스텀 GraphQL 분석
+- 사용자 제어 지갑이 서명할 서명되지 않은 DeFi 트랜잭션 준비
 
 ## 다음 단계
 
@@ -39,7 +109,13 @@ chainstream defi quote --chain solana --from SOL --to USDC --amount 1
   <Card title="CLI 레퍼런스" icon="code" href="/ko/api-reference/cli-commands/overview">
     모든 명령어, 플래그, 종료 코드.
   </Card>
-  <Card title="Agent Skills" icon="brain" href="/ko/docs/ai-agents/agent-skills/introduction">
-    AI Agent가 CLI를 쓰는 패턴.
+  <Card title="GraphQL 접근 방식" icon="diagram-project" href="/ko/docs/access-methods/graphql">
+    엔드포인트, 스키마, 쿼리 패턴.
+  </Card>
+  <Card title="chainstream-graphql 스킬" icon="brain" href="/ko/docs/ai-agents/agent-skills/chainstream-graphql">
+    AI 에이전트가 `graphql schema` / `query`를 사용하는 방법.
+  </Card>
+  <Card title="Agent Skills" icon="robot" href="/ko/docs/ai-agents/agent-skills/introduction">
+    AI 에이전트가 CLI를 쓰는 패턴.
   </Card>
 </CardGroup>

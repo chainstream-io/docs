@@ -8,12 +8,15 @@ icon: "brain"
 
 エージェントスキルは、AIコーディングアシスタントに ChainStream のオンチェーンデータと DeFi 機能の使い方を教える、構造化された指示パッケージ（`SKILL.md` ファイル）です。生の API ドキュメントとは異なり、スキルは **意思決定ツリー、ワークフロー、安全ルール、エラー復旧** を提供し、AI エージェントが自律的に動くために必要な要素を揃えています。
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="chainstream-data" icon="magnifying-glass" color="#4D9CFF">
     **ツール型** — 読み取り専用のオンチェーンデータ：トークン分析、市場トレンド、ウォレットプロファイル、WebSocket ストリーム
   </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" color="#10B981">
+    **ツール型** — 27 キューブに対するカスタム GraphQL 分析：キューブ横断 JOIN、集計、時系列
+  </Card>
   <Card title="chainstream-defi" icon="right-left" color="#9333EA">
-    **プロセス型** — 取り消し不可の DeFi 実行：スワップ、ブリッジ、ローンチパッド、トランザクション送信
+    **プロセス型** — 取り消し不可の DeFi 実行：スワップ、ローンチパッド、トランザクション送信
   </Card>
 </CardGroup>
 
@@ -32,15 +35,19 @@ icon: "brain"
 
 ```mermaid
 flowchart TD
-  Start["User request"] --> IsData{"Reading data?"}
-  IsData -->|Yes| DataSkill["chainstream-data"]
-  IsData -->|No| IsDefi{"Executing transaction?"}
-  IsDefi -->|Yes| DefiSkill["chainstream-defi"]
-  IsDefi -->|No| NotCovered["Not a ChainStream task"]
+  Start["User request"] --> IsExec{"Executing transaction?"}
+  IsExec -->|Yes| DefiSkill["chainstream-defi"]
+  IsExec -->|No| IsData{"Reading data?"}
+  IsData -->|No| NotCovered["Not a ChainStream task"]
+  IsData -->|Yes| Custom{"Needs JOINs / custom<br/>aggregation / time-series?"}
+  Custom -->|Yes| GraphqlSkill["chainstream-graphql"]
+  Custom -->|No| DataSkill["chainstream-data"]
 
   DataSkill --> HasMCP{"MCP configured?"}
   HasMCP -->|Yes| UseMCP["Use MCP tools"]
   HasMCP -->|No| UseCLI["Use CLI commands"]
+
+  GraphqlSkill --> Schema["graphql schema --summary<br/>graphql query --file ..."]
 
   DefiSkill --> HasWallet{"Wallet available?"}
   HasWallet -->|Yes| UseCLIDeFi["Use CLI for signing"]
@@ -49,18 +56,19 @@ flowchart TD
 
 ## スキルの比較
 
-| 観点 | chainstream-data | chainstream-defi |
-|--------|-----------------|-----------------|
-| パターン | ツール（読み取り専用） | プロセス（実行） |
-| リスク | 低い | 高い（取り消し不可） |
-| ウォレット | 不要（API Key で可） | 必要（署名が必要） |
-| MCP 対応 | 完全（17 ツール） | ツールは利用可能だが、実行にはホスト側のウォレットが必要 |
-| ユーザー確認 | 不要 | 各トランザクションの前に **必須** |
-| 典型的な操作 | 検索、分析、追跡、ストリーム | スワップ、ブリッジ、作成、ブロードキャスト |
+| 観点 | chainstream-data | chainstream-graphql | chainstream-defi |
+|--------|-----------------|---------------------|-----------------|
+| パターン | ツール（読み取り専用） | ツール（読み取り専用） | プロセス（実行） |
+| リスク | 低い | 低い | 高い（取り消し不可） |
+| ウォレット | 不要（API Key で可） | 不要（API Key で可） | 必要（署名が必要） |
+| MCP 対応 | 完全（17 ツール） | CLI 駆動 | ツールは利用可能だが、実行にはホスト側のウォレットが必要 |
+| ユーザー確認 | 不要 | 不要 | 各トランザクションの前に **必須** |
+| 典型的な操作 | 検索、分析、追跡、ストリーム | JOIN、集計、時系列、複雑な WHERE | スワップ、トークン作成、ブロードキャスト |
+| 向いている用途 | 事前構築エンドポイント経由の標準分析 | REST では表現できないカスタム分析 | トレード、トークンローンチ、署名 |
 
 ## 共通リソース
 
-両方のスキルで共通の参照ドキュメントを共有します。
+すべてのスキルで共通の参照ドキュメントを共有します。
 
 | リソース | 内容 |
 |----------|---------|
@@ -90,7 +98,10 @@ flowchart TD
     各プラットフォームでのスキル設定
   </Card>
   <Card title="chainstream-data" icon="magnifying-glass" href="/jp/docs/ai-agents/agent-skills/chainstream-data">
-    データクエリと分析
+    標準的なデータクエリと分析
+  </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" href="/jp/docs/ai-agents/agent-skills/chainstream-graphql">
+    カスタム GraphQL 分析、JOIN、集計
   </Card>
   <Card title="chainstream-defi" icon="right-left" href="/jp/docs/ai-agents/agent-skills/chainstream-defi">
     DeFi 実行ワークフロー

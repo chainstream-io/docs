@@ -1,24 +1,24 @@
 ---
-title: "Dataset & Aggregates"
-description: "Control data source scope and pre-aggregation behavior with the dataset and aggregates parameters"
+title: "資料集與聚合"
+description: "使用 dataset 與 aggregates 參數控制資料源範圍與預聚合行為"
 icon: "database"
 ---
 
-## 概覽
+## 概述
 
-ChainStream GraphQL 中，每個 Chain Group 都可接受兩個選填參數，用來控制**實際查詢的底層表**。可依情境在資料新鮮度、查詢速度與資料完整度之間取捨。
+ChainStream GraphQL 中每個鏈組都接受兩個可選引數，用於控制 **查詢命中哪張底層表**。可按場景在新鮮度、查詢速度與資料完整性之間取捨。
 
 ---
 
-## `dataset` 參數
+## Dataset 引數
 
-`dataset` 參數控制所查資料的**時間範圍**。它決定查詢會打到即時表、歸檔表，或兩者皆查。
+`dataset` 引數控制所查資料的 **時間範圍**，決定走實時表、歸檔表或兩者。
 
-| 值 | 說明 | 典型用途 |
+| 取值 | 說明 | 典型場景 |
 |:------|:------------|:-----------------|
-| `combined` | 同時查即時與歸檔資料 **（預設）** — 通常涵蓋最近約 7–10 天 | 需要完整時間範圍的通用查詢 |
-| `realtime` | 僅近期資料（約最近 24 小時內） | 監控儀表板、最新成交、即時告警 |
-| `archive` | 僅保留區間內的歷史資料（約 7–10 天） | 歷史分析、回填、趨勢研究 |
+| `combined` | 同時查詢實時與歸檔資料 **（預設）** — 通常覆蓋最近約 7–10 天 | 需要完整時間範圍的通用查詢 |
+| `realtime` | 僅近期資料（約最近 24 小時） | 監控大盤、最新成交、實時告警 |
+| `archive` | 僅保留視窗內的歷史資料（約 7–10 天） | 歷史分析、回補、趨勢研究 |
 
 ### 用法
 
@@ -47,14 +47,14 @@ query {
 }
 ```
 
-### 歷史資料回填
+### 歷史資料回補
 
-建置資料管線或從中斷恢復時，可搭配時間範圍篩選使用 `dataset: archive` 回填歷史：
+構建資料管道或從故障恢復時，可用 `dataset: archive` 配合時間範圍過濾回補歷史：
 
-1. 記錄最後處理的時間戳或區塊高度
-2. 以 `dataset: archive` 搭配 `where`，從上次檢查點查到目前時間
-3. 處理回填資料
-4. 改為 `dataset: realtime` 做持續監控
+1. 記錄上次處理的時間戳或區塊高度
+2. 用 `dataset: archive` 與 `where` 從檢查點查到當前時間
+3. 處理回補資料
+4. 持續監控時改用 `dataset: realtime`
 
 ```graphql
 query BackfillTrades {
@@ -82,26 +82,26 @@ query BackfillTrades {
 }
 ```
 
-### 不支援 `dataset` 切換的表
+### 不支援 Dataset 切換的表
 
-部分 Cube 不論 `dataset` 為何都查同一張表，包括：
+部分 Cube 無論 `dataset` 取何值都查詢同一張表，包括：
 
-- **DWS Cube**：`TokenHolders`、`WalletTokenPnL`、`DEXPools` — 代表目前狀態快照
+- **DWS Cube**：`TokenHolders`、`WalletTokenPnL`、`DEXPools` — 表示當前狀態快照
 - **特殊表**：`TransactionBalances`、`PredictionTrades`、`PredictionManagements`、`PredictionSettlements`
 
 對這些 Cube，`dataset` 會被靜默忽略。
 
 ---
 
-## `aggregates` 參數
+## Aggregates 引數
 
-`aggregates` 參數控制查詢是否使用**預先彙總的 materialized view**（DWM 層），而非原始明細表（DWD 層）。預先彙總表內含預先計算的 rollup（通常為每分鐘），查詢會快很多。
+`aggregates` 引數決定查詢是否使用 **預聚合物化檢視**（DWM 層），而非原始明細表（DWD 層）。預聚合表通常按分鐘預計算彙總，查詢明顯更快。
 
-| 值 | 說明 | 典型用途 |
+| 取值 | 說明 | 典型場景 |
 |:------|:------------|:-----------------|
-| `yes` | 在可用時優先使用預先彙總表 **（預設行為）** | 多數分析查詢 |
-| `no` | 僅使用原始明細表 | 需要單筆事件粒度時 |
-| `only` | 僅使用預先彙總表 | 追求最快速度，可接受較少欄位 |
+| `yes` | 在可用時優先走預聚合表 **（預設行為）** | 多數分析查詢 |
+| `no` | 僅使用原始明細表 | 需要逐事件粒度時 |
+| `only` | 僅使用預聚合表 | 追求最快速度，可接受欄位集受限 |
 
 ### 用法
 
@@ -121,20 +121,20 @@ query {
 }
 ```
 
-### 各模式何時使用
+### 各模式適用場景
 
-| 情境 | 建議 | 原因 |
+| 場景 | 建議 | 原因 |
 |:---------|:------------|:----|
-| 建立 OHLC 圖表 | `aggregates: only` | 預先計算的 K 線資料，回應最快 |
-| 隨時間的成交量趨勢 | `aggregates: yes` | 善用預先彙總的成交量統計 |
-| 單筆成交分析 | `aggregates: no` | 需要 rollup 無法提供的單筆明細 |
-| 計算不重複交易者數 | `aggregates: yes` | 可使用預先計算的不重複計數 |
+| 繪製 OHLC 圖表 | `aggregates: only` | K 線已預計算，響應最快 |
+| 成交量隨時間變化 | `aggregates: yes` | 可利用預聚合成交量統計 |
+| 單筆成交分析 | `aggregates: no` | 需要彙總無法提供的逐事件細節 |
+| 統計獨立交易者數 | `aggregates: yes` | 可使用預計算的獨立計數 |
 
 ---
 
-## 兩者並用
+## 組合使用兩個引數
 
-`dataset` 與 `aggregates` 可同時使用：
+可同時使用 `dataset` 與 `aggregates`：
 
 ```graphql
 query {
@@ -152,23 +152,23 @@ query {
 }
 ```
 
-此查詢以即時資料搭配預先彙總表，取得最近約 60 分鐘的跨鏈代幣交易統計，以追求較快速度。
+該查詢在實時資料上使用預聚合表，拉取最近約 60 分鐘的跨鏈代幣成交統計，以獲得較高速度。
 
 ---
 
 ## 效能考量
 
 <CardGroup cols={2}>
-  <Card title="儀表板請用 realtime" icon="gauge-high">
-    `dataset: realtime` 會打到較小的表分割區，監控情境下回應較快。
+  <Card title="大盤用 realtime" icon="gauge-high">
+    `dataset: realtime` 命中更小的表分割槽，監控類場景響應更快。
   </Card>
-  <Card title="分析請用 aggregates" icon="chart-line">
-    `aggregates: yes` 或 `only` 會使用預先計算的 rollup，比掃描原始事件表快上數個數量級。
+  <Card title="分析用 aggregates" icon="chart-line">
+    `aggregates: yes` 或 `only` 利用預計算彙總，比全表掃描原始事件快幾個數量級。
   </Card>
 </CardGroup>
 
 <Tip>
-若要 OHLC 或成交量查詢盡可能快，可同時使用 `dataset: realtime` 與 `aggregates: only`，鎖定最小、最優化的資料切片。
+若要 OHLC 或成交量查詢儘可能快，可組合 `dataset: realtime` 與 `aggregates: only`，命中最小、最最佳化的一片資料。
 </Tip>
 
 ---
@@ -177,9 +177,9 @@ query {
 
 <CardGroup cols={2}>
   <Card title="Schema 概覽" icon="sitemap" href="/zh-Hant/graphql/schema/schema-overview">
-    了解 `dataset` 與 `aggregates` 在整體查詢結構中的位置。
+    瞭解 dataset 與 aggregates 在整體查詢結構中的位置。
   </Card>
-  <Card title="資料 Cube" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
-    查閱哪些 Cube 支援 `dataset` 切換。
+  <Card title="資料 Cubes" icon="cubes" href="/zh-Hant/graphql/schema/cubes">
+    檢視哪些 Cube 支援 dataset 切換。
   </Card>
 </CardGroup>

@@ -8,12 +8,15 @@ icon: "brain"
 
 Agent Skills 是结构化的指令包（`SKILL.md` 文件），用于教 AI 编程助手如何使用 ChainStream 的链上数据和 DeFi 能力。与原始 API 文档不同，Skills 提供了**决策树、工作流、安全规则和错误恢复** — AI Agent 自主运行所需的一切。
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="chainstream-data" icon="magnifying-glass" color="#4D9CFF">
     **Tool 模式** — 只读链上数据：代币分析、市场趋势、钱包画像、WebSocket 流
   </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" color="#10B981">
+    **Tool 模式** — 基于 27 个 cube 的自定义 GraphQL 分析：跨 cube JOIN、聚合、时间序列
+  </Card>
   <Card title="chainstream-defi" icon="right-left" color="#9333EA">
-    **Process 模式** — 不可逆 DeFi 执行：兑换、跨链桥、Launchpad、交易广播
+    **Process 模式** — 不可逆 DeFi 执行：兑换、Launchpad、交易广播
   </Card>
 </CardGroup>
 
@@ -32,15 +35,19 @@ Skills 处于**最高抽象层** — 内部引用 MCP 工具和 CLI 命令，将
 
 ```mermaid
 flowchart TD
-  Start["用户请求"] --> IsData{"读取数据？"}
-  IsData -->|是| DataSkill["chainstream-data"]
-  IsData -->|否| IsDefi{"执行交易？"}
-  IsDefi -->|是| DefiSkill["chainstream-defi"]
-  IsDefi -->|否| NotCovered["非 ChainStream 任务"]
+  Start["用户请求"] --> IsExec{"执行交易？"}
+  IsExec -->|是| DefiSkill["chainstream-defi"]
+  IsExec -->|否| IsData{"读取数据？"}
+  IsData -->|否| NotCovered["非 ChainStream 任务"]
+  IsData -->|是| Custom{"需要 JOIN / 自定义<br/>聚合 / 时间序列？"}
+  Custom -->|是| GraphqlSkill["chainstream-graphql"]
+  Custom -->|否| DataSkill["chainstream-data"]
 
   DataSkill --> HasMCP{"已配置 MCP？"}
   HasMCP -->|是| UseMCP["使用 MCP 工具"]
   HasMCP -->|否| UseCLI["使用 CLI 命令"]
+
+  GraphqlSkill --> Schema["graphql schema --summary<br/>graphql query --file ..."]
 
   DefiSkill --> HasWallet{"有钱包？"}
   HasWallet -->|是| UseCLIDeFi["使用 CLI 签名"]
@@ -49,18 +56,19 @@ flowchart TD
 
 ## Skill 对比
 
-| 方面 | chainstream-data | chainstream-defi |
-|------|-----------------|-----------------|
-| 模式 | Tool（只读） | Process（执行） |
-| 风险等级 | 低 | 高（不可逆） |
-| 需要钱包 | 否（API Key 即可） | 是（需要签名） |
-| MCP 支持 | 完整（17 个工具） | 工具可用，但执行需宿主侧钱包 |
-| 用户确认 | 不需要 | **每次交易前强制确认** |
-| 典型操作 | 搜索、分析、追踪、流式 | 兑换、桥接、创建、广播 |
+| 方面 | chainstream-data | chainstream-graphql | chainstream-defi |
+|------|------------------|---------------------|------------------|
+| 模式 | Tool（只读） | Tool（只读） | Process（执行） |
+| 风险等级 | 低 | 低 | 高（不可逆） |
+| 需要钱包 | 否（API Key 即可） | 否（API Key 即可） | 是（需要签名） |
+| MCP 支持 | 完整（17 个工具） | 由 CLI 驱动 | 工具可用，但执行需宿主侧钱包 |
+| 用户确认 | 不需要 | 不需要 | **每次交易前强制确认** |
+| 典型操作 | 搜索、分析、追踪、流式 | JOIN、聚合、时间序列、复杂 WHERE | 兑换、发币、广播 |
+| 最适合 | 通过预置端点做标准分析 | REST 不暴露的自定义分析 | 交易、发币、签名 |
 
 ## 共享资源
 
-两个 Skill 共享通用参考文档：
+所有 Skill 共享通用参考文档：
 
 | 资源 | 内容 |
 |------|------|
@@ -90,7 +98,10 @@ Skills 适用于任何支持 `SKILL.md` 文件的 AI 编程助手：
     在你的平台上配置 Skills
   </Card>
   <Card title="chainstream-data" icon="magnifying-glass" href="/cn/docs/ai-agents/agent-skills/chainstream-data">
-    数据查询与分析
+    标准数据查询与分析
+  </Card>
+  <Card title="chainstream-graphql" icon="diagram-project" href="/cn/docs/ai-agents/agent-skills/chainstream-graphql">
+    自定义 GraphQL 分析、JOIN、聚合
   </Card>
   <Card title="chainstream-defi" icon="right-left" href="/cn/docs/ai-agents/agent-skills/chainstream-defi">
     DeFi 执行工作流

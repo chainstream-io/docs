@@ -1,45 +1,121 @@
 ---
 title: "CLI"
-description: "`chainstream` コマンドラインインターフェース — シェルから全データプロダクトと DeFi プリミティブへ。"
+description: "`chainstream` コマンドラインインターフェース — すべてのデータプロダクト、GraphQL、DeFi プリミティブへのシェルネイティブアクセス。"
 icon: "terminal"
 ---
 
-ChainStream CLI は、SDK / REST / GraphQL 経由で触れる [データプロダクト](/jp/docs/data-products/overview) への CLI フロント。`jq`・シェルパイプライン・シェルを駆動する AI Agent と組み合わせる設計です。
+ChainStream CLI は、SDK / REST / GraphQL / WebSocket と同じ [データプロダクト](/jp/docs/data-products/overview) にコマンドラインからアクセスするフロントドアです。`jq`、シェルパイプライン、シェルを駆動する AI エージェントと組み合わせられるよう設計されています。
 
 ## インストール
 
 ```bash
-brew install chainstream-io/tap/chainstream
+# オプション A — グローバルインストール（インタラクティブ利用推奨）
 npm install -g @chainstream-io/cli
-curl -fsSL https://chainstream.io/install.sh | sh
+
+# オプション B — インストール不要・常に最新（エージェントや CI 推奨）
+npx @chainstream-io/cli <command>
 ```
+
+<Note>
+  以下の例では `chainstream <cmd>` は `npx @chainstream-io/cli <cmd>` と等価です。環境に合った呼び出し方を選んでください。
+</Note>
 
 ## 認証
 
+CLI は 2 つの認証パスを持ちます。どちらも同じ設定ファイルから REST API、GraphQL、DeFi コマンドへのアクセス権を与えます。
+
 ```bash
-chainstream auth login
-# または
+# ホスト内ウォレットを作成し、nano trial（50K CU、30 日間）を自動付与
+chainstream login
+
+# …または既存の API Key を明示的に設定
+chainstream config set --key apiKey --value <your-api-key>
+
+# スクリプトでは環境変数で渡すこともできます
 export CHAINSTREAM_API_KEY=...
 ```
+
+設定は `~/.config/chainstream/config.json` に保存され、ウォレットキーは `~/.config/chainstream/keys/` 以下に保存されます。`chainstream logout` はウォレット設定をクリアしますがキーファイルはディスクに残します。
+
+## コマンドグループ
+
+| グループ | 目的 |
+|-------|---------|
+| `token` | `search`, `info`, `security`, `holders`, `candles`, `pools` |
+| `market` | `trending`, `new`, `trades` |
+| `wallet` | `profile`, `pnl`, `holdings`, `activity`, `address`, `balance`, `pricing`, `sign`, `set-raw`, `link` |
+| `dex` | `route`, `swap`, `create` — ホスト管理のウォレットで署名するための**未署名**トランザクションを構築 |
+| `tx` | `send`, `gas-price`, `estimate-gas` |
+| `graphql` | `schema`, `query` — 下記参照 |
+| `plan` | `status`, `purchase` — x402 オートペイ、API Key を返却 |
+| `config` | `set`, `get`, `auth` |
+| `job` | `status` |
+| トップレベル | `login`, `logout`, `verify`, `bind-email`, `bind-email-verify` |
+
+グローバルフラグ：`--json` は単一行の機械可読 JSON を出力（既定は整形済み JSON）。
 
 ## 最初のコマンド
 
 ```bash
-chainstream tokens search --chain solana --query USDC --limit 5
-chainstream trades tail --chain ethereum --token 0xA0b8...
-chainstream rankings hot --chain solana --window 24h
-chainstream defi quote --chain solana --from SOL --to USDC --amount 1
+chainstream token search --chain sol --keyword PUMP --limit 5
+chainstream token security --chain sol --address <addr>
+chainstream market trending --chain sol --duration 1h --limit 20
+chainstream wallet pnl --chain sol --address <wallet>
+chainstream dex route --chain sol --from SOL --to USDC --amount 1
 ```
 
-デフォルトは JSON 出力。`--format=table` で人間向け。
+## GraphQL サブコマンド
+
+`graphql` グループは ChainStream のオンチェーンデータウェアハウス（`Solana`、`EVM`、`Trading` にまたがる 27 キューブ）を公開します — REST／MCP エンドポイントでは表現力が足りないとき（キューブ横断 JOIN、カスタム集計、時系列、多条件フィルタ）に有用です。既定エンドポイント：`https://graphql.chainstream.io/graphql`。
+
+### スキーマの探索
+
+```bash
+chainstream graphql schema --summary              # 全 27 キューブのコンパクトなカタログ
+chainstream graphql schema --type DEXTrades       # 1 キューブのフィールドを深掘り
+chainstream graphql schema --full                 # 完全リファレンス（エージェントに最適）
+chainstream graphql schema --summary --refresh    # キャッシュを無視して再取得
+```
+
+### クエリの実行
+
+```bash
+# インラインクエリ
+chainstream graphql query \
+  --query 'query { Solana { DEXTrades(limit:{count:5}) { Block { Time } } } }' \
+  --json
+
+# 変数付きでファイルから
+chainstream graphql query --file ./query.graphql --var '{"chain":"sol"}'
+```
+
+認証は自動です：API Key が設定されている場合（`config set --key apiKey` または `CHAINSTREAM_API_KEY`）CLI は `X-API-KEY` で送信します。未設定の場合はホスト内ウォレットから SIWX トークンを署名します。GraphQL は REST API と同じ API Key ＆サブスクリプションプールを共有します — 別途購入は不要です。
+
+<Note>
+  402 の場合、`graphql query` は説明的なエラーを返します。`chainstream plan status` を実行し、続けて `chainstream plan purchase`（x402 オートペイを処理し返却された API Key を保存）を実行して再試行してください。
+</Note>
+
+## 使いどころ
+
+- 手早い探索（「今何が起きているか？」）
+- スクリプト、cron ジョブ、GitHub Actions
+- AI エージェントにシェル実行可能な ChainStream プリミティブを提供する
+- クライアントコードを書かずにカスタム GraphQL 分析を実行する
+- ユーザー管理ウォレットが署名するための未署名 DeFi トランザクションを準備する
 
 ## 次へ
 
 <CardGroup cols={2}>
   <Card title="CLI リファレンス" icon="code" href="/jp/api-reference/cli-commands/overview">
-    すべてのコマンド・フラグ・終了コード。
+    すべてのコマンド、フラグ、終了コード。
   </Card>
-  <Card title="Agent Skills" icon="brain" href="/jp/docs/ai-agents/agent-skills/introduction">
-    AI Agent が CLI を使うパターン。
+  <Card title="GraphQL アクセス方法" icon="diagram-project" href="/jp/docs/access-methods/graphql">
+    エンドポイント、スキーマ、クエリパターン。
+  </Card>
+  <Card title="chainstream-graphql スキル" icon="brain" href="/jp/docs/ai-agents/agent-skills/chainstream-graphql">
+    AI エージェントによる `graphql schema` / `query` の使い方。
+  </Card>
+  <Card title="Agent Skills" icon="robot" href="/jp/docs/ai-agents/agent-skills/introduction">
+    AI エージェントが CLI を使うパターン。
   </Card>
 </CardGroup>

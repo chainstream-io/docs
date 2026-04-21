@@ -1,11 +1,11 @@
 ---
 title: 'WebSocket API'
-description: 'WebSocket API 即時資料訂閱服務'
+description: 'WebSocket API 實時資料訂閱服務'
 ---
 
 ## 概述
 
-ChainStream DEX WebSocket API 提供即時資料訂閱服務，支援以下資料類型：
+ChainStream DEX WebSocket API 提供實時資料訂閱服務，支援以下資料型別：
 - K線資料 (Candles)
 - 代幣相關 (Token Series)
 - 錢包相關 (Wallet Series)
@@ -22,7 +22,7 @@ wss://realtime-dex.chainstream.io/connection/websocket
 
 ### 1. 建立連線
 
-首先需要建立 WebSocket 連線。WebSocket 連線需要在 URL 中透過 `token` 查詢參數進行認證。
+首先需要建立 WebSocket 連線。WebSocket 連線需要在 URL 中透過 `token` 查詢引數進行認證。
 
 <Tabs>
   <Tab title="使用 SDK（推薦）">
@@ -34,19 +34,19 @@ wss://realtime-dex.chainstream.io/connection/websocket
 
     const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-    // 直接訂閱即可，SDK 會自動處理 WebSocket 連線和認證
+    // 直接订阅即可，SDK 会自动处理 WebSocket 连接和认证
     client.stream.subscribeTokenCandles({
       chain: 'sol',
       tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
       resolution: Resolution._1m,
       callback: (data) => {
-        console.log('收到資料:', data);
+        console.log('收到数据:', data);
       }
     });
     ```
 
     <Note>
-    呼叫 `subscribeXXX` 方法時，SDK 會自動偵測連線狀態，如果未連線會自動建立連線，無需手動呼叫 `connect()`。
+    呼叫 `subscribeXXX` 方法時，SDK 會自動檢測連線狀態，如果未連線會自動建立連線，無需手動呼叫 `connect()`。
     </Note>
 
     SDK 安裝：
@@ -56,27 +56,27 @@ wss://realtime-dex.chainstream.io/connection/websocket
     - **Rust**: 新增 `chainstream-sdk` 到 `Cargo.toml` ([crates.io](https://crates.io/crates/chainstream-sdk))
   </Tab>
   <Tab title="使用原生 WebSocket">
-    使用瀏覽器原生 WebSocket 或其他 WebSocket 函式庫時，需要在 URL 中拼接 `token` 參數：
+    使用瀏覽器原生 WebSocket 或其他 WebSocket 庫時，需要在 URL 中拼接 `token` 引數：
 
     ```typescript
-    // 瀏覽器或 Node.js 均可使用
+    // 浏览器或 Node.js 均可使用
     const token = 'YOUR_ACCESS_TOKEN';
     const ws = new WebSocket(
       `wss://realtime-dex.chainstream.io/connection/websocket?token=${token}`
     );
 
     ws.onopen = () => {
-      console.log('連線成功');
+      console.log('连接成功');
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('收到資料:', data);
+      console.log('收到数据:', data);
     };
     ```
 
     <Note>
-    透過 URL 參數傳遞 token，瀏覽器原生 WebSocket 和各種第三方函式庫均可使用，無需特殊處理請求標頭。
+    透過 URL 引數傳遞 token，瀏覽器原生 WebSocket 和各種第三方庫均可使用，無需特殊處理請求頭。
     </Note>
   </Tab>
   <Tab title="命令列測試">
@@ -90,10 +90,10 @@ wss://realtime-dex.chainstream.io/connection/websocket
 
 ### 2. 訂閱資料
 
-選擇需要的資料類型進行訂閱：
+選擇需要的資料型別進行訂閱：
 
 ```typescript
-// 訂閱K線資料範例
+// 订阅K线数据示例
 ws.send(JSON.stringify({
   type: "subscribe",
   channel: "dex-candle:sol_6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN_1m"
@@ -105,7 +105,7 @@ ws.send(JSON.stringify({
 ```typescript
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log('收到資料:', data);
+  console.log('收到数据:', data);
 };
 ```
 
@@ -115,14 +115,14 @@ ws.onmessage = (event) => {
 
 #### K線資料
 
-即時取得代幣價格走勢的K線圖資料。
+實時獲取代幣價格走勢的K線圖資料。
 
 **訂閱格式**
 ```text
 dex-candle:{chain}_{tokenAddress}_{resolution}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -136,39 +136,39 @@ dex-candle:{chain}_{tokenAddress}_{resolution}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：volume > 1000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：volume > 1000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "o": number,    // 開盤價
-      "c": number,    // 收盤價
-      "h": number,    // 最高價
-      "l": number,    // 最低價
+      "o": number,    // 开盘价
+      "c": number,    // 收盘价
+      "h": number,    // 最高价
+      "l": number,    // 最低价
       "v": number,    // 交易量
-      "r": string,    // 週期
-      "t": number     // 時間戳
+      "r": string,    // 周期
+      "t": number     // 时间戳
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "open": number,       // 開盤價
-      "close": number,      // 收盤價
-      "high": number,       // 最高價
-      "low": number,        // 最低價
+      "open": number,       // 开盘价
+      "close": number,      // 收盘价
+      "high": number,       // 最高价
+      "low": number,        // 最低价
       "volume": number,     // 交易量
-      "resolution": string, // 週期
-      "time": number       // 時間戳
+      "resolution": string, // 周期
+      "time": number       // 时间戳
     }
     ```
   </Tab>
@@ -177,14 +177,14 @@ dex-candle:{chain}_{tokenAddress}_{resolution}
 ### 代幣
 #### 代幣統計
 
-即時取得代幣的市場統計資料。
+實時獲取代幣的市場統計資料。
 
 **訂閱格式**
 ```text
 dex-token-stats:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -194,157 +194,157 @@ dex-token-stats:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：price > 0.01
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：price > 0.01
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,      // 代幣地址
-      "t": number,      // 時間戳
-      "b1m": number,    // 1分鐘內買入次數
-      "s1m": number,    // 1分鐘內賣出次數
-      "be1m": number,   // 1分鐘內買入人數
-      "se1m": number,   // 1分鐘內賣出人數
-      "bviu1m": number, // 1分鐘內買入美元金額
-      "sviu1m": number, // 1分鐘內賣出美元金額
-      "p1m": number,    // 1分鐘價格
-      "oiu1m": number,  // 1分鐘內開盤價格
-      "ciu1m": number,  // 1分鐘內收盤價格
-      "b5m": number,    // 5分鐘內買入次數
-      "s5m": number,    // 5分鐘內賣出次數
-      "be5m": number,   // 5分鐘內買入人數
-      "se5m": number,   // 5分鐘內賣出人數
-      "bviu5m": number, // 5分鐘內買入美元金額
-      "sviu5m": number, // 5分鐘內賣出美元金額
-      "p5m": number,    // 5分鐘價格
-      "oiu5m": number,  // 5分鐘內開盤價格
-      "ciu5m": number,  // 5分鐘內收盤價格
-      "b15m": number,   // 15分鐘內買入次數
-      "s15m": number,   // 15分鐘內賣出次數
-      "be15m": number,  // 15分鐘內買入人數
-      "se15m": number,  // 15分鐘內賣出人數
-      "bviu15m": number,// 15分鐘內買入美元金額
-      "sviu15m": number,// 15分鐘內賣出美元金額
-      "p15m": number,   // 15分鐘價格
-      "oiu15m": number, // 15分鐘內開盤價格
-      "ciu15m": number, // 15分鐘內收盤價格
-      "b30m": number,   // 30分鐘內買入次數
-      "s30m": number,   // 30分鐘內賣出次數
-      "be30m": number,  // 30分鐘內買入人數
-      "se30m": number,  // 30分鐘內賣出人數
-      "bviu30m": number,// 30分鐘內買入美元金額
-      "sviu30m": number,// 30分鐘內賣出美元金額
-      "p30m": number,   // 30分鐘價格
-      "oiu30m": number, // 30分鐘內開盤價格
-      "ciu30m": number, // 30分鐘內收盤價格
-      "b1h": number,    // 1小時內買入次數
-      "s1h": number,    // 1小時內賣出次數
-      "be1h": number,   // 1小時內買入人數
-      "se1h": number,   // 1小時內賣出人數
-      "bviu1h": number, // 1小時內買入美元金額
-      "sviu1h": number, // 1小時內賣出美元金額
-      "p1h": number,    // 1小時價格
-      "oiu1h": number,  // 1小時內開盤價格
-      "ciu1h": number,  // 1小時內收盤價格
-      "b4h": number,    // 4小時內買入次數
-      "s4h": number,    // 4小時內賣出次數
-      "be4h": number,   // 4小時內買入人數
-      "se4h": number,   // 4小時內賣出人數
-      "bviu4h": number, // 4小時內買入美元金額
-      "sviu4h": number, // 4小時內賣出美元金額
-      "p4h": number,    // 4小時價格
-      "oiu4h": number,  // 4小時內開盤價格
-      "ciu4h": number,  // 4小時內收盤價格
-      "b24h": number,   // 24小時內買入次數
-      "s24h": number,   // 24小時內賣出次數
-      "be24h": number,  // 24小時內買入人數
-      "se24h": number,  // 24小時內賣出人數
-      "bviu24h": number,// 24小時內買入美元金額
-      "sviu24h": number,// 24小時內賣出美元金額
-      "p24h": number,   // 24小時價格
-      "oiu24h": number, // 24小時內開盤價格
-      "ciu24h": number, // 24小時內收盤價格
-      "p": number       // 當前價格
+      "a": string,      // 代币地址
+      "t": number,      // 时间戳
+      "b1m": number,    // 1分钟内买入次数
+      "s1m": number,    // 1分钟内卖出次数
+      "be1m": number,   // 1分钟内买入人数
+      "se1m": number,   // 1分钟内卖出人数
+      "bviu1m": number, // 1分钟内买入美元金额
+      "sviu1m": number, // 1分钟内卖出美元金额
+      "p1m": number,    // 1分钟价格
+      "oiu1m": number,  // 1分钟内开盘价格
+      "ciu1m": number,  // 1分钟内收盘价格
+      "b5m": number,    // 5分钟内买入次数
+      "s5m": number,    // 5分钟内卖出次数
+      "be5m": number,   // 5分钟内买入人数
+      "se5m": number,   // 5分钟内卖出人数
+      "bviu5m": number, // 5分钟内买入美元金额
+      "sviu5m": number, // 5分钟内卖出美元金额
+      "p5m": number,    // 5分钟价格
+      "oiu5m": number,  // 5分钟内开盘价格
+      "ciu5m": number,  // 5分钟内收盘价格
+      "b15m": number,   // 15分钟内买入次数
+      "s15m": number,   // 15分钟内卖出次数
+      "be15m": number,  // 15分钟内买入人数
+      "se15m": number,  // 15分钟内卖出人数
+      "bviu15m": number,// 15分钟内买入美元金额
+      "sviu15m": number,// 15分钟内卖出美元金额
+      "p15m": number,   // 15分钟价格
+      "oiu15m": number, // 15分钟内开盘价格
+      "ciu15m": number, // 15分钟内收盘价格
+      "b30m": number,   // 30分钟内买入次数
+      "s30m": number,   // 30分钟内卖出次数
+      "be30m": number,  // 30分钟内买入人数
+      "se30m": number,  // 30分钟内卖出人数
+      "bviu30m": number,// 30分钟内买入美元金额
+      "sviu30m": number,// 30分钟内卖出美元金额
+      "p30m": number,   // 30分钟价格
+      "oiu30m": number, // 30分钟内开盘价格
+      "ciu30m": number, // 30分钟内收盘价格
+      "b1h": number,    // 1小时内买入次数
+      "s1h": number,    // 1小时内卖出次数
+      "be1h": number,   // 1小时内买入人数
+      "se1h": number,   // 1小时内卖出人数
+      "bviu1h": number, // 1小时内买入美元金额
+      "sviu1h": number, // 1小时内卖出美元金额
+      "p1h": number,    // 1小时价格
+      "oiu1h": number,  // 1小时内开盘价格
+      "ciu1h": number,  // 1小时内收盘价格
+      "b4h": number,    // 4小时内买入次数
+      "s4h": number,    // 4小时内卖出次数
+      "be4h": number,   // 4小时内买入人数
+      "se4h": number,   // 4小时内卖出人数
+      "bviu4h": number, // 4小时内买入美元金额
+      "sviu4h": number, // 4小时内卖出美元金额
+      "p4h": number,    // 4小时价格
+      "oiu4h": number,  // 4小时内开盘价格
+      "ciu4h": number,  // 4小时内收盘价格
+      "b24h": number,   // 24小时内买入次数
+      "s24h": number,   // 24小时内卖出次数
+      "be24h": number,  // 24小时内买入人数
+      "se24h": number,  // 24小时内卖出人数
+      "bviu24h": number,// 24小时内买入美元金额
+      "sviu24h": number,// 24小时内卖出美元金额
+      "p24h": number,   // 24小时价格
+      "oiu24h": number, // 24小时内开盘价格
+      "ciu24h": number, // 24小时内收盘价格
+      "p": number       // 当前价格
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "address": string,           // 代幣地址
-      "timestamp": number,         // 時間戳
-      "buys1m": number,           // 1分鐘內買入次數
-      "sells1m": number,          // 1分鐘內賣出次數
-      "buyers1m": number,         // 1分鐘內買入人數
-      "sellers1m": number,        // 1分鐘內賣出人數
-      "buyVolumeInUsd1m": number, // 1分鐘內買入美元金額
-      "sellVolumeInUsd1m": number,// 1分鐘內賣出美元金額
-      "price1m": number,          // 1分鐘價格
-      "openInUsd1m": number,      // 1分鐘內開盤價格
-      "closeInUsd1m": number,     // 1分鐘內收盤價格      
-      "buys5m": number,           // 5分鐘內買入次數
-      "sells5m": number,          // 5分鐘內賣出次數
-      "buyers5m": number,         // 5分鐘內買入人數
-      "sellers5m": number,        // 5分鐘內賣出人數
-      "buyVolumeInUsd5m": number, // 5分鐘內買入美元金額
-      "sellVolumeInUsd5m": number,// 5分鐘內賣出美元金額
-      "price5m": number,          // 5分鐘價格
-      "openInUsd5m": number,      // 5分鐘內開盤價格
-      "closeInUsd5m": number,     // 5分鐘內收盤價格
-      "buys15m": number,          // 15分鐘內買入次數
-      "sells15m": number,         // 15分鐘內賣出次數
-      "buyers15m": number,        // 15分鐘內買入人數
-      "sellers15m": number,       // 15分鐘內賣出人數
-      "buyVolumeInUsd15m": number,// 15分鐘內買入美元金額
-      "sellVolumeInUsd15m": number,// 15分鐘內賣出美元金額
-      "price15m": number,         // 15分鐘價格
-      "openInUsd15m": number,     // 15分鐘內開盤價格
-      "closeInUsd15m": number,    // 15分鐘內收盤價格
-      "buys30m": number,          // 30分鐘內買入次數
-      "sells30m": number,         // 30分鐘內賣出次數
-      "buyers30m": number,        // 30分鐘內買入人數
-      "sellers30m": number,       // 30分鐘內賣出人數
-      "buyVolumeInUsd30m": number,// 30分鐘內買入美元金額
-      "sellVolumeInUsd30m": number,// 30分鐘內賣出美元金額
-      "price30m": number,         // 30分鐘價格
-      "openInUsd30m": number,     // 30分鐘內開盤價格
-      "closeInUsd30m": number,    // 30分鐘內收盤價格
-      "buys1h": number,           // 1小時內買入次數
-      "sells1h": number,          // 1小時內賣出次數
-      "buyers1h": number,         // 1小時內買入人數
-      "sellers1h": number,        // 1小時內賣出人數
-      "buyVolumeInUsd1h": number, // 1小時內買入美元金額
-      "sellVolumeInUsd1h": number,// 1小時內賣出美元金額
-      "price1h": number,          // 1小時價格
-      "openInUsd1h": number,      // 1小時內開盤價格
-      "closeInUsd1h": number,     // 1小時內收盤價格
-      "buys4h": number,           // 4小時內買入次數
-      "sells4h": number,          // 4小時內賣出次數
-      "buyers4h": number,         // 4小時內買入人數
-      "sellers4h": number,        // 4小時內賣出人數
-      "buyVolumeInUsd4h": number, // 4小時內買入美元金額
-      "sellVolumeInUsd4h": number,// 4小時內賣出美元金額
-      "price4h": number,          // 4小時價格
-      "openInUsd4h": number,      // 4小時內開盤價格
-      "closeInUsd4h": number,     // 4小時內收盤價格
-      "buys24h": number,          // 24小時內買入次數
-      "sells24h": number,         // 24小時內賣出次數
-      "buyers24h": number,        // 24小時內買入人數
-      "sellers24h": number,       // 24小時內賣出人數
-      "buyVolumeInUsd24h": number,// 24小時內買入美元金額
-      "sellVolumeInUsd24h": number,// 24小時內賣出美元金額
-      "price24h": number,         // 24小時價格
-      "openInUsd24h": number,     // 24小時內開盤價格
-      "closeInUsd24h": number,    // 24小時內收盤價格
-      "price": number            // 當前價格
+      "address": string,           // 代币地址
+      "timestamp": number,         // 时间戳
+      "buys1m": number,           // 1分钟内买入次数
+      "sells1m": number,          // 1分钟内卖出次数
+      "buyers1m": number,         // 1分钟内买入人数
+      "sellers1m": number,        // 1分钟内卖出人数
+      "buyVolumeInUsd1m": number, // 1分钟内买入美元金额
+      "sellVolumeInUsd1m": number,// 1分钟内卖出美元金额
+      "price1m": number,          // 1分钟价格
+      "openInUsd1m": number,      // 1分钟内开盘价格
+      "closeInUsd1m": number,     // 1分钟内收盘价格      
+      "buys5m": number,           // 5分钟内买入次数
+      "sells5m": number,          // 5分钟内卖出次数
+      "buyers5m": number,         // 5分钟内买入人数
+      "sellers5m": number,        // 5分钟内卖出人数
+      "buyVolumeInUsd5m": number, // 5分钟内买入美元金额
+      "sellVolumeInUsd5m": number,// 5分钟内卖出美元金额
+      "price5m": number,          // 5分钟价格
+      "openInUsd5m": number,      // 5分钟内开盘价格
+      "closeInUsd5m": number,     // 5分钟内收盘价格
+      "buys15m": number,          // 15分钟内买入次数
+      "sells15m": number,         // 15分钟内卖出次数
+      "buyers15m": number,        // 15分钟内买入人数
+      "sellers15m": number,       // 15分钟内卖出人数
+      "buyVolumeInUsd15m": number,// 15分钟内买入美元金额
+      "sellVolumeInUsd15m": number,// 15分钟内卖出美元金额
+      "price15m": number,         // 15分钟价格
+      "openInUsd15m": number,     // 15分钟内开盘价格
+      "closeInUsd15m": number,    // 15分钟内收盘价格
+      "buys30m": number,          // 30分钟内买入次数
+      "sells30m": number,         // 30分钟内卖出次数
+      "buyers30m": number,        // 30分钟内买入人数
+      "sellers30m": number,       // 30分钟内卖出人数
+      "buyVolumeInUsd30m": number,// 30分钟内买入美元金额
+      "sellVolumeInUsd30m": number,// 30分钟内卖出美元金额
+      "price30m": number,         // 30分钟价格
+      "openInUsd30m": number,     // 30分钟内开盘价格
+      "closeInUsd30m": number,    // 30分钟内收盘价格
+      "buys1h": number,           // 1小时内买入次数
+      "sells1h": number,          // 1小时内卖出次数
+      "buyers1h": number,         // 1小时内买入人数
+      "sellers1h": number,        // 1小时内卖出人数
+      "buyVolumeInUsd1h": number, // 1小时内买入美元金额
+      "sellVolumeInUsd1h": number,// 1小时内卖出美元金额
+      "price1h": number,          // 1小时价格
+      "openInUsd1h": number,      // 1小时内开盘价格
+      "closeInUsd1h": number,     // 1小时内收盘价格
+      "buys4h": number,           // 4小时内买入次数
+      "sells4h": number,          // 4小时内卖出次数
+      "buyers4h": number,         // 4小时内买入人数
+      "sellers4h": number,        // 4小时内卖出人数
+      "buyVolumeInUsd4h": number, // 4小时内买入美元金额
+      "sellVolumeInUsd4h": number,// 4小时内卖出美元金额
+      "price4h": number,          // 4小时价格
+      "openInUsd4h": number,      // 4小时内开盘价格
+      "closeInUsd4h": number,     // 4小时内收盘价格
+      "buys24h": number,          // 24小时内买入次数
+      "sells24h": number,         // 24小时内卖出次数
+      "buyers24h": number,        // 24小时内买入人数
+      "sellers24h": number,       // 24小时内卖出人数
+      "buyVolumeInUsd24h": number,// 24小时内买入美元金额
+      "sellVolumeInUsd24h": number,// 24小时内卖出美元金额
+      "price24h": number,         // 24小时价格
+      "openInUsd24h": number,     // 24小时内开盘价格
+      "closeInUsd24h": number,    // 24小时内收盘价格
+      "price": number            // 当前价格
     }
     ```
   </Tab>
@@ -352,14 +352,14 @@ dex-token-stats:{chain}_{tokenAddress}
 
 #### 代幣持有者統計
 
-即時取得代幣持有者統計資訊。
+實時獲取代幣持有者統計資訊。
 
 **訂閱格式**
 ```text
 dex-token-holding:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -369,76 +369,76 @@ dex-token-holding:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：holders > 200
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：holders > 200
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,      // 代幣地址
-      "h": number,      // 持有者數量
-      "t100a": number,  // 前100名持有者持有總量
-      "t10a": number,   // 前10名持有者持有總量
-      "t100h": number,  // 前100名持有者數量
-      "t10h": number,   // 前10名持有者數量
+      "a": string,      // 代币地址
+      "h": number,      // 持有者数量
+      "t100a": number,  // 前100名持有者持有总量
+      "t10a": number,   // 前10名持有者持有总量
+      "t100h": number,  // 前100名持有者数量
+      "t10h": number,   // 前10名持有者数量
       "t100r": number,  // 前100名持有者持有比例
       "t10r": number,   // 前10名持有者持有比例
-      "ch": number,     // 創建者持有者數量
-      "ca": number,     // 創建者持有量
-      "cr": number,     // 創建者持有比例
-      "ts": number      // 時間戳
+      "ch": number,     // 创建者持有者数量
+      "ca": number,     // 创建者持有量
+      "cr": number,     // 创建者持有比例
+      "ts": number      // 时间戳
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,    // 代幣地址
-      "holders": number,         // 持有者數量
-      "top100Amount": number,    // 前100名持有者持有總量
-      "top10Amount": number,     // 前10名持有者持有總量
-      "top100Holders": number,   // 前100名持有者數量
-      "top10Holders": number,    // 前10名持有者數量
+      "tokenAddress": string,    // 代币地址
+      "holders": number,         // 持有者数量
+      "top100Amount": number,    // 前100名持有者持有总量
+      "top10Amount": number,     // 前10名持有者持有总量
+      "top100Holders": number,   // 前100名持有者数量
+      "top10Holders": number,    // 前10名持有者数量
       "top100Ratio": number,     // 前100名持有者持有比例
       "top10Ratio": number,      // 前10名持有者持有比例
-      "creatorsHolders": number, // 創建者持有者數量
-      "creatorsAmount": number,  // 創建者持有量
-      "creatorsRatio": number,   // 創建者持有比例
-      "timestamp": number        // 時間戳
+      "creatorsHolders": number, // 创建者持有者数量
+      "creatorsAmount": number,  // 创建者持有量
+      "creatorsRatio": number,   // 创建者持有比例
+      "timestamp": number        // 时间戳
     }
     ```
   </Tab>
 </Tabs>
 
-#### 新代幣元資料
+#### 新代幣後設資料
 
-取得新上市代幣的即時元資料資訊。
+獲取新上市代幣的實時後設資料資訊。
 
 **訂閱格式**
 ```text
 dex-new-tokens-metadata:{chain}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：name == "USDC"
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：name == "USDC"
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -446,15 +446,15 @@ dex-new-tokens-metadata:{chain}
     ```typescript
     [
       {
-        "a": string,      // 代幣地址
-        "n": string,      // 名稱
-        "s": string,      // 符號
-        "iu": string,     // 圖片URL
+        "a": string,      // 代币地址
+        "n": string,      // 名称
+        "s": string,      // 符号
+        "iu": string,     // 图片URL
         "de": string,     // 描述
-        "sm": {           // 社群媒體
+        "sm": {           // 社交媒体
           "tw": string,   // Twitter
           "tg": string,   // Telegram
-          "w": string,    // 網站
+          "w": string,    // 网站
           "tt": string,   // TikTok
           "dc": string,   // Discord
           "fb": string,   // Facebook
@@ -466,7 +466,7 @@ dex-new-tokens-metadata:{chain}
           "yt": string,   // YouTube
           "bb": string    // BitBucket
         },
-        "cts": number     // 建立時間戳（毫秒）
+        "cts": number     // 创建时间戳（毫秒）
       }
     ]
     ```
@@ -475,15 +475,15 @@ dex-new-tokens-metadata:{chain}
     ```typescript
     [
       {
-        "tokenAddress": string,     // 代幣地址
-        "name": string,             // 名稱
-        "symbol": string,           // 符號
-        "imageUrl": string,         // 圖片URL
+        "tokenAddress": string,     // 代币地址
+        "name": string,             // 名称
+        "symbol": string,           // 符号
+        "imageUrl": string,         // 图片URL
         "description": string,      // 描述
-        "socialMedia": {            // 社群媒體
+        "socialMedia": {            // 社交媒体
           "twitter": string,        // Twitter
           "telegram": string,       // Telegram
-          "website": string,        // 網站
+          "website": string,        // 网站
           "tiktok": string,         // TikTok
           "discord": string,        // Discord
           "facebook": string,       // Facebook
@@ -495,7 +495,7 @@ dex-new-tokens-metadata:{chain}
           "youtube": string,        // YouTube
           "bitbucket": string       // BitBucket
         },
-        "createdAtMs": number       // 建立時間戳（毫秒）
+        "createdAtMs": number       // 创建时间戳（毫秒）
       }
     ]
     ```
@@ -504,37 +504,37 @@ dex-new-tokens-metadata:{chain}
 
 #### 新代幣資訊
 
-取得新建立代幣的資訊。
+獲取新建立代幣的資訊。
 
 **訂閱格式**
 ```text
 dex-new-token:{chain}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,      // 代幣地址
-      "n": string,      // 名稱
-      "s": string,      // 符號
-      "dec": number,    // 小數位數
-      "cts": number,    // 建立時間戳（毫秒）
-      "lf": {           // 啟動來源資訊
-        "pa": string,   // 程式地址
-        "pf": string,   // 協議家族
-        "pn": string    // 協議名稱
+      "a": string,      // 代币地址
+      "n": string,      // 名称
+      "s": string,      // 符号
+      "dec": number,    // 小数位数
+      "cts": number,    // 创建时间戳（毫秒）
+      "lf": {           // 启动来源信息
+        "pa": string,   // 程序地址
+        "pf": string,   // 协议家族
+        "pn": string    // 协议名称
       }
     }
     ```
@@ -542,15 +542,15 @@ dex-new-token:{chain}
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,     // 代幣地址
-      "name": string,             // 名稱
-      "symbol": string,           // 符號
-      "decimals": number,         // 小數位數
-      "createdAtMs": number,      // 建立時間戳（毫秒）
-      "launchFrom": {             // 啟動來源資訊
-        "programAddress": string, // 程式地址
-        "protocolFamily": string, // 協議家族
-        "protocolName": string    // 協議名稱
+      "tokenAddress": string,     // 代币地址
+      "name": string,             // 名称
+      "symbol": string,           // 符号
+      "decimals": number,         // 小数位数
+      "createdAtMs": number,      // 创建时间戳（毫秒）
+      "launchFrom": {             // 启动来源信息
+        "programAddress": string, // 程序地址
+        "protocolFamily": string, // 协议家族
+        "protocolName": string    // 协议名称
       }
     }
     ```
@@ -559,14 +559,14 @@ dex-new-token:{chain}
 
 #### 代幣供應量
 
-即時取得代幣的供應量和市值資訊。
+實時獲取代幣的供應量和市值資訊。
 
 **訂閱格式**
 ```text
 dex-token-supply:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -576,33 +576,33 @@ dex-token-supply:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：supply > 1000000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：supply > 1000000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,    // 代幣地址
-      "s": number,    // 供應量
+      "a": string,    // 代币地址
+      "s": number,    // 供应量
       "mc": number,   // 市值（美元）
-      "ts": number    // 時間戳
+      "ts": number    // 时间戳
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,    // 代幣地址
-      "supply": number,          // 供應量
+      "tokenAddress": string,    // 代币地址
+      "supply": number,          // 供应量
       "marketCapInUsd": number,  // 市值（美元）
-      "timestamp": number        // 時間戳
+      "timestamp": number        // 时间戳
     }
     ```
   </Tab>
@@ -610,14 +610,14 @@ dex-token-supply:{chain}_{tokenAddress}
 
 #### 代幣流動性
 
-即時取得代幣的流動性統計資訊。
+實時獲取代幣的流動性統計資訊。
 
 **訂閱格式**
 ```text
 dex-token-general-stat-num:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -627,33 +627,33 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：value > 1000000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：value > 1000000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,    // 代幣地址
-      "t": string,    // 指標類型
-      "v": number,    // 數值
-      "ts": number    // 時間戳
+      "a": string,    // 代币地址
+      "t": string,    // 指标类型
+      "v": number,    // 数值
+      "ts": number    // 时间戳
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,  // 代幣地址
-      "metricType": string,    // 指標類型
-      "value": number,         // 數值
-      "timestamp": number      // 時間戳
+      "tokenAddress": string,  // 代币地址
+      "metricType": string,    // 指标类型
+      "value": number,         // 数值
+      "timestamp": number      // 时间戳
     }
     ```
   </Tab>
@@ -661,14 +661,14 @@ dex-token-general-stat-num:{chain}_{tokenAddress}
 
 #### 代幣最大流動性
 
-即時取得代幣在單一池子中的最大流動性資訊。
+實時獲取代幣在單個池子中的最大流動性資訊。
 
 **訂閱格式**
 ```text
 dex-token-liquidity:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -678,35 +678,35 @@ dex-token-liquidity:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：liquidityInUsd > 10000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：liquidityInUsd > 10000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,     // 代幣地址
+      "a": string,     // 代币地址
       "p": string,     // 池子地址
-      "liu": string,   // 美元流動性
-      "lin": string,   // 原生代幣流動性
-      "ts": number     // 時間戳
+      "liu": string,   // 美元流动性
+      "lin": string,   // 原生代币流动性
+      "ts": number     // 时间戳
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,       // 代幣地址
+      "tokenAddress": string,       // 代币地址
       "poolAddress": string,        // 池子地址
-      "liquidityInUsd": string,     // 美元流動性
-      "liquidityInNative": string,  // 原生代幣流動性
-      "timestamp": number           // 時間戳
+      "liquidityInUsd": string,     // 美元流动性
+      "liquidityInNative": string,  // 原生代币流动性
+      "timestamp": number           // 时间戳
     }
     ```
   </Tab>
@@ -714,14 +714,14 @@ dex-token-liquidity:{chain}_{tokenAddress}
 
 #### 代幣總流動性
 
-即時取得代幣在所有池子中的總流動性資訊。
+實時獲取代幣在所有池子中的總流動性資訊。
 
 **訂閱格式**
 ```text
 dex-token-total-liquidity:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -731,35 +731,35 @@ dex-token-total-liquidity:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：liquidityInUsd > 50000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：liquidityInUsd > 50000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,     // 代幣地址
-      "liu": string,   // 總美元流動性
-      "lin": string,   // 總原生代幣流動性
-      "pc": number,    // 池子數量
-      "ts": number     // 時間戳
+      "a": string,     // 代币地址
+      "liu": string,   // 总美元流动性
+      "lin": string,   // 总原生代币流动性
+      "pc": number,    // 池子数量
+      "ts": number     // 时间戳
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,       // 代幣地址
-      "liquidityInUsd": string,     // 總美元流動性
-      "liquidityInNative": string,  // 總原生代幣流動性
-      "poolCount": number,          // 池子數量
-      "timestamp": number           // 時間戳
+      "tokenAddress": string,       // 代币地址
+      "liquidityInUsd": string,     // 总美元流动性
+      "liquidityInNative": string,  // 总原生代币流动性
+      "poolCount": number,          // 池子数量
+      "timestamp": number           // 时间戳
     }
     ```
   </Tab>
@@ -769,26 +769,26 @@ dex-token-total-liquidity:{chain}_{tokenAddress}
 
 #### 排名的代幣統計資料
 
-即時取得排名代幣的市場統計資料。
+實時獲取排名代幣的市場統計資料。
 
 **訂閱格式**
 ```text
 dex-ranking-token-stats-list:{chain}_{channelType}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  頻道類型，支援：new、trending、us_stocks、completed、graduated
+  頻道型別，支援：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -796,72 +796,72 @@ dex-ranking-token-stats-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "a": string,      // 代幣地址
-        "t": number,      // 時間戳
-        "b1m": number,    // 1分鐘內買入次數
-        "s1m": number,    // 1分鐘內賣出次數
-        "be1m": number,   // 1分鐘內買入人數
-        "se1m": number,   // 1分鐘內賣出人數
-        "bviu1m": number, // 1分鐘內買入美元金額
-        "sviu1m": number, // 1分鐘內賣出美元金額
-        "p1m": number,    // 1分鐘價格
-        "oiu1m": number,  // 1分鐘內開盤價格
-        "ciu1m": number,  // 1分鐘內收盤價格
-        "b5m": number,    // 5分鐘內買入次數
-        "s5m": number,    // 5分鐘內賣出次數
-        "be5m": number,   // 5分鐘內買入人數
-        "se5m": number,   // 5分鐘內賣出人數
-        "bviu5m": number, // 5分鐘內買入美元金額
-        "sviu5m": number, // 5分鐘內賣出美元金額
-        "p5m": number,    // 5分鐘價格
-        "oiu5m": number,  // 5分鐘內開盤價格
-        "ciu5m": number,  // 5分鐘內收盤價格
-        "b15m": number,   // 15分鐘內買入次數
-        "s15m": number,   // 15分鐘內賣出次數
-        "be15m": number,  // 15分鐘內買入人數
-        "se15m": number,  // 15分鐘內賣出人數
-        "bviu15m": number,// 15分鐘內買入美元金額
-        "sviu15m": number,// 15分鐘內賣出美元金額
-        "p15m": number,   // 15分鐘價格
-        "oiu15m": number, // 15分鐘內開盤價格
-        "ciu15m": number, // 15分鐘內收盤價格
-        "b30m": number,   // 30分鐘內買入次數
-        "s30m": number,   // 30分鐘內賣出次數
-        "be30m": number,  // 30分鐘內買入人數
-        "se30m": number,  // 30分鐘內賣出人數
-        "bviu30m": number,// 30分鐘內買入美元金額
-        "sviu30m": number,// 30分鐘內賣出美元金額
-        "p30m": number,   // 30分鐘價格
-        "oiu30m": number, // 30分鐘內開盤價格
-        "ciu30m": number, // 30分鐘內收盤價格
-        "b1h": number,    // 1小時內買入次數
-        "s1h": number,    // 1小時內賣出次數
-        "be1h": number,   // 1小時內買入人數
-        "se1h": number,   // 1小時內賣出人數
-        "bviu1h": number, // 1小時內買入美元金額
-        "sviu1h": number, // 1小時內賣出美元金額
-        "p1h": number,    // 1小時價格
-        "oiu1h": number,  // 1小時內開盤價格
-        "ciu1h": number,  // 1小時內收盤價格
-        "b4h": number,    // 4小時內買入次數
-        "s4h": number,    // 4小時內賣出次數
-        "be4h": number,   // 4小時內買入人數
-        "se4h": number,   // 4小時內賣出人數
-        "bviu4h": number, // 4小時內買入美元金額
-        "sviu4h": number, // 4小時內賣出美元金額
-        "p4h": number,    // 4小時價格
-        "oiu4h": number,  // 4小時內開盤價格
-        "ciu4h": number,  // 4小時內收盤價格
-        "b24h": number,   // 24小時內買入次數
-        "s24h": number,   // 24小時內賣出次數
-        "be24h": number,  // 24小時內買入人數
-        "se24h": number,  // 24小時內賣出人數
-        "bviu24h": number,// 24小時內買入美元金額
-        "sviu24h": number,// 24小時內賣出美元金額
-        "p24h": number,   // 24小時價格
-        "oiu24h": number, // 24小時內開盤價格
-        "ciu24h": number, // 24小時內收盤價格
-        "p": number       // 當前價格
+        "a": string,      // 代币地址
+        "t": number,      // 时间戳
+        "b1m": number,    // 1分钟内买入次数
+        "s1m": number,    // 1分钟内卖出次数
+        "be1m": number,   // 1分钟内买入人数
+        "se1m": number,   // 1分钟内卖出人数
+        "bviu1m": number, // 1分钟内买入美元金额
+        "sviu1m": number, // 1分钟内卖出美元金额
+        "p1m": number,    // 1分钟价格
+        "oiu1m": number,  // 1分钟内开盘价格
+        "ciu1m": number,  // 1分钟内收盘价格
+        "b5m": number,    // 5分钟内买入次数
+        "s5m": number,    // 5分钟内卖出次数
+        "be5m": number,   // 5分钟内买入人数
+        "se5m": number,   // 5分钟内卖出人数
+        "bviu5m": number, // 5分钟内买入美元金额
+        "sviu5m": number, // 5分钟内卖出美元金额
+        "p5m": number,    // 5分钟价格
+        "oiu5m": number,  // 5分钟内开盘价格
+        "ciu5m": number,  // 5分钟内收盘价格
+        "b15m": number,   // 15分钟内买入次数
+        "s15m": number,   // 15分钟内卖出次数
+        "be15m": number,  // 15分钟内买入人数
+        "se15m": number,  // 15分钟内卖出人数
+        "bviu15m": number,// 15分钟内买入美元金额
+        "sviu15m": number,// 15分钟内卖出美元金额
+        "p15m": number,   // 15分钟价格
+        "oiu15m": number, // 15分钟内开盘价格
+        "ciu15m": number, // 15分钟内收盘价格
+        "b30m": number,   // 30分钟内买入次数
+        "s30m": number,   // 30分钟内卖出次数
+        "be30m": number,  // 30分钟内买入人数
+        "se30m": number,  // 30分钟内卖出人数
+        "bviu30m": number,// 30分钟内买入美元金额
+        "sviu30m": number,// 30分钟内卖出美元金额
+        "p30m": number,   // 30分钟价格
+        "oiu30m": number, // 30分钟内开盘价格
+        "ciu30m": number, // 30分钟内收盘价格
+        "b1h": number,    // 1小时内买入次数
+        "s1h": number,    // 1小时内卖出次数
+        "be1h": number,   // 1小时内买入人数
+        "se1h": number,   // 1小时内卖出人数
+        "bviu1h": number, // 1小时内买入美元金额
+        "sviu1h": number, // 1小时内卖出美元金额
+        "p1h": number,    // 1小时价格
+        "oiu1h": number,  // 1小时内开盘价格
+        "ciu1h": number,  // 1小时内收盘价格
+        "b4h": number,    // 4小时内买入次数
+        "s4h": number,    // 4小时内卖出次数
+        "be4h": number,   // 4小时内买入人数
+        "se4h": number,   // 4小时内卖出人数
+        "bviu4h": number, // 4小时内买入美元金额
+        "sviu4h": number, // 4小时内卖出美元金额
+        "p4h": number,    // 4小时价格
+        "oiu4h": number,  // 4小时内开盘价格
+        "ciu4h": number,  // 4小时内收盘价格
+        "b24h": number,   // 24小时内买入次数
+        "s24h": number,   // 24小时内卖出次数
+        "be24h": number,  // 24小时内买入人数
+        "se24h": number,  // 24小时内卖出人数
+        "bviu24h": number,// 24小时内买入美元金额
+        "sviu24h": number,// 24小时内卖出美元金额
+        "p24h": number,   // 24小时价格
+        "oiu24h": number, // 24小时内开盘价格
+        "ciu24h": number, // 24小时内收盘价格
+        "p": number       // 当前价格
       }
     ]
     ```
@@ -870,72 +870,72 @@ dex-ranking-token-stats-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "address": string,           // 代幣地址
-        "timestamp": number,         // 時間戳
-        "buys1m": number,           // 1分鐘內買入次數
-        "sells1m": number,          // 1分鐘內賣出次數
-        "buyers1m": number,         // 1分鐘內買入人數
-        "sellers1m": number,        // 1分鐘內賣出人數
-        "buyVolumeInUsd1m": number, // 1分鐘內買入美元金額
-        "sellVolumeInUsd1m": number,// 1分鐘內賣出美元金額
-        "price1m": number,          // 1分鐘價格
-        "openInUsd1m": number,      // 1分鐘內開盤價格
-        "closeInUsd1m": number,     // 1分鐘內收盤價格      
-        "buys5m": number,           // 5分鐘內買入次數
-        "sells5m": number,          // 5分鐘內賣出次數
-        "buyers5m": number,         // 5分鐘內買入人數
-        "sellers5m": number,        // 5分鐘內賣出人數
-        "buyVolumeInUsd5m": number, // 5分鐘內買入美元金額
-        "sellVolumeInUsd5m": number,// 5分鐘內賣出美元金額
-        "price5m": number,          // 5分鐘價格
-        "openInUsd5m": number,      // 5分鐘內開盤價格
-        "closeInUsd5m": number,     // 5分鐘內收盤價格
-        "buys15m": number,          // 15分鐘內買入次數
-        "sells15m": number,         // 15分鐘內賣出次數
-        "buyers15m": number,        // 15分鐘內買入人數
-        "sellers15m": number,       // 15分鐘內賣出人數
-        "buyVolumeInUsd15m": number,// 15分鐘內買入美元金額
-        "sellVolumeInUsd15m": number,// 15分鐘內賣出美元金額
-        "price15m": number,         // 15分鐘價格
-        "openInUsd15m": number,     // 15分鐘內開盤價格
-        "closeInUsd15m": number,    // 15分鐘內收盤價格
-        "buys30m": number,          // 30分鐘內買入次數
-        "sells30m": number,         // 30分鐘內賣出次數
-        "buyers30m": number,        // 30分鐘內買入人數
-        "sellers30m": number,       // 30分鐘內賣出人數
-        "buyVolumeInUsd30m": number,// 30分鐘內買入美元金額
-        "sellVolumeInUsd30m": number,// 30分鐘內賣出美元金額
-        "price30m": number,         // 30分鐘價格
-        "openInUsd30m": number,     // 30分鐘內開盤價格
-        "closeInUsd30m": number,    // 30分鐘內收盤價格
-        "buys1h": number,           // 1小時內買入次數
-        "sells1h": number,          // 1小時內賣出次數
-        "buyers1h": number,         // 1小時內買入人數
-        "sellers1h": number,        // 1小時內賣出人數
-        "buyVolumeInUsd1h": number, // 1小時內買入美元金額
-        "sellVolumeInUsd1h": number,// 1小時內賣出美元金額
-        "price1h": number,          // 1小時價格
-        "openInUsd1h": number,      // 1小時內開盤價格
-        "closeInUsd1h": number,     // 1小時內收盤價格
-        "buys4h": number,           // 4小時內買入次數
-        "sells4h": number,          // 4小時內賣出次數
-        "buyers4h": number,         // 4小時內買入人數
-        "sellers4h": number,        // 4小時內賣出人數
-        "buyVolumeInUsd4h": number, // 4小時內買入美元金額
-        "sellVolumeInUsd4h": number,// 4小時內賣出美元金額
-        "price4h": number,          // 4小時價格
-        "openInUsd4h": number,      // 4小時內開盤價格
-        "closeInUsd4h": number,     // 4小時內收盤價格
-        "buys24h": number,          // 24小時內買入次數
-        "sells24h": number,         // 24小時內賣出次數
-        "buyers24h": number,        // 24小時內買入人數
-        "sellers24h": number,       // 24小時內賣出人數
-        "buyVolumeInUsd24h": number,// 24小時內買入美元金額
-        "sellVolumeInUsd24h": number,// 24小時內賣出美元金額
-        "price24h": number,         // 24小時價格
-        "openInUsd24h": number,     // 24小時內開盤價格
-        "closeInUsd24h": number,    // 24小時內收盤價格
-        "price": number            // 當前價格
+        "address": string,           // 代币地址
+        "timestamp": number,         // 时间戳
+        "buys1m": number,           // 1分钟内买入次数
+        "sells1m": number,          // 1分钟内卖出次数
+        "buyers1m": number,         // 1分钟内买入人数
+        "sellers1m": number,        // 1分钟内卖出人数
+        "buyVolumeInUsd1m": number, // 1分钟内买入美元金额
+        "sellVolumeInUsd1m": number,// 1分钟内卖出美元金额
+        "price1m": number,          // 1分钟价格
+        "openInUsd1m": number,      // 1分钟内开盘价格
+        "closeInUsd1m": number,     // 1分钟内收盘价格      
+        "buys5m": number,           // 5分钟内买入次数
+        "sells5m": number,          // 5分钟内卖出次数
+        "buyers5m": number,         // 5分钟内买入人数
+        "sellers5m": number,        // 5分钟内卖出人数
+        "buyVolumeInUsd5m": number, // 5分钟内买入美元金额
+        "sellVolumeInUsd5m": number,// 5分钟内卖出美元金额
+        "price5m": number,          // 5分钟价格
+        "openInUsd5m": number,      // 5分钟内开盘价格
+        "closeInUsd5m": number,     // 5分钟内收盘价格
+        "buys15m": number,          // 15分钟内买入次数
+        "sells15m": number,         // 15分钟内卖出次数
+        "buyers15m": number,        // 15分钟内买入人数
+        "sellers15m": number,       // 15分钟内卖出人数
+        "buyVolumeInUsd15m": number,// 15分钟内买入美元金额
+        "sellVolumeInUsd15m": number,// 15分钟内卖出美元金额
+        "price15m": number,         // 15分钟价格
+        "openInUsd15m": number,     // 15分钟内开盘价格
+        "closeInUsd15m": number,    // 15分钟内收盘价格
+        "buys30m": number,          // 30分钟内买入次数
+        "sells30m": number,         // 30分钟内卖出次数
+        "buyers30m": number,        // 30分钟内买入人数
+        "sellers30m": number,       // 30分钟内卖出人数
+        "buyVolumeInUsd30m": number,// 30分钟内买入美元金额
+        "sellVolumeInUsd30m": number,// 30分钟内卖出美元金额
+        "price30m": number,         // 30分钟价格
+        "openInUsd30m": number,     // 30分钟内开盘价格
+        "closeInUsd30m": number,    // 30分钟内收盘价格
+        "buys1h": number,           // 1小时内买入次数
+        "sells1h": number,          // 1小时内卖出次数
+        "buyers1h": number,         // 1小时内买入人数
+        "sellers1h": number,        // 1小时内卖出人数
+        "buyVolumeInUsd1h": number, // 1小时内买入美元金额
+        "sellVolumeInUsd1h": number,// 1小时内卖出美元金额
+        "price1h": number,          // 1小时价格
+        "openInUsd1h": number,      // 1小时内开盘价格
+        "closeInUsd1h": number,     // 1小时内收盘价格
+        "buys4h": number,           // 4小时内买入次数
+        "sells4h": number,          // 4小时内卖出次数
+        "buyers4h": number,         // 4小时内买入人数
+        "sellers4h": number,        // 4小时内卖出人数
+        "buyVolumeInUsd4h": number, // 4小时内买入美元金额
+        "sellVolumeInUsd4h": number,// 4小时内卖出美元金额
+        "price4h": number,          // 4小时价格
+        "openInUsd4h": number,      // 4小时内开盘价格
+        "closeInUsd4h": number,     // 4小时内收盘价格
+        "buys24h": number,          // 24小时内买入次数
+        "sells24h": number,         // 24小时内卖出次数
+        "buyers24h": number,        // 24小时内买入人数
+        "sellers24h": number,       // 24小时内卖出人数
+        "buyVolumeInUsd24h": number,// 24小时内买入美元金额
+        "sellVolumeInUsd24h": number,// 24小时内卖出美元金额
+        "price24h": number,         // 24小时价格
+        "openInUsd24h": number,     // 24小时内开盘价格
+        "closeInUsd24h": number,    // 24小时内收盘价格
+        "price": number            // 当前价格
       }
     ]
     ```
@@ -944,26 +944,26 @@ dex-ranking-token-stats-list:{chain}_{channelType}
 
 #### 排名的代幣持有者統計
 
-即時取得排名代幣的持有者統計資訊。
+實時獲取排名代幣的持有者統計資訊。
 
 **訂閱格式**
 ```text
 dex-ranking-token-holding-list:{chain}_{channelType}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  頻道類型，支援：new、trending、us_stocks、completed、graduated
+  頻道型別，支援：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -971,15 +971,15 @@ dex-ranking-token-holding-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "a": string,      // 代幣地址
-        "h": number,      // 持有者數量
-        "t100a": number,  // 前100名持有者持有總量
-        "t10a": number,   // 前10名持有者持有總量
-        "t100h": number,  // 前100名持有者數量
-        "t10h": number,   // 前10名持有者數量
+        "a": string,      // 代币地址
+        "h": number,      // 持有者数量
+        "t100a": number,  // 前100名持有者持有总量
+        "t10a": number,   // 前10名持有者持有总量
+        "t100h": number,  // 前100名持有者数量
+        "t10h": number,   // 前10名持有者数量
         "t100r": number,  // 前100名持有者持有比例
         "t10r": number,   // 前10名持有者持有比例
-        "ts": number      // 時間戳
+        "ts": number      // 时间戳
       }
     ]
     ```
@@ -988,15 +988,15 @@ dex-ranking-token-holding-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "tokenAddress": string,    // 代幣地址
-        "holders": number,         // 持有者數量
-        "top100Amount": number,    // 前100名持有者持有總量
-        "top10Amount": number,     // 前10名持有者持有總量
-        "top100Holders": number,   // 前100名持有者數量
-        "top10Holders": number,    // 前10名持有者數量
+        "tokenAddress": string,    // 代币地址
+        "holders": number,         // 持有者数量
+        "top100Amount": number,    // 前100名持有者持有总量
+        "top10Amount": number,     // 前10名持有者持有总量
+        "top100Holders": number,   // 前100名持有者数量
+        "top10Holders": number,    // 前10名持有者数量
         "top100Ratio": number,     // 前100名持有者持有比例
         "top10Ratio": number,      // 前10名持有者持有比例
-        "timestamp": number        // 時間戳
+        "timestamp": number        // 时间戳
       }
     ]
     ```
@@ -1005,26 +1005,26 @@ dex-ranking-token-holding-list:{chain}_{channelType}
 
 #### 排名的代幣供應量資料
 
-即時取得排名代幣的供應量和市值資訊。
+實時獲取排名代幣的供應量和市值資訊。
 
 **訂閱格式**
 ```text
 dex-ranking-token-supply-list:{chain}_{channelType}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  頻道類型，支援：new、trending、us_stocks、completed、graduated
+  頻道型別，支援：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1032,10 +1032,10 @@ dex-ranking-token-supply-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "a": string,    // 代幣地址
-        "s": number,    // 供應量
+        "a": string,    // 代币地址
+        "s": number,    // 供应量
         "mc": number,   // 市值（美元）
-        "ts": number    // 時間戳
+        "ts": number    // 时间戳
       }
     ]
     ```
@@ -1044,10 +1044,10 @@ dex-ranking-token-supply-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "tokenAddress": string,    // 代幣地址
-        "supply": number,          // 供應量
+        "tokenAddress": string,    // 代币地址
+        "supply": number,          // 供应量
         "marketCapInUsd": number,  // 市值（美元）
-        "timestamp": number        // 時間戳
+        "timestamp": number        // 时间戳
       }
     ]
     ```
@@ -1056,26 +1056,26 @@ dex-ranking-token-supply-list:{chain}_{channelType}
 
 #### 排名的代幣流動性資料
 
-即時取得排名代幣的流動性統計資訊。
+實時獲取排名代幣的流動性統計資訊。
 
 **訂閱格式**
 ```text
 dex-ranking-token-general_stat_num-list:{chain}_{channelType}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
 <ParamField query="channelType" type="string" required>
-  頻道類型，支援：new、trending、us_stocks、completed、graduated
+  頻道型別，支援：new、trending、us_stocks、completed、graduated
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1083,10 +1083,10 @@ dex-ranking-token-general_stat_num-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "a": string,    // 代幣地址
-        "t": string,    // 指標類型
-        "v": number,    // 數值
-        "ts": number    // 時間戳
+        "a": string,    // 代币地址
+        "t": string,    // 指标类型
+        "v": number,    // 数值
+        "ts": number    // 时间戳
       }
     ]
     ```
@@ -1095,10 +1095,10 @@ dex-ranking-token-general_stat_num-list:{chain}_{channelType}
     ```typescript
     [
       {
-        "tokenAddress": string,  // 代幣地址
-        "metricType": string,    // 指標類型
-        "value": number,         // 數值
-        "timestamp": number      // 時間戳
+        "tokenAddress": string,  // 代币地址
+        "metricType": string,    // 指标类型
+        "value": number,         // 数值
+        "timestamp": number      // 时间戳
       }
     ]
     ```
@@ -1107,7 +1107,7 @@ dex-ranking-token-general_stat_num-list:{chain}_{channelType}
 
 #### 排名的代幣列表
 
-即時取得排名代幣的完整資訊列表，包括元資料、持有者統計、供應量和市場資料。
+實時獲取排名代幣的完整資訊列表，包括後設資料、持有者統計、供應量和市場資料。
 
 **訂閱格式**
 ```text
@@ -1116,23 +1116,23 @@ dex-ranking-list:{chain}_{ranking_type}
 dex-ranking-list:{chain}_{ranking_type}_{dex}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
 <ParamField query="ranking_type" type="string" required>
-  排名類型，支援：new、trending、us_stocks、completed、graduated
+  排名型別，支援：new、trending、us_stocks、completed、graduated
 </ParamField>
 
 <ParamField query="dex" type="string" required={false}>
-  可選的DEX平台，支援：pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
+  可選的DEX平臺，支援：pump_fun、raydium_launchpad、meteora_dynamic_bounding_curve、bonk_fun、boop_fun、moonit_fun
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1142,27 +1142,27 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
       {
         // TokenMetadata (t)
         "t": {
-          "a": string,      // 代幣地址
-          "n": string,      // 名稱
-          "s": string,      // 符號
-          "iu": string,     // 圖片URL
+          "a": string,      // 代币地址
+          "n": string,      // 名称
+          "s": string,      // 符号
+          "iu": string,     // 图片URL
           "de": string,     // 描述
-          "dec": number,    // 小數位數
-          "cts": number,    // 建立時間戳（毫秒）
-          "lf": {           // 啟動來源資訊
-            "pa": string,   // 程式地址
-            "pf": string,   // 協議家族
-            "pn": string    // 協議名稱
+          "dec": number,    // 小数位数
+          "cts": number,    // 创建时间戳（毫秒）
+          "lf": {           // 启动来源信息
+            "pa": string,   // 程序地址
+            "pf": string,   // 协议家族
+            "pn": string    // 协议名称
           },
-          "mt": {           // 遷移目標資訊
-            "pa": string,   // 程式地址
-            "pf": string,   // 協議家族
-            "pn": string    // 協議名稱
+          "mt": {           // 迁移目标信息
+            "pa": string,   // 程序地址
+            "pf": string,   // 协议家族
+            "pn": string    // 协议名称
           },
-          "sm": {           // 社群媒體
+          "sm": {           // 社交媒体
             "tw": string,   // Twitter
             "tg": string,   // Telegram
-            "w": string,    // 網站
+            "w": string,    // 网站
             "tt": string,   // TikTok
             "dc": string,   // Discord
             "fb": string,   // Facebook
@@ -1177,95 +1177,95 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
           },
         // TokenBondingCurve (bc)
         "bc": {
-          "pr": number      // 進度比例
+          "pr": number      // 进度比例
         },
         // TokenHolder (h)
         "h": {
-          "a": string,      // 代幣地址
-          "h": number,      // 持有者數量
-          "t100a": number,  // 前100名持有者持有總量
-          "t10a": number,   // 前10名持有者持有總量
-          "t100h": number,  // 前100名持有者數量
-          "t10h": number,   // 前10名持有者數量
+          "a": string,      // 代币地址
+          "h": number,      // 持有者数量
+          "t100a": number,  // 前100名持有者持有总量
+          "t10a": number,   // 前10名持有者持有总量
+          "t100h": number,  // 前100名持有者数量
+          "t10h": number,   // 前10名持有者数量
           "t100r": number,  // 前100名持有者持有比例
           "t10r": number,   // 前10名持有者持有比例
-          "ts": number      // 時間戳
+          "ts": number      // 时间戳
         },
         // TokenSupply (s)
         "s": {
-          "a": string,    // 代幣地址
-          "s": number,    // 供應量
+          "a": string,    // 代币地址
+          "s": number,    // 供应量
           "mc": number,   // 市值（美元）
-          "ts": number    // 時間戳
+          "ts": number    // 时间戳
         },
         // TokenStat (ts)
         "ts": {
-          "a": string,      // 代幣地址
-          "t": number,      // 時間戳
-          "b1m": number,    // 1分鐘內買入次數
-          "s1m": number,    // 1分鐘內賣出次數
-          "be1m": number,   // 1分鐘內買入人數
-          "se1m": number,   // 1分鐘內賣出人數
-          "bviu1m": number, // 1分鐘內買入美元金額
-          "sviu1m": number, // 1分鐘內賣出美元金額
-          "p1m": number,    // 1分鐘價格
-          "oiu1m": number,  // 1分鐘內開盤價格
-          "ciu1m": number,  // 1分鐘內收盤價格
-          "b5m": number,    // 5分鐘內買入次數
-          "s5m": number,    // 5分鐘內賣出次數
-          "be5m": number,   // 5分鐘內買入人數
-          "se5m": number,   // 5分鐘內賣出人數
-          "bviu5m": number, // 5分鐘內買入美元金額
-          "sviu5m": number, // 5分鐘內賣出美元金額
-          "p5m": number,    // 5分鐘價格
-          "oiu5m": number,  // 5分鐘內開盤價格
-          "ciu5m": number,  // 5分鐘內收盤價格
-          "b15m": number,   // 15分鐘內買入次數
-          "s15m": number,   // 15分鐘內賣出次數
-          "be15m": number,  // 15分鐘內買入人數
-          "se15m": number,  // 15分鐘內賣出人數
-          "bviu15m": number,// 15分鐘內買入美元金額
-          "sviu15m": number,// 15分鐘內賣出美元金額
-          "p15m": number,   // 15分鐘價格
-          "oiu15m": number, // 15分鐘內開盤價格
-          "ciu15m": number, // 15分鐘內收盤價格
-          "b30m": number,   // 30分鐘內買入次數
-          "s30m": number,   // 30分鐘內賣出次數
-          "be30m": number,  // 30分鐘內買入人數
-          "se30m": number,  // 30分鐘內賣出人數
-          "bviu30m": number,// 30分鐘內買入美元金額
-          "sviu30m": number,// 30分鐘內賣出美元金額
-          "p30m": number,   // 30分鐘價格
-          "oiu30m": number, // 30分鐘內開盤價格
-          "ciu30m": number, // 30分鐘內收盤價格
-          "b1h": number,    // 1小時內買入次數
-          "s1h": number,    // 1小時內賣出次數
-          "be1h": number,   // 1小時內買入人數
-          "se1h": number,   // 1小時內賣出人數
-          "bviu1h": number, // 1小時內買入美元金額
-          "sviu1h": number, // 1小時內賣出美元金額
-          "p1h": number,    // 1小時價格
-          "oiu1h": number,  // 1小時內開盤價格
-          "ciu1h": number,  // 1小時內收盤價格
-          "b4h": number,    // 4小時內買入次數
-          "s4h": number,    // 4小時內賣出次數
-          "be4h": number,   // 4小時內買入人數
-          "se4h": number,   // 4小時內賣出人數
-          "bviu4h": number, // 4小時內買入美元金額
-          "sviu4h": number, // 4小時內賣出美元金額
-          "p4h": number,    // 4小時價格
-          "oiu4h": number,  // 4小時內開盤價格
-          "ciu4h": number,  // 4小時內收盤價格
-          "b24h": number,   // 24小時內買入次數
-          "s24h": number,   // 24小時內賣出次數
-          "be24h": number,  // 24小時內買入人數
-          "se24h": number,  // 24小時內賣出人數
-          "bviu24h": number,// 24小時內買入美元金額
-          "sviu24h": number,// 24小時內賣出美元金額
-          "p24h": number,   // 24小時價格
-          "oiu24h": number, // 24小時內開盤價格
-          "ciu24h": number, // 24小時內收盤價格
-          "p": number       // 當前價格
+          "a": string,      // 代币地址
+          "t": number,      // 时间戳
+          "b1m": number,    // 1分钟内买入次数
+          "s1m": number,    // 1分钟内卖出次数
+          "be1m": number,   // 1分钟内买入人数
+          "se1m": number,   // 1分钟内卖出人数
+          "bviu1m": number, // 1分钟内买入美元金额
+          "sviu1m": number, // 1分钟内卖出美元金额
+          "p1m": number,    // 1分钟价格
+          "oiu1m": number,  // 1分钟内开盘价格
+          "ciu1m": number,  // 1分钟内收盘价格
+          "b5m": number,    // 5分钟内买入次数
+          "s5m": number,    // 5分钟内卖出次数
+          "be5m": number,   // 5分钟内买入人数
+          "se5m": number,   // 5分钟内卖出人数
+          "bviu5m": number, // 5分钟内买入美元金额
+          "sviu5m": number, // 5分钟内卖出美元金额
+          "p5m": number,    // 5分钟价格
+          "oiu5m": number,  // 5分钟内开盘价格
+          "ciu5m": number,  // 5分钟内收盘价格
+          "b15m": number,   // 15分钟内买入次数
+          "s15m": number,   // 15分钟内卖出次数
+          "be15m": number,  // 15分钟内买入人数
+          "se15m": number,  // 15分钟内卖出人数
+          "bviu15m": number,// 15分钟内买入美元金额
+          "sviu15m": number,// 15分钟内卖出美元金额
+          "p15m": number,   // 15分钟价格
+          "oiu15m": number, // 15分钟内开盘价格
+          "ciu15m": number, // 15分钟内收盘价格
+          "b30m": number,   // 30分钟内买入次数
+          "s30m": number,   // 30分钟内卖出次数
+          "be30m": number,  // 30分钟内买入人数
+          "se30m": number,  // 30分钟内卖出人数
+          "bviu30m": number,// 30分钟内买入美元金额
+          "sviu30m": number,// 30分钟内卖出美元金额
+          "p30m": number,   // 30分钟价格
+          "oiu30m": number, // 30分钟内开盘价格
+          "ciu30m": number, // 30分钟内收盘价格
+          "b1h": number,    // 1小时内买入次数
+          "s1h": number,    // 1小时内卖出次数
+          "be1h": number,   // 1小时内买入人数
+          "se1h": number,   // 1小时内卖出人数
+          "bviu1h": number, // 1小时内买入美元金额
+          "sviu1h": number, // 1小时内卖出美元金额
+          "p1h": number,    // 1小时价格
+          "oiu1h": number,  // 1小时内开盘价格
+          "ciu1h": number,  // 1小时内收盘价格
+          "b4h": number,    // 4小时内买入次数
+          "s4h": number,    // 4小时内卖出次数
+          "be4h": number,   // 4小时内买入人数
+          "se4h": number,   // 4小时内卖出人数
+          "bviu4h": number, // 4小时内买入美元金额
+          "sviu4h": number, // 4小时内卖出美元金额
+          "p4h": number,    // 4小时价格
+          "oiu4h": number,  // 4小时内开盘价格
+          "ciu4h": number,  // 4小时内收盘价格
+          "b24h": number,   // 24小时内买入次数
+          "s24h": number,   // 24小时内卖出次数
+          "be24h": number,  // 24小时内买入人数
+          "se24h": number,  // 24小时内卖出人数
+          "bviu24h": number,// 24小时内买入美元金额
+          "sviu24h": number,// 24小时内卖出美元金额
+          "p24h": number,   // 24小时价格
+          "oiu24h": number, // 24小时内开盘价格
+          "ciu24h": number, // 24小时内收盘价格
+          "p": number       // 当前价格
         }
       }
     ]
@@ -1275,29 +1275,29 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
     ```typescript
     [
       {
-        // 代幣元資料
+        // 代币元数据
         "metadata": {
-        "tokenAddress": string,     // 代幣地址
-        "name": string,             // 名稱
-        "symbol": string,           // 符號
-        "imageUrl": string,         // 圖片URL
+        "tokenAddress": string,     // 代币地址
+        "name": string,             // 名称
+        "symbol": string,           // 符号
+        "imageUrl": string,         // 图片URL
         "description": string,      // 描述
-          "decimals": number,         // 小數位數
-          "createdAtMs": number,      // 建立時間戳（毫秒）
-          "launchFrom": {             // 啟動來源資訊
-            "programAddress": string, // 程式地址
-            "protocolFamily": string, // 協議家族
-            "protocolName": string    // 協議名稱
+          "decimals": number,         // 小数位数
+          "createdAtMs": number,      // 创建时间戳（毫秒）
+          "launchFrom": {             // 启动来源信息
+            "programAddress": string, // 程序地址
+            "protocolFamily": string, // 协议家族
+            "protocolName": string    // 协议名称
           },
-          "migratedTo": {             // 遷移目標資訊
-            "programAddress": string, // 程式地址
-            "protocolFamily": string, // 協議家族
-            "protocolName": string    // 協議名稱
+          "migratedTo": {             // 迁移目标信息
+            "programAddress": string, // 程序地址
+            "protocolFamily": string, // 协议家族
+            "protocolName": string    // 协议名称
           },
-        "socialMedia": {            // 社群媒體
+        "socialMedia": {            // 社交媒体
           "twitter": string,        // Twitter
           "telegram": string,       // Telegram
-          "website": string,        // 網站
+          "website": string,        // 网站
           "tiktok": string,         // TikTok
           "discord": string,        // Discord
           "facebook": string,       // Facebook
@@ -1311,100 +1311,100 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
           }
         },
         
-        // 綁定曲線資訊
+        // 绑定曲线信息
         "bondingCurve": {
-          "progressRatio": number     // 進度比例
+          "progressRatio": number     // 进度比例
         },
         
-        // 持有者統計
+        // 持有者统计
         "holder": {
-          "tokenAddress": string,     // 代幣地址
-          "timestamp": number,        // 時間戳
-        "holders": number,          // 持有者數量
-        "top100Amount": number,     // 前100名持有者持有總量
-        "top10Amount": number,      // 前10名持有者持有總量
-        "top100Holders": number,    // 前100名持有者數量
-        "top10Holders": number,     // 前10名持有者數量
+          "tokenAddress": string,     // 代币地址
+          "timestamp": number,        // 时间戳
+        "holders": number,          // 持有者数量
+        "top100Amount": number,     // 前100名持有者持有总量
+        "top10Amount": number,      // 前10名持有者持有总量
+        "top100Holders": number,    // 前100名持有者数量
+        "top10Holders": number,     // 前10名持有者数量
         "top100Ratio": number,      // 前100名持有者持有比例
           "top10Ratio": number        // 前10名持有者持有比例
         },
         
-        // 供應量資訊
+        // 供应量信息
         "supply": {
-          "tokenAddress": string,     // 代幣地址
-          "timestamp": number,        // 時間戳
-        "supply": number,           // 供應量
+          "tokenAddress": string,     // 代币地址
+          "timestamp": number,        // 时间戳
+        "supply": number,           // 供应量
           "marketCapInUsd": number    // 市值（美元）
         },
         
-        // 市場統計資料
+        // 市场统计数据
         "stat": {
-          "address": string,          // 代幣地址
-          "timestamp": number,        // 時間戳
-        "buys1m": number,           // 1分鐘內買入次數
-        "sells1m": number,          // 1分鐘內賣出次數
-        "buyers1m": number,         // 1分鐘內買入人數
-        "sellers1m": number,        // 1分鐘內賣出人數
-        "buyVolumeInUsd1m": number, // 1分鐘內買入美元金額
-        "sellVolumeInUsd1m": number,// 1分鐘內賣出美元金額
-        "price1m": number,          // 1分鐘價格
-        "openInUsd1m": number,      // 1分鐘內開盤價格
-        "closeInUsd1m": number,     // 1分鐘內收盤價格
-          "buys5m": number,           // 5分鐘內買入次數
-          "sells5m": number,          // 5分鐘內賣出次數
-          "buyers5m": number,         // 5分鐘內買入人數
-          "sellers5m": number,        // 5分鐘內賣出人數
-          "buyVolumeInUsd5m": number, // 5分鐘內買入美元金額
-          "sellVolumeInUsd5m": number,// 5分鐘內賣出美元金額
-          "price5m": number,          // 5分鐘價格
-          "openInUsd5m": number,      // 5分鐘內開盤價格
-          "closeInUsd5m": number,     // 5分鐘內收盤價格
-          "buys15m": number,          // 15分鐘內買入次數
-          "sells15m": number,         // 15分鐘內賣出次數
-          "buyers15m": number,        // 15分鐘內買入人數
-          "sellers15m": number,       // 15分鐘內賣出人數
-          "buyVolumeInUsd15m": number,// 15分鐘內買入美元金額
-          "sellVolumeInUsd15m": number,// 15分鐘內賣出美元金額
-          "price15m": number,         // 15分鐘價格
-          "openInUsd15m": number,     // 15分鐘內開盤價格
-          "closeInUsd15m": number,    // 15分鐘內收盤價格
-          "buys30m": number,          // 30分鐘內買入次數
-          "sells30m": number,         // 30分鐘內賣出次數
-          "buyers30m": number,        // 30分鐘內買入人數
-          "sellers30m": number,       // 30分鐘內賣出人數
-          "buyVolumeInUsd30m": number,// 30分鐘內買入美元金額
-          "sellVolumeInUsd30m": number,// 30分鐘內賣出美元金額
-          "price30m": number,         // 30分鐘價格
-          "openInUsd30m": number,     // 30分鐘內開盤價格
-          "closeInUsd30m": number,    // 30分鐘內收盤價格
-          "buys1h": number,           // 1小時內買入次數
-          "sells1h": number,          // 1小時內賣出次數
-          "buyers1h": number,         // 1小時內買入人數
-          "sellers1h": number,        // 1小時內賣出人數
-          "buyVolumeInUsd1h": number, // 1小時內買入美元金額
-          "sellVolumeInUsd1h": number,// 1小時內賣出美元金額
-          "price1h": number,          // 1小時價格
-          "openInUsd1h": number,      // 1小時內開盤價格
-          "closeInUsd1h": number,     // 1小時內收盤價格
-          "buys4h": number,           // 4小時內買入次數
-          "sells4h": number,          // 4小時內賣出次數
-          "buyers4h": number,         // 4小時內買入人數
-          "sellers4h": number,        // 4小時內賣出人數
-          "buyVolumeInUsd4h": number, // 4小時內買入美元金額
-          "sellVolumeInUsd4h": number,// 4小時內賣出美元金額
-          "price4h": number,          // 4小時價格
-          "openInUsd4h": number,      // 4小時內開盤價格
-          "closeInUsd4h": number,     // 4小時內收盤價格
-          "buys24h": number,          // 24小時內買入次數
-          "sells24h": number,         // 24小時內賣出次數
-          "buyers24h": number,        // 24小時內買入人數
-          "sellers24h": number,       // 24小時內賣出人數
-          "buyVolumeInUsd24h": number,// 24小時內買入美元金額
-          "sellVolumeInUsd24h": number,// 24小時內賣出美元金額
-          "price24h": number,         // 24小時價格
-          "openInUsd24h": number,     // 24小時內開盤價格
-          "closeInUsd24h": number,    // 24小時內收盤價格
-          "price": number             // 當前價格
+          "address": string,          // 代币地址
+          "timestamp": number,        // 时间戳
+        "buys1m": number,           // 1分钟内买入次数
+        "sells1m": number,          // 1分钟内卖出次数
+        "buyers1m": number,         // 1分钟内买入人数
+        "sellers1m": number,        // 1分钟内卖出人数
+        "buyVolumeInUsd1m": number, // 1分钟内买入美元金额
+        "sellVolumeInUsd1m": number,// 1分钟内卖出美元金额
+        "price1m": number,          // 1分钟价格
+        "openInUsd1m": number,      // 1分钟内开盘价格
+        "closeInUsd1m": number,     // 1分钟内收盘价格
+          "buys5m": number,           // 5分钟内买入次数
+          "sells5m": number,          // 5分钟内卖出次数
+          "buyers5m": number,         // 5分钟内买入人数
+          "sellers5m": number,        // 5分钟内卖出人数
+          "buyVolumeInUsd5m": number, // 5分钟内买入美元金额
+          "sellVolumeInUsd5m": number,// 5分钟内卖出美元金额
+          "price5m": number,          // 5分钟价格
+          "openInUsd5m": number,      // 5分钟内开盘价格
+          "closeInUsd5m": number,     // 5分钟内收盘价格
+          "buys15m": number,          // 15分钟内买入次数
+          "sells15m": number,         // 15分钟内卖出次数
+          "buyers15m": number,        // 15分钟内买入人数
+          "sellers15m": number,       // 15分钟内卖出人数
+          "buyVolumeInUsd15m": number,// 15分钟内买入美元金额
+          "sellVolumeInUsd15m": number,// 15分钟内卖出美元金额
+          "price15m": number,         // 15分钟价格
+          "openInUsd15m": number,     // 15分钟内开盘价格
+          "closeInUsd15m": number,    // 15分钟内收盘价格
+          "buys30m": number,          // 30分钟内买入次数
+          "sells30m": number,         // 30分钟内卖出次数
+          "buyers30m": number,        // 30分钟内买入人数
+          "sellers30m": number,       // 30分钟内卖出人数
+          "buyVolumeInUsd30m": number,// 30分钟内买入美元金额
+          "sellVolumeInUsd30m": number,// 30分钟内卖出美元金额
+          "price30m": number,         // 30分钟价格
+          "openInUsd30m": number,     // 30分钟内开盘价格
+          "closeInUsd30m": number,    // 30分钟内收盘价格
+          "buys1h": number,           // 1小时内买入次数
+          "sells1h": number,          // 1小时内卖出次数
+          "buyers1h": number,         // 1小时内买入人数
+          "sellers1h": number,        // 1小时内卖出人数
+          "buyVolumeInUsd1h": number, // 1小时内买入美元金额
+          "sellVolumeInUsd1h": number,// 1小时内卖出美元金额
+          "price1h": number,          // 1小时价格
+          "openInUsd1h": number,      // 1小时内开盘价格
+          "closeInUsd1h": number,     // 1小时内收盘价格
+          "buys4h": number,           // 4小时内买入次数
+          "sells4h": number,          // 4小时内卖出次数
+          "buyers4h": number,         // 4小时内买入人数
+          "sellers4h": number,        // 4小时内卖出人数
+          "buyVolumeInUsd4h": number, // 4小时内买入美元金额
+          "sellVolumeInUsd4h": number,// 4小时内卖出美元金额
+          "price4h": number,          // 4小时价格
+          "openInUsd4h": number,      // 4小时内开盘价格
+          "closeInUsd4h": number,     // 4小时内收盘价格
+          "buys24h": number,          // 24小时内买入次数
+          "sells24h": number,         // 24小时内卖出次数
+          "buyers24h": number,        // 24小时内买入人数
+          "sellers24h": number,       // 24小时内卖出人数
+          "buyVolumeInUsd24h": number,// 24小时内买入美元金额
+          "sellVolumeInUsd24h": number,// 24小时内卖出美元金额
+          "price24h": number,         // 24小时价格
+          "openInUsd24h": number,     // 24小时内开盘价格
+          "closeInUsd24h": number,    // 24小时内收盘价格
+          "price": number             // 当前价格
         }
       }
     ]
@@ -1412,24 +1412,24 @@ dex-ranking-list:{chain}_{ranking_type}_{dex}
   </Tab>
 </Tabs>
 
-#### 排名代幣綁定曲線
+#### 排名代幣繫結曲線
 
-即時取得新上市代幣的綁定曲線進度。
+實時獲取新上市代幣的繫結曲線進度。
 
 **訂閱格式**
 ```text
 dex-ranking-token-bounding-curve-list:{chain}_new
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1437,8 +1437,8 @@ dex-ranking-token-bounding-curve-list:{chain}_new
     ```typescript
     [
       {
-        "a": string,    // 代幣地址
-        "pr": string    // 進度比例 (0-1)
+        "a": string,    // 代币地址
+        "pr": string    // 进度比例 (0-1)
       }
     ]
     ```
@@ -1447,8 +1447,8 @@ dex-ranking-token-bounding-curve-list:{chain}_new
     ```typescript
     [
       {
-        "tokenAddress": string,   // 代幣地址
-        "progressRatio": string   // 進度比例 (0-1)
+        "tokenAddress": string,   // 代币地址
+        "progressRatio": string   // 进度比例 (0-1)
       }
     ]
     ```
@@ -1458,14 +1458,14 @@ dex-ranking-token-bounding-curve-list:{chain}_new
 ### 錢包
 #### 錢包餘額
 
-即時取得錢包的餘額資訊。
+實時獲取錢包的餘額資訊。
 
 **訂閱格式**
 ```text
 dex-wallet-balance:{chain}_{walletAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -1475,13 +1475,13 @@ dex-wallet-balance:{chain}_{walletAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：balance > 1000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：balance > 1000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1489,11 +1489,11 @@ dex-wallet-balance:{chain}_{walletAddress}
     ```typescript
     [
       {
-        "a": string,      // 錢包地址
-        "ta": string,     // 代幣地址
-        "tpiu": number,   // 代幣美元價格
-        "b": number,      // 餘額
-        "t": number       // 時間戳
+        "a": string,      // 钱包地址
+        "ta": string,     // 代币地址
+        "tpiu": number,   // 代币美元价格
+        "b": number,      // 余额
+        "t": number       // 时间戳
       }
     ]
     ```
@@ -1502,11 +1502,11 @@ dex-wallet-balance:{chain}_{walletAddress}
     ```typescript
     [
       {
-        "walletAddress": string,    // 錢包地址
-        "tokenAddress": string,     // 代幣地址
-        "tokenPriceInUsd": number, // 代幣美元價格
-        "balance": number,          // 餘額
-        "timestamp": number         // 時間戳
+        "walletAddress": string,    // 钱包地址
+        "tokenAddress": string,     // 代币地址
+        "tokenPriceInUsd": number, // 代币美元价格
+        "balance": number,          // 余额
+        "timestamp": number         // 时间戳
       }
     ]
     ```
@@ -1515,14 +1515,14 @@ dex-wallet-balance:{chain}_{walletAddress}
 
 #### 錢包盈虧資料（代幣級別）
 
-即時取得錢包的盈虧(PnL)統計資料。
+實時獲取錢包的盈虧(PnL)統計資料。
 
 **訂閱格式**
 ```text
 dex-wallet-token-pnl:{chain}_{walletAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -1532,77 +1532,77 @@ dex-wallet-token-pnl:{chain}_{walletAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：buyAmount > 1000
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：buyAmount > 1000
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,      // 錢包地址
-      "ta": string,     // 代幣地址
-      "tpiu": number,   // 代幣美元價格
-      "t": number,      // 時間戳
-      "ot": number,     // 開倉時間
-      "lt": number,     // 最後交易時間
-      "ct": number,     // 平倉時間
-      "ba": number,     // 買入數量
-      "baiu": number,   // 買入美元金額
-      "bs": number,     // 買入次數
-      "bs30d": number,  // 30天買入次數
-      "bs7d": number,   // 7天買入次數
-      "sa": number,     // 賣出數量
-      "saiu": number,   // 賣出美元金額
-      "ss": number,     // 賣出次數
-      "ss30d": number,  // 30天賣出次數
-      "ss7d": number,   // 7天賣出次數
-      "hdts": number,   // 持倉時長時間戳
-      "abpiu": number,  // 平均買入美元價格
-      "aspiu": number,  // 平均賣出美元價格
-      "upiu": number,   // 未實現美元盈虧
-      "upr": number,    // 未實現盈虧比率
-      "rpiu": number,   // 已實現美元盈虧
-      "rpr": number,    // 已實現盈虧比率
-      "trpiu": number,  // 總已實現美元盈虧
-      "trr": number     // 總已實現盈虧比率
+      "a": string,      // 钱包地址
+      "ta": string,     // 代币地址
+      "tpiu": number,   // 代币美元价格
+      "t": number,      // 时间戳
+      "ot": number,     // 开仓时间
+      "lt": number,     // 最后交易时间
+      "ct": number,     // 平仓时间
+      "ba": number,     // 买入数量
+      "baiu": number,   // 买入美元金额
+      "bs": number,     // 买入次数
+      "bs30d": number,  // 30天买入次数
+      "bs7d": number,   // 7天买入次数
+      "sa": number,     // 卖出数量
+      "saiu": number,   // 卖出美元金额
+      "ss": number,     // 卖出次数
+      "ss30d": number,  // 30天卖出次数
+      "ss7d": number,   // 7天卖出次数
+      "hdts": number,   // 持仓时长时间戳
+      "abpiu": number,  // 平均买入美元价格
+      "aspiu": number,  // 平均卖出美元价格
+      "upiu": number,   // 未实现美元盈亏
+      "upr": number,    // 未实现盈亏比率
+      "rpiu": number,   // 已实现美元盈亏
+      "rpr": number,    // 已实现盈亏比率
+      "trpiu": number,  // 总已实现美元盈亏
+      "trr": number     // 总已实现盈亏比率
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "walletAddress": string,         // 錢包地址
-      "tokenAddress": string,          // 代幣地址
-      "tokenPriceInUsd": number,       // 代幣美元價格
-      "timestamp": number,             // 時間戳
-      "opentime": number,              // 開倉時間
-      "lasttime": number,              // 最後交易時間
-      "closetime": number,             // 平倉時間
-      "buyAmount": number,             // 買入數量
-      "buyAmountInUsd": number,        // 買入美元金額
-      "buyCount": number,              // 買入次數
-      "buyCount30d": number,           // 30天買入次數
-      "buyCount7d": number,            // 7天買入次數
-      "sellAmount": number,            // 賣出數量
-      "sellAmountInUsd": number,       // 賣出美元金額
-      "sellCount": number,             // 賣出次數
-      "sellCount30d": number,          // 30天賣出次數
-      "sellCount7d": number,           // 7天賣出次數
-      "heldDurationTimestamp": number, // 持倉時長時間戳
-      "averageBuyPriceInUsd": number,  // 平均買入美元價格
-      "averageSellPriceInUsd": number, // 平均賣出美元價格
-      "unrealizedProfitInUsd": number, // 未實現美元盈虧
-      "unrealizedProfitRatio": number, // 未實現盈虧比率
-      "realizedProfitInUsd": number,   // 已實現美元盈虧
-      "realizedProfitRatio": number,   // 已實現盈虧比率
-      "totalRealizedProfitInUsd": number, // 總已實現美元盈虧
-      "totalRealizedProfitRatio": number  // 總已實現盈虧比率
+      "walletAddress": string,         // 钱包地址
+      "tokenAddress": string,          // 代币地址
+      "tokenPriceInUsd": number,       // 代币美元价格
+      "timestamp": number,             // 时间戳
+      "opentime": number,              // 开仓时间
+      "lasttime": number,              // 最后交易时间
+      "closetime": number,             // 平仓时间
+      "buyAmount": number,             // 买入数量
+      "buyAmountInUsd": number,        // 买入美元金额
+      "buyCount": number,              // 买入次数
+      "buyCount30d": number,           // 30天买入次数
+      "buyCount7d": number,            // 7天买入次数
+      "sellAmount": number,            // 卖出数量
+      "sellAmountInUsd": number,       // 卖出美元金额
+      "sellCount": number,             // 卖出次数
+      "sellCount30d": number,          // 30天卖出次数
+      "sellCount7d": number,           // 7天卖出次数
+      "heldDurationTimestamp": number, // 持仓时长时间戳
+      "averageBuyPriceInUsd": number,  // 平均买入美元价格
+      "averageSellPriceInUsd": number, // 平均卖出美元价格
+      "unrealizedProfitInUsd": number, // 未实现美元盈亏
+      "unrealizedProfitRatio": number, // 未实现盈亏比率
+      "realizedProfitInUsd": number,   // 已实现美元盈亏
+      "realizedProfitRatio": number,   // 已实现盈亏比率
+      "totalRealizedProfitInUsd": number, // 总已实现美元盈亏
+      "totalRealizedProfitRatio": number  // 总已实现盈亏比率
     }
     ```
   </Tab>
@@ -1610,14 +1610,14 @@ dex-wallet-token-pnl:{chain}_{walletAddress}
 
 #### 錢包盈虧資料（錢包級別）
 
-即時取得錢包的整體盈虧統計資料。
+實時獲取錢包的整體盈虧統計資料。
 
 **訂閱格式**
 ```text
 dex-wallet-pnl-list:{chain}_{walletAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -1626,10 +1626,10 @@ dex-wallet-pnl-list:{chain}_{walletAddress}
   錢包地址
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1637,23 +1637,23 @@ dex-wallet-pnl-list:{chain}_{walletAddress}
     ```typescript
     [
       {
-        "a": string,     // 錢包地址
-        "bs": number,    // 買入次數
-        "ba": number,    // 買入數量
-        "baiu": number,  // 買入美元金額
-        "abpiu": number, // 平均買入美元價格
-        "sa": number,    // 賣出數量
-        "saiu": number,  // 賣出美元金額
-        "ss": number,    // 賣出次數
-        "ws": number,    // 獲利次數
-        "wr": number,    // 勝率
-        "piu": number,   // 美元盈虧
-        "apiu": number,  // 平均美元盈虧
-        "pr": number,    // 盈虧比率
-        "pd": number,    // 獲利天數
-        "ld": number,    // 虧損天數
-        "ts": number,    // 交易代幣數
-        "r": string      // 統計週期
+        "a": string,     // 钱包地址
+        "bs": number,    // 买入次数
+        "ba": number,    // 买入数量
+        "baiu": number,  // 买入美元金额
+        "abpiu": number, // 平均买入美元价格
+        "sa": number,    // 卖出数量
+        "saiu": number,  // 卖出美元金额
+        "ss": number,    // 卖出次数
+        "ws": number,    // 盈利次数
+        "wr": number,    // 胜率
+        "piu": number,   // 美元盈亏
+        "apiu": number,  // 平均美元盈亏
+        "pr": number,    // 盈亏比率
+        "pd": number,    // 盈利天数
+        "ld": number,    // 亏损天数
+        "ts": number,    // 交易代币数
+        "r": string      // 统计周期
       }
     ]
     ```
@@ -1662,23 +1662,23 @@ dex-wallet-pnl-list:{chain}_{walletAddress}
     ```typescript
     [
       {
-        "walletAddress": string,         // 錢包地址
-        "buys": number,                  // 買入次數
-        "buyAmount": number,             // 買入數量
-        "buyAmountInUsd": number,        // 買入美元金額
-        "averageBuyPriceInUsd": number,  // 平均買入美元價格
-        "sellAmount": number,            // 賣出數量
-        "sellAmountInUsd": number,       // 賣出美元金額
-        "sells": number,                 // 賣出次數
-        "wins": number,                  // 獲利次數
-        "winRatio": number,              // 勝率
-        "pnlInUsd": number,              // 美元盈虧
-        "averagePnlInUsd": number,       // 平均美元盈虧
-        "pnlRatio": number,              // 盈虧比率
-        "profitableDays": number,        // 獲利天數
-        "losingDays": number,            // 虧損天數
-        "tokens": number,                // 交易代幣數
-        "resolution": string             // 統計週期
+        "walletAddress": string,         // 钱包地址
+        "buys": number,                  // 买入次数
+        "buyAmount": number,             // 买入数量
+        "buyAmountInUsd": number,        // 买入美元金额
+        "averageBuyPriceInUsd": number,  // 平均买入美元价格
+        "sellAmount": number,            // 卖出数量
+        "sellAmountInUsd": number,       // 卖出美元金额
+        "sells": number,                 // 卖出次数
+        "wins": number,                  // 盈利次数
+        "winRatio": number,              // 胜率
+        "pnlInUsd": number,              // 美元盈亏
+        "averagePnlInUsd": number,       // 平均美元盈亏
+        "pnlRatio": number,              // 盈亏比率
+        "profitableDays": number,        // 盈利天数
+        "losingDays": number,            // 亏损天数
+        "tokens": number,                // 交易代币数
+        "resolution": string             // 统计周期
       }
     ]
     ```
@@ -1688,14 +1688,14 @@ dex-wallet-pnl-list:{chain}_{walletAddress}
 ### 交易
 #### 代幣交易
 
-即時取得代幣的交易事件。
+實時獲取代幣的交易事件。
 
 **訂閱格式**
 ```text
 dex-trade:{chain}_{tokenAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -1705,57 +1705,57 @@ dex-trade:{chain}_{tokenAddress}
 </ParamField>
 
 <ParamField query="filter" type="string" required={false}>
-  可選的篩選條件，使用Google Common Expression Language (CEL)表達式語言語法。例如：buyAmount > 100
+  可選的過濾條件，使用Google Common Expression Language (CEL)表示式語言語法。例如：buyAmount > 100
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,      // 代幣地址
-      "t": number,      // 時間戳
-      "k": string,      // 交易類型
-      "ba": number,     // 買入數量
-      "baiu": number,   // 買入美元金額
-      "btma": string,   // 買入代幣地址
-      "btn": string,    // 買入代幣名稱
-      "bts": string,    // 買入代幣符號
-      "bwa": string,    // 買入錢包地址
-      "sa": number,     // 賣出數量
-      "saiu": number,   // 賣出美元金額
-      "stma": string,   // 賣出代幣地址
-      "stn": string,    // 賣出代幣名稱
-      "sts": string,    // 賣出代幣符號
-      "swa": string,    // 賣出錢包地址
-      "h": string       // 交易雜湊
+      "a": string,      // 代币地址
+      "t": number,      // 时间戳
+      "k": string,      // 交易类型
+      "ba": number,     // 买入数量
+      "baiu": number,   // 买入美元金额
+      "btma": string,   // 买入代币地址
+      "btn": string,    // 买入代币名称
+      "bts": string,    // 买入代币符号
+      "bwa": string,    // 买入钱包地址
+      "sa": number,     // 卖出数量
+      "saiu": number,   // 卖出美元金额
+      "stma": string,   // 卖出代币地址
+      "stn": string,    // 卖出代币名称
+      "sts": string,    // 卖出代币符号
+      "swa": string,    // 卖出钱包地址
+      "h": string       // 交易哈希
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "tokenAddress": string,    // 代幣地址
-      "timestamp": number,       // 時間戳
-      "kind": string,            // 交易類型
-      "buyAmount": number,       // 買入數量
-      "buyAmountInUsd": number,  // 買入美元金額
-      "buyTokenAddress": string, // 買入代幣地址
-      "buyTokenName": string,    // 買入代幣名稱
-      "buyTokenSymbol": string,  // 買入代幣符號
-      "buyWalletAddress": string,// 買入錢包地址
-      "sellAmount": number,      // 賣出數量
-      "sellAmountInUsd": number,// 賣出美元金額
-      "sellTokenAddress": string,// 賣出代幣地址
-      "sellTokenName": string,   // 賣出代幣名稱
-      "sellTokenSymbol": string,// 賣出代幣符號
-      "sellWalletAddress": string,// 賣出錢包地址
-      "txHash": string          // 交易雜湊
+      "tokenAddress": string,    // 代币地址
+      "timestamp": number,       // 时间戳
+      "kind": string,            // 交易类型
+      "buyAmount": number,       // 买入数量
+      "buyAmountInUsd": number,  // 买入美元金额
+      "buyTokenAddress": string, // 买入代币地址
+      "buyTokenName": string,    // 买入代币名称
+      "buyTokenSymbol": string,  // 买入代币符号
+      "buyWalletAddress": string,// 买入钱包地址
+      "sellAmount": number,      // 卖出数量
+      "sellAmountInUsd": number,// 卖出美元金额
+      "sellTokenAddress": string,// 卖出代币地址
+      "sellTokenName": string,   // 卖出代币名称
+      "sellTokenSymbol": string,// 卖出代币符号
+      "sellWalletAddress": string,// 卖出钱包地址
+      "txHash": string          // 交易哈希
     }
     ```
   </Tab>
@@ -1763,14 +1763,14 @@ dex-trade:{chain}_{tokenAddress}
 
 #### 錢包交易
 
-即時取得指定錢包的交易事件。
+實時獲取指定錢包的交易事件。
 
 **訂閱格式**
 ```text
 dex-wallet-trade:{chain}_{walletAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -1779,10 +1779,10 @@ dex-wallet-trade:{chain}_{walletAddress}
   錢包地址，例如：GDekof7TtgeBKJtoVpkvzPin5mvhxSDyoUY2c1FK1T3i
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
@@ -1790,14 +1790,14 @@ dex-wallet-trade:{chain}_{walletAddress}
     ```typescript
     {
       "bwa": string,     // maker地址
-      "ba": number,      // 基礎代幣數量
-      "sa": number,      // 報價代幣數量
-      "swa": string,     // 報價代幣地址
-      "bais": number,    // 美元金額
-      "t": number,       // 時間戳
-      "k": string,       // 事件類型
-      "h": string,       // 交易雜湊
-      "a": string        // 代幣地址
+      "ba": number,      // 基础代币数量
+      "sa": number,      // 报价代币数量
+      "swa": string,     // 报价代币地址
+      "bais": number,    // 美元金额
+      "t": number,       // 时间戳
+      "k": string,       // 事件类型
+      "h": string,       // 交易哈希
+      "a": string        // 代币地址
     }
     ```
   </Tab>
@@ -1805,14 +1805,14 @@ dex-wallet-trade:{chain}_{walletAddress}
     ```typescript
     {
       "maker": string,        // maker地址
-      "baseAmount": number,   // 基礎代幣數量
-      "quoteAmount": number,  // 報價代幣數量
-      "quoteAddress": string, // 報價代幣地址
-      "amountInUsd": number,  // 美元金額
-      "timestamp": number,    // 時間戳
-      "event": string,       // 事件類型
-      "txHash": string,      // 交易雜湊
-      "tokenAddress": string  // 代幣地址
+      "baseAmount": number,   // 基础代币数量
+      "quoteAmount": number,  // 报价代币数量
+      "quoteAddress": string, // 报价代币地址
+      "amountInUsd": number,  // 美元金额
+      "timestamp": number,    // 时间戳
+      "event": string,       // 事件类型
+      "txHash": string,      // 交易哈希
+      "tokenAddress": string  // 代币地址
     }
     ```
   </Tab>
@@ -1821,14 +1821,14 @@ dex-wallet-trade:{chain}_{walletAddress}
 ### 流動池
 #### DEX 資金池餘額
 
-即時取得 DEX 資金池的餘額資訊。
+實時獲取 DEX 資金池的餘額資訊。
 
 **訂閱格式**
 ```text
 dex-pool-balance:{chain}_{poolAddress}
 ```
 
-**參數說明**
+**引數說明**
 <ParamField query="chain" type="string" required>
   區塊鏈名稱，例如：sol
 </ParamField>
@@ -1837,38 +1837,38 @@ dex-pool-balance:{chain}_{poolAddress}
   資金池地址
 </ParamField>
 
-**回應資料格式**
+**響應資料格式**
 
 <Tip>
-  WebSocket API 回傳簡短欄位名以最佳化傳輸效率，SDK 回傳完整欄位名以提高程式碼可讀性。
+  WebSocket API 返回簡短欄位名以最佳化傳輸效率，SDK 返回完整欄位名以提高程式碼可讀性。
 </Tip>
 
 <Tabs>
   <Tab title="WebSocket API">
     ```typescript
     {
-      "a": string,     // 資金池地址
-      "taa": string,   // 代幣A地址
-      "taliu": number, // 代幣A流動性（美元）
-      "tba": string,   // 代幣B地址
-      "tbliu": number  // 代幣B流動性（美元）
+      "a": string,     // 资金池地址
+      "taa": string,   // 代币A地址
+      "taliu": number, // 代币A流动性（美元）
+      "tba": string,   // 代币B地址
+      "tbliu": number  // 代币B流动性（美元）
     }
     ```
   </Tab>
   <Tab title="SDK">
     ```typescript
     {
-      "poolAddress": string,           // 資金池地址
-      "tokenAAddress": string,         // 代幣A地址
-      "tokenALiquidityInUsd": number,  // 代幣A流動性（美元）
-      "tokenBAddress": string,         // 代幣B地址
-      "tokenBLiquidityInUsd": number   // 代幣B流動性（美元）
+      "poolAddress": string,           // 资金池地址
+      "tokenAAddress": string,         // 代币A地址
+      "tokenALiquidityInUsd": number,  // 代币A流动性（美元）
+      "tokenBAddress": string,         // 代币B地址
+      "tokenBLiquidityInUsd": number   // 代币B流动性（美元）
     }
     ```
   </Tab>
 </Tabs>
 
-## 使用範例
+## 使用示例
 
 ```typescript
 import { ChainStreamClient } from '@chainstream-io/sdk';
@@ -1876,22 +1876,22 @@ import { Resolution } from '@chainstream-io/sdk/openapi';
 
 const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-// 直接訂閱即可，SDK 會自動偵測連線狀態並建立連線
+// 直接订阅即可，SDK 会自动检测连接状态并建立连接
 client.stream.subscribeTokenCandles({
   chain: 'sol',
   tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
   resolution: Resolution._1m,
   callback: (data) => {
-    console.log('K線資料:', data);
+    console.log('K线数据:', data);
   }
 });
 
-// 訂閱錢包餘額
+// 订阅钱包余额
 client.stream.subscribeWalletBalance({
   chain: 'sol',
   walletAddress: 'YOUR_WALLET_ADDRESS',
   callback: (data) => {
-    console.log('錢包餘額:', data);
+    console.log('钱包余额:', data);
   }
 });
 ```
@@ -1915,26 +1915,26 @@ function reconnect(attempt) {
 |--------|--------|------|
 | 最大訂閱數 | 100個/連線 | 超出將被拒絕 |
 | 訊息大小 | 100KB | 超出將被截斷 |
-| 心跳間隔 | 30秒 | 需定期發送 |
+| 心跳間隔 | 30秒 | 需定期傳送 |
 
 ## 最佳實踐
 
 1. **連線管理**
-   - 保持單一WebSocket連線
-   - 實作自動重連機制
-   - 定期發送心跳
+   - 保持單個WebSocket連線
+   - 實現自動重連機制
+   - 定期傳送心跳
 
 2. **錯誤處理**
-   - 實作完整的錯誤處理流程
+   - 實現完整的錯誤處理流程
    - 記錄詳細的錯誤日誌
    - 使用指數退避重連
 
 3. **效能最佳化**
    - 合理控制訂閱數量
-   - 實作訊息佇列機制
+   - 實現訊息佇列機制
    - 及時清理無用訂閱
 
-## 完整範例
+## 完整示例
 
 <Tabs>
   <Tab title="使用 SDK（推薦）">
@@ -1944,22 +1944,22 @@ function reconnect(attempt) {
 
     const client = new ChainStreamClient('YOUR_ACCESS_TOKEN');
 
-    // 直接訂閱即可，SDK 會自動偵測連線狀態並建立連線
+    // 直接订阅即可，SDK 会自动检测连接状态并建立连接
     const subscription = client.stream.subscribeTokenCandles({
       chain: 'sol',
       tokenAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
       resolution: Resolution._1m,
       callback: (data) => {
-        console.log('K線資料:', data);
+        console.log('K线数据:', data);
       }
     });
 
-    // 取消訂閱
+    // 取消订阅
     subscription.unsubscribe();
     ```
 
     <Note>
-    使用 SDK 時，認證、重連、心跳等都已自動處理，推薦在正式環境中使用。
+    使用 SDK 時，認證、重連、心跳等都已自動處理，推薦在生產環境中使用。
     - **TypeScript/JavaScript SDK**: [@chainstream-io/sdk](https://www.npmjs.com/package/@chainstream-io/sdk)
     - **Python SDK**: [chainstream-sdk](https://pypi.org/project/chainstream-sdk)
     - **Go SDK**: [chainstream-go-sdk](https://github.com/chainstream-io/chainstream-go-sdk)
@@ -1982,14 +1982,14 @@ function reconnect(attempt) {
       }
 
       private connect() {
-        // 在 URL 中拼接 token 參數進行認證
+        // 在 URL 中拼接 token 参数进行认证
         const url = `${this.baseUrl}?token=${this.accessToken}`;
         this.ws = new WebSocket(url);
         
         this.ws.onopen = () => {
-          console.log('WebSocket 連線成功');
+          console.log('WebSocket 连接成功');
           this.reconnectAttempts = 0;
-          // 重新訂閱之前的頻道
+          // 重新订阅之前的频道
           this.resubscribe();
         };
 
@@ -1998,12 +1998,12 @@ function reconnect(attempt) {
         };
 
         this.ws.onclose = () => {
-          console.log('WebSocket 連線關閉');
+          console.log('WebSocket 连接关闭');
           this.reconnect();
         };
 
         this.ws.onerror = (error) => {
-          console.error('WebSocket 錯誤:', error);
+          console.error('WebSocket 错误:', error);
         };
       }
 
@@ -2011,7 +2011,7 @@ function reconnect(attempt) {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
           this.reconnectAttempts++;
-          console.log(`${delay}ms 後嘗試重連...`);
+          console.log(`${delay}ms 后尝试重连...`);
           setTimeout(() => this.connect(), delay);
         }
       }
@@ -2023,7 +2023,7 @@ function reconnect(attempt) {
       }
 
       private handleMessage(data: any) {
-        // 處理訊息
+        // 处理消息
       }
 
       private send(data: any) {
@@ -2043,7 +2043,7 @@ function reconnect(attempt) {
       }
     }
 
-    // 使用範例
+    // 使用示例
     const client = new DexWebSocket(
       "wss://realtime-dex.chainstream.io/connection/websocket",
       "YOUR_ACCESS_TOKEN"

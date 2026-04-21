@@ -1,9 +1,116 @@
 ---
-title: "Solana Kafka Topics"
+title: "Solana Kafka 主題"
 description: "Solana 鏈 Kafka topic 名稱、key 與 payload schema 參考。"
+icon: "sun"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+ChainStream 為 Solana 釋出的 Kafka topic 權威列表。所有 topic 使用 `sol.` 字首。
+
+端到端的連線細節、SASL 憑證與 SDK 示例見 [接入方式 → Kafka Streams → Solana Streams](/zh-Hant/docs/access-methods/kafka-streams/solana-streams)。權威的 Protobuf 定義見 [github.com/chainstream-io/streaming_protobuf/solana](https://github.com/chainstream-io/streaming_protobuf/tree/main/solana)。
+
+## 分割槽
+
+- **Mint 地址**（32 位元組 pubkey，base58 編碼）—— 用於代幣中心的 topic（`tokens`、`dex.trades`、`dex.pools`、`candlesticks`、`token-prices`、`token-supplies`、`token-market-caps`、`trade-stats`、`token-holdings`）
+- **賬戶地址** —— 用於賬戶中心的 topic（`balances`、`transfers`）
+
+同一 mint 或賬戶的事件按 slot 順序落到同一分割槽。
+
+## Topic 矩陣
+
+### DEX 成交
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.dex.trades` | `TradeEvents` | `solana/trade_event.proto` | 原始 DEX 成交（Raydium、Meteora、Pump.fun、Jupiter 路由等） |
+| `sol.dex.trades.processed` | `TradeEvents` | `solana/trade_event.proto` | 附帶 USD / SOL 價格、路由解析、可疑標記 |
+
+### 代幣
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.tokens` | `TokenEvents` | `solana/token_event.proto` | 代幣生命週期事件（鑄幣、後設資料更新、許可權變更） |
+| `sol.tokens.created` | `TokenEvents` | `solana/token_event.proto` | 僅 mint 建立事件的過濾流 |
+| `sol.tokens.processed` | `TokenEvents` | `solana/token_event.proto` | 補充後設資料 JSON、圖片、社交後的代幣 |
+
+### 代幣級統計
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.token-prices` | `TokenPriceEvent` | `solana/token_price_event.proto` | 聚合的價格更新（USD + SOL） |
+| `sol.token-supplies` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | Mint 供給變化（mint / burn） |
+| `sol.token-supplies.processed` | `TokenSupplyEvent` | `solana/token_supply_event.proto` | 含小數歸一化 + USD 數值的供給 |
+| `sol.token-market-caps.processed` | `TokenMarketCapEvent` | `solana/token_market_cap_event.proto` | 市值（流通量 × 價格） |
+| `sol.token-holdings` | `TokenHoldingEvent` | `solana/token_holding_event.proto` | 持幣人數、Top-N 集中度 |
+| `sol.trade-stats` | `TradeStatEvent` | `solana/trade_stat_event.proto` | 成交筆數、成交量、獨立買家 / 賣家 |
+
+### 餘額
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.balances` | `BalanceEvents` | `solana/balance_event.proto` | 每個賬戶的原始餘額變化事件 |
+| `sol.balances.processed` | `BalanceEvents` | `solana/balance_event.proto` | 附帶 USD + SOL 價值的餘額事件 |
+
+### DEX 池
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.dex.pools` | `DexPoolEvents` | `solana/dex_pool_event.proto` | 池建立 / 更新 / sync 事件（含 CLMM tick） |
+| `sol.dex.pools.processed` | `DexPoolEvents` | `solana/dex_pool_event.proto` | 附帶 USD + SOL 流動性與費率檔的池事件 |
+
+### 轉賬
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.transfers` | `TransferEvents` | `solana/transfer_event.proto` | 所有 SPL + 原生轉賬，包含程式呼叫的轉賬 |
+| `sol.transfers.processed` | `TransferProcessedEvents` | `solana/transfer_processed_event.proto` | 附帶 slot 時價格 + USD 數值的轉賬 |
+
+### K 線
+
+| Topic | Proto 訊息 | Schema 檔案 | 描述 |
+|-------|---------------|-------------|-------------|
+| `sol.candlesticks` | `CandlestickEvents` | `candlestick.proto` | 多解析度預聚合的 OHLC |
+
+## 消費者示例
+
+```python
+from confluent_kafka import Consumer
+from streaming_protobuf.solana.trade_event_pb2 import TradeEvents
+
+consumer = Consumer({
+    "bootstrap.servers": "kafka.chainstream.io:9093",
+    "security.protocol": "SASL_SSL",
+    "sasl.mechanism": "SCRAM-SHA-512",
+    "sasl.username": "<your-username>",
+    "sasl.password": "<your-password>",
+    "group.id": "my-consumer",
+    "auto.offset.reset": "latest",
+})
+consumer.subscribe(["sol.dex.trades.processed"])
+
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None or msg.error():
+        continue
+    events = TradeEvents.FromString(msg.value())
+    for trade in events.Trades:
+        print(trade)
+```
+
+Go 與 JavaScript 等效示例見 [Solana Streams 指南](/zh-Hant/docs/access-methods/kafka-streams/solana-streams)。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="EVM Kafka Topics" icon="ethereum" href="/zh-Hant/api-reference/kafka-topics/evm">
+    Ethereum、BSC、Base、Polygon 等鏈的 topic 列表
+  </Card>
+  <Card title="Tron Kafka Topics" icon="bolt" href="/zh-Hant/api-reference/kafka-topics/tron">
+    Tron 的 topic 列表
+  </Card>
+  <Card title="Kafka Streams 總覽" icon="server" href="/zh-Hant/docs/access-methods/kafka-streams/overview">
+    連線、鑑權、分割槽模型
+  </Card>
+  <Card title="Solana Streams 指南" icon="book" href="/zh-Hant/docs/access-methods/kafka-streams/solana-streams">
+    欄位定義與消費者示例
+  </Card>
+</CardGroup>

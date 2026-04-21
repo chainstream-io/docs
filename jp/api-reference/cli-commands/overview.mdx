@@ -1,9 +1,159 @@
 ---
 title: "CLI コマンドリファレンス"
-description: "Full list of chainstream CLI commands, flags and output formats."
+description: "chainstream CLI の全コマンド、フラグ、出力形式一覧。"
+icon: "terminal"
 ---
 
-<Note>
-  This page is part of the **Guides v3** restructure. Content is being migrated
-  — check back soon or open an issue if you need this sooner.
-</Note>
+`chainstream` CLI は、すべてのデータプロダクト、GraphQL キューブ、DeFi プリミティブを単一のバイナリから公開します。このページは正式なコマンドリファレンスです — インストールや使い方の解説は [アクセス方法 → CLI](/jp/docs/access-methods/cli) を参照してください。
+
+## インストール
+
+```bash
+# グローバルインストール（インタラクティブ利用推奨）
+npm install -g @chainstream-io/cli
+
+# インストール不要・常に最新（エージェントや CI 推奨）
+npx @chainstream-io/cli <command>
+```
+
+どちらの呼び出し方でもこのリファレンスに掲載のコマンドは同様に動作します。以下の説明では短縮形 `chainstream <cmd>` を使用しますが、これは `npx @chainstream-io/cli <cmd>` と等価です。
+
+## グローバルフラグ
+
+| フラグ | 目的 |
+|------|---------|
+| `--version` | CLI のバージョンを表示して終了 |
+| `--json` | 単一行の機械可読 JSON を出力（既定出力は整形済み JSON） |
+| `--help` | 現在のコマンドまたはグループのヘルプを表示 |
+
+## 環境変数
+
+| 変数 | 目的 | 既定値 |
+|----------|---------|---------|
+| `CHAINSTREAM_API_KEY` | `config.json` の代わりに使用する API キー | 未設定 |
+| `CHAINSTREAM_API_URL` | REST ベース URL を上書き | `https://api.chainstream.io` |
+| `CHAINSTREAM_AUTH_URL` | Auth サービス URL を上書き | 本番既定値 |
+| `CHAINSTREAM_GRAPHQL_URL` | GraphQL エンドポイントを上書き | `https://graphql.chainstream.io/graphql` |
+| `SOLANA_RPC_URL` | ウォレット／残高読み取り用の Solana RPC を上書き | パブリック RPC |
+| `BASE_RPC_URL` | Base RPC を上書き | パブリック RPC |
+
+設定は `~/.config/chainstream/config.json` に保存され、P-256 ウォレットキーは `~/.config/chainstream/keys/` に保存されます。`chainstream logout` はウォレット設定をクリアしますがキーは残します。
+
+## 認証コマンド（トップレベル）
+
+以下のコマンドはプログラムのルートに登録されています（サブグループなし）。
+
+| コマンド | 目的 | 引数／オプション |
+|---------|---------|---------------------|
+| `login` | TEE バックエンドのウォレットを作成（既定）、またはメール OTP フローを開始。初回ログイン時に **nano trial**（50K CU、30 日間）を自動付与 | `[email]`; `--key`; `--email` |
+| `verify` | `login --email` で開始したメール OTP ログインを完了 | `--otp-id`; `--code`; `--email` |
+| `logout` | セッションをクリア（キーはディスクに残す） | — |
+| `bind-email` | 既存ウォレットにメールを紐づけ | `[email]` |
+| `bind-email-verify` | メール紐づけの OTP フローを非対話で完了 | `--otp-id`; `--code`; `--email` |
+
+## `token` — トークン情報と分析
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `search` | キーワードでトークンを検索 | `--keyword`（必須）; `--chain`（必須）; `--limit` |
+| `info` | トークンの詳細を取得 | `--chain`; `--address` |
+| `security` | セキュリティレポート（honeypot、mint authority、freeze authority など） | `--chain`; `--address` |
+| `holders` | 上位保有者 | `--chain`; `--address`; `--limit` |
+| `candles` | OHLCV ローソク足 | `--chain`; `--address`; `--resolution`; `--from`; `--to`; `--limit` |
+| `pools` | トークンの流動性プール | `--chain`; `--address` |
+
+## `market` — マーケットデータとディスカバリ
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `trending` | ウィンドウ別のホット／トレンドトークン | `--chain`; `--duration`; `--limit` |
+| `new` | 新規作成されたトークン | `--chain`; `--limit` |
+| `trades` | 直近の取引（トークンでフィルタ可） | `--chain`; `--token`; `--limit` |
+
+## `wallet` — ウォレット分析、管理、署名
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `sign` | ホスト内ウォレットでシリアライズ済みトランザクションに署名 | `--chain`; `--tx` |
+| `profile` | PnL ＋純資産＋トップ保有を 1 回で取得 | `--chain`; `--address` |
+| `pnl` | PnL 詳細 | `--chain`; `--address` |
+| `holdings` | トークン残高 | `--chain`; `--address`; `--limit` |
+| `activity` | 送受信履歴 | `--chain`; `--address`; `--limit` |
+| `address` | 現在のウォレットアドレスを表示 | — |
+| `balance` | ネイティブ＋ USDC 残高（1 リクエスト） | `--chain`（`sol` \| `base`） |
+| `set-raw` | 生の秘密鍵をインポート（開発／テストのみ） | `--chain`（`base` \| `sol`） |
+| `link` | ウォレットアドレスをサブスクリプションにリンク | `--chain`（`evm` \| `solana`） |
+| `pricing` | 利用可能な x402 プランと料金を一覧表示 | — |
+
+## `dex` — DEX ルート、スワップ、トークン作成
+
+すべてのコマンドは**未署名**トランザクションをサーバー側で構築して返します。署名はホストのウォレットで行います。
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `route` | アグリゲートルート＋未署名スワップトランザクション | `--chain`; `--from`; `--input-token`; `--output-token`; `--amount`; `--slippage`; `--dex`; `--recipient`; `--anti-mev`; `--gas-price`; `--gas-limit`; `--max-fee-per-gas`; `--max-priority-fee-per-gas` |
+| `swap` | 未署名のスワップトランザクション（直接、アグリゲートなし） | `--chain`; `--from`; `--input-token`; `--output-token`; `--amount`; `--slippage`; `--dex` |
+| `create` | 未署名の launchpad トークン作成トランザクション | `--chain`; `--from`; `--name`; `--symbol`; `--dex`; `--uri`; `--image` |
+
+## `tx` — ブロードキャストとガス
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `send` | 署名済みトランザクションをブロードキャスト | `--chain`; `--signed-tx`; `--submit-type`; `--anti-mev` |
+| `gas-price` | 現在のガス価格（EVM のみ） | `--chain`（`eth` \| `bsc`） |
+| `estimate-gas` | EVM 呼び出しのガスリミットを見積もり | `--chain`; `--from`; `--to`; `--data`; `--value` |
+
+## `job` — 非同期ジョブのポーリング
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `status` | 長時間実行ジョブのステータスを確認 | `--id`; `--wait`; `--timeout` |
+
+## `graphql` — GraphQL スキーマとクエリ
+
+詳しい使い方は [アクセス方法 → CLI → GraphQL サブコマンド](/jp/docs/access-methods/cli#graphql-subcommand) および [chainstream-graphql](/jp/docs/ai-agents/agent-skills/chainstream-graphql) の Agent Skill を参照してください。
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `schema` | スキーマ（キューブ、型、フィールド）を探索 | `--summary`; `--type <cube>`; `--full`; `--refresh` |
+| `query` | GraphQL クエリを実行 | `--query <gql>`; `--file <path>`; `--var <json>` |
+
+## `plan` — サブスクリプションと x402 オートペイ
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `status` | 現在のプラン、残りクォータ、使用量 | `--chain`; `--address` |
+| `purchase` | x402 / MPP でプランを購入（返却された API キーを `config.json` に自動保存） | `--plan` |
+
+## `config` — ローカル設定
+
+| サブコマンド | 目的 | オプション |
+|-----------|---------|---------|
+| `set` | 設定値を設定 | `--key`（`apiKey` \| `baseUrl` \| `walletChain`）; `--value` |
+| `get` | 現在の設定を表示 | `--key`（省略可） |
+| `auth` | 現在の認証状態を表示 | — |
+
+## 終了挙動
+
+- `0` — 成功（または空の結果）
+- `1` — ユーザー向けエラー。`stdout` に JSON ペイロードを出力（`--json` オフの場合は整形されたエラーを出力）
+- 認証失敗（`401`）、支払い必要（`402`）、ネットワークエラーの場合は非ゼロで終了
+
+データ／GraphQL コマンドで 402 が返った場合、CLI は `wallet pricing` と `plan purchase` への案内を表示します。`plan purchase` 自体は x402 オートペイを透過的に処理します。
+
+## 次へ
+
+<CardGroup cols={2}>
+  <Card title="アクセス方法 → CLI" icon="terminal" href="/jp/docs/access-methods/cli">
+    解説：インストール、認証、最初のコマンド、GraphQL サブコマンド。
+  </Card>
+  <Card title="Agent Skills" icon="brain" href="/jp/docs/ai-agents/agent-skills/introduction">
+    AI エージェントが CLI をどう駆動すべきか。
+  </Card>
+  <Card title="x402 ペイメント" icon="credit-card" href="/jp/docs/platform/billing-payments/x402-payments">
+    `plan purchase` と都度の 402 ハンドリングのしくみ。
+  </Card>
+  <Card title="GraphQL" icon="diagram-project" href="/jp/docs/access-methods/graphql">
+    GraphQL 表面のエンドポイント、スキーマ、認証。
+  </Card>
+</CardGroup>

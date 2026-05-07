@@ -11,7 +11,7 @@ ChainStream GraphQL は 25 個の Cube を 3 つの **Chain Group（チェーン
 ```graphql
 type ChainStream {
   EVM(network: Network!, dataset: Dataset, aggregates: Aggregates) { ... }
-  Solana(dataset: Dataset, aggregates: Aggregates) { ... }
+  Solana(network: SolanaNetwork, dataset: Dataset, aggregates: Aggregates) { ... }
   Trading(dataset: Dataset, aggregates: Aggregates) { ... }
 }
 ```
@@ -74,7 +74,7 @@ query {
 
 ## Solana
 
-**Solana** グループには Solana 向けの Cube が含まれます。ネットワークは暗黙的に `sol` のため、`network` 引数は不要です。
+**Solana** グループには Solana 向けの Cube が含まれます。`network` 引数が利用可能で、値は `solana` です。省略可能で、デフォルトは `solana` です。
 
 ### Cubes
 
@@ -189,7 +189,7 @@ query {
 
 | 項目 | EVM | Solana | Trading |
 |:--------|:----|:-------|:--------|
-| **`network` 引数** | 必須（`eth`、`bsc`、`polygon`） | 不要（暗黙的に `sol`） | 不要（クロスチェーン） |
+| **`network` 引数** | 必須（`eth`、`bsc`、`polygon`） | 任意（`solana`、デフォルト `solana`） | 不要（クロスチェーン） |
 | **固有の Cube** | Events、Calls、MinerRewards、Uncles、DEXPoolSlippages、Prediction* | Instructions、InstructionBalanceUpdates、Rewards、DEXOrders | Pairs、Tokens |
 | **データ粒度** | イベント単位（DWD）＋集計（DWM/DWS） | イベント単位＋命令レベル | 事前集計（DWM） |
 | **`dataset` 対応** | あり（ほとんどの Cube） | あり（ほとんどの Cube） | あり |

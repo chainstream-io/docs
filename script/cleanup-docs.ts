@@ -10,10 +10,11 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 // 需要扫描的目录
 const SCAN_DIRS = ['en', 'cn', 'jp', 'ko', 'zh-Hant'];
 
-// 需要排除的目录（这些目录下的文件不会被检查）
+// 需要排除的目录（这些目录下的文件不会被检查，也不会被清理空目录）
 const EXCLUDED_DIRS = [
   'node_modules',
   '.git',
+  '.claude',
   'script',
   'images',
   'logo',
@@ -34,28 +35,14 @@ function extractReferencedPages(obj: any, pages: Set<string>): void {
       extractReferencedPages(item, pages);
     }
   } else if (typeof obj === 'object' && obj !== null) {
-    // 如果有 pages 属性，递归处理
-    if (obj.pages) {
-      extractReferencedPages(obj.pages, pages);
-    }
-    // 如果有 groups 属性，递归处理
-    if (obj.groups) {
-      extractReferencedPages(obj.groups, pages);
-    }
-    // 如果有 tabs 属性，递归处理
-    if (obj.tabs) {
-      extractReferencedPages(obj.tabs, pages);
-    }
-    // 如果有 languages 属性，递归处理
-    if (obj.languages) {
-      extractReferencedPages(obj.languages, pages);
-    }
-    // 如果有 navigation 属性，递归处理
-    if (obj.navigation) {
-      extractReferencedPages(obj.navigation, pages);
+    for (const key of Object.keys(obj)) {
+      // 递归遍历所有已知的结构化容器
+      if (['pages', 'groups', 'tabs', 'languages', 'navigation', 'navbar', 'footer', 'redirects', 'links', 'items', 'source', 'destination', 'href'].includes(key)) {
+        extractReferencedPages(obj[key], pages);
+      }
     }
   } else if (typeof obj === 'string') {
-    // 这是一个页面路径
+    // 这是一个页面路径（或 href 目标、redirect source/destination）
     pages.add(obj);
   }
 }
@@ -118,10 +105,11 @@ async function main() {
     const referencedPages = new Set<string>();
     extractReferencedPages(docsJson, referencedPages);
     
-    // 转换为带 .mdx 后缀的路径集合
+    // 转换为带 .mdx 后缀的路径集合（去掉前导 /，统一格式）
     const referencedFiles = new Set<string>();
     for (const page of referencedPages) {
-      referencedFiles.add(`${page}.mdx`);
+      const normalized = page.replace(/^\/+/, '');
+      referencedFiles.add(`${normalized}.mdx`);
     }
     
     console.log(`📄 docs.json 中引用了 ${referencedFiles.size} 个页面\n`);

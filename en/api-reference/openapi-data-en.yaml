@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Data Services API
-  description: Data Services API
+  title: Services API
+  description: Services API
   contact:
     name: AI
     email: ai@sx.ai
@@ -2373,6 +2373,14 @@ paths:
                   type: object
                   description: Token market data
                   properties:
+                    athMarketCapInUsd:
+                      type:
+                        - string
+                        - 'null'
+                      description: |-
+                        ENTITY.TOKEN_MARKET_DATA.ATH_MARKET_CAP_IN_USD
+                        All-time-high market cap in USD (max observed since token creation).
+                      example: '9500000.00'
                     bluechipHoldingsRatio:
                       type:
                         - string
@@ -3056,7 +3064,7 @@ paths:
                     periods:
                       type: object
                       description: |-
-                        Trade statistics grouped by time period (1m, 5m, 15m, 30m, 1h, 4h, 24h).
+                        Trade statistics grouped by time period (1m, 5m, 15m, 30m, 1h, 4h, 6h, 24h).
                         Each period contains full OHLCV data, trade counts, and previous-period comparisons.
                         See `TokenTradeStatPeriod` schema for all fields.
                       additionalProperties:
@@ -3064,45 +3072,45 @@ paths:
                       propertyNames:
                         type: string
                       example:
-                        24h:
-                          buyVolumeInUsd: '45000.00'
-                          buyers: '320'
-                          buys: '1520'
+                        6h:
+                          buyVolumeInUsd: '12000.00'
+                          buyers: '120'
+                          buys: '420'
                           closeInUsd: '0.15600000'
                           currentLiquidityInUsd: '250000.00'
                           highInUsd: '0.15900000'
-                          lowInUsd: '0.15000000'
-                          openInUsd: '0.15000000'
-                          priceChangeRatioInUsd: '0.04000000'
-                          sellVolumeInUsd: '36000.00'
-                          sellers: '210'
-                          sells: '980'
-                          totalVolumeInUsd: '81000.00'
-                          traders: '530'
-                          trades: '2500'
+                          lowInUsd: '0.15100000'
+                          openInUsd: '0.15200000'
+                          priceChangeRatioInUsd: '0.02631579'
+                          sellVolumeInUsd: '9800.00'
+                          sellers: '95'
+                          sells: '360'
+                          totalVolumeInUsd: '21800.00'
+                          traders: '215'
+                          trades: '780'
                 propertyNames:
                   type: string
               example:
                 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN:
                   address: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
                   periods:
-                    24h:
-                      buyVolume: '15000000.12345678'
-                      buyVolumeInUsd: '45000.00'
-                      buyers: '320'
-                      buys: '1520'
+                    6h:
+                      buyVolume: '5000000.12345678'
+                      buyVolumeInUsd: '12000.00'
+                      buyers: '120'
+                      buys: '420'
                       closeInUsd: '0.15600000'
                       highInUsd: '0.15900000'
-                      lowInUsd: '0.15000000'
-                      openInUsd: '0.15000000'
-                      priceChangeRatioInUsd: '0.04000000'
-                      sellVolume: '12000000.98765432'
-                      sellVolumeInUsd: '36000.00'
-                      sellers: '210'
-                      sells: '980'
-                      totalVolumeInUsd: '81000.00'
-                      traders: '530'
-                      trades: '2500'
+                      lowInUsd: '0.15100000'
+                      openInUsd: '0.15200000'
+                      priceChangeRatioInUsd: '0.02631579'
+                      sellVolume: '4200000.98765432'
+                      sellVolumeInUsd: '9800.00'
+                      sellers: '95'
+                      sells: '360'
+                      totalVolumeInUsd: '21800.00'
+                      traders: '215'
+                      trades: '780'
   /v2/token/{chain}/{tokenAddress}:
     get:
       tags:
@@ -3717,13 +3725,14 @@ paths:
           required: true
           schema:
             type: string
-          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+          example: 6pdxGxyoZhFQDwkL5jDn8QHF66kAAxhR9Yok911kpump
       responses:
         '200':
-          description: ''
+          description: Token security data
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: '#/components/schemas/TokenSecurityResponse'
   /v2/token/{chain}/{tokenAddress}/stats:
     get:
       tags:
@@ -4204,6 +4213,15 @@ paths:
           schema:
             $ref: '#/components/schemas/ActivityType'
           example: BUY
+        - name: sortBy
+          in: query
+          description: 'DTO.TRADE.SORT_BY Sort by: timestamp (default) | totalUsd'
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ActivitySortBy'
+            default: timestamp
+          example: timestamp
       responses:
         '200':
           description: Successful response
@@ -4442,6 +4460,15 @@ paths:
           schema:
             type: string
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p
+        - name: resolution
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/PnlResolution'
+            default: 1d
+          example: 1d
       responses:
         '200':
           description: Successful response
@@ -4833,6 +4860,15 @@ paths:
           schema:
             type: string
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        - name: resolution
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/PnlResolution'
+            default: 1d
+          example: 1d
       responses:
         '200':
           description: Successful response
@@ -4887,6 +4923,13 @@ paths:
               - $ref: '#/components/schemas/PageDirection'
             default: next
           example: next
+        - name: resolution
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          required: true
+          schema:
+            $ref: '#/components/schemas/PnlResolution'
+          example: 1d
       responses:
         '200':
           description: Successful response
@@ -5354,6 +5397,12 @@ paths:
         - api_key_auth: []
 components:
   schemas:
+    ActivitySortBy:
+      type: string
+      description: Sort field for activities query
+      enum:
+        - timestamp
+        - totalUsd
     ActivityType:
       type: string
       description: Activity type (extends TradeType)
@@ -6295,6 +6344,169 @@ components:
         value:
           type: string
           description: Value to compare
+    GoPlusSecurityInfo:
+      type: object
+      required:
+        - available
+      properties:
+        available:
+          type: boolean
+          description: Whether data is available from this source
+          example: true
+        buyTax:
+          type:
+            - string
+            - 'null'
+          description: Buy tax rate
+        chainSupported:
+          type:
+            - boolean
+            - 'null'
+          description: Whether this source supports the token chain
+          example: true
+        holderCount:
+          type:
+            - string
+            - 'null'
+          description: Number of token holders
+        isBlacklisted:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract has blacklist
+        isFreezable:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token accounts can be frozen
+        isHoneypot:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is a honeypot
+        isMintable:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is mintable
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isProxy:
+          type:
+            - boolean
+            - 'null'
+          description: Whether it is a proxy contract
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract ownership is renounced
+        lastRefreshedAt:
+          type:
+            - string
+            - 'null'
+          description: Last refresh timestamp
+          example: 2026-05-13T10:00:00
+        lpHolderCount:
+          type:
+            - string
+            - 'null'
+          description: Number of LP holders
+        ownerAddress:
+          type:
+            - string
+            - 'null'
+          description: Contract owner address
+        raw:
+          description: Raw security data from the source
+        sellTax:
+          type:
+            - string
+            - 'null'
+          description: Sell tax rate
+        totalSupply:
+          type:
+            - string
+            - 'null'
+          description: Total token supply
+    HoneypotIsSecurityInfo:
+      type: object
+      required:
+        - available
+      properties:
+        available:
+          type: boolean
+          description: Whether data is available from this source
+          example: true
+        averageTax:
+          type:
+            - string
+            - 'null'
+          description: Average observed tax rate
+        buyTax:
+          type:
+            - string
+            - 'null'
+          description: Buy tax rate
+        canNotSell:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of holders that cannot sell
+        canSell:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of holders that can sell
+        chainSupported:
+          type:
+            - boolean
+            - 'null'
+          description: Whether this source supports the token chain
+          example: true
+        highTax:
+          type:
+            - string
+            - 'null'
+          description: Highest observed tax rate
+        honeypotResult:
+          type:
+            - string
+            - 'null'
+          description: Honeypot.is verdict
+        isHoneypot:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is a honeypot
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract ownership is renounced
+        lastRefreshedAt:
+          type:
+            - string
+            - 'null'
+          description: Last refresh timestamp
+          example: 2026-05-13T10:00:00
+        raw:
+          description: Raw security data from the source
+        sellTax:
+          type:
+            - string
+            - 'null'
+          description: Sell tax rate
     HotTokenDuration:
       type: string
       description: Hot token ranking duration
@@ -6879,11 +7091,17 @@ components:
         - chain
         - name
         - symbol
+        - isActive
       properties:
         amount:
           type: string
           description: Token holding amount
           example: '1000.50'
+        avgCostUsd:
+          type:
+            - string
+            - 'null'
+          description: Average cost per token in USD (balance_cost_avg_in_usd; sparse ~0.2% fill rate)
         chain:
           type: string
           description: Blockchain network identifier
@@ -6893,6 +7111,15 @@ components:
           format: int32
           description: Token decimal places
           example: 6
+        isActive:
+          type: boolean
+          description: Whether the wallet currently holds a non-zero balance
+        lastActiveAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Last active timestamp (ms since epoch)
         logoUri:
           type:
             - string
@@ -6911,6 +7138,11 @@ components:
           type: string
           description: Token price in USD
           example: '1.0001'
+        realizedPnlInUsd:
+          type:
+            - string
+            - 'null'
+          description: Realized PnL in USD (all-time cumulative)
         symbol:
           type: string
           description: Token ticker symbol
@@ -6919,6 +7151,11 @@ components:
           type: string
           description: Token contract address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        unrealizedPnlInUsd:
+          type:
+            - string
+            - 'null'
+          description: Unrealized PnL in USD (current open position)
         valueInNative:
           type: string
           description: Holding value in native token
@@ -6927,6 +7164,11 @@ components:
           type: string
           description: Holding value in USD
           example: '1000.60'
+        walletTokenTags:
+          type: array
+          items:
+            type: string
+          description: Trader classification tags
     NetWorthByTokensResult:
       type: object
       description: Wallet net-worth by tokens result (mirrors TS WalletNetWorthByTokensResult).
@@ -7423,11 +7665,17 @@ components:
               - chain
               - name
               - symbol
+              - isActive
             properties:
               amount:
                 type: string
                 description: Token holding amount
                 example: '1000.50'
+              avgCostUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Average cost per token in USD (balance_cost_avg_in_usd; sparse ~0.2% fill rate)
               chain:
                 type: string
                 description: Blockchain network identifier
@@ -7437,6 +7685,15 @@ components:
                 format: int32
                 description: Token decimal places
                 example: 6
+              isActive:
+                type: boolean
+                description: Whether the wallet currently holds a non-zero balance
+              lastActiveAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Last active timestamp (ms since epoch)
               logoUri:
                 type:
                   - string
@@ -7455,6 +7712,11 @@ components:
                 type: string
                 description: Token price in USD
                 example: '1.0001'
+              realizedPnlInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Realized PnL in USD (all-time cumulative)
               symbol:
                 type: string
                 description: Token ticker symbol
@@ -7463,6 +7725,11 @@ components:
                 type: string
                 description: Token contract address
                 example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+              unrealizedPnlInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Unrealized PnL in USD (current open position)
               valueInNative:
                 type: string
                 description: Holding value in native token
@@ -7471,6 +7738,11 @@ components:
                 type: string
                 description: Holding value in USD
                 example: '1000.60'
+              walletTokenTags:
+                type: array
+                items:
+                  type: string
+                description: Trader classification tags
           description: Page data
         endCursor:
           type:
@@ -7678,10 +7950,27 @@ components:
                 type: string
                 description: Token holding value in USD
                 example: '1000000000000000000'
+              lastActiveAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Last active timestamp (ms since epoch)
               percentage:
                 type: string
                 description: Percentage of total supply held
                 example: '100'
+              startHoldingAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Timestamp when holder first acquired the token (ms since epoch)
+              tags:
+                type: array
+                items:
+                  type: string
+                description: Trader classification tags (e.g. "kol", "smart", "sniper")
               walletAddress:
                 type: string
                 description: Holder wallet address
@@ -8266,6 +8555,13 @@ components:
                   - 'null'
                 description: DEX protocol family
                 example: OrcaWhirpool
+              gasFee:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Gas fee (transaction fee in lamports / wei)
+                example: 5000
               poolAddress:
                 type: string
                 description: Pool address
@@ -8350,6 +8646,11 @@ components:
                 type: string
                 description: Token symbol
                 example: TRUMP
+              traderTags:
+                type: array
+                items:
+                  type: string
+                description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "bundle", "bluechip")
               transactionSignature:
                 type: string
                 description: Transaction signature
@@ -8544,6 +8845,7 @@ components:
         - totalProfitInUsd
         - totalProfitRatio
         - avgProfitPerTradeInUsd
+        - isClosed
       properties:
         avgBuyPriceInUsd:
           type: string
@@ -8582,12 +8884,33 @@ components:
           format: int32
           description: Token decimal places
           example: 6
+        firstBuyAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp of first buy (ms since epoch)
+        isClosed:
+          type: boolean
+          description: Whether the position is fully closed (balance == 0)
+        lastSellAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp of last sell (ms since epoch)
         logoUri:
           type:
             - string
             - 'null'
           description: Token logo URI
           example: https://s1.chainstream.io/tokens/images/example.webp
+        losses:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.LOSSES
+          example: '5'
         name:
           type: string
           description: Token display name
@@ -8624,6 +8947,12 @@ components:
           type: string
           description: Token contract address
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p
+        totalCostInUsd:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.TOTAL_COST_IN_USD
+          example: '48469.17'
         totalProfitInUsd:
           type: string
           description: Total profit (realized + unrealized) in USD
@@ -8648,6 +8977,12 @@ components:
           type: string
           description: Wallet address
           example: 54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy
+        wins:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.WINS
+          example: '12'
     PnlDetailSummary:
       type: object
       description: Aggregated PnL summary across all items (mirrors TS PnlDetailSummaryDTO).
@@ -9106,6 +9441,82 @@ components:
         - h24VolumeInUsd
         - h24Transactions
         - tokenCreatedAt
+    SerializedSecurityInfo:
+      type: object
+      required:
+        - available
+      properties:
+        available:
+          type: boolean
+          description: Whether data is available from this source
+          example: true
+        chainSupported:
+          type:
+            - boolean
+            - 'null'
+          description: Whether this source supports the token chain
+          example: true
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isProxy:
+          type:
+            - boolean
+            - 'null'
+          description: Whether it is a proxy contract
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract ownership is renounced
+        isSafe:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is safe (Serialized Audit verdict)
+        lastRefreshedAt:
+          type:
+            - string
+            - 'null'
+          description: Last refresh timestamp
+          example: 2026-05-13T10:00:00
+        launchpadName:
+          type:
+            - string
+            - 'null'
+          description: Launchpad name
+        ownerAddress:
+          type:
+            - string
+            - 'null'
+          description: Contract owner address
+        raw:
+          description: Raw security data from the source
+        sourceType:
+          type:
+            - string
+            - 'null'
+          description: Contract source type (verified/decompiled/none)
+        vulnCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Total number of vulnerabilities
+        vulnCriticalCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of critical vulnerabilities
+        vulnMitigatedCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of mitigated vulnerabilities
     SortDirection:
       type: string
       description: 'Sort direction (case-insensitive: accepts "asc"/"ASC"/"Asc" etc.)'
@@ -9597,6 +10008,7 @@ components:
         - stats.volumesInUsd4h
         - stats.volumesInUsd24h
         - tokenCreatedAt
+        - marketData.athMarketCapInUsd
     TokenFilter:
       type: string
       enum:
@@ -9631,10 +10043,27 @@ components:
           type: string
           description: Token holding value in USD
           example: '1000000000000000000'
+        lastActiveAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Last active timestamp (ms since epoch)
         percentage:
           type: string
           description: Percentage of total supply held
           example: '100'
+        startHoldingAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp when holder first acquired the token (ms since epoch)
+        tags:
+          type: array
+          items:
+            type: string
+          description: Trader classification tags (e.g. "kol", "smart", "sniper")
         walletAddress:
           type: string
           description: Holder wallet address
@@ -9767,6 +10196,14 @@ components:
       type: object
       description: Token market data
       properties:
+        athMarketCapInUsd:
+          type:
+            - string
+            - 'null'
+          description: |-
+            ENTITY.TOKEN_MARKET_DATA.ATH_MARKET_CAP_IN_USD
+            All-time-high market cap in USD (max observed since token creation).
+          example: '9500000.00'
         bluechipHoldingsRatio:
           type:
             - string
@@ -10257,6 +10694,73 @@ components:
           format: int64
           description: Timestamp
           example: 1754055151000
+    TokenSecurityResponse:
+      type: object
+      required:
+        - chain
+        - address
+      properties:
+        address:
+          type: string
+          description: Token contract address
+          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+        chain:
+          type: string
+          description: Chain name
+          example: sol
+        goplus:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/GoPlusSecurityInfo'
+              description: GoPlus security data
+        honeypot:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/HoneypotIsSecurityInfo'
+              description: Honeypot.is security data
+        serialized:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/SerializedSecurityInfo'
+              description: Serialized Audit security data
+      example:
+        address: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+        chain: sol
+        goplus:
+          available: true
+          buyTax: '0'
+          chainSupported: true
+          holderCount: '6620826'
+          isHoneypot: false
+          isOpenSource: true
+          isRenounced: false
+          lastRefreshedAt: 2026-05-13T10:00:00
+          raw: {}
+          sellTax: '0'
+          totalSupply: '1000000000'
+        honeypot:
+          available: true
+          averageTax: '0.1'
+          buyTax: '0'
+          canNotSell: 0
+          canSell: 100
+          chainSupported: true
+          honeypotResult: clean
+          isHoneypot: false
+          lastRefreshedAt: 2026-05-13T09:55:00
+          raw: {}
+          sellTax: '0'
+        serialized:
+          available: true
+          chainSupported: true
+          isOpenSource: true
+          isSafe: true
+          lastRefreshedAt: 2026-05-13T10:05:00
+          raw: {}
+          sourceType: verified
+          vulnCount: 2
+          vulnCriticalCount: 0
+          vulnMitigatedCount: 2
     TokenSocialMedias:
       type: object
       description: Token social media links
@@ -10353,7 +10857,7 @@ components:
         periods:
           type: object
           description: |-
-            Trade statistics grouped by time period (1m, 5m, 15m, 30m, 1h, 4h, 24h).
+            Trade statistics grouped by time period (1m, 5m, 15m, 30m, 1h, 4h, 6h, 24h).
             Each period contains full OHLCV data, trade counts, and previous-period comparisons.
             See `TokenTradeStatPeriod` schema for all fields.
           additionalProperties:
@@ -10361,22 +10865,22 @@ components:
           propertyNames:
             type: string
           example:
-            24h:
-              buyVolumeInUsd: '45000.00'
-              buyers: '320'
-              buys: '1520'
+            6h:
+              buyVolumeInUsd: '12000.00'
+              buyers: '120'
+              buys: '420'
               closeInUsd: '0.15600000'
               currentLiquidityInUsd: '250000.00'
               highInUsd: '0.15900000'
-              lowInUsd: '0.15000000'
-              openInUsd: '0.15000000'
-              priceChangeRatioInUsd: '0.04000000'
-              sellVolumeInUsd: '36000.00'
-              sellers: '210'
-              sells: '980'
-              totalVolumeInUsd: '81000.00'
-              traders: '530'
-              trades: '2500'
+              lowInUsd: '0.15100000'
+              openInUsd: '0.15200000'
+              priceChangeRatioInUsd: '0.02631579'
+              sellVolumeInUsd: '9800.00'
+              sellers: '95'
+              sells: '360'
+              totalVolumeInUsd: '21800.00'
+              traders: '215'
+              trades: '780'
     TokenTradeStatPeriod:
       type: object
       description: Single time window trade statistics period
@@ -10892,6 +11396,13 @@ components:
             - 'null'
           description: DEX protocol family
           example: OrcaWhirpool
+        gasFee:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Gas fee (transaction fee in lamports / wei)
+          example: 5000
         poolAddress:
           type: string
           description: Pool address
@@ -10976,6 +11487,11 @@ components:
           type: string
           description: Token symbol
           example: TRUMP
+        traderTags:
+          type: array
+          items:
+            type: string
+          description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "bundle", "bluechip")
         transactionSignature:
           type: string
           description: Transaction signature

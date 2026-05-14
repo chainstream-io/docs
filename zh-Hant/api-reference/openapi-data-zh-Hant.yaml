@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Data Services API
-  description: Data Services API
+  title: Services API
+  description: Services API
   contact:
     name: AI
     email: ai@sx.ai
@@ -2371,8 +2371,16 @@ paths:
                 type: object
                 additionalProperties:
                   type: object
-                  description: 代幣市場資料
+                  description: Token market data
                   properties:
+                    athMarketCapInUsd:
+                      type:
+                        - string
+                        - 'null'
+                      description: |-
+                        ENTITY.TOKEN_MARKET_DATA.ATH_MARKET_CAP_IN_USD
+                        All-time-high market cap in USD (max observed since token creation).
+                      example: '9500000.00'
                     bluechipHoldingsRatio:
                       type:
                         - string
@@ -2696,7 +2704,7 @@ paths:
                 type: object
                 additionalProperties:
                   type: object
-                  description: 代幣元資料
+                  description: Token metadata
                   required:
                     - address
                     - chain
@@ -2858,7 +2866,7 @@ paths:
           example: desc
         - name: filterBy
           in: query
-          description: DTO.TOKEN.REQUEST.FILTER_BY（篩選條件的 JSON 陣列）
+          description: DTO.TOKEN.REQUEST.FILTER_BY (JSON array of filter conditions)
           required: false
           schema:
             type: string
@@ -3044,7 +3052,7 @@ paths:
                 type: object
                 additionalProperties:
                   type: object
-                  description: 包含巢狀時間段資料的代幣統計
+                  description: Token statistics with nested time period data
                   required:
                     - address
                     - periods
@@ -3056,53 +3064,53 @@ paths:
                     periods:
                       type: object
                       description: |-
-                        依時間週期（1m、5m、15m、30m、1h、4h、24h）彙總的交易統計。
-                        每個週期包含完整 OHLCV 資料、交易筆數，以及與前一週期的比較。
-                        完整欄位請參見 `TokenTradeStatPeriod` schema。
+                        Trade statistics grouped by time period (1m, 5m, 15m, 30m, 1h, 4h, 6h, 24h).
+                        Each period contains full OHLCV data, trade counts, and previous-period comparisons.
+                        See `TokenTradeStatPeriod` schema for all fields.
                       additionalProperties:
                         $ref: '#/components/schemas/TokenTradeStatPeriod'
                       propertyNames:
                         type: string
                       example:
-                        24h:
-                          buyVolumeInUsd: '45000.00'
-                          buyers: '320'
-                          buys: '1520'
+                        6h:
+                          buyVolumeInUsd: '12000.00'
+                          buyers: '120'
+                          buys: '420'
                           closeInUsd: '0.15600000'
                           currentLiquidityInUsd: '250000.00'
                           highInUsd: '0.15900000'
-                          lowInUsd: '0.15000000'
-                          openInUsd: '0.15000000'
-                          priceChangeRatioInUsd: '0.04000000'
-                          sellVolumeInUsd: '36000.00'
-                          sellers: '210'
-                          sells: '980'
-                          totalVolumeInUsd: '81000.00'
-                          traders: '530'
-                          trades: '2500'
+                          lowInUsd: '0.15100000'
+                          openInUsd: '0.15200000'
+                          priceChangeRatioInUsd: '0.02631579'
+                          sellVolumeInUsd: '9800.00'
+                          sellers: '95'
+                          sells: '360'
+                          totalVolumeInUsd: '21800.00'
+                          traders: '215'
+                          trades: '780'
                 propertyNames:
                   type: string
               example:
                 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN:
                   address: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
                   periods:
-                    24h:
-                      buyVolume: '15000000.12345678'
-                      buyVolumeInUsd: '45000.00'
-                      buyers: '320'
-                      buys: '1520'
+                    6h:
+                      buyVolume: '5000000.12345678'
+                      buyVolumeInUsd: '12000.00'
+                      buyers: '120'
+                      buys: '420'
                       closeInUsd: '0.15600000'
                       highInUsd: '0.15900000'
-                      lowInUsd: '0.15000000'
-                      openInUsd: '0.15000000'
-                      priceChangeRatioInUsd: '0.04000000'
-                      sellVolume: '12000000.98765432'
-                      sellVolumeInUsd: '36000.00'
-                      sellers: '210'
-                      sells: '980'
-                      totalVolumeInUsd: '81000.00'
-                      traders: '530'
-                      trades: '2500'
+                      lowInUsd: '0.15100000'
+                      openInUsd: '0.15200000'
+                      priceChangeRatioInUsd: '0.02631579'
+                      sellVolume: '4200000.98765432'
+                      sellVolumeInUsd: '9800.00'
+                      sellers: '95'
+                      sells: '360'
+                      totalVolumeInUsd: '21800.00'
+                      traders: '215'
+                      trades: '780'
   /v2/token/{chain}/{tokenAddress}:
     get:
       tags:
@@ -3717,13 +3725,14 @@ paths:
           required: true
           schema:
             type: string
-          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+          example: 6pdxGxyoZhFQDwkL5jDn8QHF66kAAxhR9Yok911kpump
       responses:
         '200':
-          description: ''
+          description: 代幣安全數據
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: '#/components/schemas/TokenSecurityResponse'
   /v2/token/{chain}/{tokenAddress}/stats:
     get:
       tags:
@@ -4204,6 +4213,15 @@ paths:
           schema:
             $ref: '#/components/schemas/ActivityType'
           example: BUY
+        - name: sortBy
+          in: query
+          description: 'DTO.TRADE.SORT_BY Sort by: timestamp (default) | totalUsd'
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ActivitySortBy'
+            default: timestamp
+          example: timestamp
       responses:
         '200':
           description: 成功回應
@@ -4442,6 +4460,15 @@ paths:
           schema:
             type: string
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p
+        - name: resolution
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/PnlResolution'
+            default: 1d
+          example: 1d
       responses:
         '200':
           description: 成功回應
@@ -4653,7 +4680,7 @@ paths:
           example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
         - name: hours
           in: query
-          description: DTO.WALLET.NET_WORTH_CHART.HOURS（1-720，預設 24）
+          description: DTO.WALLET.NET_WORTH_CHART.HOURS (1-720, default 24)
           required: false
           schema:
             type: integer
@@ -4716,7 +4743,7 @@ paths:
           example: next
         - name: hours
           in: query
-          description: DTO.WALLET.NET_WORTH_DETAILS.HOURS（0=即時，1-720=歷史快照，預設 0）
+          description: DTO.WALLET.NET_WORTH_DETAILS.HOURS (0=realtime, 1-720=historical snapshot, default 0)
           required: false
           schema:
             type: integer
@@ -4833,6 +4860,15 @@ paths:
           schema:
             type: string
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        - name: resolution
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          required: false
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/PnlResolution'
+            default: 1d
+          example: 1d
       responses:
         '200':
           description: 成功回應
@@ -4887,6 +4923,13 @@ paths:
               - $ref: '#/components/schemas/PageDirection'
             default: next
           example: next
+        - name: resolution
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          required: true
+          schema:
+            $ref: '#/components/schemas/PnlResolution'
+          example: 1d
       responses:
         '200':
           description: 成功回應
@@ -5354,9 +5397,15 @@ paths:
         - api_key_auth: []
 components:
   schemas:
+    ActivitySortBy:
+      type: string
+      description: Sort field for activities query
+      enum:
+        - timestamp
+        - totalUsd
     ActivityType:
       type: string
-      description: 活動類型（擴充自 TradeType）
+      description: Activity type (extends TradeType)
       enum:
         - BUY
         - SELL
@@ -5369,19 +5418,19 @@ components:
         - RED_PACKET_REFUND
     BalanceChangeType:
       type: string
-      description: 餘額變動類型
+      description: Balance change type
       enum:
         - INCREASE
         - DECREASE
     BalanceTokenType:
       type: string
-      description: 餘額代幣類型
+      description: Balance token type
       enum:
         - SOL
         - SPL
     BalanceUpdate:
       type: object
-      description: 餘額更新記錄
+      description: Balance update record
       required:
         - blockHash
         - blockHeight
@@ -5471,7 +5520,7 @@ components:
           description: 代幣類型（SOL 為原生代幣，SPL 為代幣）
     Blockchain:
       type: object
-      description: 區塊鏈資訊
+      description: Blockchain information
       required:
         - symbol
         - name
@@ -5512,7 +5561,7 @@ components:
           example: 123
     BooleanResult:
       type: object
-      description: 布林結果回應
+      description: Boolean result response
       required:
         - result
       properties:
@@ -5535,7 +5584,7 @@ components:
             - So11111111111111111111111111111111111111112
     ChainSymbol:
       type: string
-      description: 支援的區塊鏈
+      description: Supported blockchain chains
       enum:
         - sol
         - eth
@@ -5570,7 +5619,7 @@ components:
           example: abc123
     ClaimRedPacketResponse:
       type: object
-      description: 領取紅包回應
+      description: Claim red packet response
       required:
         - txSerialize
       properties:
@@ -5638,7 +5687,7 @@ components:
           example: '1000000000'
     CreateRedPacketResponse:
       type: object
-      description: 建立紅包回應
+      description: Create red packet response
       required:
         - txSerialize
         - shareId
@@ -5653,7 +5702,7 @@ components:
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
     CreateWebhookRequest:
       type: object
-      description: 建立 Webhook 端點請求
+      description: Request to create a webhook endpoint
       required:
         - url
       properties:
@@ -5717,7 +5766,7 @@ components:
           example: https://example.com
     DevToken:
       type: object
-      description: '`get_dev_tokens` 回傳的 token 資訊 — 對應 TS `DevTokenDTO`。'
+      description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
       required:
         - address
         - metadata
@@ -5726,47 +5775,47 @@ components:
       properties:
         address:
           type: string
-          description: 代幣地址
+          description: Token address
           example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
         marketData:
           $ref: '#/components/schemas/TokenMarketData'
-          description: 市場資料
+          description: Market data
         metadata:
           $ref: '#/components/schemas/TokenMetadata'
-          description: 代幣元資料
+          description: Token metadata
         stats:
           $ref: '#/components/schemas/TokenStats'
-          description: 交易統計
+          description: Trade statistics
     Dex:
       type: object
-      description: DEX 資訊
+      description: DEX information
       required:
         - chain
       properties:
         chain:
           type: string
-          description: 鏈識別符
+          description: Chain identifier
           example: sol
         image:
           type:
             - string
             - 'null'
-          description: DEX 圖片 URL
+          description: DEX image URL
           example: https://example.com/dex-logo.png
         programAddress:
           type:
             - string
             - 'null'
-          description: DEX 程式地址
+          description: DEX program address
           example: whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc
         protocolFamily:
           oneOf:
             - type: 'null'
             - $ref: '#/components/schemas/DexProtocolFamily'
-              description: 協議家族名稱
+              description: Protocol family name
     DexPool:
       type: object
-      description: DEX 池
+      description: DEX pool
       required:
         - poolAddress
         - chain
@@ -5775,47 +5824,47 @@ components:
       properties:
         chain:
           type: string
-          description: 鏈
+          description: Chain
           example: sol
         poolAddress:
           type: string
-          description: 池地址
+          description: Pool address
           example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
         programAddress:
           type:
             - string
             - 'null'
-          description: DEX 程式地址
+          description: DEX program address
           example: 675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
         protocolFamily:
           type:
             - string
             - 'null'
-          description: 協議家族
+          description: Protocol family
           example: raydium
         tokenAAddress:
           type: string
-          description: Token A 地址
+          description: Token A address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
         tokenBAddress:
           type: string
-          description: Token B 地址
+          description: Token B address
           example: So11111111111111111111111111111111111111112
         tvlInSol:
           type:
             - string
             - 'null'
-          description: TVL（原生代幣）
+          description: TVL in native token
           example: '1000000.45'
         tvlInUsd:
           type:
             - string
             - 'null'
-          description: TVL（USD）
+          description: TVL in USD
           example: '1000000.45'
     DexPoolDetail:
       type: object
-      description: DEX 池詳情
+      description: DEX pool detail
       required:
         - poolAddress
         - chain
@@ -5824,98 +5873,98 @@ components:
       properties:
         chain:
           type: string
-          description: 鏈識別符
+          description: Chain identifier
         createdBlockTimestamp:
           type:
             - string
             - 'null'
-          description: 建立區塊時間戳
+          description: Creation block timestamp
         feeRate:
           type:
             - string
             - 'null'
-          description: 費率
+          description: Fee rate
         image:
           type:
             - string
             - 'null'
-          description: 圖片 URL
+          description: Image URL
         liquidityModel:
           type:
             - integer
             - 'null'
           format: int32
-          description: 流動性模型
+          description: Liquidity model
           minimum: 0
         poolAddress:
           type: string
-          description: 池地址
+          description: Pool address
         programAddress:
           type:
             - string
             - 'null'
-          description: DEX 程式地址
+          description: DEX program address
         protocolFamily:
           type:
             - string
             - 'null'
-          description: 協議家族
+          description: Protocol family
         protocolName:
           type:
             - string
             - 'null'
-          description: 協議名稱
+          description: Protocol name
         tickSpacing:
           type:
             - integer
             - 'null'
           format: int64
-          description: Tick 間距
+          description: Tick spacing
         tokenAAddress:
           type: string
-          description: Token A 地址
+          description: Token A address
         tokenALiquidity:
           oneOf:
             - type: 'null'
             - $ref: '#/components/schemas/DexPoolTokenLiquidity'
-              description: Token A 流動性
+              description: Token A liquidity
         tokenBAddress:
           type: string
-          description: Token B 地址
+          description: Token B address
         tokenBLiquidity:
           oneOf:
             - type: 'null'
             - $ref: '#/components/schemas/DexPoolTokenLiquidity'
-              description: Token B 流動性
+              description: Token B liquidity
         tokenCount:
           type:
             - integer
             - 'null'
           format: int32
-          description: 代幣數量
+          description: Token count
         tvlInSol:
           type:
             - string
             - 'null'
-          description: TVL（原生代幣）
+          description: TVL in native token
         tvlInUsd:
           type:
             - string
             - 'null'
-          description: TVL（USD）
+          description: TVL in USD
         type:
           type:
             - integer
             - 'null'
           format: int32
-          description: 池類型
+          description: Pool type
           minimum: 0
         version:
           type:
             - integer
             - 'null'
           format: int32
-          description: 池版本
+          description: Pool version
           minimum: 0
       example:
         chain: sol
@@ -5953,7 +6002,7 @@ components:
         version: 2
     DexPoolLiquidityModel:
       type: string
-      description: DEX 池流動性模型（0=Unknown, 1=ReserveBased, 2=PositionBased, 3=Virtual, 4=Shared）
+      description: DEX pool liquidity model (0=Unknown, 1=ReserveBased, 2=PositionBased, 3=Virtual, 4=Shared)
       enum:
         - Unknown
         - ReserveBased
@@ -5963,7 +6012,7 @@ components:
       example: 1
     DexPoolSnapshot:
       type: object
-      description: DEX 池流動性快照
+      description: DEX pool liquidity snapshot
       required:
         - poolAddress
         - snapshotTime
@@ -5977,36 +6026,36 @@ components:
         blockHeight:
           type: integer
           format: int64
-          description: 區塊高度
+          description: Block height
         blockSlot:
           type:
             - integer
             - 'null'
           format: int64
-          description: 區塊 slot（可選）
+          description: Block slot (optional)
         blockTimestamp:
           type: integer
           format: int64
-          description: 區塊時間戳（毫秒）
+          description: Block timestamp (ms)
         poolAddress:
           type: string
-          description: 池地址
+          description: Pool address
         snapshotTime:
           type: integer
           format: int64
-          description: 快照時間戳（毫秒）
+          description: Snapshot timestamp (ms)
         tokenA:
           $ref: '#/components/schemas/DexPoolTokenSnapshot'
-          description: Token A 快照
+          description: Token A snapshot
         tokenB:
           $ref: '#/components/schemas/DexPoolTokenSnapshot'
-          description: Token B 快照
+          description: Token B snapshot
         tvlInNative:
           type: string
-          description: TVL（原生代幣）
+          description: TVL in native token
         tvlInUsd:
           type: string
-          description: TVL（USD）
+          description: TVL in USD
       example:
         blockHeight: 123456789
         blockSlot: 123456789
@@ -6033,7 +6082,7 @@ components:
         tvlInUsd: '1000000.45'
     DexPoolTokenLiquidity:
       type: object
-      description: DEX 池代幣流動性
+      description: DEX pool token liquidity
       required:
         - tokenAddress
         - decimals
@@ -6045,36 +6094,36 @@ components:
       properties:
         amountInNative:
           type: string
-          description: 原生代幣金額
+          description: Amount in native token
           example: '5000.123'
         amountInUsd:
           type: string
-          description: USD 金額
+          description: Amount in USD
           example: '1000000.45'
         decimals:
           type: integer
           format: int32
-          description: 代幣精度
+          description: Token decimals
           example: 6
         priceNative:
           type: string
-          description: 原生代幣計價
+          description: Price in native token
           example: '0.005'
         priceUsd:
           type: string
-          description: USD 計價
+          description: Price in USD
           example: '1.0001'
         tokenAddress:
           type: string
-          description: 代幣地址
+          description: Token address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
         vaultAmount:
           type: string
-          description: 金庫數量
+          description: Vault amount
           example: '1000000000000'
     DexPoolTokenSnapshot:
       type: object
-      description: DEX 池代幣快照
+      description: DEX pool token snapshot
       required:
         - tokenAddress
         - decimals
@@ -6086,36 +6135,36 @@ components:
       properties:
         amountInNative:
           type: string
-          description: 原生代幣金額
+          description: Amount in native token
           example: '5000.123'
         amountInUsd:
           type: string
-          description: USD 金額
+          description: Amount in USD
           example: '1000000.45'
         decimals:
           type: integer
           format: int32
-          description: 代幣精度
+          description: Token decimals
           example: 6
         priceNative:
           type: string
-          description: 原生代幣計價
+          description: Price in native token
           example: '0.005'
         priceUsd:
           type: string
-          description: USD 計價
+          description: Price in USD
           example: '1.0001'
         tokenAddress:
           type: string
-          description: 代幣地址
+          description: Token address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
         vaultAmount:
           type: string
-          description: 金庫數量
+          description: Vault amount
           example: '1000000000000'
     DexPoolType:
       type: string
-      description: DEX 池類型（0=Unknown, 1=Standard, 2=Concentrated, 3=Weighted, 4=Stable）
+      description: DEX pool type (0=Unknown, 1=Standard, 2=Concentrated, 3=Weighted, 4=Stable)
       enum:
         - Unknown
         - Standard
@@ -6125,7 +6174,7 @@ components:
       example: 1
     DexPoolVersion:
       type: string
-      description: DEX 池版本（0=Unknown, 1=V1, 2=V2, 3=V3）
+      description: DEX pool version (0=Unknown, 1=V1, 2=V2, 3=V3)
       enum:
         - Unknown
         - V1
@@ -6134,7 +6183,7 @@ components:
       example: 2
     DexProtocolFamily:
       type: string
-      description: DEX 協議家族識別符
+      description: DEX protocol family identifier
       enum:
         - Raydium
         - Pumpfun
@@ -6181,7 +6230,7 @@ components:
         - Unknown
     EndpointListResponse:
       type: object
-      description: Webhook 端點分頁列表
+      description: Paginated list of webhook endpoints
       required:
         - data
         - done
@@ -6209,7 +6258,7 @@ components:
           example: eyJpZCI6MTAwfQ==
     EndpointOperationResponse:
       type: object
-      description: 端點操作的布林結果（delete、rotate secret）
+      description: Boolean result for endpoint operations (delete, rotate secret)
       required:
         - success
       properties:
@@ -6219,13 +6268,13 @@ components:
           example: true
     EndpointOrder:
       type: string
-      description: 分頁端點列表的排序方向
+      description: Ordering direction for paginated endpoint listing
       enum:
         - ascending
         - descending
     EndpointSecretResponse:
       type: object
-      description: Webhook 端點的密鑰回應
+      description: Secret response for a webhook endpoint
       required:
         - secret
       properties:
@@ -6280,7 +6329,7 @@ components:
           description: 錯誤詳情物件
     FilterCondition:
       type: object
-      description: 代幣查詢的過濾條件
+      description: Filter condition for token queries
       required:
         - field
         - operator
@@ -6288,16 +6337,179 @@ components:
       properties:
         field:
           type: string
-          description: 用於過濾的欄位名
+          description: Field name to filter
         operator:
           type: string
-          description: 運算子（gt、gte、lt、lte、eq、ne）
+          description: Operator (gt, gte, lt, lte, eq, ne)
         value:
           type: string
-          description: 比較值
+          description: Value to compare
+    GoPlusSecurityInfo:
+      type: object
+      required:
+        - available
+      properties:
+        available:
+          type: boolean
+          description: Whether data is available from this source
+          example: true
+        buyTax:
+          type:
+            - string
+            - 'null'
+          description: Buy tax rate
+        chainSupported:
+          type:
+            - boolean
+            - 'null'
+          description: Whether this source supports the token chain
+          example: true
+        holderCount:
+          type:
+            - string
+            - 'null'
+          description: Number of token holders
+        isBlacklisted:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract has blacklist
+        isFreezable:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token accounts can be frozen
+        isHoneypot:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is a honeypot
+        isMintable:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is mintable
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isProxy:
+          type:
+            - boolean
+            - 'null'
+          description: Whether it is a proxy contract
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract ownership is renounced
+        lastRefreshedAt:
+          type:
+            - string
+            - 'null'
+          description: Last refresh timestamp
+          example: 2026-05-13T10:00:00
+        lpHolderCount:
+          type:
+            - string
+            - 'null'
+          description: Number of LP holders
+        ownerAddress:
+          type:
+            - string
+            - 'null'
+          description: Contract owner address
+        raw:
+          description: Raw security data from the source
+        sellTax:
+          type:
+            - string
+            - 'null'
+          description: Sell tax rate
+        totalSupply:
+          type:
+            - string
+            - 'null'
+          description: Total token supply
+    HoneypotIsSecurityInfo:
+      type: object
+      required:
+        - available
+      properties:
+        available:
+          type: boolean
+          description: Whether data is available from this source
+          example: true
+        averageTax:
+          type:
+            - string
+            - 'null'
+          description: Average observed tax rate
+        buyTax:
+          type:
+            - string
+            - 'null'
+          description: Buy tax rate
+        canNotSell:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of holders that cannot sell
+        canSell:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of holders that can sell
+        chainSupported:
+          type:
+            - boolean
+            - 'null'
+          description: Whether this source supports the token chain
+          example: true
+        highTax:
+          type:
+            - string
+            - 'null'
+          description: Highest observed tax rate
+        honeypotResult:
+          type:
+            - string
+            - 'null'
+          description: Honeypot.is verdict
+        isHoneypot:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is a honeypot
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract ownership is renounced
+        lastRefreshedAt:
+          type:
+            - string
+            - 'null'
+          description: Last refresh timestamp
+          example: 2026-05-13T10:00:00
+        raw:
+          description: Raw security data from the source
+        sellTax:
+          type:
+            - string
+            - 'null'
+          description: Sell tax rate
     HotTokenDuration:
       type: string
-      description: 熱門代幣排行週期
+      description: Hot token ranking duration
       enum:
         - 1m
         - 5m
@@ -6306,29 +6518,29 @@ components:
         - 24h
     IpfsUploadResponse:
       type: object
-      description: 'IPFS JSON 上傳的回應 — 對應 TS `uploadJson` 回傳型別。'
+      description: Response from IPFS JSON upload — mirrors TS `uploadJson` return type.
       required:
         - url
         - cid
       properties:
         cid:
           type: string
-          description: IPFS 內容識別符（CID）
+          description: IPFS content identifier (CID)
           example: QmHash...
         name:
           type:
             - string
             - 'null'
-          description: 檔案名稱
+          description: File name
         size:
           type:
             - integer
             - 'null'
           format: int64
-          description: Pin 大小（位元組）
+          description: Pin size in bytes
         url:
           type: string
-          description: 公共 IPFS URL
+          description: Public IPFS URL
           example: https://ipfs.io/ipfs/QmHash...
     KYTRegisterAddressInput:
       type: object
@@ -6851,7 +7063,7 @@ components:
           example: '1000'
     LaunchpadTag:
       type: string
-      description: 用於代幣過濾的 Launchpad 標籤
+      description: Launchpad tag for token filtering
       enum:
         - pump_fun
         - raydium_launchpad
@@ -6860,14 +7072,14 @@ components:
         - moonit_fun
     MintBurnType:
       type: string
-      description: 鑄造/銷毀類型過濾
+      description: Mint/burn type filter
       enum:
         - all
         - mint
         - burn
     NetWorthByTokensItem:
       type: object
-      description: 單個代幣淨資產項目（對應 TS WalletNetWorthItemDTO）。
+      description: Single token net-worth item (mirrors TS WalletNetWorthItemDTO).
       required:
         - tokenAddress
         - decimals
@@ -6879,11 +7091,17 @@ components:
         - chain
         - name
         - symbol
+        - isActive
       properties:
         amount:
           type: string
           description: 代幣持有數量
           example: '1000.50'
+        avgCostUsd:
+          type:
+            - string
+            - 'null'
+          description: Average cost per token in USD (balance_cost_avg_in_usd; sparse ~0.2% fill rate)
         chain:
           type: string
           description: 區塊鏈網路標識
@@ -6893,6 +7111,15 @@ components:
           format: int32
           description: 代幣小數位數
           example: 6
+        isActive:
+          type: boolean
+          description: Whether the wallet currently holds a non-zero balance
+        lastActiveAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Last active timestamp (ms since epoch)
         logoUri:
           type:
             - string
@@ -6911,6 +7138,11 @@ components:
           type: string
           description: 代幣價格（USD 計）
           example: '1.0001'
+        realizedPnlInUsd:
+          type:
+            - string
+            - 'null'
+          description: Realized PnL in USD (all-time cumulative)
         symbol:
           type: string
           description: 代幣代號
@@ -6919,6 +7151,11 @@ components:
           type: string
           description: 代幣合約地址
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        unrealizedPnlInUsd:
+          type:
+            - string
+            - 'null'
+          description: Unrealized PnL in USD (current open position)
         valueInNative:
           type: string
           description: 持倉價值（原生代幣計）
@@ -6927,9 +7164,14 @@ components:
           type: string
           description: 持倉價值（USD 計）
           example: '1000.60'
+        walletTokenTags:
+          type: array
+          items:
+            type: string
+          description: Trader classification tags
     NetWorthByTokensResult:
       type: object
-      description: 按代幣彙總的錢包淨資產結果（對應 TS WalletNetWorthByTokensResult）。
+      description: Wallet net-worth by tokens result (mirrors TS WalletNetWorthByTokensResult).
       required:
         - walletAddress
         - totalValueInUsd
@@ -6960,7 +7202,7 @@ components:
           example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
     NetWorthHistoryItem:
       type: object
-      description: 淨資產走勢圖時間序列中的單一資料點。
+      description: Single data point in a net-worth chart time series.
       required:
         - timestamp
         - netWorth
@@ -6994,13 +7236,13 @@ components:
           example: '1764819473.530063'
     PageDirection:
       type: string
-      description: 分頁方向
+      description: Pagination direction
       enum:
         - next
         - prev
     PageResponse_BalanceUpdate:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7008,7 +7250,7 @@ components:
           type: array
           items:
             type: object
-            description: 餘額更新記錄
+            description: Balance update record
             required:
               - blockHash
               - blockHeight
@@ -7096,30 +7338,30 @@ components:
               type:
                 $ref: '#/components/schemas/BalanceTokenType'
                 description: 代幣類型（SOL 為原生代幣，SPL 為代幣）
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_DevToken:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7127,7 +7369,7 @@ components:
           type: array
           items:
             type: object
-            description: '`get_dev_tokens` 回傳的 token 資訊 — 對應 TS `DevTokenDTO`。'
+            description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
             required:
               - address
               - metadata
@@ -7136,41 +7378,41 @@ components:
             properties:
               address:
                 type: string
-                description: 代幣地址
+                description: Token address
                 example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
               marketData:
                 $ref: '#/components/schemas/TokenMarketData'
-                description: 市場資料
+                description: Market data
               metadata:
                 $ref: '#/components/schemas/TokenMetadata'
-                description: 代幣元資料
+                description: Token metadata
               stats:
                 $ref: '#/components/schemas/TokenStats'
-                description: 交易統計
-          description: 頁資料
+                description: Trade statistics
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_Dex:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7178,55 +7420,55 @@ components:
           type: array
           items:
             type: object
-            description: DEX 資訊
+            description: DEX information
             required:
               - chain
             properties:
               chain:
                 type: string
-                description: 鏈識別符
+                description: Chain identifier
                 example: sol
               image:
                 type:
                   - string
                   - 'null'
-                description: DEX 圖片 URL
+                description: DEX image URL
                 example: https://example.com/dex-logo.png
               programAddress:
                 type:
                   - string
                   - 'null'
-                description: DEX 程式地址
+                description: DEX program address
                 example: whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc
               protocolFamily:
                 oneOf:
                   - type: 'null'
                   - $ref: '#/components/schemas/DexProtocolFamily'
-                    description: 協議家族名稱
-          description: 頁資料
+                    description: Protocol family name
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_DexPool:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7234,7 +7476,7 @@ components:
           type: array
           items:
             type: object
-            description: DEX 池
+            description: DEX pool
             required:
               - poolAddress
               - chain
@@ -7243,68 +7485,68 @@ components:
             properties:
               chain:
                 type: string
-                description: 鏈
+                description: Chain
                 example: sol
               poolAddress:
                 type: string
-                description: 池地址
+                description: Pool address
                 example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
               programAddress:
                 type:
                   - string
                   - 'null'
-                description: DEX 程式地址
+                description: DEX program address
                 example: 675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
               protocolFamily:
                 type:
                   - string
                   - 'null'
-                description: 協議家族
+                description: Protocol family
                 example: raydium
               tokenAAddress:
                 type: string
-                description: Token A 地址
+                description: Token A address
                 example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
               tokenBAddress:
                 type: string
-                description: Token B 地址
+                description: Token B address
                 example: So11111111111111111111111111111111111111112
               tvlInSol:
                 type:
                   - string
                   - 'null'
-                description: TVL（原生代幣）
+                description: TVL in native token
                 example: '1000000.45'
               tvlInUsd:
                 type:
                   - string
                   - 'null'
-                description: TVL（USD）
+                description: TVL in USD
                 example: '1000000.45'
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_DexPoolSnapshot:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7312,7 +7554,7 @@ components:
           type: array
           items:
             type: object
-            description: DEX 池流動性快照
+            description: DEX pool liquidity snapshot
             required:
               - poolAddress
               - snapshotTime
@@ -7326,36 +7568,36 @@ components:
               blockHeight:
                 type: integer
                 format: int64
-                description: 區塊高度
+                description: Block height
               blockSlot:
                 type:
                   - integer
                   - 'null'
                 format: int64
-                description: 區塊 slot（可選）
+                description: Block slot (optional)
               blockTimestamp:
                 type: integer
                 format: int64
-                description: 區塊時間戳（毫秒）
+                description: Block timestamp (ms)
               poolAddress:
                 type: string
-                description: 池地址
+                description: Pool address
               snapshotTime:
                 type: integer
                 format: int64
-                description: 快照時間戳（毫秒）
+                description: Snapshot timestamp (ms)
               tokenA:
                 $ref: '#/components/schemas/DexPoolTokenSnapshot'
-                description: Token A 快照
+                description: Token A snapshot
               tokenB:
                 $ref: '#/components/schemas/DexPoolTokenSnapshot'
-                description: Token B 快照
+                description: Token B snapshot
               tvlInNative:
                 type: string
-                description: TVL（原生代幣）
+                description: TVL in native token
               tvlInUsd:
                 type: string
-                description: TVL（USD）
+                description: TVL in USD
             example:
               blockHeight: 123456789
               blockSlot: 123456789
@@ -7380,30 +7622,30 @@ components:
                 vaultAmount: '1000000000000'
               tvlInNative: '5000'
               tvlInUsd: '1000000.45'
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_NetWorthByTokensItem:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7411,7 +7653,7 @@ components:
           type: array
           items:
             type: object
-            description: 單個代幣淨資產項目（對應 TS WalletNetWorthItemDTO）。
+            description: Single token net-worth item (mirrors TS WalletNetWorthItemDTO).
             required:
               - tokenAddress
               - decimals
@@ -7423,11 +7665,17 @@ components:
               - chain
               - name
               - symbol
+              - isActive
             properties:
               amount:
                 type: string
                 description: 代幣持有數量
                 example: '1000.50'
+              avgCostUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Average cost per token in USD (balance_cost_avg_in_usd; sparse ~0.2% fill rate)
               chain:
                 type: string
                 description: 區塊鏈網路標識
@@ -7437,6 +7685,15 @@ components:
                 format: int32
                 description: 代幣小數位數
                 example: 6
+              isActive:
+                type: boolean
+                description: Whether the wallet currently holds a non-zero balance
+              lastActiveAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Last active timestamp (ms since epoch)
               logoUri:
                 type:
                   - string
@@ -7455,6 +7712,11 @@ components:
                 type: string
                 description: 代幣價格（USD 計）
                 example: '1.0001'
+              realizedPnlInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Realized PnL in USD (all-time cumulative)
               symbol:
                 type: string
                 description: 代幣代號
@@ -7463,6 +7725,11 @@ components:
                 type: string
                 description: 代幣合約地址
                 example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+              unrealizedPnlInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Unrealized PnL in USD (current open position)
               valueInNative:
                 type: string
                 description: 持倉價值（原生代幣計）
@@ -7471,30 +7738,35 @@ components:
                 type: string
                 description: 持倉價值（USD 計）
                 example: '1000.60'
-          description: 頁資料
+              walletTokenTags:
+                type: array
+                items:
+                  type: string
+                description: Trader classification tags
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_Token:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7503,10 +7775,10 @@ components:
           items:
             type: object
             description: |-
-              代幣實體 — 對應 TS `TokenDTO extends TokenMetadataDTO`。
+              Token entity — mirrors TS `TokenDTO extends TokenMetadataDTO`.
 
-              TS 透過類別繼承將中繼資料扁平化至頂層。
-              Rust 使用 `#[serde(flatten)]` 達到相同效果。
+              TS uses class inheritance to flatten metadata into the top level.
+              Rust uses `#[serde(flatten)]` for the same effect.
             required:
               - address
               - chain
@@ -7575,7 +7847,7 @@ components:
                 example: USDC-SOL
               marketData:
                 $ref: '#/components/schemas/TokenMarketData'
-                description: 市場資料
+                description: Market data
               metadataAddress:
                 type:
                   - string
@@ -7591,7 +7863,7 @@ components:
                 description: 代幣社交媒體連結
               stats:
                 $ref: '#/components/schemas/TokenStats'
-                description: 代幣統計資料
+                description: Token statistics
               symbol:
                 type: string
                 description: 代幣代號
@@ -7632,30 +7904,30 @@ components:
                   - 'null'
                 description: 代幣元資料 URI
                 example: https://arweave.net/abc123
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TokenHolder:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7663,7 +7935,7 @@ components:
           type: array
           items:
             type: object
-            description: 代幣持有者
+            description: Token holder
             required:
               - walletAddress
               - amount
@@ -7678,38 +7950,55 @@ components:
                 type: string
                 description: 代幣持有價值（USD 計）
                 example: '1000000000000000000'
+              lastActiveAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Last active timestamp (ms since epoch)
               percentage:
                 type: string
                 description: 佔總供應量百分比
                 example: '100'
+              startHoldingAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Timestamp when holder first acquired the token (ms since epoch)
+              tags:
+                type: array
+                items:
+                  type: string
+                description: Trader classification tags (e.g. "kol", "smart", "sniper")
               walletAddress:
                 type: string
                 description: 持有者錢包地址
                 example: '0x1234567890abcdef'
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TokenLiquiditySnapshot:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7717,7 +8006,7 @@ components:
           type: array
           items:
             type: object
-            description: 代幣流動性快照
+            description: Token liquidity snapshot
             required:
               - snapshotTime
               - maxLiquidityPoolAddress
@@ -7773,30 +8062,30 @@ components:
                 type: string
                 description: 所有池子總流動性（USD 計）
                 example: '2000000.90'
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TokenMintBurn:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7804,7 +8093,7 @@ components:
           type: array
           items:
             type: object
-            description: 代幣鑄造/銷毀事件
+            description: Token mint/burn event
             required:
               - tokenAddress
               - transactionSignature
@@ -7838,30 +8127,30 @@ components:
                 type: string
                 description: 交易簽名
                 example: 3A7B9C1D2E4F6G8
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TokenPrice:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7869,7 +8158,7 @@ components:
           type: array
           items:
             type: object
-            description: 代幣價格
+            description: Token price
             required:
               - address
               - timestamp
@@ -7877,47 +8166,47 @@ components:
             properties:
               address:
                 type: string
-                description: 代幣地址
+                description: Token address
                 example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
               priceInSol:
                 type:
                   - string
                   - 'null'
-                description: 原生代幣計價
+                description: Price in native token
                 example: '1000'
               priceInUsd:
                 type: string
-                description: USD 計價
+                description: Price in USD
                 example: '1000'
               timestamp:
                 type: integer
                 format: int64
-                description: 時間戳
+                description: Timestamp
                 example: 1754055151000
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TokenTrader:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -7925,94 +8214,94 @@ components:
           type: array
           items:
             type: object
-            description: 'Token 交易者資訊 — 對應 TS `TokenTraderDTO`'
+            description: Token trader info — mirrors TS `TokenTraderDTO`
             required:
               - address
             properties:
               address:
                 type: string
-                description: 錢包地址
+                description: Wallet address
                 example: MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2
               blockTimestamp:
                 type:
                   - string
                   - 'null'
-                description: 區塊時間戳（sniper）
+                description: Block timestamp (sniper)
                 example: 2025-01-15T10:30:00Z
               onchainCreatedAt:
                 type:
                   - string
                   - 'null'
-                description: 鏈上帳戶建立時間（fresh/dev）
+                description: Onchain account creation time (fresh/dev)
                 example: 2025-01-15T10:30:00Z
               percentileRankTradeAmountInUsd:
                 type:
                   - string
                   - 'null'
-                description: USD 交易額的百分位排名（pro/insider）
+                description: Percentile rank of trade amount in USD (pro/insider)
                 example: '0.98'
               percentileRankTradeCount:
                 type:
                   - integer
                   - 'null'
                 format: int64
-                description: 交易次數的百分位排名（pro）
+                description: Percentile rank of trade count (pro)
                 example: 95
               rankTradeAmountInUsd:
                 type:
                   - string
                   - 'null'
-                description: USD 交易額排名（insider）
+                description: Rank trade amount in USD (insider)
                 example: '0.95'
               tradeAmountInNative:
                 type:
                   - string
                   - 'null'
-                description: 原生代幣交易額（pro/insider）
+                description: Trade amount in native token (pro/insider)
                 example: '1500.50'
               tradeAmountInUsd:
                 type:
                   - string
                   - 'null'
-                description: USD 交易額（pro/insider）
+                description: Trade amount in USD (pro/insider)
                 example: '45000.00'
               tradeCount:
                 type:
                   - integer
                   - 'null'
                 format: int64
-                description: 交易次數（pro/insider）
+                description: Trade count (pro/insider)
                 example: 42
               transactionSignature:
                 type:
                   - string
                   - 'null'
-                description: 交易簽名（sandwich/bundle/sniper）
+                description: Transaction signature (sandwish/bundle/sniper)
                 example: 5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz...
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TokenTransfer:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -8020,7 +8309,7 @@ components:
           type: array
           items:
             type: object
-            description: 代幣轉帳
+            description: Token transfer
             required:
               - id
               - transactionSignature
@@ -8057,7 +8346,7 @@ components:
                 example: transfer-1
               status:
                 type: string
-                description: '轉帳狀態: unknown / succeeded / failed'
+                description: 'Transfer status: unknown / succeeded / failed'
                 example: succeeded
               toAddress:
                 type: string
@@ -8073,32 +8362,32 @@ components:
                 example: 3hmmomhUcmLMw2ZCqKg5MBfK8b7RBNrBpqvE2Wv7u5V6PCMLh4s7dVfA83NbzNFAgTzVvZuMURoKEviwR92otRp
               type:
                 type: string
-                description: '轉帳類型: unknown / in / out'
+                description: 'Transfer type: unknown / in / out'
                 example: in
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TopTrader:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -8106,7 +8395,7 @@ components:
           type: array
           items:
             type: object
-            description: 頂級交易者統計
+            description: Top trader statistics
             required:
               - tokenAddress
               - walletAddress
@@ -8172,30 +8461,30 @@ components:
                 type: string
                 description: 交易者錢包地址
                 example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TradeDetail:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -8203,7 +8492,7 @@ components:
           type: array
           items:
             type: object
-            description: 交易詳情
+            description: Trade detail
             required:
               - chain
               - blockHeight
@@ -8232,156 +8521,168 @@ components:
             properties:
               accountOwnerAddress:
                 type: string
-                description: 帳戶所有者地址（交易者錢包）
+                description: Account owner address (trader wallet)
                 example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
               blockHeight:
                 type: integer
                 format: int64
-                description: 區塊高度
+                description: Block height
                 example: 332417228
               blockTimestamp:
                 type: integer
                 format: int64
-                description: 區塊時間戳（毫秒）
+                description: Block timestamp (milliseconds)
                 example: 1717334400000
               chain:
                 type: string
-                description: 鏈識別符
+                description: Chain identifier
                 example: sol
               dexImage:
                 type:
                   - string
                   - 'null'
-                description: DEX 圖片
+                description: DEX image
                 example: https://example.com/dex.png
               dexProgramAddress:
                 type:
                   - string
                   - 'null'
-                description: DEX 程式地址
+                description: DEX program address
                 example: whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc
               dexProtocolFamily:
                 type:
                   - string
                   - 'null'
-                description: DEX 協議家族
+                description: DEX protocol family
                 example: OrcaWhirpool
+              gasFee:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Gas fee (transaction fee in lamports / wei)
+                example: 5000
               poolAddress:
                 type: string
-                description: 池地址
+                description: Pool address
                 example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
               sideTokenAddress:
                 type: string
-                description: 對手方代幣地址
+                description: Side token address
                 example: So11111111111111111111111111111111111111112
               sideTokenAmount:
                 type: string
-                description: 對手方代幣數量
+                description: Side token amount
                 example: '1'
               sideTokenAmountInNative:
                 type: string
-                description: 對手方代幣數量（原生貨幣計價）
+                description: Side token amount in native currency
                 example: '150'
               sideTokenAmountInUsd:
                 type: string
-                description: 對手方代幣數量（USD 計價）
+                description: Side token amount in USD
                 example: '150'
               sideTokenImageUrl:
                 type:
                   - string
                   - 'null'
-                description: 對手方代幣圖片 URL
+                description: Side token image URL
                 example: https://arweave.net/sol.png
               sideTokenName:
                 type: string
-                description: 對手方代幣名稱
+                description: Side token name
                 example: Wrapped SOL
               sideTokenPriceInNative:
                 type: string
-                description: 對手方代幣原生貨幣價格
+                description: Side token price in native currency
                 example: '1'
               sideTokenPriceInUsd:
                 type: string
-                description: 對手方代幣 USD 價格
+                description: Side token price in USD
                 example: '150'
               sideTokenSymbol:
                 type: string
-                description: 對手方代幣符號
+                description: Side token symbol
                 example: SOL
               status:
                 type: string
-                description: 交易狀態
+                description: Transaction status
                 example: SUCCEEDED
               tokenAddress:
                 type: string
-                description: 代幣地址
+                description: Token address
                 example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
               tokenAmount:
                 type: string
-                description: 代幣數量
+                description: Token amount
                 example: '1000000'
               tokenAmountInNative:
                 type: string
-                description: 代幣數量（原生貨幣計價）
+                description: Token amount in native currency
                 example: '100'
               tokenAmountInUsd:
                 type: string
-                description: 代幣數量（USD 計價）
+                description: Token amount in USD
                 example: '8800000'
               tokenImageUrl:
                 type:
                   - string
                   - 'null'
-                description: 代幣圖片 URL
+                description: Token image URL
                 example: https://arweave.net/token.png
               tokenName:
                 type: string
-                description: 代幣名稱
+                description: Token name
                 example: TRUMP
               tokenPriceInNative:
                 type: string
-                description: 代幣原生貨幣價格
+                description: Token price in native currency
                 example: '0.0001'
               tokenPriceInUsd:
                 type: string
-                description: 代幣 USD 價格
+                description: Token price in USD
                 example: '8.80'
               tokenSymbol:
                 type: string
-                description: 代幣符號
+                description: Token symbol
                 example: TRUMP
+              traderTags:
+                type: array
+                items:
+                  type: string
+                description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "bundle", "bluechip")
               transactionSignature:
                 type: string
-                description: 交易簽名
+                description: Transaction signature
                 example: 37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F
               type:
                 type: string
-                description: 交易類型（BUY/SELL）
+                description: Trade type (BUY/SELL)
                 example: BUY
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_TraderGainersLosersItem:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -8389,7 +8690,7 @@ components:
           type: array
           items:
             type: object
-            description: 交易者盈虧排行項 — 基於 PnL 的排名
+            description: Trader gainers/losers item — PnL-based ranking
             required:
               - chain
               - address
@@ -8417,30 +8718,30 @@ components:
                 type: string
                 description: 總交易量（USD 計）
                 example: '85000.00'
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PageResponse_WalletTransfer:
       type: object
-      description: 通用分頁回應
+      description: Generic pagination response
       required:
         - data
       properties:
@@ -8448,7 +8749,7 @@ components:
           type: array
           items:
             type: object
-            description: 錢包轉帳
+            description: Wallet transfer
             required:
               - id
               - transactionSignature
@@ -8498,30 +8799,30 @@ components:
                 type: string
                 description: 轉帳類型（SEND 或 RECEIVE）
                 example: SEND
-          description: 頁資料
+          description: Page data
         endCursor:
           type:
             - string
             - 'null'
-          description: 目前頁尾端游標
+          description: Cursor for the end of current page
           example: eyJpZCI6ImVuZCJ9
         hasNext:
           type: boolean
-          description: 是否存在下一頁
+          description: Whether there is a next page
           example: false
         hasPrev:
           type: boolean
-          description: 是否存在上一頁
+          description: Whether there is a previous page
           example: false
         startCursor:
           type:
             - string
             - 'null'
-          description: 目前頁起始游標
+          description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
     PnlDetailItem:
       type: object
-      description: 單個錢包-代幣組合的 PnL 詳情（對應 TS PnlDetailItemDTO）。
+      description: PnL detail for a single wallet-token pair (mirrors TS PnlDetailItemDTO).
       required:
         - tokenAddress
         - walletAddress
@@ -8544,6 +8845,7 @@ components:
         - totalProfitInUsd
         - totalProfitRatio
         - avgProfitPerTradeInUsd
+        - isClosed
       properties:
         avgBuyPriceInUsd:
           type: string
@@ -8582,12 +8884,33 @@ components:
           format: int32
           description: 代幣小數位數
           example: 6
+        firstBuyAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp of first buy (ms since epoch)
+        isClosed:
+          type: boolean
+          description: Whether the position is fully closed (balance == 0)
+        lastSellAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp of last sell (ms since epoch)
         logoUri:
           type:
             - string
             - 'null'
           description: 代幣 Logo URI
           example: https://s1.chainstream.io/tokens/images/example.webp
+        losses:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.LOSSES
+          example: '5'
         name:
           type: string
           description: 代幣顯示名稱
@@ -8624,6 +8947,12 @@ components:
           type: string
           description: 代幣合約地址
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p
+        totalCostInUsd:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.TOTAL_COST_IN_USD
+          example: '48469.17'
         totalProfitInUsd:
           type: string
           description: 總利潤（已實現 + 未實現，USD 計）
@@ -8648,9 +8977,15 @@ components:
           type: string
           description: 錢包地址
           example: 54Pz1e35z9uoFdnxtzjp7xZQoFiofqhdayQWBMN7dsuy
+        wins:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.WINS
+          example: '12'
     PnlDetailSummary:
       type: object
-      description: 所有項目的彙總 PnL 摘要（對應 TS PnlDetailSummaryDTO）。
+      description: Aggregated PnL summary across all items (mirrors TS PnlDetailSummaryDTO).
       required:
         - tokens
         - buys
@@ -8735,7 +9070,7 @@ components:
           example: '91'
     PnlDetailsResult:
       type: object
-      description: 帶游標分頁的完整 PnL 詳情結果。
+      description: Full PnL details result with cursor pagination.
       required:
         - summary
         - data
@@ -8770,7 +9105,7 @@ components:
           description: 彙總盈虧摘要
     PnlResolution:
       type: string
-      description: PnL 精度週期
+      description: PnL resolution period
       enum:
         - 1d
         - 7d
@@ -8778,7 +9113,7 @@ components:
         - all
     PoolSortField:
       type: string
-      description: 池排序欄位
+      description: Pool sort field
       enum:
         - tvlInSol
         - tvlInUsd
@@ -8789,17 +9124,17 @@ components:
       properties:
         presignUrl:
           type: string
-          description: 預簽名上傳 URL
+          description: Presigned upload URL
           example: https://uploads.pinata.cloud/v3/files/sign/...
     PriceType:
       type: string
-      description: K 線資料的價格類型
+      description: Price type for candle data
       enum:
         - usd
         - native
     RangeFilterCondition:
       type: object
-      description: '範圍篩選條件 – 對應 TS `FilterCondition`，用於 min/max。'
+      description: Range filter condition – mirrors TS `FilterCondition` used with min/max.
       required:
         - field
       properties:
@@ -8834,7 +9169,7 @@ components:
         - moonit_fun
     RedPacket:
       type: object
-      description: 紅包詳情
+      description: Red packet detail
       required:
         - id
         - creator
@@ -8940,7 +9275,7 @@ components:
           example: 5UfDuX7hXbL3mFfPdq1pymNHM...
     RedPacketClaim:
       type: object
-      description: 紅包領取記錄
+      description: Red packet claim record
       required:
         - packetId
         - claimer
@@ -8990,7 +9325,7 @@ components:
           example: 5UfDuX7hXbL3mFfPdq1pymNHM...
     RedPacketClaimsPage:
       type: object
-      description: 紅包領取記錄分頁回應
+      description: Paginated red packet claims response
       required:
         - total
         - hasNextPage
@@ -9020,7 +9355,7 @@ components:
           description: 領取總數
     RedPacketSendTxRequest:
       type: object
-      description: 傳送紅包交易請求
+      description: Send red packet transaction request
       required:
         - signedTx
       properties:
@@ -9030,7 +9365,7 @@ components:
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
     RedPacketSendTxResponse:
       type: object
-      description: 傳送紅包交易回應
+      description: Send red packet transaction response
       required:
         - signature
       properties:
@@ -9040,7 +9375,7 @@ components:
           example: 5UfDuX7hXbL3mFfPdq1pymNHM...
     RedPacketsPage:
       type: object
-      description: 紅包分頁回應
+      description: Paginated red packets response
       required:
         - total
         - hasNextPage
@@ -9070,7 +9405,7 @@ components:
           description: 紅包總數
     Resolution:
       type: string
-      description: K 線精度
+      description: Candle resolution
       enum:
         - 1s
         - 15s
@@ -9092,7 +9427,7 @@ components:
         - 1M
     SearchMode:
       type: string
-      description: '搜尋模式: `fast` 僅返回 OpenSearch 欄位（預設），`normal` 返回完整資料。'
+      description: 'Search mode: `fast` returns only OpenSearch fields (default), `normal` enriches with full data.'
       enum:
         - fast
         - normal
@@ -9106,9 +9441,85 @@ components:
         - h24VolumeInUsd
         - h24Transactions
         - tokenCreatedAt
+    SerializedSecurityInfo:
+      type: object
+      required:
+        - available
+      properties:
+        available:
+          type: boolean
+          description: Whether data is available from this source
+          example: true
+        chainSupported:
+          type:
+            - boolean
+            - 'null'
+          description: Whether this source supports the token chain
+          example: true
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isProxy:
+          type:
+            - boolean
+            - 'null'
+          description: Whether it is a proxy contract
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract ownership is renounced
+        isSafe:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is safe (Serialized Audit verdict)
+        lastRefreshedAt:
+          type:
+            - string
+            - 'null'
+          description: Last refresh timestamp
+          example: 2026-05-13T10:00:00
+        launchpadName:
+          type:
+            - string
+            - 'null'
+          description: Launchpad name
+        ownerAddress:
+          type:
+            - string
+            - 'null'
+          description: Contract owner address
+        raw:
+          description: Raw security data from the source
+        sourceType:
+          type:
+            - string
+            - 'null'
+          description: Contract source type (verified/decompiled/none)
+        vulnCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Total number of vulnerabilities
+        vulnCriticalCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of critical vulnerabilities
+        vulnMitigatedCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Number of mitigated vulnerabilities
     SortDirection:
       type: string
-      description: '排序方向（大小寫不敏感: 支援 "asc"/"ASC"/"Asc" 等）'
+      description: 'Sort direction (case-insensitive: accepts "asc"/"ASC"/"Asc" etc.)'
       enum:
         - asc
         - desc
@@ -9123,7 +9534,7 @@ components:
           example: true
     TimeFrame:
       type: string
-      description: 統計時間範圍
+      description: Time frame for statistics
       enum:
         - 30m
         - 1h
@@ -9136,10 +9547,10 @@ components:
     Token:
       type: object
       description: |-
-        代幣實體 — 對應 TS `TokenDTO extends TokenMetadataDTO`。
+        Token entity — mirrors TS `TokenDTO extends TokenMetadataDTO`.
 
-        TS 透過類別繼承將中繼資料扁平化至頂層。
-        Rust 使用 `#[serde(flatten)]` 達到相同效果。
+        TS uses class inheritance to flatten metadata into the top level.
+        Rust uses `#[serde(flatten)]` for the same effect.
       required:
         - address
         - chain
@@ -9208,7 +9619,7 @@ components:
           example: USDC-SOL
         marketData:
           $ref: '#/components/schemas/TokenMarketData'
-          description: 市場資料
+          description: Market data
         metadataAddress:
           type:
             - string
@@ -9224,7 +9635,7 @@ components:
           description: 代幣社交媒體連結
         stats:
           $ref: '#/components/schemas/TokenStats'
-          description: 代幣統計資料
+          description: Token statistics
         symbol:
           type: string
           description: 代幣代號
@@ -9267,53 +9678,53 @@ components:
           example: https://arweave.net/abc123
     TokenBalance:
       type: object
-      description: 代幣餘額
+      description: Token balance
       required:
         - tokenAddress
         - amount
       properties:
         amount:
           type: string
-          description: 餘額數量
+          description: Balance amount
           example: '1000.50'
         amountInUsd:
           type:
             - string
             - 'null'
-          description: USD 餘額
+          description: Balance in USD
           example: '1000.50'
         decimals:
           type:
             - integer
             - 'null'
           format: int32
-          description: 代幣精度
+          description: Token decimals
           example: 6
         imageUrl:
           type:
             - string
             - 'null'
-          description: 代幣圖片 URL
+          description: Token image URL
           example: https://arweave.net/usdc.png
         tokenAddress:
           type: string
-          description: 代幣地址
+          description: Token address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
         tokenName:
           type:
             - string
             - 'null'
-          description: 代幣名稱
+          description: Token name
           example: USD Coin
         tokenSymbol:
           type:
             - string
             - 'null'
-          description: 代幣符號
+          description: Token symbol
           example: USDC
     TokenCandle:
       type: object
-      description: 代幣 K 線（OHLCV）
+      description: Token candle (OHLCV)
       required:
         - timestamp
         - open
@@ -9324,32 +9735,32 @@ components:
       properties:
         close:
           type: string
-          description: 收盤價
+          description: Close price
           example: '51.2'
         high:
           type: string
-          description: 最高價
+          description: High price
           example: '51.8'
         low:
           type: string
-          description: 最低價
+          description: Low price
           example: '50.1'
         open:
           type: string
-          description: 開盤價
+          description: Open price
           example: '50.5'
         timestamp:
           type: integer
           format: int64
-          description: 時間戳
+          description: Timestamp
           example: 1709251200000
         volume:
           type: string
-          description: 成交量
+          description: Volume
           example: '1000000'
     TokenCreation:
       type: object
-      description: 'Token 建立資訊 — 對應 TS `TokenCreationDTO`'
+      description: Token creation info — mirrors TS `TokenCreationDTO`
       required:
         - tokenAddress
         - blockHeight
@@ -9394,7 +9805,7 @@ components:
           example: create
     TokenCreator:
       type: object
-      description: 代幣建立者資訊
+      description: Token creator info
       properties:
         address:
           type:
@@ -9417,7 +9828,7 @@ components:
           example: 100
     TokenExtra:
       type: object
-      description: 代幣額外元資料
+      description: Token extra metadata
       properties:
         collectionAddress:
           type:
@@ -9597,6 +10008,7 @@ components:
         - stats.volumesInUsd4h
         - stats.volumesInUsd24h
         - tokenCreatedAt
+        - marketData.athMarketCapInUsd
     TokenFilter:
       type: string
       enum:
@@ -9616,7 +10028,7 @@ components:
         - has_bitbucket
     TokenHolder:
       type: object
-      description: 代幣持有者
+      description: Token holder
       required:
         - walletAddress
         - amount
@@ -9631,17 +10043,34 @@ components:
           type: string
           description: 代幣持有價值（USD 計）
           example: '1000000000000000000'
+        lastActiveAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Last active timestamp (ms since epoch)
         percentage:
           type: string
           description: 佔總供應量百分比
           example: '100'
+        startHoldingAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp when holder first acquired the token (ms since epoch)
+        tags:
+          type: array
+          items:
+            type: string
+          description: Trader classification tags (e.g. "kol", "smart", "sniper")
         walletAddress:
           type: string
           description: 持有者錢包地址
           example: '0x1234567890abcdef'
     TokenLiquiditySnapshot:
       type: object
-      description: 代幣流動性快照
+      description: Token liquidity snapshot
       required:
         - snapshotTime
         - maxLiquidityPoolAddress
@@ -9765,8 +10194,16 @@ components:
         - m1SellVolumeInUsd
     TokenMarketData:
       type: object
-      description: 代幣市場資料
+      description: Token market data
       properties:
+        athMarketCapInUsd:
+          type:
+            - string
+            - 'null'
+          description: |-
+            ENTITY.TOKEN_MARKET_DATA.ATH_MARKET_CAP_IN_USD
+            All-time-high market cap in USD (max observed since token creation).
+          example: '9500000.00'
         bluechipHoldingsRatio:
           type:
             - string
@@ -10051,7 +10488,7 @@ components:
           example: '1000000.45'
     TokenMetadata:
       type: object
-      description: 代幣元資料
+      description: Token metadata
       required:
         - address
         - chain
@@ -10165,7 +10602,7 @@ components:
           example: https://arweave.net/abc123
     TokenMintBurn:
       type: object
-      description: 代幣鑄造/銷毀事件
+      description: Token mint/burn event
       required:
         - tokenAddress
         - transactionSignature
@@ -10201,7 +10638,7 @@ components:
           example: 3A7B9C1D2E4F6G8
     TokenPage:
       type: object
-      description: 'Token 搜尋結果頁 — 對應 TS `TokenPage`。'
+      description: Token search result page — mirrors TS `TokenPage`.
       required:
         - data
       properties:
@@ -10232,7 +10669,7 @@ components:
           example: eyJpZCI6InN0YXJ0In0=
     TokenPrice:
       type: object
-      description: 代幣價格
+      description: Token price
       required:
         - address
         - timestamp
@@ -10240,26 +10677,93 @@ components:
       properties:
         address:
           type: string
-          description: 代幣地址
+          description: Token address
           example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
         priceInSol:
           type:
             - string
             - 'null'
-          description: 原生代幣計價
+          description: Price in native token
           example: '1000'
         priceInUsd:
           type: string
-          description: USD 計價
+          description: Price in USD
           example: '1000'
         timestamp:
           type: integer
           format: int64
-          description: 時間戳
+          description: Timestamp
           example: 1754055151000
+    TokenSecurityResponse:
+      type: object
+      required:
+        - chain
+        - address
+      properties:
+        address:
+          type: string
+          description: Token contract address
+          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+        chain:
+          type: string
+          description: Chain name
+          example: sol
+        goplus:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/GoPlusSecurityInfo'
+              description: GoPlus security data
+        honeypot:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/HoneypotIsSecurityInfo'
+              description: Honeypot.is security data
+        serialized:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/SerializedSecurityInfo'
+              description: Serialized Audit security data
+      example:
+        address: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+        chain: sol
+        goplus:
+          available: true
+          buyTax: '0'
+          chainSupported: true
+          holderCount: '6620826'
+          isHoneypot: false
+          isOpenSource: true
+          isRenounced: false
+          lastRefreshedAt: 2026-05-13T10:00:00
+          raw: {}
+          sellTax: '0'
+          totalSupply: '1000000000'
+        honeypot:
+          available: true
+          averageTax: '0.1'
+          buyTax: '0'
+          canNotSell: 0
+          canSell: 100
+          chainSupported: true
+          honeypotResult: clean
+          isHoneypot: false
+          lastRefreshedAt: 2026-05-13T09:55:00
+          raw: {}
+          sellTax: '0'
+        serialized:
+          available: true
+          chainSupported: true
+          isOpenSource: true
+          isSafe: true
+          lastRefreshedAt: 2026-05-13T10:05:00
+          raw: {}
+          sourceType: verified
+          vulnCount: 2
+          vulnCriticalCount: 0
+          vulnMitigatedCount: 2
     TokenSocialMedias:
       type: object
-      description: 代幣社群媒體連結
+      description: Token social media links
       properties:
         bitbucket:
           type:
@@ -10341,7 +10845,7 @@ components:
           example: https://youtube.com/@circle
     TokenStats:
       type: object
-      description: 包含巢狀時間段資料的代幣統計
+      description: Token statistics with nested time period data
       required:
         - address
         - periods
@@ -10353,33 +10857,33 @@ components:
         periods:
           type: object
           description: |-
-            依時間週期（1m、5m、15m、30m、1h、4h、24h）彙總的交易統計。
-            每個週期包含完整 OHLCV 資料、交易筆數，以及與前一週期的比較。
-            完整欄位請參見 `TokenTradeStatPeriod` schema。
+            Trade statistics grouped by time period (1m, 5m, 15m, 30m, 1h, 4h, 6h, 24h).
+            Each period contains full OHLCV data, trade counts, and previous-period comparisons.
+            See `TokenTradeStatPeriod` schema for all fields.
           additionalProperties:
             $ref: '#/components/schemas/TokenTradeStatPeriod'
           propertyNames:
             type: string
           example:
-            24h:
-              buyVolumeInUsd: '45000.00'
-              buyers: '320'
-              buys: '1520'
+            6h:
+              buyVolumeInUsd: '12000.00'
+              buyers: '120'
+              buys: '420'
               closeInUsd: '0.15600000'
               currentLiquidityInUsd: '250000.00'
               highInUsd: '0.15900000'
-              lowInUsd: '0.15000000'
-              openInUsd: '0.15000000'
-              priceChangeRatioInUsd: '0.04000000'
-              sellVolumeInUsd: '36000.00'
-              sellers: '210'
-              sells: '980'
-              totalVolumeInUsd: '81000.00'
-              traders: '530'
-              trades: '2500'
+              lowInUsd: '0.15100000'
+              openInUsd: '0.15200000'
+              priceChangeRatioInUsd: '0.02631579'
+              sellVolumeInUsd: '9800.00'
+              sellers: '95'
+              sells: '360'
+              totalVolumeInUsd: '21800.00'
+              traders: '215'
+              trades: '780'
     TokenTradeStatPeriod:
       type: object
-      description: 單一時間視窗交易統計週期
+      description: Single time window trade statistics period
       properties:
         averagePriceInNative:
           type: string
@@ -10607,73 +11111,73 @@ components:
           example: '0.25'
     TokenTrader:
       type: object
-      description: 'Token 交易者資訊 — 對應 TS `TokenTraderDTO`'
+      description: Token trader info — mirrors TS `TokenTraderDTO`
       required:
         - address
       properties:
         address:
           type: string
-          description: 錢包地址
+          description: Wallet address
           example: MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2
         blockTimestamp:
           type:
             - string
             - 'null'
-          description: 區塊時間戳（sniper）
+          description: Block timestamp (sniper)
           example: 2025-01-15T10:30:00Z
         onchainCreatedAt:
           type:
             - string
             - 'null'
-          description: 鏈上帳戶建立時間（fresh/dev）
+          description: Onchain account creation time (fresh/dev)
           example: 2025-01-15T10:30:00Z
         percentileRankTradeAmountInUsd:
           type:
             - string
             - 'null'
-          description: USD 交易額的百分位排名（pro/insider）
+          description: Percentile rank of trade amount in USD (pro/insider)
           example: '0.98'
         percentileRankTradeCount:
           type:
             - integer
             - 'null'
           format: int64
-          description: 交易次數的百分位排名（pro）
+          description: Percentile rank of trade count (pro)
           example: 95
         rankTradeAmountInUsd:
           type:
             - string
             - 'null'
-          description: USD 交易額排名（insider）
+          description: Rank trade amount in USD (insider)
           example: '0.95'
         tradeAmountInNative:
           type:
             - string
             - 'null'
-          description: 原生代幣交易額（pro/insider）
+          description: Trade amount in native token (pro/insider)
           example: '1500.50'
         tradeAmountInUsd:
           type:
             - string
             - 'null'
-          description: USD 交易額（pro/insider）
+          description: Trade amount in USD (pro/insider)
           example: '45000.00'
         tradeCount:
           type:
             - integer
             - 'null'
           format: int64
-          description: 交易次數（pro/insider）
+          description: Trade count (pro/insider)
           example: 42
         transactionSignature:
           type:
             - string
             - 'null'
-          description: 交易簽名（sandwich/bundle/sniper）
+          description: Transaction signature (sandwish/bundle/sniper)
           example: 5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz...
     TokenTraderTag:
       type: string
-      description: 代幣交易者標籤
+      description: Token trader tag
       enum:
         - fresh
         - sandwish
@@ -10687,7 +11191,7 @@ components:
         - smart
     TokenTransfer:
       type: object
-      description: 代幣轉帳
+      description: Token transfer
       required:
         - id
         - transactionSignature
@@ -10724,7 +11228,7 @@ components:
           example: transfer-1
         status:
           type: string
-          description: '轉帳狀態: unknown / succeeded / failed'
+          description: 'Transfer status: unknown / succeeded / failed'
           example: succeeded
         toAddress:
           type: string
@@ -10740,11 +11244,11 @@ components:
           example: 3hmmomhUcmLMw2ZCqKg5MBfK8b7RBNrBpqvE2Wv7u5V6PCMLh4s7dVfA83NbzNFAgTzVvZuMURoKEviwR92otRp
         type:
           type: string
-          description: '轉帳類型: unknown / in / out'
+          description: 'Transfer type: unknown / in / out'
           example: in
     TokenTransferTotal:
       type: object
-      description: 代幣轉帳總數
+      description: Token transfer total count
       required:
         - total
       properties:
@@ -10755,7 +11259,7 @@ components:
           example: 123456
     TopTrader:
       type: object
-      description: 頂級交易者統計
+      description: Top trader statistics
       required:
         - tokenAddress
         - walletAddress
@@ -10823,13 +11327,13 @@ components:
           example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
     TopTraderSortBy:
       type: string
-      description: 頂級交易者查詢的排序欄位
+      description: Sort field for top traders query
       enum:
         - tradeAmount
         - tradeCount
     TradeDetail:
       type: object
-      description: 交易詳情
+      description: Trade detail
       required:
         - chain
         - blockHeight
@@ -10858,141 +11362,153 @@ components:
       properties:
         accountOwnerAddress:
           type: string
-          description: 帳戶所有者地址（交易者錢包）
+          description: Account owner address (trader wallet)
           example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
         blockHeight:
           type: integer
           format: int64
-          description: 區塊高度
+          description: Block height
           example: 332417228
         blockTimestamp:
           type: integer
           format: int64
-          description: 區塊時間戳（毫秒）
+          description: Block timestamp (milliseconds)
           example: 1717334400000
         chain:
           type: string
-          description: 鏈識別符
+          description: Chain identifier
           example: sol
         dexImage:
           type:
             - string
             - 'null'
-          description: DEX 圖片
+          description: DEX image
           example: https://example.com/dex.png
         dexProgramAddress:
           type:
             - string
             - 'null'
-          description: DEX 程式地址
+          description: DEX program address
           example: whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc
         dexProtocolFamily:
           type:
             - string
             - 'null'
-          description: DEX 協議家族
+          description: DEX protocol family
           example: OrcaWhirpool
+        gasFee:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Gas fee (transaction fee in lamports / wei)
+          example: 5000
         poolAddress:
           type: string
-          description: 池地址
+          description: Pool address
           example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
         sideTokenAddress:
           type: string
-          description: 對手方代幣地址
+          description: Side token address
           example: So11111111111111111111111111111111111111112
         sideTokenAmount:
           type: string
-          description: 對手方代幣數量
+          description: Side token amount
           example: '1'
         sideTokenAmountInNative:
           type: string
-          description: 對手方代幣數量（原生貨幣計價）
+          description: Side token amount in native currency
           example: '150'
         sideTokenAmountInUsd:
           type: string
-          description: 對手方代幣數量（USD 計價）
+          description: Side token amount in USD
           example: '150'
         sideTokenImageUrl:
           type:
             - string
             - 'null'
-          description: 對手方代幣圖片 URL
+          description: Side token image URL
           example: https://arweave.net/sol.png
         sideTokenName:
           type: string
-          description: 對手方代幣名稱
+          description: Side token name
           example: Wrapped SOL
         sideTokenPriceInNative:
           type: string
-          description: 對手方代幣原生貨幣價格
+          description: Side token price in native currency
           example: '1'
         sideTokenPriceInUsd:
           type: string
-          description: 對手方代幣 USD 價格
+          description: Side token price in USD
           example: '150'
         sideTokenSymbol:
           type: string
-          description: 對手方代幣符號
+          description: Side token symbol
           example: SOL
         status:
           type: string
-          description: 交易狀態
+          description: Transaction status
           example: SUCCEEDED
         tokenAddress:
           type: string
-          description: 代幣地址
+          description: Token address
           example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
         tokenAmount:
           type: string
-          description: 代幣數量
+          description: Token amount
           example: '1000000'
         tokenAmountInNative:
           type: string
-          description: 代幣數量（原生貨幣計價）
+          description: Token amount in native currency
           example: '100'
         tokenAmountInUsd:
           type: string
-          description: 代幣數量（USD 計價）
+          description: Token amount in USD
           example: '8800000'
         tokenImageUrl:
           type:
             - string
             - 'null'
-          description: 代幣圖片 URL
+          description: Token image URL
           example: https://arweave.net/token.png
         tokenName:
           type: string
-          description: 代幣名稱
+          description: Token name
           example: TRUMP
         tokenPriceInNative:
           type: string
-          description: 代幣原生貨幣價格
+          description: Token price in native currency
           example: '0.0001'
         tokenPriceInUsd:
           type: string
-          description: 代幣 USD 價格
+          description: Token price in USD
           example: '8.80'
         tokenSymbol:
           type: string
-          description: 代幣符號
+          description: Token symbol
           example: TRUMP
+        traderTags:
+          type: array
+          items:
+            type: string
+          description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "bundle", "bluechip")
         transactionSignature:
           type: string
-          description: 交易簽名
+          description: Transaction signature
           example: 37XpPt9Ak6JiE1V3sftJDtdUsvR9FVFRqkZmoT3dp4BTD9pgyTWn1XgHH6R7NjuJ4pBMAgj8JvZtxQrf4s6NTC5F
         type:
           type: string
-          description: 交易類型（BUY/SELL）
+          description: Trade type (BUY/SELL)
           example: BUY
     TradeType:
       type: string
-      description: 交易類型
+      description: Trade type
       enum:
         - BUY
         - SELL
     TraderGainersLosersItem:
       type: object
-      description: 交易者盈虧排行項 — 基於 PnL 的排名
+      description: Trader gainers/losers item — PnL-based ranking
       required:
         - chain
         - address
@@ -11022,14 +11538,14 @@ components:
           example: '85000.00'
     TraderPnlResolution:
       type: string
-      description: 交易者 PnL 精度週期
+      description: Trader PnL resolution period
       enum:
         - 1d
         - 7d
         - 30d
     TransactionStatus:
       type: string
-      description: 交易狀態
+      description: Transaction status
       enum:
         - UNKNOWN
         - SUCCEEDED
@@ -11051,7 +11567,7 @@ components:
           example: 125
     UpdateWebhookRequest:
       type: object
-      description: 更新 Webhook 端點請求
+      description: Request to update a webhook endpoint
       required:
         - endpointId
       properties:
@@ -11116,7 +11632,7 @@ components:
           example: https://example.com
     WalletBalances:
       type: object
-      description: 錢包餘額
+      description: Wallet balances
       required:
         - walletAddress
         - chain
@@ -11124,38 +11640,38 @@ components:
       properties:
         chain:
           type: string
-          description: 鏈識別符
+          description: Chain identifier
           example: sol
         nativeBalance:
           type:
             - string
             - 'null'
-          description: 原生代幣餘額
+          description: Native token balance
           example: '0.5'
         nativeBalanceInUsd:
           type:
             - string
             - 'null'
-          description: 原生代幣餘額（USD 計價）
+          description: Native balance in USD
           example: '75.00'
         tokens:
           type: array
           items:
             $ref: '#/components/schemas/TokenBalance'
-          description: 代幣餘額列表
+          description: Token balances
         totalValueInUsd:
           type:
             - string
             - 'null'
-          description: USD 總價值
+          description: Total value in USD
           example: '3.369918'
         walletAddress:
           type: string
-          description: 錢包地址
+          description: Wallet address
           example: 8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1
     WalletFirstTx:
       type: object
-      description: 錢包首次交易摘要
+      description: Wallet first transaction summary
       required:
         - txHash
         - blockTime
@@ -11193,7 +11709,7 @@ components:
           example: 5rG9igZk95gbS8ZG66upvRfbcaaDpokQYg4ny3WQ3DrA...
     WalletNetWorth:
       type: object
-      description: 錢包淨資產摘要
+      description: Wallet net worth summary
       required:
         - walletAddress
         - chain
@@ -11227,7 +11743,7 @@ components:
           example: 8X35rQUK2u9hfn8rMPwwr6ZSEUhbmfDPEapp589XyoM1
     WalletNetWorthChartResponse:
       type: object
-      description: 帶分頁的錢包淨資產走勢圖回應。
+      description: Wallet net-worth chart response with pagination.
       required:
         - walletAddress
         - currentTimestamp
@@ -11253,7 +11769,7 @@ components:
           example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
     WalletNetWorthDetailsPage:
       type: object
-      description: 分頁的錢包淨資產詳情（對應 TS WalletNetWorthDetailsPage）。
+      description: Paginated wallet net-worth details (mirrors TS WalletNetWorthDetailsPage).
       required:
         - walletAddress
         - netWorth
@@ -11304,7 +11820,7 @@ components:
           example: 3xd4LGVWtYXLBspR6X5JWbW49NXmEehfPtX6Kqx98b4w
     WalletNetWorthPage:
       type: object
-      description: 分頁的錢包淨資產頁（對應 TS WalletNetWorthPage）。
+      description: Paginated wallet net-worth page (mirrors TS WalletNetWorthPage).
       required:
         - walletAddress
         - totalValueInUsd
@@ -11375,7 +11891,7 @@ components:
               value: '1764819473.530063'
     WalletPnlSummary:
       type: object
-      description: 錢包 PnL 摘要（在給定精度下對所有代幣彙總）
+      description: Wallet PnL Summary (aggregated across all tokens for a given resolution)
       required:
         - walletAddress
         - resolution
@@ -11481,7 +11997,7 @@ components:
           example: '438944'
     WalletTransfer:
       type: object
-      description: 錢包轉帳
+      description: Wallet transfer
       required:
         - id
         - transactionSignature
@@ -11553,7 +12069,7 @@ components:
               txHash: 5rG9igZk95gbS8ZG66upvRfbcaaDpokQYg4ny3WQ3DrA...
     Watchlist:
       type: object
-      description: 關注清單實體
+      description: Watchlist entity
       required:
         - userId
         - items
@@ -11562,10 +12078,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WatchlistItem'
-          description: 關注清單項目列表
+          description: List of watchlist items
         userId:
           type: string
-          description: 使用者 ID 或識別符
+          description: User ID or identifier
     WatchlistAddResponse:
       type: object
       required:
@@ -11577,26 +12093,26 @@ components:
           example: true
     WatchlistItem:
       type: object
-      description: 關注清單項目
+      description: Watchlist item
       required:
         - chain
         - walletAddress
       properties:
         chain:
           type: string
-          description: 鏈識別符
+          description: Chain identifier
         walletAddress:
           type: string
-          description: 被監控的錢包地址
+          description: Wallet address being watched
     WebhookChannel:
       type: string
-      description: Webhook 事件通道
+      description: Webhook event channel
       enum:
         - sol.token.migrated
         - sol.token.created
     WebhookEndpoint:
       type: object
-      description: Webhook 端點回應
+      description: Webhook endpoint response
       required:
         - id
         - url

@@ -24,14 +24,14 @@ export const SUPPORTED_LANGUAGES: Language[] = [
 export const SERVICES: ServiceConfig[] = [
   {
     name: 'data',
-    groupName: 'DATA API',
+    groupName: 'REST API',
     openapiFilePrefix: 'openapi-data',
     i18nFile: 'i18n-data.key.md',
     endpointSubDir: 'data',
   },
   {
     name: 'defi',
-    groupName: 'DEFI API',
+    groupName: 'REST API',
     openapiFilePrefix: 'openapi-defi',
     i18nFile: 'i18n-defi.key.md',
     endpointSubDir: 'defi',

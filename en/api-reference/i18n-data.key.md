@@ -23,6 +23,7 @@ GLOBAL.TAG.TRADE='Trade related operations'
 GLOBAL.TAG.WALLET='Wallet related operations'
 GLOBAL.TAG.WATCHLIST='Watchlist related operations'
 GLOBAL.TAG.WEBHOOK='Webhook related operations'
+GLOBAL.TAG.DEXSCREENER='DexScreener related operations'
 
 //GET_SUPPORTED_BLOCKCHAINS CONTROLLER
 CONTROLLER.GET_SUPPORTED_BLOCKCHAINS.DESCRIPTION='Get list of supported blockchains'
@@ -1185,3 +1186,73 @@ ENTITY.HEALTH_RESPONSE.COMPONENTS='List of component health checks'
 ENTITY.COMPONENT_HEALTH.NAME='Component name'
 ENTITY.COMPONENT_HEALTH.STATUS='Component health status'
 ENTITY.COMPONENT_HEALTH.LATENCY_MS='Component response latency in milliseconds'
+
+//DEXSCR CONTROLLER
+CONTROLLER.DEXSCR.GET_TOKEN_INFO.DESCRIPTION='Retrieve DexScreener ad, boost, and link update information for a specific token'
+CONTROLLER.DEXSCR.GET_TOKEN_INFO.RESPONSE='Successful response'
+CONTROLLER.DEXSCR.GET_TOKEN_INFO.SUMMARY='DexScreener - Token Info'
+CONTROLLER.DEXSCR.GET_ADS.DESCRIPTION='Retrieve a list of paid DexScreener advertisements'
+CONTROLLER.DEXSCR.GET_ADS.RESPONSE='Successful response'
+CONTROLLER.DEXSCR.GET_ADS.SUMMARY='DexScreener - Ads'
+CONTROLLER.DEXSCR.GET_BOOSTS.DESCRIPTION='Retrieve a list of token boosts with spending amounts from DexScreener'
+CONTROLLER.DEXSCR.GET_BOOSTS.RESPONSE='Successful response'
+CONTROLLER.DEXSCR.GET_BOOSTS.SUMMARY='DexScreener - Boosts'
+CONTROLLER.DEXSCR.GET_TRENDING.DESCRIPTION='Retrieve trending meta categories from DexScreener'
+CONTROLLER.DEXSCR.GET_TRENDING.RESPONSE='Successful response'
+CONTROLLER.DEXSCR.GET_TRENDING.SUMMARY='DexScreener - Trending'
+CONTROLLER.DEXSCR.GET_LINK_UPDATES.DESCRIPTION='Retrieve recently updated token profile links from DexScreener'
+CONTROLLER.DEXSCR.GET_LINK_UPDATES.RESPONSE='Successful response'
+CONTROLLER.DEXSCR.GET_LINK_UPDATES.SUMMARY='DexScreener - Link Updates'
+
+//DEXSCR DTO
+DTO.DEXSCR.LIMIT='Number of results to return'
+
+//DEXSCR_TOKEN_INFO ENTITY
+ENTITY.DEXSCR_TOKEN_INFO.CHAIN='Blockchain network identifier'
+ENTITY.DEXSCR_TOKEN_INFO.TOKEN_ADDRESS='Token contract address'
+ENTITY.DEXSCR_TOKEN_INFO.AD='DexScreener advertisement data for this token, if any'
+ENTITY.DEXSCR_TOKEN_INFO.BOOST='DexScreener boost data for this token, if any'
+ENTITY.DEXSCR_TOKEN_INFO.LINK_UPDATE='DexScreener link update data for this token, if any'
+
+//DEXSCR_AD ENTITY
+ENTITY.DEXSCR_AD.CHAIN='Blockchain network identifier'
+ENTITY.DEXSCR_AD.TOKEN_ADDRESS='Token contract address'
+ENTITY.DEXSCR_AD.URL='DexScreener token page URL'
+ENTITY.DEXSCR_AD.DATE='Ad start date'
+ENTITY.DEXSCR_AD.AD_TYPE='Ad type (e.g. banner)'
+ENTITY.DEXSCR_AD.DURATION_HOURS='Ad duration in hours'
+ENTITY.DEXSCR_AD.IMPRESSIONS='Total ad impressions count'
+
+//DEXSCR_BOOST ENTITY
+ENTITY.DEXSCR_BOOST.CHAIN='Blockchain network identifier'
+ENTITY.DEXSCR_BOOST.TOKEN_ADDRESS='Token contract address'
+ENTITY.DEXSCR_BOOST.AMOUNT='Current boost amount'
+ENTITY.DEXSCR_BOOST.TOTAL_AMOUNT='Total boost amount spent'
+ENTITY.DEXSCR_BOOST.URL='DexScreener token page URL'
+ENTITY.DEXSCR_BOOST.ICON='Token icon URL'
+ENTITY.DEXSCR_BOOST.HEADER='Token header image URL'
+ENTITY.DEXSCR_BOOST.OPEN_GRAPH='Token Open Graph image URL'
+ENTITY.DEXSCR_BOOST.DESCRIPTION='Token description'
+ENTITY.DEXSCR_BOOST.LINKS='Token social links in JSON format'
+
+//DEXSCR_TRENDING_META ENTITY
+ENTITY.DEXSCR_TRENDING_META.SLUG='Meta category slug identifier'
+ENTITY.DEXSCR_TRENDING_META.NAME='Meta category display name'
+ENTITY.DEXSCR_TRENDING_META.DESCRIPTION='Meta category description'
+ENTITY.DEXSCR_TRENDING_META.ICON_TYPE='Icon type (e.g. image)'
+ENTITY.DEXSCR_TRENDING_META.ICON_VALUE='Icon URL or identifier value'
+ENTITY.DEXSCR_TRENDING_META.MARKET_CAP='Aggregate market capitalization in USD'
+ENTITY.DEXSCR_TRENDING_META.LIQUIDITY='Aggregate liquidity in USD'
+ENTITY.DEXSCR_TRENDING_META.VOLUME='Aggregate trading volume in USD'
+ENTITY.DEXSCR_TRENDING_META.TOKEN_COUNT='Number of tokens in this meta category'
+ENTITY.DEXSCR_TRENDING_META.MARKET_CAP_CHANGE='Market cap change percentages by period in JSON format'
+
+//DEXSCR_LINK_UPDATE ENTITY
+ENTITY.DEXSCR_LINK_UPDATE.CHAIN='Blockchain network identifier'
+ENTITY.DEXSCR_LINK_UPDATE.TOKEN_ADDRESS='Token contract address'
+ENTITY.DEXSCR_LINK_UPDATE.URL='DexScreener token page URL'
+ENTITY.DEXSCR_LINK_UPDATE.ICON='Token icon URL'
+ENTITY.DEXSCR_LINK_UPDATE.HEADER='Token header image URL'
+ENTITY.DEXSCR_LINK_UPDATE.OPEN_GRAPH='Token Open Graph image URL'
+ENTITY.DEXSCR_LINK_UPDATE.DESCRIPTION='Token description'
+ENTITY.DEXSCR_LINK_UPDATE.LINKS='Token social links in JSON format'

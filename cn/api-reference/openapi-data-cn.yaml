@@ -233,6 +233,175 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PageResponse_DexPoolSnapshot'
+  /v2/dexscr/{chain}/ads:
+    get:
+      tags:
+        - DexScreener
+      summary: CONTROLLER.DEXSCR.GET_ADS.SUMMARY
+      description: CONTROLLER.DEXSCR.GET_ADS.DESCRIPTION
+      operationId: get.dexscr.ads
+      parameters:
+        - name: chain
+          in: path
+          description: 支持网络列表中的链名称
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: limit
+          in: query
+          description: DTO.DEXSCR.LIMIT
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 20
+            maximum: 100
+            minimum: 1
+          style: form
+      responses:
+        '200':
+          description: CONTROLLER.DEXSCR.GET_ADS.RESPONSE
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DexscrAd'
+  /v2/dexscr/{chain}/boosts:
+    get:
+      tags:
+        - DexScreener
+      summary: CONTROLLER.DEXSCR.GET_BOOSTS.SUMMARY
+      description: CONTROLLER.DEXSCR.GET_BOOSTS.DESCRIPTION
+      operationId: get.dexscr.boosts
+      parameters:
+        - name: chain
+          in: path
+          description: 支持网络列表中的链名称
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: limit
+          in: query
+          description: DTO.DEXSCR.LIMIT
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 20
+            maximum: 100
+            minimum: 1
+          style: form
+      responses:
+        '200':
+          description: CONTROLLER.DEXSCR.GET_BOOSTS.RESPONSE
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DexscrBoost'
+  /v2/dexscr/{chain}/link-updates:
+    get:
+      tags:
+        - DexScreener
+      summary: CONTROLLER.DEXSCR.GET_LINK_UPDATES.SUMMARY
+      description: CONTROLLER.DEXSCR.GET_LINK_UPDATES.DESCRIPTION
+      operationId: get.dexscr.link-updates
+      parameters:
+        - name: chain
+          in: path
+          description: 支持网络列表中的链名称
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: limit
+          in: query
+          description: DTO.DEXSCR.LIMIT
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 20
+            maximum: 100
+            minimum: 1
+          style: form
+      responses:
+        '200':
+          description: CONTROLLER.DEXSCR.GET_LINK_UPDATES.RESPONSE
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DexscrLinkUpdate'
+  /v2/dexscr/{chain}/token/{tokenAddress}:
+    get:
+      tags:
+        - DexScreener
+      summary: CONTROLLER.DEXSCR.GET_TOKEN_INFO.SUMMARY
+      description: CONTROLLER.DEXSCR.GET_TOKEN_INFO.DESCRIPTION
+      operationId: get.dexscr.token-info
+      parameters:
+        - name: chain
+          in: path
+          description: 支持网络列表中的链名称
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: tokenAddress
+          in: path
+          description: 代币地址
+          required: true
+          schema:
+            type: string
+          example: WCoRVxGcpiwE6EvtDjXHJq6Kcn4nWT9Ubt1PrJHNAzM
+      responses:
+        '200':
+          description: CONTROLLER.DEXSCR.GET_TOKEN_INFO.RESPONSE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DexscrTokenInfo'
+  /v2/dexscr/{chain}/trending:
+    get:
+      tags:
+        - DexScreener
+      summary: CONTROLLER.DEXSCR.GET_TRENDING.SUMMARY
+      description: CONTROLLER.DEXSCR.GET_TRENDING.DESCRIPTION
+      operationId: get.dexscr.trending
+      parameters:
+        - name: chain
+          in: path
+          description: 支持网络列表中的链名称
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: limit
+          in: query
+          description: DTO.DEXSCR.LIMIT
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 20
+            maximum: 100
+            minimum: 1
+          style: form
+      responses:
+        '200':
+          description: CONTROLLER.DEXSCR.GET_TRENDING.RESPONSE
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DexscrTrendingMeta'
   /v2/ipfs/presign:
     post:
       tags:
@@ -2429,6 +2598,24 @@ paths:
                         - 'null'
                       description: Bonding Curve 完成比例
                       example: '1.0'
+                    creatorsHoldingsRatio:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.CREATORS_HOLDINGS_RATIO
+                      example: '0.10'
+                    creatorsTotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDERS
+                      example: '1'
+                    creatorsTotalHoldings:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDINGS
+                      example: '100000000.00'
                     devHoldingsRatio:
                       type:
                         - string
@@ -2543,6 +2730,24 @@ paths:
                         - 'null'
                       description: 最大池子 TVL（USD 计）
                       example: '150000.00'
+                    phishingHoldingsRatio:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.PHISHING_HOLDINGS_RATIO
+                      example: '0.0005'
+                    phishingTotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDERS
+                      example: '2'
+                    phishingTotalHoldings:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDINGS
+                      example: '50000.00'
                     priceInSol:
                       type:
                         - string
@@ -2573,6 +2778,24 @@ paths:
                         - 'null'
                       description: 专业交易者总持仓量
                       example: '40000'
+                    ratHoldingsRatio:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.RAT_HOLDINGS_RATIO
+                      example: '0.0012'
+                    ratTotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDERS
+                      example: '5'
+                    ratTotalHoldings:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDINGS
+                      example: '120000.00'
                     sandwishHoldingsRatio:
                       type:
                         - string
@@ -2591,6 +2814,24 @@ paths:
                         - 'null'
                       description: 三明治攻击钱包总持仓量
                       example: '15000'
+                    smartHoldingsRatio:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.SMART_HOLDINGS_RATIO
+                      example: '0.03'
+                    smartTotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDERS
+                      example: '30'
+                    smartTotalHoldings:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDINGS
+                      example: '3000000.00'
                     sniperHoldingsRatio:
                       type:
                         - string
@@ -3240,6 +3481,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenCreation'
+  /v2/token/{chain}/{tokenAddress}/holderTrend:
+    get:
+      tags:
+        - Token
+      summary: CONTROLLER.TOKEN.GET_HOLDER_TREND.SUMMARY
+      description: CONTROLLER.TOKEN.GET_HOLDER_TREND.DESCRIPTION
+      operationId: get.holder.trend
+      parameters:
+        - name: chain
+          in: path
+          description: 支持网络列表中的链名称
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: tokenAddress
+          in: path
+          description: 代币地址
+          required: true
+          schema:
+            type: string
+          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+        - name: resolution
+          in: query
+          description: 'DTO.TOKEN.HOLDER_TREND.RESOLUTION Aggregation resolution: 1h (default) | 1d'
+          required: false
+          schema:
+            type: string
+            default: 1h
+          example: 1h
+        - name: from
+          in: query
+          description: 'DTO.TOKEN.HOLDER_TREND.FROM Start timestamp in Unix milliseconds (default: 30 days ago)'
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1743465600000
+        - name: to
+          in: query
+          description: 'DTO.TOKEN.HOLDER_TREND.TO End timestamp in Unix milliseconds (default: now)'
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: 1746144000000
+      responses:
+        '200':
+          description: CONTROLLER.TOKEN.GET_HOLDER_TREND.RESPONSE
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenHolderTrendPoint'
   /v2/token/{chain}/{tokenAddress}/holders:
     get:
       tags:
@@ -3725,7 +4021,7 @@ paths:
           required: true
           schema:
             type: string
-          example: 6pdxGxyoZhFQDwkL5jDn8QHF66kAAxhR9Yok911kpump
+          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
       responses:
         '200':
           description: 代币安全数据
@@ -3733,6 +4029,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenSecurityResponse'
+  /v2/token/{chain}/{tokenAddress}/similar:
+    get:
+      tags:
+        - Token
+      summary: Get tokens similar to the specified token by image or name.
+      operationId: get.token.similar
+      parameters:
+        - name: chain
+          in: path
+          description: Chain identifier
+          required: true
+          schema:
+            type: string
+          example: sol
+        - name: tokenAddress
+          in: path
+          description: Token address
+          required: true
+          schema:
+            type: string
+          example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
+        - name: type
+          in: query
+          description: 'Similarity type: image or name'
+          required: false
+          schema:
+            $ref: '#/components/schemas/SimilarType'
+        - name: limit
+          in: query
+          description: Max results (1-100)
+          required: false
+          schema:
+            type: integer
+            format: int64
+          example: '20'
+      responses:
+        '200':
+          description: List of similar tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
   /v2/token/{chain}/{tokenAddress}/stats:
     get:
       tags:
@@ -4222,6 +4562,22 @@ paths:
               - $ref: '#/components/schemas/ActivitySortBy'
             default: timestamp
           example: timestamp
+        - name: traderTags
+          in: query
+          description: |-
+            Filter by trader tag(s). Comma-separated list from: kol, smart, sniper, bundle, dev, bluechip, insider, fresh.
+            Returns activities where the trader has ANY of the specified tags.
+          required: false
+          schema:
+            type: string
+          example: kol,smart
+        - name: minAmountUsd
+          in: query
+          description: Minimum trade value in USD (inclusive). Filters out small trades.
+          required: false
+          schema:
+            type: string
+          example: '1000'
       responses:
         '200':
           description: 成功响应
@@ -6228,6 +6584,226 @@ components:
         - Symmetry
         - ZeroFi
         - Unknown
+    DexscrAd:
+      type: object
+      required:
+        - chain
+        - tokenAddress
+      properties:
+        adType:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_AD.AD_TYPE
+        chain:
+          type: string
+          description: ENTITY.DEXSCR_AD.CHAIN
+          example: sol
+        date:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_AD.DATE
+        durationHours:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: ENTITY.DEXSCR_AD.DURATION_HOURS
+        impressions:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: ENTITY.DEXSCR_AD.IMPRESSIONS
+        tokenAddress:
+          type: string
+          description: ENTITY.DEXSCR_AD.TOKEN_ADDRESS
+          example: So11111111111111111111111111111111111111112
+        url:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_AD.URL
+    DexscrBoost:
+      type: object
+      required:
+        - chain
+        - tokenAddress
+        - totalAmount
+      properties:
+        amount:
+          type:
+            - number
+            - 'null'
+          format: double
+          description: ENTITY.DEXSCR_BOOST.AMOUNT
+        chain:
+          type: string
+          description: ENTITY.DEXSCR_BOOST.CHAIN
+          example: sol
+        description:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_BOOST.DESCRIPTION
+        header:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_BOOST.HEADER
+        icon:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_BOOST.ICON
+        links:
+          description: ENTITY.DEXSCR_BOOST.LINKS
+        openGraph:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_BOOST.OPEN_GRAPH
+        tokenAddress:
+          type: string
+          description: ENTITY.DEXSCR_BOOST.TOKEN_ADDRESS
+          example: So11111111111111111111111111111111111111112
+        totalAmount:
+          type: number
+          format: double
+          description: ENTITY.DEXSCR_BOOST.TOTAL_AMOUNT
+          example: 500
+        url:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_BOOST.URL
+    DexscrLinkUpdate:
+      type: object
+      required:
+        - chain
+        - tokenAddress
+      properties:
+        chain:
+          type: string
+          description: ENTITY.DEXSCR_LINK_UPDATE.CHAIN
+          example: sol
+        description:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_LINK_UPDATE.DESCRIPTION
+        header:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_LINK_UPDATE.HEADER
+        icon:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_LINK_UPDATE.ICON
+        links:
+          description: ENTITY.DEXSCR_LINK_UPDATE.LINKS
+        openGraph:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_LINK_UPDATE.OPEN_GRAPH
+        tokenAddress:
+          type: string
+          description: ENTITY.DEXSCR_LINK_UPDATE.TOKEN_ADDRESS
+          example: So11111111111111111111111111111111111111112
+        url:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_LINK_UPDATE.URL
+    DexscrTokenInfo:
+      type: object
+      description: Per-token aggregated DexScreener information.
+      required:
+        - chain
+        - tokenAddress
+      properties:
+        ad:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DexscrAd'
+              description: ENTITY.DEXSCR_TOKEN_INFO.AD
+        boost:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DexscrBoost'
+              description: ENTITY.DEXSCR_TOKEN_INFO.BOOST
+        chain:
+          type: string
+          description: ENTITY.DEXSCR_TOKEN_INFO.CHAIN
+          example: sol
+        linkUpdate:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DexscrLinkUpdate'
+              description: ENTITY.DEXSCR_TOKEN_INFO.LINK_UPDATE
+        tokenAddress:
+          type: string
+          description: ENTITY.DEXSCR_TOKEN_INFO.TOKEN_ADDRESS
+          example: WCoRVxGcpiwE6EvtDjXHJq6Kcn4nWT9Ubt1PrJHNAzM
+    DexscrTrendingMeta:
+      type: object
+      required:
+        - slug
+      properties:
+        description:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_TRENDING_META.DESCRIPTION
+        iconType:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_TRENDING_META.ICON_TYPE
+        iconValue:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_TRENDING_META.ICON_VALUE
+        liquidity:
+          type:
+            - number
+            - 'null'
+          format: double
+          description: ENTITY.DEXSCR_TRENDING_META.LIQUIDITY
+        marketCap:
+          type:
+            - number
+            - 'null'
+          format: double
+          description: ENTITY.DEXSCR_TRENDING_META.MARKET_CAP
+        marketCapChange:
+          description: ENTITY.DEXSCR_TRENDING_META.MARKET_CAP_CHANGE
+        name:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.DEXSCR_TRENDING_META.NAME
+        slug:
+          type: string
+          description: ENTITY.DEXSCR_TRENDING_META.SLUG
+          example: ai
+        tokenCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: ENTITY.DEXSCR_TRENDING_META.TOKEN_COUNT
+        volume:
+          type:
+            - number
+            - 'null'
+          format: double
+          description: ENTITY.DEXSCR_TRENDING_META.VOLUME
     EndpointListResponse:
       type: object
       description: Paginated list of webhook endpoints
@@ -6368,7 +6944,6 @@ components:
           type:
             - string
             - 'null'
-          description: Number of token holders
         isBlacklisted:
           type:
             - boolean
@@ -6414,12 +6989,10 @@ components:
           type:
             - string
             - 'null'
-          description: Number of LP holders
         ownerAddress:
           type:
             - string
             - 'null'
-          description: Contract owner address
         raw:
           description: Raw security data from the source
         sellTax:
@@ -6431,7 +7004,6 @@ components:
           type:
             - string
             - 'null'
-          description: Total token supply
     HoneypotIsSecurityInfo:
       type: object
       required:
@@ -6439,74 +7011,60 @@ components:
       properties:
         available:
           type: boolean
-          description: Whether data is available from this source
           example: true
         averageTax:
           type:
             - string
             - 'null'
-          description: Average observed tax rate
         buyTax:
           type:
             - string
             - 'null'
-          description: Buy tax rate
         canNotSell:
           type:
             - integer
             - 'null'
           format: int32
-          description: Number of holders that cannot sell
         canSell:
           type:
             - integer
             - 'null'
           format: int32
-          description: Number of holders that can sell
         chainSupported:
           type:
             - boolean
             - 'null'
-          description: Whether this source supports the token chain
           example: true
         highTax:
           type:
             - string
             - 'null'
-          description: Highest observed tax rate
         honeypotResult:
           type:
             - string
             - 'null'
-          description: Honeypot.is verdict
         isHoneypot:
           type:
             - boolean
             - 'null'
-          description: Whether the token is a honeypot
         isOpenSource:
           type:
             - boolean
             - 'null'
-          description: Whether the contract is open source
         isRenounced:
           type:
             - boolean
             - 'null'
-          description: Whether the contract ownership is renounced
         lastRefreshedAt:
           type:
             - string
             - 'null'
-          description: Last refresh timestamp
           example: 2026-05-13T10:00:00
-        raw:
-          description: Raw security data from the source
+        raw: {}
         sellTax:
           type:
             - string
             - 'null'
-          description: Sell tax rate
     HotTokenDuration:
       type: string
       description: Hot token ranking duration
@@ -7093,6 +7651,14 @@ components:
         - symbol
         - isActive
       properties:
+        accuAmount:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Accumulated net token position in token native units:
+            buy_amount - sell_amount + transfer_in_amount - transfer_out_amount.
+            Mirrors GMGN `accu_amount`. None when all four source fields are absent.
         amount:
           type: string
           description: 代币持有数量
@@ -7667,6 +8233,14 @@ components:
               - symbol
               - isActive
             properties:
+              accuAmount:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Accumulated net token position in token native units:
+                  buy_amount - sell_amount + transfer_in_amount - transfer_out_amount.
+                  Mirrors GMGN `accu_amount`. None when all four source fields are absent.
               amount:
                 type: string
                 description: 代币持有数量
@@ -7833,6 +8407,18 @@ components:
               extra:
                 $ref: '#/components/schemas/TokenExtra'
                 description: 代币扩展元数据
+              imageDup:
+                type:
+                  - boolean
+                  - 'null'
+                description: ENTITY.TOKEN.IMAGE_DUP
+                example: false
+              imageHash:
+                type:
+                  - string
+                  - 'null'
+                description: ENTITY.TOKEN.IMAGE_HASH
+                example: a1b2c3d4e5f6a7b8
               imageUrl:
                 type:
                   - string
@@ -7858,6 +8444,12 @@ components:
                 type: string
                 description: 代币显示名称
                 example: USD Coin
+              normalizedName:
+                type:
+                  - string
+                  - 'null'
+                description: ENTITY.TOKEN.NORMALIZED_NAME
+                example: pepe
               socialMedias:
                 $ref: '#/components/schemas/TokenSocialMedias'
                 description: 代币社交媒体链接
@@ -7942,6 +8534,11 @@ components:
               - amountInUsd
               - percentage
             properties:
+              accuCost:
+                type:
+                  - string
+                  - 'null'
+                description: 'Traceable position accumulated cost, USD (GMGN: accu_cost)'
               amount:
                 type: string
                 description: 代币持有数量
@@ -7950,16 +8547,174 @@ components:
                 type: string
                 description: 代币持有价值（USD 计）
                 example: '1000000000000000000'
+              avgBuyPriceUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Average buy price in USD per token (all-time)
+              avgCostUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Average cost per token in USD (current position cost basis)
+              avgSellPriceUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Average sell price in USD per token (all-time)
+              buyAmountCur:
+                type:
+                  - string
+                  - 'null'
+                description: 'Cumulative token quantity bought, all-time (GMGN: buy_amount_cur / history_bought_amount)'
+              buyVolumeNative:
+                type:
+                  - string
+                  - 'null'
+                description: All-time total buy volume in native token
+              buyVolumeUsd:
+                type:
+                  - string
+                  - 'null'
+                description: All-time total buy volume in USD
+              endHoldingAt:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Timestamp when holder fully closed position (ms since epoch)
+              firstBuyTime:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Timestamp of first token purchase (ms since epoch)
+              historyBoughtCost:
+                type:
+                  - string
+                  - 'null'
+                description: 'Total DEX buy cost including fees, USD (GMGN: history_bought_cost)'
+              historyBoughtFee:
+                type:
+                  - string
+                  - 'null'
+                description: 'Total DEX buy fees, USD (GMGN: history_bought_fee)'
+              historySoldFee:
+                type:
+                  - string
+                  - 'null'
+                description: 'Total DEX sell fees, USD (GMGN: history_sold_fee)'
+              historySoldIncome:
+                type:
+                  - string
+                  - 'null'
+                description: 'Total DEX sell income, USD (GMGN: history_sold_income)'
+              historyTransferInAmount:
+                type:
+                  - string
+                  - 'null'
+                description: 'Cumulative transfer-in token qty (GMGN: history_transfer_in_amount)'
+              historyTransferInCost:
+                type:
+                  - string
+                  - 'null'
+                description: 'Transfer-in USD cost basis (GMGN: history_transfer_in_cost)'
+              historyTransferOutAmount:
+                type:
+                  - string
+                  - 'null'
+                description: 'Cumulative transfer-out token qty (GMGN: history_transfer_out_amount)'
+              historyTransferOutIncome:
+                type:
+                  - string
+                  - 'null'
+                description: 'Transfer-out USD income (GMGN: history_transfer_out_income)'
+              isClosed:
+                type:
+                  - boolean
+                  - 'null'
+                description: Whether the token position is fully closed (balance = 0)
+              isTransferIn:
+                type:
+                  - boolean
+                  - 'null'
+                description: 'Position acquired purely via transfers, no DEX buy (GMGN: transfer_in)'
               lastActiveAt:
                 type:
                   - integer
                   - 'null'
                 format: int64
                 description: Last active timestamp (ms since epoch)
+              lossCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Number of losing trades (PnL < 0)
+              makerTokenTags:
+                type: array
+                items:
+                  type: string
+                description: |-
+                  Per-token position/behaviour tags derived at query time.
+                  Possible values: "top_holder" (rank ≤ 10, first page only),
+                  "whale" (holding > $10,000 USD), "diamond_hands" (held > 30 days).
+              nativeBalance:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Native chain token balance in lamports (SOL) or wei (EVM), as decimal string.
+                  Fetched from RPC with a 10-second Redis cache.
+              netflowUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Net USD inflow (buy_volume_usd − sell_volume_usd); positive = net buyer
               percentage:
                 type: string
                 description: 占总供应量百分比
                 example: '100'
+              positionCostUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Current open position cost in USD
+              realizedPnlRatio:
+                type:
+                  - string
+                  - 'null'
+                description: 'Realized PnL / total_cost ratio (GMGN: realized_pnl)'
+              realizedProfit:
+                type:
+                  - string
+                  - 'null'
+                description: Realized PnL in USD (all-time)
+              roi:
+                type:
+                  - string
+                  - 'null'
+                description: Return on investment = total_pnl / total_cost_all (e.g. 0.25 = 25%)
+              sellAmountCur:
+                type:
+                  - string
+                  - 'null'
+                description: 'Cumulative token quantity sold, all-time (GMGN: sell_amount_cur / history_sold_amount)'
+              sellAmountPercentage:
+                type:
+                  - string
+                  - 'null'
+                description: 'Sell quantity / buy quantity, capped 0–1 (GMGN: sell_amount_percentage)'
+              sellVolumeNative:
+                type:
+                  - string
+                  - 'null'
+                description: All-time total sell volume in native token
+              sellVolumeUsd:
+                type:
+                  - string
+                  - 'null'
+                description: All-time total sell volume in USD
               startHoldingAt:
                 type:
                   - integer
@@ -7971,10 +8726,72 @@ components:
                 items:
                   type: string
                 description: Trader classification tags (e.g. "kol", "smart", "sniper")
+              totalBuyCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: All-time total buy trade count
+              totalCostUsd:
+                type:
+                  - string
+                  - 'null'
+                description: All-time accumulated cost basis in USD (total_cost_all from pnl-sync)
+              totalProfit:
+                type:
+                  - string
+                  - 'null'
+                description: Total PnL in USD (realized + unrealized)
+              totalSellCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: All-time total sell trade count
+              transferInAmount7d:
+                type:
+                  - string
+                  - 'null'
+                description: Inbound transfer volume in native token over last 7 days
+              transferInCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: 'Number of token transfer-in events (GMGN: transfer_in_count)'
+              transferOutAmount7d:
+                type:
+                  - string
+                  - 'null'
+                description: Outbound transfer volume in native token over last 7 days
+              transferOutCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: 'Number of token transfer-out events (GMGN: transfer_out_count)'
+              unrealizedProfit:
+                type:
+                  - string
+                  - 'null'
+                description: Unrealized PnL in USD (current position)
               walletAddress:
                 type: string
                 description: 持有者钱包地址
                 example: '0x1234567890abcdef'
+              walletTagV2:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Global rank tag on this token when sorted by balance (e.g. "TOP1", "TOP2").
+                  Only present on the first page of a balance-sorted query (no cursor).
+              winCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Number of winning trades (PnL > 0)
           description: Page data
         endCursor:
           type:
@@ -8560,12 +9377,75 @@ components:
                   - integer
                   - 'null'
                 format: int64
-                description: Gas fee (transaction fee in lamports / wei)
+                description: 'Gas fee (raw: lamports for SOL, Gwei for BSC)'
                 example: 5000
+              gasFeeInNative:
+                type:
+                  - string
+                  - 'null'
+                description: Gas fee in native currency (SOL / BNB / ETH)
+                example: '0.000073'
+              gasFeeInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Gas fee in USD
+                example: '0.011'
+              historyBoughtAmount:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Cumulative token quantity bought by this wallet (up to and including this trade).
+                  Matches GMGN `history_bought_amount`.
+              historySoldAmount:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Cumulative token quantity sold by this wallet (up to and including this trade).
+                  Matches GMGN `history_sold_amount`.
+              isOpenOrClose:
+                type:
+                  - integer
+                  - 'null'
+                format: int32
+                description: |-
+                  Position lifecycle: 0=normal, 1=open_position, 2=close_position
+                  Matches GMGN `is_open_or_close` field.
+              makerEventTags:
+                type: array
+                items:
+                  type: string
+                description: |-
+                  Trade behaviour tags for this event (e.g. "open_position", "dip_buy",
+                  "take_profit", "stop_loss", "close_position", "accumulate",
+                  "transfer_in", "transfer_out").
+                  Matches GMGN `maker_token_tags` on the activity level.
+              marketCapInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Market cap in USD at trade time
+                example: '1500000.00'
               poolAddress:
                 type: string
                 description: Pool address
                 example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
+              postBalance:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Token balance after this trade (token quantity).
+                  Matches GMGN `balance` in activity feed.
+              realizedProfitInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Realized PnL for this specific trade in USD (non-zero only on Sell events).
+                  Matches GMGN `realized_profit`.
               sideTokenAddress:
                 type: string
                 description: Side token address
@@ -9448,75 +10328,61 @@ components:
       properties:
         available:
           type: boolean
-          description: Whether data is available from this source
           example: true
         chainSupported:
           type:
             - boolean
             - 'null'
-          description: Whether this source supports the token chain
           example: true
         isOpenSource:
           type:
             - boolean
             - 'null'
-          description: Whether the contract is open source
         isProxy:
           type:
             - boolean
             - 'null'
-          description: Whether it is a proxy contract
         isRenounced:
           type:
             - boolean
             - 'null'
-          description: Whether the contract ownership is renounced
         isSafe:
           type:
             - boolean
             - 'null'
-          description: Whether the contract is safe (Serialized Audit verdict)
         lastRefreshedAt:
           type:
             - string
             - 'null'
-          description: Last refresh timestamp
           example: 2026-05-13T10:00:00
         launchpadName:
           type:
             - string
             - 'null'
-          description: Launchpad name
         ownerAddress:
           type:
             - string
             - 'null'
-          description: Contract owner address
-        raw:
-          description: Raw security data from the source
+        raw: {}
         sourceType:
           type:
             - string
             - 'null'
-          description: Contract source type (verified/decompiled/none)
         vulnCount:
           type:
             - integer
             - 'null'
           format: int32
-          description: Total number of vulnerabilities
         vulnCriticalCount:
           type:
             - integer
             - 'null'
           format: int32
-          description: Number of critical vulnerabilities
         vulnMitigatedCount:
           type:
             - integer
             - 'null'
           format: int32
-          description: Number of mitigated vulnerabilities
     SortDirection:
       type: string
       description: 'Sort direction (case-insensitive: accepts "asc"/"ASC"/"Asc" etc.)'
@@ -9605,6 +10471,18 @@ components:
         extra:
           $ref: '#/components/schemas/TokenExtra'
           description: 代币扩展元数据
+        imageDup:
+          type:
+            - boolean
+            - 'null'
+          description: ENTITY.TOKEN.IMAGE_DUP
+          example: false
+        imageHash:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN.IMAGE_HASH
+          example: a1b2c3d4e5f6a7b8
         imageUrl:
           type:
             - string
@@ -9630,6 +10508,12 @@ components:
           type: string
           description: 代币显示名称
           example: USD Coin
+        normalizedName:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN.NORMALIZED_NAME
+          example: pepe
         socialMedias:
           $ref: '#/components/schemas/TokenSocialMedias'
           description: 代币社交媒体链接
@@ -10035,6 +10919,11 @@ components:
         - amountInUsd
         - percentage
       properties:
+        accuCost:
+          type:
+            - string
+            - 'null'
+          description: 'Traceable position accumulated cost, USD (GMGN: accu_cost)'
         amount:
           type: string
           description: 代币持有数量
@@ -10043,16 +10932,174 @@ components:
           type: string
           description: 代币持有价值（USD 计）
           example: '1000000000000000000'
+        avgBuyPriceUsd:
+          type:
+            - string
+            - 'null'
+          description: Average buy price in USD per token (all-time)
+        avgCostUsd:
+          type:
+            - string
+            - 'null'
+          description: Average cost per token in USD (current position cost basis)
+        avgSellPriceUsd:
+          type:
+            - string
+            - 'null'
+          description: Average sell price in USD per token (all-time)
+        buyAmountCur:
+          type:
+            - string
+            - 'null'
+          description: 'Cumulative token quantity bought, all-time (GMGN: buy_amount_cur / history_bought_amount)'
+        buyVolumeNative:
+          type:
+            - string
+            - 'null'
+          description: All-time total buy volume in native token
+        buyVolumeUsd:
+          type:
+            - string
+            - 'null'
+          description: All-time total buy volume in USD
+        endHoldingAt:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp when holder fully closed position (ms since epoch)
+        firstBuyTime:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Timestamp of first token purchase (ms since epoch)
+        historyBoughtCost:
+          type:
+            - string
+            - 'null'
+          description: 'Total DEX buy cost including fees, USD (GMGN: history_bought_cost)'
+        historyBoughtFee:
+          type:
+            - string
+            - 'null'
+          description: 'Total DEX buy fees, USD (GMGN: history_bought_fee)'
+        historySoldFee:
+          type:
+            - string
+            - 'null'
+          description: 'Total DEX sell fees, USD (GMGN: history_sold_fee)'
+        historySoldIncome:
+          type:
+            - string
+            - 'null'
+          description: 'Total DEX sell income, USD (GMGN: history_sold_income)'
+        historyTransferInAmount:
+          type:
+            - string
+            - 'null'
+          description: 'Cumulative transfer-in token qty (GMGN: history_transfer_in_amount)'
+        historyTransferInCost:
+          type:
+            - string
+            - 'null'
+          description: 'Transfer-in USD cost basis (GMGN: history_transfer_in_cost)'
+        historyTransferOutAmount:
+          type:
+            - string
+            - 'null'
+          description: 'Cumulative transfer-out token qty (GMGN: history_transfer_out_amount)'
+        historyTransferOutIncome:
+          type:
+            - string
+            - 'null'
+          description: 'Transfer-out USD income (GMGN: history_transfer_out_income)'
+        isClosed:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token position is fully closed (balance = 0)
+        isTransferIn:
+          type:
+            - boolean
+            - 'null'
+          description: 'Position acquired purely via transfers, no DEX buy (GMGN: transfer_in)'
         lastActiveAt:
           type:
             - integer
             - 'null'
           format: int64
           description: Last active timestamp (ms since epoch)
+        lossCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Number of losing trades (PnL < 0)
+        makerTokenTags:
+          type: array
+          items:
+            type: string
+          description: |-
+            Per-token position/behaviour tags derived at query time.
+            Possible values: "top_holder" (rank ≤ 10, first page only),
+            "whale" (holding > $10,000 USD), "diamond_hands" (held > 30 days).
+        nativeBalance:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Native chain token balance in lamports (SOL) or wei (EVM), as decimal string.
+            Fetched from RPC with a 10-second Redis cache.
+        netflowUsd:
+          type:
+            - string
+            - 'null'
+          description: Net USD inflow (buy_volume_usd − sell_volume_usd); positive = net buyer
         percentage:
           type: string
           description: 占总供应量百分比
           example: '100'
+        positionCostUsd:
+          type:
+            - string
+            - 'null'
+          description: Current open position cost in USD
+        realizedPnlRatio:
+          type:
+            - string
+            - 'null'
+          description: 'Realized PnL / total_cost ratio (GMGN: realized_pnl)'
+        realizedProfit:
+          type:
+            - string
+            - 'null'
+          description: Realized PnL in USD (all-time)
+        roi:
+          type:
+            - string
+            - 'null'
+          description: Return on investment = total_pnl / total_cost_all (e.g. 0.25 = 25%)
+        sellAmountCur:
+          type:
+            - string
+            - 'null'
+          description: 'Cumulative token quantity sold, all-time (GMGN: sell_amount_cur / history_sold_amount)'
+        sellAmountPercentage:
+          type:
+            - string
+            - 'null'
+          description: 'Sell quantity / buy quantity, capped 0–1 (GMGN: sell_amount_percentage)'
+        sellVolumeNative:
+          type:
+            - string
+            - 'null'
+          description: All-time total sell volume in native token
+        sellVolumeUsd:
+          type:
+            - string
+            - 'null'
+          description: All-time total sell volume in USD
         startHoldingAt:
           type:
             - integer
@@ -10064,10 +11111,168 @@ components:
           items:
             type: string
           description: Trader classification tags (e.g. "kol", "smart", "sniper")
+        totalBuyCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: All-time total buy trade count
+        totalCostUsd:
+          type:
+            - string
+            - 'null'
+          description: All-time accumulated cost basis in USD (total_cost_all from pnl-sync)
+        totalProfit:
+          type:
+            - string
+            - 'null'
+          description: Total PnL in USD (realized + unrealized)
+        totalSellCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: All-time total sell trade count
+        transferInAmount7d:
+          type:
+            - string
+            - 'null'
+          description: Inbound transfer volume in native token over last 7 days
+        transferInCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: 'Number of token transfer-in events (GMGN: transfer_in_count)'
+        transferOutAmount7d:
+          type:
+            - string
+            - 'null'
+          description: Outbound transfer volume in native token over last 7 days
+        transferOutCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: 'Number of token transfer-out events (GMGN: transfer_out_count)'
+        unrealizedProfit:
+          type:
+            - string
+            - 'null'
+          description: Unrealized PnL in USD (current position)
         walletAddress:
           type: string
           description: 持有者钱包地址
           example: '0x1234567890abcdef'
+        walletTagV2:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Global rank tag on this token when sorted by balance (e.g. "TOP1", "TOP2").
+            Only present on the first page of a balance-sorted query (no cursor).
+        winCount:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Number of winning trades (PnL > 0)
+    TokenHolderTrendPoint:
+      type: object
+      description: Single time-point in the holder waterline trend (sparkline data)
+      required:
+        - timestamp
+        - holders
+        - top10HoldersRatio
+        - top50HoldersRatio
+        - top100HoldersRatio
+        - devAmountRatio
+        - insiderAmountRatio
+        - proAmountRatio
+        - sniperAmountRatio
+        - bundleAmountRatio
+        - freshAmountRatio
+        - sandwichAmountRatio
+        - kolAmountRatio
+        - phishingAmountRatio
+        - bluechipAmountRatio
+        - ratAmountRatio
+        - smartAmountRatio
+        - creatorsAmountRatio
+      properties:
+        bluechipAmountRatio:
+          type: string
+          description: Bluechip holder ratio (0–1)
+          example: '0.0200'
+        bundleAmountRatio:
+          type: string
+          description: Bundle (bundler) wallet holding ratio (0–1)
+          example: '0.0006'
+        creatorsAmountRatio:
+          type: string
+          description: Creator wallet holding ratio (0–1)
+          example: '0.0050'
+        devAmountRatio:
+          type: string
+          description: Dev wallet holding ratio (0–1)
+          example: '0.0100'
+        freshAmountRatio:
+          type: string
+          description: Fresh wallet holding ratio (0–1)
+          example: '0.1500'
+        holders:
+          type: string
+          description: Total holder count
+          example: '644381'
+        insiderAmountRatio:
+          type: string
+          description: Insider wallet holding ratio (0–1)
+          example: '0.0200'
+        kolAmountRatio:
+          type: string
+          description: KOL wallet holding ratio (0–1)
+          example: '0.0300'
+        phishingAmountRatio:
+          type: string
+          description: Phishing (entrapment) wallet holding ratio (0–1)
+          example: '0.1400'
+        proAmountRatio:
+          type: string
+          description: Pro wallet holding ratio (0–1)
+          example: '0.0300'
+        ratAmountRatio:
+          type: string
+          description: Rat trader holding ratio (0–1)
+          example: '0.0001'
+        sandwichAmountRatio:
+          type: string
+          description: Sandwich bot holding ratio (0–1)
+          example: '0.0020'
+        smartAmountRatio:
+          type: string
+          description: Smart wallet holding ratio (0–1)
+          example: '0.0800'
+        sniperAmountRatio:
+          type: string
+          description: Sniper wallet holding ratio (0–1)
+          example: '0.0050'
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds (start of the hour or day bucket)
+          example: 1747353600000
+        top100HoldersRatio:
+          type: string
+          description: Top-100 holder ratio (0–1)
+          example: '0.2500'
+        top10HoldersRatio:
+          type: string
+          description: Top-10 holder ratio (0–1)
+          example: '0.0832'
+        top50HoldersRatio:
+          type: string
+          description: Top-50 holder ratio (0–1)
+          example: '0.1500'
     TokenLiquiditySnapshot:
       type: object
       description: Token liquidity snapshot
@@ -10252,6 +11457,24 @@ components:
             - 'null'
           description: Bonding Curve 完成比例
           example: '1.0'
+        creatorsHoldingsRatio:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.CREATORS_HOLDINGS_RATIO
+          example: '0.10'
+        creatorsTotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDERS
+          example: '1'
+        creatorsTotalHoldings:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDINGS
+          example: '100000000.00'
         devHoldingsRatio:
           type:
             - string
@@ -10366,6 +11589,24 @@ components:
             - 'null'
           description: 最大池子 TVL（USD 计）
           example: '150000.00'
+        phishingHoldingsRatio:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.PHISHING_HOLDINGS_RATIO
+          example: '0.0005'
+        phishingTotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDERS
+          example: '2'
+        phishingTotalHoldings:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDINGS
+          example: '50000.00'
         priceInSol:
           type:
             - string
@@ -10396,6 +11637,24 @@ components:
             - 'null'
           description: 专业交易者总持仓量
           example: '40000'
+        ratHoldingsRatio:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.RAT_HOLDINGS_RATIO
+          example: '0.0012'
+        ratTotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDERS
+          example: '5'
+        ratTotalHoldings:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDINGS
+          example: '120000.00'
         sandwishHoldingsRatio:
           type:
             - string
@@ -10414,6 +11673,24 @@ components:
             - 'null'
           description: 三明治攻击钱包总持仓量
           example: '15000'
+        smartHoldingsRatio:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.SMART_HOLDINGS_RATIO
+          example: '0.03'
+        smartTotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDERS
+          example: '30'
+        smartTotalHoldings:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDINGS
+          example: '3000000.00'
         sniperHoldingsRatio:
           type:
             - string
@@ -10723,44 +12000,15 @@ components:
             - type: 'null'
             - $ref: '#/components/schemas/SerializedSecurityInfo'
               description: Serialized Audit security data
-      example:
-        address: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
-        chain: sol
-        goplus:
-          available: true
-          buyTax: '0'
-          chainSupported: true
-          holderCount: '6620826'
-          isHoneypot: false
-          isOpenSource: true
-          isRenounced: false
-          lastRefreshedAt: 2026-05-13T10:00:00
-          raw: {}
-          sellTax: '0'
-          totalSupply: '1000000000'
-        honeypot:
-          available: true
-          averageTax: '0.1'
-          buyTax: '0'
-          canNotSell: 0
-          canSell: 100
-          chainSupported: true
-          honeypotResult: clean
-          isHoneypot: false
-          lastRefreshedAt: 2026-05-13T09:55:00
-          raw: {}
-          sellTax: '0'
-        serialized:
-          available: true
-          chainSupported: true
-          isOpenSource: true
-          isSafe: true
-          lastRefreshedAt: 2026-05-13T10:05:00
-          raw: {}
-          sourceType: verified
-          vulnCount: 2
-          vulnCriticalCount: 0
-          vulnMitigatedCount: 2
+        sourcesAvailable:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: ENTITY.TOKEN_SECURITY.SOURCES_AVAILABLE
+          example:
+            - goplus
     TokenSocialMedias:
       type: object
       description: Token social media links
@@ -11401,12 +12649,75 @@ components:
             - integer
             - 'null'
           format: int64
-          description: Gas fee (transaction fee in lamports / wei)
+          description: 'Gas fee (raw: lamports for SOL, Gwei for BSC)'
           example: 5000
+        gasFeeInNative:
+          type:
+            - string
+            - 'null'
+          description: Gas fee in native currency (SOL / BNB / ETH)
+          example: '0.000073'
+        gasFeeInUsd:
+          type:
+            - string
+            - 'null'
+          description: Gas fee in USD
+          example: '0.011'
+        historyBoughtAmount:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Cumulative token quantity bought by this wallet (up to and including this trade).
+            Matches GMGN `history_bought_amount`.
+        historySoldAmount:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Cumulative token quantity sold by this wallet (up to and including this trade).
+            Matches GMGN `history_sold_amount`.
+        isOpenOrClose:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: |-
+            Position lifecycle: 0=normal, 1=open_position, 2=close_position
+            Matches GMGN `is_open_or_close` field.
+        makerEventTags:
+          type: array
+          items:
+            type: string
+          description: |-
+            Trade behaviour tags for this event (e.g. "open_position", "dip_buy",
+            "take_profit", "stop_loss", "close_position", "accumulate",
+            "transfer_in", "transfer_out").
+            Matches GMGN `maker_token_tags` on the activity level.
+        marketCapInUsd:
+          type:
+            - string
+            - 'null'
+          description: Market cap in USD at trade time
+          example: '1500000.00'
         poolAddress:
           type: string
           description: Pool address
           example: 58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2
+        postBalance:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Token balance after this trade (token quantity).
+            Matches GMGN `balance` in activity feed.
+        realizedProfitInUsd:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Realized PnL for this specific trade in USD (non-zero only on Sell events).
+            Matches GMGN `realized_profit`.
         sideTokenAddress:
           type: string
           description: Side token address
@@ -12223,3 +13534,5 @@ tags:
     description: 红包相关操作
   - name: IPFS
     description: IPFS 相关操作
+  - name: DexScreener
+    description: GLOBAL.TAG.DEXSCREENER

@@ -114,6 +114,24 @@ async function generateDocs() {
       }
     }
 
+    // Clean up stale .mdx directories for excluded tags
+    for (const language of SUPPORTED_LANGUAGES) {
+      for (const service of services) {
+        for (const excludedTag of EXCLUDED_TAGS) {
+          const dir = path.join(
+            ROOT_DIR, language.baseDir, 'api-reference', 'endpoint',
+            service.endpointSubDir, excludedTag.toLowerCase()
+          );
+          try {
+            await fs.rm(dir, { recursive: true });
+            console.log(`Cleaned excluded tag: ${dir}`);
+          } catch {
+            // directory doesn't exist, skip
+          }
+        }
+      }
+    }
+
     await fs.writeFile(
       path.join(ROOT_DIR, 'docs.json'),
       JSON.stringify(docsJson, null, 2)
@@ -155,12 +173,15 @@ function updateDocsJsonForService(
     if (tag.includes('/')) {
       findOrCreateNestedGroup(serviceGroup.pages, tag.split('/'), pages);
     } else {
-      const tagGroup = { group: tag, pages };
       const existingIdx = serviceGroup.pages.findIndex((p: any) => p.group === tag);
       if (existingIdx >= 0) {
-        serviceGroup.pages[existingIdx] = tagGroup;
+        const existing = serviceGroup.pages[existingIdx];
+        const existingSet = new Set(existing.pages);
+        for (const p of pages) {
+          if (!existingSet.has(p)) existing.pages.push(p);
+        }
       } else {
-        serviceGroup.pages.push(tagGroup);
+        serviceGroup.pages.push({ group: tag, pages });
       }
     }
   }

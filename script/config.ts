@@ -38,7 +38,7 @@ export const SERVICES: ServiceConfig[] = [
   },
 ];
 
-export const EXCLUDED_TAGS: string[] = ['Job'];
+export const EXCLUDED_TAGS: string[] = ['Job', 'Webhook'];
 
 export const ROOT_DIR = path.resolve(__dirname, '..');
 

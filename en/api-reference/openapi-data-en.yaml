@@ -111,7 +111,7 @@ paths:
       tags:
         - DexPool
       summary: DexPool - Detail
-      description: Retrieve detailed information about a specific DEX pool
+      description: Retrieve detailed information about a specific DexPool
       operationId: get.dexpool
       parameters:
         - name: chain
@@ -5769,196 +5769,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchlistAddResponse'
-  /v2/webhook/endpoint:
-    get:
-      tags:
-        - Webhook
-      summary: Endpoint - List
-      description: Get list of webhook endpoints
-      operationId: list.endpoints
-      parameters:
-        - name: limit
-          in: query
-          description: Number of results per page
-          required: false
-          schema:
-            type: integer
-            format: int64
-            maximum: 100
-            minimum: 1
-          example: 100
-        - name: iterator
-          in: query
-          description: Pagination iterator
-          required: false
-          schema:
-            type: string
-        - name: order
-          in: query
-          description: Sort order
-          required: false
-          schema:
-            $ref: '#/components/schemas/EndpointOrder'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EndpointListResponse'
-      security:
-        - bearer_auth:
-            - webhook.read
-        - api_key_auth: []
-    post:
-      tags:
-        - Webhook
-      summary: Endpoint - Create
-      description: Create a new webhook endpoint
-      operationId: create.endpoint
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWebhookRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookEndpoint'
-      security:
-        - bearer_auth:
-            - webhook.write
-        - api_key_auth: []
-    patch:
-      tags:
-        - Webhook
-      summary: Endpoint - Update
-      description: Update webhook endpoint configuration
-      operationId: update.endpoint
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateWebhookRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookEndpoint'
-      security:
-        - bearer_auth:
-            - webhook.write
-        - api_key_auth: []
-  /v2/webhook/endpoint/{id}:
-    get:
-      tags:
-        - Webhook
-      summary: Endpoint - Get
-      description: Get webhook endpoint details
-      operationId: get.endpoint
-      parameters:
-        - name: id
-          in: path
-          description: Endpoint ID
-          required: true
-          schema:
-            type: string
-          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebhookEndpoint'
-      security:
-        - bearer_auth:
-            - webhook.read
-        - api_key_auth: []
-    delete:
-      tags:
-        - Webhook
-      summary: Endpoint - Delete
-      description: Delete a webhook endpoint
-      operationId: delete.endpoint
-      parameters:
-        - name: id
-          in: path
-          description: Endpoint ID
-          required: true
-          schema:
-            type: string
-          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EndpointOperationResponse'
-      security:
-        - bearer_auth:
-            - webhook.write
-        - api_key_auth: []
-  /v2/webhook/endpoint/{id}/secret:
-    get:
-      tags:
-        - Webhook
-      summary: Endpoint - Get Secret
-      description: Get webhook endpoint secret
-      operationId: get.endpoint.secret
-      parameters:
-        - name: id
-          in: path
-          description: Endpoint ID
-          required: true
-          schema:
-            type: string
-          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EndpointSecretResponse'
-      security:
-        - bearer_auth:
-            - webhook.read
-        - api_key_auth: []
-  /v2/webhook/endpoint/{id}/secret/rotate:
-    post:
-      tags:
-        - Webhook
-      summary: Endpoint - Rotate Secret
-      description: Rotate the secret key for a webhook endpoint
-      operationId: rotate.endpoint.secret
-      parameters:
-        - name: id
-          in: path
-          description: Endpoint ID
-          required: true
-          schema:
-            type: string
-          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EndpointOperationResponse'
-      security:
-        - bearer_auth:
-            - webhook.write
-        - api_key_auth: []
 components:
   schemas:
     ActivitySortBy:
@@ -6264,70 +6074,6 @@ components:
           type: string
           description: Serialized transaction data
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
-    CreateWebhookRequest:
-      type: object
-      description: Request to create a webhook endpoint
-      required:
-        - url
-      properties:
-        channels:
-          type:
-            - array
-            - 'null'
-          items:
-            $ref: '#/components/schemas/WebhookChannel'
-          description: Webhook event channels to subscribe to
-        description:
-          type:
-            - string
-            - 'null'
-          description: Endpoint description
-          example: Webhook description
-        disabled:
-          type:
-            - boolean
-            - 'null'
-          description: Whether the endpoint is disabled
-          example: false
-        filter:
-          type:
-            - string
-            - 'null'
-          description: Event filter configuration
-        filterTypes:
-          type:
-            - array
-            - 'null'
-          items:
-            type: string
-          description: Event type filters
-        metadata:
-          type:
-            - object
-            - 'null'
-          description: Endpoint metadata
-          additionalProperties: {}
-          propertyNames:
-            type: string
-          example:
-            key: value
-        rateLimit:
-          type:
-            - integer
-            - 'null'
-          format: int32
-          description: Rate limit for the endpoint
-          example: 1000
-          minimum: 0
-        secret:
-          type:
-            - string
-            - 'null'
-          description: Endpoint signing secret
-        url:
-          type: string
-          description: Webhook destination URL
-          example: https://example.com
     DevToken:
       type: object
       description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
@@ -6379,7 +6125,7 @@ components:
               description: Protocol family name
     DexPool:
       type: object
-      description: DEX pool
+      description: DexPool
       required:
         - poolAddress
         - chain
@@ -6428,7 +6174,7 @@ components:
           example: '1000000.45'
     DexPoolDetail:
       type: object
-      description: DEX pool detail
+      description: DexPool detail
       required:
         - poolAddress
         - chain
@@ -6566,7 +6312,7 @@ components:
         version: 2
     DexPoolLiquidityModel:
       type: string
-      description: DEX pool liquidity model (0=Unknown, 1=ReserveBased, 2=PositionBased, 3=Virtual, 4=Shared)
+      description: DexPool liquidity model (0=Unknown, 1=ReserveBased, 2=PositionBased, 3=Virtual, 4=Shared)
       enum:
         - Unknown
         - ReserveBased
@@ -6576,7 +6322,7 @@ components:
       example: 1
     DexPoolSnapshot:
       type: object
-      description: DEX pool liquidity snapshot
+      description: DexPool liquidity snapshot
       required:
         - poolAddress
         - snapshotTime
@@ -6646,7 +6392,7 @@ components:
         tvlInUsd: '1000000.45'
     DexPoolTokenLiquidity:
       type: object
-      description: DEX pool token liquidity
+      description: DexPool token liquidity
       required:
         - tokenAddress
         - decimals
@@ -6687,7 +6433,7 @@ components:
           example: '1000000000000'
     DexPoolTokenSnapshot:
       type: object
-      description: DEX pool token snapshot
+      description: DexPool token snapshot
       required:
         - tokenAddress
         - decimals
@@ -6728,7 +6474,7 @@ components:
           example: '1000000000000'
     DexPoolType:
       type: string
-      description: DEX pool type (0=Unknown, 1=Standard, 2=Concentrated, 3=Weighted, 4=Stable)
+      description: DexPool type (0=Unknown, 1=Standard, 2=Concentrated, 3=Weighted, 4=Stable)
       enum:
         - Unknown
         - Standard
@@ -6738,7 +6484,7 @@ components:
       example: 1
     DexPoolVersion:
       type: string
-      description: DEX pool version (0=Unknown, 1=V1, 2=V2, 3=V3)
+      description: DexPool version (0=Unknown, 1=V1, 2=V2, 3=V3)
       enum:
         - Unknown
         - V1
@@ -7012,60 +6758,6 @@ components:
             - 'null'
           format: double
           description: Aggregate trading volume in USD
-    EndpointListResponse:
-      type: object
-      description: Paginated list of webhook endpoints
-      required:
-        - data
-        - done
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEndpoint'
-          description: Paginated endpoint list
-        done:
-          type: boolean
-          description: Whether pagination is complete
-          example: false
-        iterator:
-          type:
-            - string
-            - 'null'
-          description: Current page iterator
-          example: eyJpZCI6MTAwfQ==
-        prevIterator:
-          type:
-            - string
-            - 'null'
-          description: Previous page iterator
-          example: eyJpZCI6MTAwfQ==
-    EndpointOperationResponse:
-      type: object
-      description: Boolean result for endpoint operations (delete, rotate secret)
-      required:
-        - success
-      properties:
-        success:
-          type: boolean
-          description: Operation success status
-          example: true
-    EndpointOrder:
-      type: string
-      description: Ordering direction for paginated endpoint listing
-      enum:
-        - ascending
-        - descending
-    EndpointSecretResponse:
-      type: object
-      description: Secret response for a webhook endpoint
-      required:
-        - secret
-      properties:
-        secret:
-          type: string
-          description: Endpoint signing secret
-          example: whsec_abcdXXX
     ErrorDetail:
       type: object
       required:
@@ -8312,7 +8004,7 @@ components:
           type: array
           items:
             type: object
-            description: DEX pool
+            description: DexPool
             required:
               - poolAddress
               - chain
@@ -8390,7 +8082,7 @@ components:
           type: array
           items:
             type: object
-            description: DEX pool liquidity snapshot
+            description: DexPool liquidity snapshot
             required:
               - poolAddress
               - snapshotTime
@@ -14088,71 +13780,6 @@ components:
           format: int64
           description: Total number of transfers
           example: 125
-    UpdateWebhookRequest:
-      type: object
-      description: Request to update a webhook endpoint
-      required:
-        - endpointId
-      properties:
-        channels:
-          type:
-            - array
-            - 'null'
-          items:
-            $ref: '#/components/schemas/WebhookChannel'
-          description: Webhook event channels to subscribe to
-        description:
-          type:
-            - string
-            - 'null'
-          description: Endpoint description
-          example: Webhook description
-        disabled:
-          type:
-            - boolean
-            - 'null'
-          description: Whether the endpoint is disabled
-          example: false
-        endpointId:
-          type: string
-          description: Endpoint ID
-          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
-        filter:
-          type:
-            - string
-            - 'null'
-          description: Event filter configuration
-        filterTypes:
-          type:
-            - array
-            - 'null'
-          items:
-            type: string
-          description: Event type filters
-        metadata:
-          type:
-            - object
-            - 'null'
-          description: Endpoint metadata
-          additionalProperties: {}
-          propertyNames:
-            type: string
-          example:
-            key: value
-        rateLimit:
-          type:
-            - integer
-            - 'null'
-          format: int32
-          description: Rate limit for the endpoint
-          example: 1000
-          minimum: 0
-        url:
-          type:
-            - string
-            - 'null'
-          description: Webhook destination URL
-          example: https://example.com
     WalletBalances:
       type: object
       description: Wallet balances
@@ -14627,88 +14254,6 @@ components:
         walletAddress:
           type: string
           description: Wallet address being watched
-    WebhookChannel:
-      type: string
-      description: Webhook event channel
-      enum:
-        - sol.token.migrated
-        - sol.token.created
-    WebhookEndpoint:
-      type: object
-      description: Webhook endpoint response
-      required:
-        - id
-        - url
-      properties:
-        channels:
-          type:
-            - array
-            - 'null'
-          items:
-            $ref: '#/components/schemas/WebhookChannel'
-          description: Webhook event channels to subscribe to
-        createdAt:
-          type:
-            - string
-            - 'null'
-          description: Endpoint creation timestamp
-          example: 2021-01-01
-        description:
-          type:
-            - string
-            - 'null'
-          description: Endpoint description
-          example: Webhook description
-        disabled:
-          type:
-            - boolean
-            - 'null'
-          description: Whether the endpoint is disabled
-          example: false
-        filter:
-          type:
-            - string
-            - 'null'
-          description: Event filter configuration
-        filterTypes:
-          type:
-            - array
-            - 'null'
-          items:
-            type: string
-          description: Event type filters
-        id:
-          type: string
-          description: Endpoint internal ID
-          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
-        metadata:
-          type:
-            - object
-            - 'null'
-          description: Endpoint metadata
-          additionalProperties: {}
-          propertyNames:
-            type: string
-          example:
-            key: value
-        rateLimit:
-          type:
-            - integer
-            - 'null'
-          format: int32
-          description: Rate limit for the endpoint
-          example: 1000
-          minimum: 0
-        updatedAt:
-          type:
-            - string
-            - 'null'
-          description: Endpoint last updated timestamp
-          example: 2021-01-01
-        url:
-          type: string
-          description: Webhook destination URL
-          example: https://example.com
   securitySchemes:
     api_key_auth:
       type: apiKey
@@ -14735,13 +14280,11 @@ tags:
   - name: Ranking
     description: Ranking related operations
   - name: DexPool
-    description: Dexpool related operations
+    description: DexPool related operations
   - name: Watchlist
     description: Watchlist related operations
   - name: KYT
     description: Kyt related operations
-  - name: Webhook
-    description: Webhook related operations
   - name: RedPacket
     description: Redpacket related operations
   - name: IPFS

@@ -13,7 +13,7 @@ GLOBAL.WALLETADDRESSES.DESCRIPTION='A list of wallet addresses in string separat
 //GLOBAL TAGS
 GLOBAL.TAG.BLOCKCHAIN='Blockchain related operations'
 GLOBAL.TAG.DEX='Dex related operations'
-GLOBAL.TAG.DEXPOOL='Dexpool related operations'
+GLOBAL.TAG.DEXPOOL='DexPool related operations'
 GLOBAL.TAG.IPFS='Ipfs related operations'
 GLOBAL.TAG.KYT='Kyt related operations'
 GLOBAL.TAG.RANKING='Ranking related operations'
@@ -45,7 +45,7 @@ DTO.DEX.LIST.CHAINS='Filter by blockchain networks'
 DTO.DEX.LIST.DEX_PROGRAM='Filter by DEX program address'
 
 //DEXPOOL CONTROLLER
-CONTROLLER.DEXPOOL.GET.DESCRIPTION='Retrieve detailed information about a specific DEX pool'
+CONTROLLER.DEXPOOL.GET.DESCRIPTION='Retrieve detailed information about a specific DexPool'
 CONTROLLER.DEXPOOL.GET.RESPONSE='Successful response'
 CONTROLLER.DEXPOOL.GET.SUMMARY='DexPool - Detail'
 CONTROLLER.DEXPOOL.SNAPSHOTS.DESCRIPTION='Retrieve historical liquidity snapshots for a specific pool. If a time parameter is provided, returns the nearest snapshot before or at that time.'

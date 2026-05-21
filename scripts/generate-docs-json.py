@@ -56,7 +56,6 @@ LABELS = {
     "rest_kyt":             {"en": "KYT",                  "cn": "KYT",             "zh-Hant": "KYT",             "jp": "KYT",                    "ko": "KYT"},
     "rest_dex_swap":        {"en": "DEX Swap",             "cn": "DEX Swap",        "zh-Hant": "DEX Swap",        "jp": "DEX Swap",               "ko": "DEX Swap"},
     "rest_transaction":     {"en": "Transaction",          "cn": "Transaction",     "zh-Hant": "Transaction",     "jp": "Transaction",            "ko": "Transaction"},
-    "rest_job":             {"en": "Job",                  "cn": "Job",             "zh-Hant": "Job",             "jp": "Job",                    "ko": "Job"},
     "rest_dex_registry":    {"en": "DEX Registry",         "cn": "DEX Registry",    "zh-Hant": "DEX Registry",    "jp": "DEX Registry",           "ko": "DEX Registry"},
 
     # GraphQL tab (preserve existing labels)
@@ -335,10 +334,6 @@ REST_API_GROUPS = [
         "api-reference/endpoint/defi/transaction/v2/transaction-chain-send-post",
         "api-reference/endpoint/defi/transaction/v2/transaction-chain-gas-price-get",
         "api-reference/endpoint/defi/transaction/v2/transaction-chain-estimate-gas-limit-post",
-    ]),
-    ("rest_job", [
-        "api-reference/endpoint/defi/job/v2/job-id-get",
-        "api-reference/endpoint/defi/job/v2/job-id-streaming-get",
     ]),
     ("rest_watchlist", [
         "api-reference/endpoint/data/watchlist/v2/watchlist-chain-walletaddress-post",

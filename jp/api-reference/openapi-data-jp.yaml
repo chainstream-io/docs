@@ -5769,6 +5769,196 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchlistAddResponse'
+  /v2/webhook/endpoint:
+    get:
+      tags:
+        - Webhook
+      summary: エンドポイント - 一覧
+      description: Webhook エンドポイントのリストを取得
+      operationId: list.endpoints
+      parameters:
+        - name: limit
+          in: query
+          description: ページあたりの結果数
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 100
+            minimum: 1
+          example: 100
+        - name: iterator
+          in: query
+          description: ページネーションイテレータ
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: ソート順
+          required: false
+          schema:
+            $ref: '#/components/schemas/EndpointOrder'
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointListResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    post:
+      tags:
+        - Webhook
+      summary: エンドポイント - 作成
+      description: 新しい Webhook エンドポイントを作成
+      operationId: create.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+    patch:
+      tags:
+        - Webhook
+      summary: エンドポイント - 更新
+      description: Webhook エンドポイントの設定を更新
+      operationId: update.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}:
+    get:
+      tags:
+        - Webhook
+      summary: エンドポイント - 取得
+      description: Webhook エンドポイントの詳細を取得
+      operationId: get.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: エンドポイント ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    delete:
+      tags:
+        - Webhook
+      summary: エンドポイント - 削除
+      description: Webhook エンドポイントを削除
+      operationId: delete.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: エンドポイント ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret:
+    get:
+      tags:
+        - Webhook
+      summary: エンドポイント - シークレット取得
+      description: Webhook エンドポイントのシークレットを取得
+      operationId: get.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: エンドポイント ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointSecretResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret/rotate:
+    post:
+      tags:
+        - Webhook
+      summary: エンドポイント - シークレットローテーション
+      description: Webhook エンドポイントのシークレットキーをローテーション
+      operationId: rotate.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: エンドポイント ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
 components:
   schemas:
     ActivitySortBy:
@@ -6074,6 +6264,70 @@ components:
           type: string
           description: シリアライズされたトランザクションデータ
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
+    CreateWebhookRequest:
+      type: object
+      description: Request to create a webhook endpoint
+      required:
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 購読する Webhook イベントチャネル
+        description:
+          type:
+            - string
+            - 'null'
+          description: エンドポイントの説明
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: エンドポイントが無効かどうか
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: イベントフィルタ設定
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: イベントタイプフィルタ
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: エンドポイントメタデータ
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: エンドポイントのレート制限
+          example: 1000
+          minimum: 0
+        secret:
+          type:
+            - string
+            - 'null'
+          description: エンドポイント署名シークレット
+        url:
+          type: string
+          description: Webhook 送信先 URL
+          example: https://example.com
     DevToken:
       type: object
       description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
@@ -6758,6 +7012,60 @@ components:
             - 'null'
           format: double
           description: ENTITY.DEXSCR_TRENDING_META.VOLUME
+    EndpointListResponse:
+      type: object
+      description: Paginated list of webhook endpoints
+      required:
+        - data
+        - done
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEndpoint'
+          description: ページネーションされたエンドポイントリスト
+        done:
+          type: boolean
+          description: ページネーションが完了したかどうか
+          example: false
+        iterator:
+          type:
+            - string
+            - 'null'
+          description: 現在のページイテレータ
+          example: eyJpZCI6MTAwfQ==
+        prevIterator:
+          type:
+            - string
+            - 'null'
+          description: 前のページイテレータ
+          example: eyJpZCI6MTAwfQ==
+    EndpointOperationResponse:
+      type: object
+      description: Boolean result for endpoint operations (delete, rotate secret)
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: 操作の成功ステータス
+          example: true
+    EndpointOrder:
+      type: string
+      description: Ordering direction for paginated endpoint listing
+      enum:
+        - ascending
+        - descending
+    EndpointSecretResponse:
+      type: object
+      description: Secret response for a webhook endpoint
+      required:
+        - secret
+      properties:
+        secret:
+          type: string
+          description: エンドポイント署名シークレット
+          example: whsec_abcdXXX
     ErrorDetail:
       type: object
       required:
@@ -13780,6 +14088,71 @@ components:
           format: int64
           description: 送金の総件数
           example: 125
+    UpdateWebhookRequest:
+      type: object
+      description: Request to update a webhook endpoint
+      required:
+        - endpointId
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 購読する Webhook イベントチャネル
+        description:
+          type:
+            - string
+            - 'null'
+          description: エンドポイントの説明
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: エンドポイントが無効かどうか
+          example: false
+        endpointId:
+          type: string
+          description: エンドポイント ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        filter:
+          type:
+            - string
+            - 'null'
+          description: イベントフィルタ設定
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: イベントタイプフィルタ
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: エンドポイントメタデータ
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: エンドポイントのレート制限
+          example: 1000
+          minimum: 0
+        url:
+          type:
+            - string
+            - 'null'
+          description: Webhook 送信先 URL
+          example: https://example.com
     WalletBalances:
       type: object
       description: Wallet balances
@@ -14254,6 +14627,88 @@ components:
         walletAddress:
           type: string
           description: Wallet address being watched
+    WebhookChannel:
+      type: string
+      description: Webhook event channel
+      enum:
+        - sol.token.migrated
+        - sol.token.created
+    WebhookEndpoint:
+      type: object
+      description: Webhook endpoint response
+      required:
+        - id
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 購読する Webhook イベントチャネル
+        createdAt:
+          type:
+            - string
+            - 'null'
+          description: エンドポイント作成タイムスタンプ
+          example: 2021-01-01
+        description:
+          type:
+            - string
+            - 'null'
+          description: エンドポイントの説明
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: エンドポイントが無効かどうか
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: イベントフィルタ設定
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: イベントタイプフィルタ
+        id:
+          type: string
+          description: エンドポイント内部 ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: エンドポイントメタデータ
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: エンドポイントのレート制限
+          example: 1000
+          minimum: 0
+        updatedAt:
+          type:
+            - string
+            - 'null'
+          description: エンドポイント最終更新タイムスタンプ
+          example: 2021-01-01
+        url:
+          type: string
+          description: Webhook 送信先 URL
+          example: https://example.com
   securitySchemes:
     api_key_auth:
       type: apiKey
@@ -14285,6 +14740,8 @@ tags:
     description: ウォッチリスト関連の操作
   - name: KYT
     description: KYT 関連の操作
+  - name: Webhook
+    description: Webhook 関連の操作
   - name: RedPacket
     description: レッドパケット関連の操作
   - name: IPFS

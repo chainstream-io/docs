@@ -5769,6 +5769,196 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchlistAddResponse'
+  /v2/webhook/endpoint:
+    get:
+      tags:
+        - Webhook
+      summary: Endpoint - List
+      description: Get list of webhook endpoints
+      operationId: list.endpoints
+      parameters:
+        - name: limit
+          in: query
+          description: Number of results per page
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 100
+            minimum: 1
+          example: 100
+        - name: iterator
+          in: query
+          description: Pagination iterator
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            $ref: '#/components/schemas/EndpointOrder'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointListResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    post:
+      tags:
+        - Webhook
+      summary: Endpoint - Create
+      description: Create a new webhook endpoint
+      operationId: create.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+    patch:
+      tags:
+        - Webhook
+      summary: Endpoint - Update
+      description: Update webhook endpoint configuration
+      operationId: update.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}:
+    get:
+      tags:
+        - Webhook
+      summary: Endpoint - Get
+      description: Get webhook endpoint details
+      operationId: get.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    delete:
+      tags:
+        - Webhook
+      summary: Endpoint - Delete
+      description: Delete a webhook endpoint
+      operationId: delete.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret:
+    get:
+      tags:
+        - Webhook
+      summary: Endpoint - Get Secret
+      description: Get webhook endpoint secret
+      operationId: get.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointSecretResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret/rotate:
+    post:
+      tags:
+        - Webhook
+      summary: Endpoint - Rotate Secret
+      description: Rotate the secret key for a webhook endpoint
+      operationId: rotate.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
 components:
   schemas:
     ActivitySortBy:
@@ -6074,6 +6264,70 @@ components:
           type: string
           description: Serialized transaction data
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
+    CreateWebhookRequest:
+      type: object
+      description: Request to create a webhook endpoint
+      required:
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: Webhook event channels to subscribe to
+        description:
+          type:
+            - string
+            - 'null'
+          description: Endpoint description
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the endpoint is disabled
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: Event filter configuration
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: Event type filters
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: Endpoint metadata
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Rate limit for the endpoint
+          example: 1000
+          minimum: 0
+        secret:
+          type:
+            - string
+            - 'null'
+          description: Endpoint signing secret
+        url:
+          type: string
+          description: Webhook destination URL
+          example: https://example.com
     DevToken:
       type: object
       description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
@@ -6758,6 +7012,60 @@ components:
             - 'null'
           format: double
           description: Aggregate trading volume in USD
+    EndpointListResponse:
+      type: object
+      description: Paginated list of webhook endpoints
+      required:
+        - data
+        - done
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEndpoint'
+          description: Paginated endpoint list
+        done:
+          type: boolean
+          description: Whether pagination is complete
+          example: false
+        iterator:
+          type:
+            - string
+            - 'null'
+          description: Current page iterator
+          example: eyJpZCI6MTAwfQ==
+        prevIterator:
+          type:
+            - string
+            - 'null'
+          description: Previous page iterator
+          example: eyJpZCI6MTAwfQ==
+    EndpointOperationResponse:
+      type: object
+      description: Boolean result for endpoint operations (delete, rotate secret)
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Operation success status
+          example: true
+    EndpointOrder:
+      type: string
+      description: Ordering direction for paginated endpoint listing
+      enum:
+        - ascending
+        - descending
+    EndpointSecretResponse:
+      type: object
+      description: Secret response for a webhook endpoint
+      required:
+        - secret
+      properties:
+        secret:
+          type: string
+          description: Endpoint signing secret
+          example: whsec_abcdXXX
     ErrorDetail:
       type: object
       required:
@@ -13780,6 +14088,71 @@ components:
           format: int64
           description: Total number of transfers
           example: 125
+    UpdateWebhookRequest:
+      type: object
+      description: Request to update a webhook endpoint
+      required:
+        - endpointId
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: Webhook event channels to subscribe to
+        description:
+          type:
+            - string
+            - 'null'
+          description: Endpoint description
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the endpoint is disabled
+          example: false
+        endpointId:
+          type: string
+          description: Endpoint ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        filter:
+          type:
+            - string
+            - 'null'
+          description: Event filter configuration
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: Event type filters
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: Endpoint metadata
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Rate limit for the endpoint
+          example: 1000
+          minimum: 0
+        url:
+          type:
+            - string
+            - 'null'
+          description: Webhook destination URL
+          example: https://example.com
     WalletBalances:
       type: object
       description: Wallet balances
@@ -14254,6 +14627,88 @@ components:
         walletAddress:
           type: string
           description: Wallet address being watched
+    WebhookChannel:
+      type: string
+      description: Webhook event channel
+      enum:
+        - sol.token.migrated
+        - sol.token.created
+    WebhookEndpoint:
+      type: object
+      description: Webhook endpoint response
+      required:
+        - id
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: Webhook event channels to subscribe to
+        createdAt:
+          type:
+            - string
+            - 'null'
+          description: Endpoint creation timestamp
+          example: 2021-01-01
+        description:
+          type:
+            - string
+            - 'null'
+          description: Endpoint description
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the endpoint is disabled
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: Event filter configuration
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: Event type filters
+        id:
+          type: string
+          description: Endpoint internal ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: Endpoint metadata
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Rate limit for the endpoint
+          example: 1000
+          minimum: 0
+        updatedAt:
+          type:
+            - string
+            - 'null'
+          description: Endpoint last updated timestamp
+          example: 2021-01-01
+        url:
+          type: string
+          description: Webhook destination URL
+          example: https://example.com
   securitySchemes:
     api_key_auth:
       type: apiKey
@@ -14285,6 +14740,8 @@ tags:
     description: Watchlist related operations
   - name: KYT
     description: Kyt related operations
+  - name: Webhook
+    description: Webhook related operations
   - name: RedPacket
     description: Redpacket related operations
   - name: IPFS

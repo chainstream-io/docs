@@ -5769,6 +5769,196 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchlistAddResponse'
+  /v2/webhook/endpoint:
+    get:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 목록
+      description: Webhook 엔드포인트 목록 조회
+      operationId: list.endpoints
+      parameters:
+        - name: limit
+          in: query
+          description: 페이지당 결과 수
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 100
+            minimum: 1
+          example: 100
+        - name: iterator
+          in: query
+          description: 페이지네이션 반복자
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: 정렬 순서
+          required: false
+          schema:
+            $ref: '#/components/schemas/EndpointOrder'
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointListResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    post:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 생성
+      description: 새 Webhook 엔드포인트 생성
+      operationId: create.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+    patch:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 업데이트
+      description: Webhook 엔드포인트 설정 업데이트
+      operationId: update.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}:
+    get:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 조회
+      description: Webhook 엔드포인트 상세 조회
+      operationId: get.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: 엔드포인트 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    delete:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 삭제
+      description: Webhook 엔드포인트 삭제
+      operationId: delete.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: 엔드포인트 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret:
+    get:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 시크릿 조회
+      description: Webhook 엔드포인트 시크릿 조회
+      operationId: get.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: 엔드포인트 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointSecretResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret/rotate:
+    post:
+      tags:
+        - Webhook
+      summary: 엔드포인트 - 시크릿 로테이션
+      description: Webhook 엔드포인트의 시크릿 키 로테이션
+      operationId: rotate.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: 엔드포인트 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 성공 응답
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
 components:
   schemas:
     ActivitySortBy:
@@ -6074,6 +6264,70 @@ components:
           type: string
           description: 직렬화된 트랜잭션 데이터
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
+    CreateWebhookRequest:
+      type: object
+      description: Request to create a webhook endpoint
+      required:
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 구독할 Webhook 이벤트 채널
+        description:
+          type:
+            - string
+            - 'null'
+          description: 엔드포인트 설명
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: 엔드포인트 비활성화 여부
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: 이벤트 필터 설정
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: 이벤트 유형 필터
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: 엔드포인트 메타데이터
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 엔드포인트 속도 제한
+          example: 1000
+          minimum: 0
+        secret:
+          type:
+            - string
+            - 'null'
+          description: 엔드포인트 서명 시크릿
+        url:
+          type: string
+          description: Webhook 수신 URL
+          example: https://example.com
     DevToken:
       type: object
       description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
@@ -6758,6 +7012,60 @@ components:
             - 'null'
           format: double
           description: ENTITY.DEXSCR_TRENDING_META.VOLUME
+    EndpointListResponse:
+      type: object
+      description: Paginated list of webhook endpoints
+      required:
+        - data
+        - done
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEndpoint'
+          description: 페이지네이션된 엔드포인트 목록
+        done:
+          type: boolean
+          description: 페이지네이션 완료 여부
+          example: false
+        iterator:
+          type:
+            - string
+            - 'null'
+          description: 현재 페이지 반복자
+          example: eyJpZCI6MTAwfQ==
+        prevIterator:
+          type:
+            - string
+            - 'null'
+          description: 이전 페이지 반복자
+          example: eyJpZCI6MTAwfQ==
+    EndpointOperationResponse:
+      type: object
+      description: Boolean result for endpoint operations (delete, rotate secret)
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: 작업 성공 상태
+          example: true
+    EndpointOrder:
+      type: string
+      description: Ordering direction for paginated endpoint listing
+      enum:
+        - ascending
+        - descending
+    EndpointSecretResponse:
+      type: object
+      description: Secret response for a webhook endpoint
+      required:
+        - secret
+      properties:
+        secret:
+          type: string
+          description: 엔드포인트 서명 시크릿
+          example: whsec_abcdXXX
     ErrorDetail:
       type: object
       required:
@@ -13780,6 +14088,71 @@ components:
           format: int64
           description: 총 전송 건수
           example: 125
+    UpdateWebhookRequest:
+      type: object
+      description: Request to update a webhook endpoint
+      required:
+        - endpointId
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 구독할 Webhook 이벤트 채널
+        description:
+          type:
+            - string
+            - 'null'
+          description: 엔드포인트 설명
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: 엔드포인트 비활성화 여부
+          example: false
+        endpointId:
+          type: string
+          description: 엔드포인트 ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        filter:
+          type:
+            - string
+            - 'null'
+          description: 이벤트 필터 설정
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: 이벤트 유형 필터
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: 엔드포인트 메타데이터
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 엔드포인트 속도 제한
+          example: 1000
+          minimum: 0
+        url:
+          type:
+            - string
+            - 'null'
+          description: Webhook 수신 URL
+          example: https://example.com
     WalletBalances:
       type: object
       description: Wallet balances
@@ -14254,6 +14627,88 @@ components:
         walletAddress:
           type: string
           description: Wallet address being watched
+    WebhookChannel:
+      type: string
+      description: Webhook event channel
+      enum:
+        - sol.token.migrated
+        - sol.token.created
+    WebhookEndpoint:
+      type: object
+      description: Webhook endpoint response
+      required:
+        - id
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 구독할 Webhook 이벤트 채널
+        createdAt:
+          type:
+            - string
+            - 'null'
+          description: 엔드포인트 생성 타임스탬프
+          example: 2021-01-01
+        description:
+          type:
+            - string
+            - 'null'
+          description: 엔드포인트 설명
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: 엔드포인트 비활성화 여부
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: 이벤트 필터 설정
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: 이벤트 유형 필터
+        id:
+          type: string
+          description: 엔드포인트 내부 ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: 엔드포인트 메타데이터
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 엔드포인트 속도 제한
+          example: 1000
+          minimum: 0
+        updatedAt:
+          type:
+            - string
+            - 'null'
+          description: 엔드포인트 마지막 업데이트 타임스탬프
+          example: 2021-01-01
+        url:
+          type: string
+          description: Webhook 수신 URL
+          example: https://example.com
   securitySchemes:
     api_key_auth:
       type: apiKey
@@ -14285,6 +14740,8 @@ tags:
     description: 워치리스트 관련 작업
   - name: KYT
     description: KYT 관련 작업
+  - name: Webhook
+    description: Webhook 관련 작업
   - name: RedPacket
     description: 레드패킷 관련 작업
   - name: IPFS

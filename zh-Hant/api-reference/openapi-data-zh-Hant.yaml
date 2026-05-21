@@ -5769,6 +5769,196 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchlistAddResponse'
+  /v2/webhook/endpoint:
+    get:
+      tags:
+        - Webhook
+      summary: 端點 - 列表
+      description: 取得 Webhook 端點列表
+      operationId: list.endpoints
+      parameters:
+        - name: limit
+          in: query
+          description: 每頁結果數量
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 100
+            minimum: 1
+          example: 100
+        - name: iterator
+          in: query
+          description: 分頁迭代器
+          required: false
+          schema:
+            type: string
+        - name: order
+          in: query
+          description: 排序方式
+          required: false
+          schema:
+            $ref: '#/components/schemas/EndpointOrder'
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointListResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    post:
+      tags:
+        - Webhook
+      summary: 端點 - 建立
+      description: 建立新的 Webhook 端點
+      operationId: create.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+    patch:
+      tags:
+        - Webhook
+      summary: 端點 - 更新
+      description: 更新 Webhook 端點配置
+      operationId: update.endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+        required: true
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}:
+    get:
+      tags:
+        - Webhook
+      summary: 端點 - 取得
+      description: 取得 Webhook 端點詳情
+      operationId: get.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: 端點 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+    delete:
+      tags:
+        - Webhook
+      summary: 端點 - 刪除
+      description: 刪除 Webhook 端點
+      operationId: delete.endpoint
+      parameters:
+        - name: id
+          in: path
+          description: 端點 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret:
+    get:
+      tags:
+        - Webhook
+      summary: 端點 - 取得密鑰
+      description: 取得 Webhook 端點密鑰
+      operationId: get.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: 端點 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointSecretResponse'
+      security:
+        - bearer_auth:
+            - webhook.read
+        - api_key_auth: []
+  /v2/webhook/endpoint/{id}/secret/rotate:
+    post:
+      tags:
+        - Webhook
+      summary: 端點 - 輪換密鑰
+      description: 輪換 Webhook 端點的密鑰
+      operationId: rotate.endpoint.secret
+      parameters:
+        - name: id
+          in: path
+          description: 端點 ID
+          required: true
+          schema:
+            type: string
+          example: wh_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+      responses:
+        '200':
+          description: 成功回應
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointOperationResponse'
+      security:
+        - bearer_auth:
+            - webhook.write
+        - api_key_auth: []
 components:
   schemas:
     ActivitySortBy:
@@ -6074,6 +6264,70 @@ components:
           type: string
           description: 序列化交易資料
           example: AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDRg...
+    CreateWebhookRequest:
+      type: object
+      description: Request to create a webhook endpoint
+      required:
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 訂閱的 Webhook 事件通道
+        description:
+          type:
+            - string
+            - 'null'
+          description: 端點描述
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: 端點是否已停用
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: 事件篩選配置
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: 事件類型篩選
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: 端點元資料
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 端點速率限制
+          example: 1000
+          minimum: 0
+        secret:
+          type:
+            - string
+            - 'null'
+          description: 端點簽名密鑰
+        url:
+          type: string
+          description: Webhook 目標 URL
+          example: https://example.com
     DevToken:
       type: object
       description: Token info returned by `get_dev_tokens` — mirrors TS `DevTokenDTO`.
@@ -6758,6 +7012,60 @@ components:
             - 'null'
           format: double
           description: ENTITY.DEXSCR_TRENDING_META.VOLUME
+    EndpointListResponse:
+      type: object
+      description: Paginated list of webhook endpoints
+      required:
+        - data
+        - done
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEndpoint'
+          description: 分頁端點列表
+        done:
+          type: boolean
+          description: 分頁是否完成
+          example: false
+        iterator:
+          type:
+            - string
+            - 'null'
+          description: 目前頁迭代器
+          example: eyJpZCI6MTAwfQ==
+        prevIterator:
+          type:
+            - string
+            - 'null'
+          description: 上一頁迭代器
+          example: eyJpZCI6MTAwfQ==
+    EndpointOperationResponse:
+      type: object
+      description: Boolean result for endpoint operations (delete, rotate secret)
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: 操作成功狀態
+          example: true
+    EndpointOrder:
+      type: string
+      description: Ordering direction for paginated endpoint listing
+      enum:
+        - ascending
+        - descending
+    EndpointSecretResponse:
+      type: object
+      description: Secret response for a webhook endpoint
+      required:
+        - secret
+      properties:
+        secret:
+          type: string
+          description: 端點簽名密鑰
+          example: whsec_abcdXXX
     ErrorDetail:
       type: object
       required:
@@ -13780,6 +14088,71 @@ components:
           format: int64
           description: 轉帳總數
           example: 125
+    UpdateWebhookRequest:
+      type: object
+      description: Request to update a webhook endpoint
+      required:
+        - endpointId
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 訂閱的 Webhook 事件通道
+        description:
+          type:
+            - string
+            - 'null'
+          description: 端點描述
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: 端點是否已停用
+          example: false
+        endpointId:
+          type: string
+          description: 端點 ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        filter:
+          type:
+            - string
+            - 'null'
+          description: 事件篩選配置
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: 事件類型篩選
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: 端點元資料
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 端點速率限制
+          example: 1000
+          minimum: 0
+        url:
+          type:
+            - string
+            - 'null'
+          description: Webhook 目標 URL
+          example: https://example.com
     WalletBalances:
       type: object
       description: Wallet balances
@@ -14254,6 +14627,88 @@ components:
         walletAddress:
           type: string
           description: Wallet address being watched
+    WebhookChannel:
+      type: string
+      description: Webhook event channel
+      enum:
+        - sol.token.migrated
+        - sol.token.created
+    WebhookEndpoint:
+      type: object
+      description: Webhook endpoint response
+      required:
+        - id
+        - url
+      properties:
+        channels:
+          type:
+            - array
+            - 'null'
+          items:
+            $ref: '#/components/schemas/WebhookChannel'
+          description: 訂閱的 Webhook 事件通道
+        createdAt:
+          type:
+            - string
+            - 'null'
+          description: 端點建立時間戳
+          example: 2021-01-01
+        description:
+          type:
+            - string
+            - 'null'
+          description: 端點描述
+          example: Webhook description
+        disabled:
+          type:
+            - boolean
+            - 'null'
+          description: 端點是否已停用
+          example: false
+        filter:
+          type:
+            - string
+            - 'null'
+          description: 事件篩選配置
+        filterTypes:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: 事件類型篩選
+        id:
+          type: string
+          description: 端點內部 ID
+          example: ep_01HT7Z4QJ7N2Q9W8P6V3K5M1X2
+        metadata:
+          type:
+            - object
+            - 'null'
+          description: 端點元資料
+          additionalProperties: {}
+          propertyNames:
+            type: string
+          example:
+            key: value
+        rateLimit:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 端點速率限制
+          example: 1000
+          minimum: 0
+        updatedAt:
+          type:
+            - string
+            - 'null'
+          description: 端點最後更新時間戳
+          example: 2021-01-01
+        url:
+          type: string
+          description: Webhook 目標 URL
+          example: https://example.com
   securitySchemes:
     api_key_auth:
       type: apiKey
@@ -14285,6 +14740,8 @@ tags:
     description: 關注列表相關操作
   - name: KYT
     description: KYT 相關操作
+  - name: Webhook
+    description: Webhook 相關操作
   - name: RedPacket
     description: 紅包相關操作
   - name: IPFS

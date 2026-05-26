@@ -936,6 +936,13 @@ ENTITY.TOKEN_SECURITY.VULN_MITIGATED_COUNT='Number of mitigated vulnerabilities'
 ENTITY.TOKEN_SECURITY.SOURCE_TYPE='Contract source type (verified/decompiled/none)'
 ENTITY.TOKEN_SECURITY.LAUNCHPAD_NAME='Launchpad name'
 ENTITY.TOKEN_SECURITY.RAW='Raw security data from the source'
+ENTITY.TOKEN_SECURITY.SOURCES_AVAILABLE='Available security data sources'
+ENTITY.TOKEN_SECURITY.IS_SHOW_ALERT='Whether to show a security alert badge'
+ENTITY.TOKEN_SECURITY.DEV_TOKEN_BURN_AMOUNT='Amount of tokens burned by the developer'
+ENTITY.TOKEN_SECURITY.DEV_TOKEN_BURN_RATIO='Ratio of tokens burned by the developer'
+ENTITY.TOKEN_SECURITY.PRIVILEGES='Token privilege information'
+ENTITY.TOKEN_SECURITY.LOCK_INFO='Token liquidity lock information'
+
 //TOKEN SECURITY SUMMARY ENTITY (lightweight security summary embedded in Token)
 ENTITY.TOKEN.SECURITY='Security audit summary'
 ENTITY.TOKEN.SECURITY.SOURCES_AVAILABLE='Available security data sources'

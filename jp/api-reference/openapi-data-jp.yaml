@@ -774,6 +774,53 @@ paths:
         - bearer_auth:
             - kyt.read
         - api_key_auth: []
+  /v2/ranking-pools/{chain}/{rankingType}:
+    get:
+      tags:
+        - Ranking
+      summary: CONTROLLER.RANKING_POOL.GET.SUMMARY
+      description: CONTROLLER.RANKING_POOL.GET.DESCRIPTION
+      operationId: get.ranking.pools
+      parameters:
+        - name: chain
+          in: path
+          description: サポートされているネットワークに記載されているチェーン名
+          required: true
+          schema:
+            $ref: '#/components/schemas/ChainSymbol'
+          example: sol
+        - name: rankingType
+          in: path
+          description: DTO.RANKING_POOL.TYPE
+          required: true
+          schema:
+            $ref: '#/components/schemas/RankingPoolType'
+          example: new-pool
+        - name: tag
+          in: query
+          description: ランキングタグフィルタ
+          required: false
+          schema:
+            $ref: '#/components/schemas/RankingTag'
+          example: pump_fun
+        - name: limit
+          in: query
+          description: ページあたりの結果数
+          required: false
+          schema:
+            type: integer
+            format: int64
+            default: 100
+          example: 20
+      responses:
+        '200':
+          description: CONTROLLER.RANKING_POOL.GET.RESPONSE
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RankingPool'
   /v2/ranking/{chain}/finalStretch:
     get:
       tags:
@@ -2867,6 +2914,12 @@ paths:
                         - 'null'
                       description: 上位100保有者の総供給量に対する割合
                       example: '0.8'
+                    top100TotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.TOP100_TOTAL_HOLDERS
+                      example: '100'
                     top100TotalHoldings:
                       type:
                         - string
@@ -2879,6 +2932,12 @@ paths:
                         - 'null'
                       description: 上位10保有者の総供給量に対する割合
                       example: '0.5'
+                    top10TotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.TOP10_TOTAL_HOLDERS
+                      example: '10'
                     top10TotalHoldings:
                       type:
                         - string
@@ -2891,6 +2950,12 @@ paths:
                         - 'null'
                       description: 上位50保有者の総供給量に対する割合
                       example: '0.3'
+                    top50TotalHolders:
+                      type:
+                        - string
+                        - 'null'
+                      description: ENTITY.TOKEN_MARKET_DATA.TOP50_TOTAL_HOLDERS
+                      example: '50'
                     top50TotalHoldings:
                       type:
                         - string
@@ -5494,6 +5559,18 @@ paths:
           schema:
             $ref: '#/components/schemas/PnlResolution'
           example: 1d
+        - name: positionState
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.POSITION_STATE
+          required: false
+          schema:
+            $ref: '#/components/schemas/PositionState'
+        - name: sortBy
+          in: query
+          description: DTO.WALLET.PNL_DETAILS.SORT_BY
+          required: false
+          schema:
+            $ref: '#/components/schemas/PnlSortBy'
       responses:
         '200':
           description: 成功レスポンス
@@ -6377,6 +6454,11 @@ components:
             - type: 'null'
             - $ref: '#/components/schemas/DexProtocolFamily'
               description: Protocol family name
+        protocolName:
+          type:
+            - string
+            - 'null'
+          description: Protocol display name
     DexPool:
       type: object
       description: DexPool
@@ -6390,6 +6472,48 @@ components:
           type: string
           description: Chain
           example: sol
+        createdBlockTimestamp:
+          type:
+            - string
+            - 'null'
+          description: Creation block timestamp
+        creatorAddress:
+          type:
+            - string
+            - 'null'
+          description: Pool creator / initialize signer
+        factoryAddress:
+          type:
+            - string
+            - 'null'
+          description: Factory contract address
+        feeRate:
+          type:
+            - string
+            - 'null'
+          description: Fee rate
+        image:
+          type:
+            - string
+            - 'null'
+          description: Image URL
+        initialTvlInNative:
+          type:
+            - string
+            - 'null'
+          description: Initial TVL in native token
+        initialTvlInUsd:
+          type:
+            - string
+            - 'null'
+          description: Initial TVL in USD
+        liquidityModel:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Liquidity model
+          minimum: 0
         poolAddress:
           type: string
           description: Pool address
@@ -6406,14 +6530,41 @@ components:
             - 'null'
           description: Protocol family
           example: raydium
+        protocolName:
+          type:
+            - string
+            - 'null'
+          description: Protocol name
+        tickSpacing:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Tick spacing
         tokenAAddress:
           type: string
           description: Token A address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        tokenALiquidity:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DexPoolTokenLiquidity'
+              description: Token A liquidity
         tokenBAddress:
           type: string
           description: Token B address
           example: So11111111111111111111111111111111111111112
+        tokenBLiquidity:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DexPoolTokenLiquidity'
+              description: Token B liquidity
+        tokenCount:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Token count
         tvlInSol:
           type:
             - string
@@ -6426,6 +6577,39 @@ components:
             - 'null'
           description: TVL in USD
           example: '1000000.45'
+        type:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Pool type
+          minimum: 0
+        version:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: Pool version
+          minimum: 0
+    DexPoolBalance:
+      type: object
+      required:
+        - poolAddress
+        - tokenAAddress
+        - tokenALiquidityInUsd
+        - tokenBAddress
+        - tokenBLiquidityInUsd
+      properties:
+        poolAddress:
+          type: string
+        tokenAAddress:
+          type: string
+        tokenALiquidityInUsd:
+          type: string
+        tokenBAddress:
+          type: string
+        tokenBLiquidityInUsd:
+          type: string
     DexPoolDetail:
       type: object
       description: DexPool detail
@@ -6443,6 +6627,16 @@ components:
             - string
             - 'null'
           description: Creation block timestamp
+        creatorAddress:
+          type:
+            - string
+            - 'null'
+          description: Pool creator / initialize signer
+        factoryAddress:
+          type:
+            - string
+            - 'null'
+          description: Factory contract address
         feeRate:
           type:
             - string
@@ -6453,6 +6647,16 @@ components:
             - string
             - 'null'
           description: Image URL
+        initialTvlInNative:
+          type:
+            - string
+            - 'null'
+          description: Initial TVL in native token
+        initialTvlInUsd:
+          type:
+            - string
+            - 'null'
+          description: Initial TVL in USD
         liquidityModel:
           type:
             - integer
@@ -6484,6 +6688,11 @@ components:
             - 'null'
           format: int64
           description: Tick spacing
+        token:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/Token'
+              description: Token selected as the display/enrichment row for pair-style pool lists.
         tokenAAddress:
           type: string
           description: Token A address
@@ -6669,6 +6878,21 @@ components:
           format: int32
           description: Token decimals
           example: 6
+        initialAmountInNative:
+          type:
+            - string
+            - 'null'
+          description: Initial amount in native token
+        initialAmountInUsd:
+          type:
+            - string
+            - 'null'
+          description: Initial amount in USD
+        initialVaultAmount:
+          type:
+            - string
+            - 'null'
+          description: Initial vault amount
         priceNative:
           type: string
           description: Price in native token
@@ -6681,10 +6905,20 @@ components:
           type: string
           description: Token address
           example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+        vaultAddress:
+          type:
+            - string
+            - 'null'
+          description: Vault address
         vaultAmount:
           type: string
           description: Vault amount
           example: '1000000000000'
+        vaultOwnerAddress:
+          type:
+            - string
+            - 'null'
+          description: Vault owner address
     DexPoolTokenSnapshot:
       type: object
       description: DexPool token snapshot
@@ -8281,6 +8515,11 @@ components:
                   - type: 'null'
                   - $ref: '#/components/schemas/DexProtocolFamily'
                     description: Protocol family name
+              protocolName:
+                type:
+                  - string
+                  - 'null'
+                description: Protocol display name
           description: Page data
         endCursor:
           type:
@@ -8323,6 +8562,48 @@ components:
                 type: string
                 description: Chain
                 example: sol
+              createdBlockTimestamp:
+                type:
+                  - string
+                  - 'null'
+                description: Creation block timestamp
+              creatorAddress:
+                type:
+                  - string
+                  - 'null'
+                description: Pool creator / initialize signer
+              factoryAddress:
+                type:
+                  - string
+                  - 'null'
+                description: Factory contract address
+              feeRate:
+                type:
+                  - string
+                  - 'null'
+                description: Fee rate
+              image:
+                type:
+                  - string
+                  - 'null'
+                description: Image URL
+              initialTvlInNative:
+                type:
+                  - string
+                  - 'null'
+                description: Initial TVL in native token
+              initialTvlInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: Initial TVL in USD
+              liquidityModel:
+                type:
+                  - integer
+                  - 'null'
+                format: int32
+                description: Liquidity model
+                minimum: 0
               poolAddress:
                 type: string
                 description: Pool address
@@ -8339,14 +8620,41 @@ components:
                   - 'null'
                 description: Protocol family
                 example: raydium
+              protocolName:
+                type:
+                  - string
+                  - 'null'
+                description: Protocol name
+              tickSpacing:
+                type:
+                  - integer
+                  - 'null'
+                format: int64
+                description: Tick spacing
               tokenAAddress:
                 type: string
                 description: Token A address
                 example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+              tokenALiquidity:
+                oneOf:
+                  - type: 'null'
+                  - $ref: '#/components/schemas/DexPoolTokenLiquidity'
+                    description: Token A liquidity
               tokenBAddress:
                 type: string
                 description: Token B address
                 example: So11111111111111111111111111111111111111112
+              tokenBLiquidity:
+                oneOf:
+                  - type: 'null'
+                  - $ref: '#/components/schemas/DexPoolTokenLiquidity'
+                    description: Token B liquidity
+              tokenCount:
+                type:
+                  - integer
+                  - 'null'
+                format: int32
+                description: Token count
               tvlInSol:
                 type:
                   - string
@@ -8359,6 +8667,20 @@ components:
                   - 'null'
                 description: TVL in USD
                 example: '1000000.45'
+              type:
+                type:
+                  - integer
+                  - 'null'
+                format: int32
+                description: Pool type
+                minimum: 0
+              version:
+                type:
+                  - integer
+                  - 'null'
+                format: int32
+                description: Pool version
+                minimum: 0
           description: Page data
         endCursor:
           type:
@@ -8702,6 +9024,20 @@ components:
                 type: string
                 description: トークンの表示名
                 example: USD Coin
+              score:
+                type:
+                  - number
+                  - 'null'
+                format: double
+                description: Search relevance score from OpenSearch _score
+              scoreBreakdown:
+                oneOf:
+                  - type: 'null'
+                  - $ref: '#/components/schemas/ScoreBreakdown'
+                    description: Approximate factor-level score breakdown (debug / explainability)
+              security:
+                $ref: '#/components/schemas/TokenSecuritySummary'
+                description: Security audit summary
               socialMedias:
                 $ref: '#/components/schemas/TokenSocialMedias'
                 description: トークンのソーシャルメディアリンク
@@ -8712,6 +9048,12 @@ components:
                 type: string
                 description: トークンのティッカーシンボル
                 example: USDC
+              tier:
+                type:
+                  - integer
+                  - 'null'
+                format: int32
+                description: 'Search tier: 0 = VIP, 1 = verified, 2 = emerging, null = unverified'
               tokenCreatedAt:
                 type:
                   - integer
@@ -8748,6 +9090,11 @@ components:
                   - 'null'
                 description: トークンメタデータ URI
                 example: https://arweave.net/abc123
+              warningBadge:
+                type:
+                  - string
+                  - 'null'
+                description: 'Warning badge: "unverified", "potential_scam", "honeypot", or null'
           description: Page data
         endCursor:
           type:
@@ -10651,12 +10998,26 @@ components:
         - 7d
         - 30d
         - all
+    PnlSortBy:
+      type: string
+      description: Sort field for PnL details query
+      enum:
+        - totalPnl
+        - realizedPnl
+        - unrealizedPnl
     PoolSortField:
       type: string
       description: Pool sort field
       enum:
         - tvlInSol
         - tvlInUsd
+    PositionState:
+      type: string
+      description: Filter for PnL position state
+      enum:
+        - open
+        - all
+        - closed
     PresignResponse:
       type: object
       required:
@@ -10715,6 +11076,44 @@ components:
         - 1h
         - 4h
         - 24h
+    RankingPool:
+      type: object
+      required:
+        - poolAddress
+        - tokenAAddress
+        - tokenBAddress
+      properties:
+        balance:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DexPoolBalance'
+        chain:
+          type:
+            - string
+            - 'null'
+        createdAtMs:
+          type:
+            - integer
+            - 'null'
+          format: int64
+        dex:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/Dex'
+        poolAddress:
+          type: string
+        token:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/Token'
+        tokenAAddress:
+          type: string
+        tokenBAddress:
+          type: string
+    RankingPoolType:
+      type: string
+      enum:
+        - new-pool
     RankingTag:
       type: string
       enum:
@@ -10981,6 +11380,65 @@ components:
         - 3d
         - 1w
         - 1M
+    ScoreBreakdown:
+      type: object
+      description: |-
+        Score breakdown for search result debugging / explainability.
+        Computed in Rust post-query as an approximation of the OS Painless scoring.
+      required:
+        - liquidityScore
+        - volumeScore
+        - holdersScore
+        - txCountScore
+        - smartMoneyScore
+        - ageScore
+        - priceChangeScore
+        - marketCapScore
+        - symbolExactMatchBonus
+        - tierBoost
+        - safetyPenalty
+        - holderConcentrationPenalty
+        - finalScore
+      properties:
+        ageScore:
+          type: number
+          format: double
+        finalScore:
+          type: number
+          format: double
+        holderConcentrationPenalty:
+          type: number
+          format: double
+        holdersScore:
+          type: number
+          format: double
+        liquidityScore:
+          type: number
+          format: double
+        marketCapScore:
+          type: number
+          format: double
+        priceChangeScore:
+          type: number
+          format: double
+        safetyPenalty:
+          type: number
+          format: double
+        smartMoneyScore:
+          type: number
+          format: double
+        symbolExactMatchBonus:
+          type: number
+          format: double
+        tierBoost:
+          type: number
+          format: double
+        txCountScore:
+          type: number
+          format: double
+        volumeScore:
+          type: number
+          format: double
     SearchMode:
       type: string
       description: 'Search mode: `fast` returns only OpenSearch fields (default), `normal` enriches with full data.'
@@ -11185,6 +11643,20 @@ components:
           type: string
           description: トークンの表示名
           example: USD Coin
+        score:
+          type:
+            - number
+            - 'null'
+          format: double
+          description: Search relevance score from OpenSearch _score
+        scoreBreakdown:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/ScoreBreakdown'
+              description: Approximate factor-level score breakdown (debug / explainability)
+        security:
+          $ref: '#/components/schemas/TokenSecuritySummary'
+          description: Security audit summary
         socialMedias:
           $ref: '#/components/schemas/TokenSocialMedias'
           description: トークンのソーシャルメディアリンク
@@ -11195,6 +11667,12 @@ components:
           type: string
           description: トークンのティッカーシンボル
           example: USDC
+        tier:
+          type:
+            - integer
+            - 'null'
+          format: int32
+          description: 'Search tier: 0 = VIP, 1 = verified, 2 = emerging, null = unverified'
         tokenCreatedAt:
           type:
             - integer
@@ -11231,6 +11709,11 @@ components:
             - 'null'
           description: トークンメタデータ URI
           example: https://arweave.net/abc123
+        warningBadge:
+          type:
+            - string
+            - 'null'
+          description: 'Warning badge: "unverified", "potential_scam", "honeypot", or null'
     TokenBalance:
       type: object
       description: Token balance
@@ -11398,11 +11881,6 @@ components:
       type: object
       description: Token extra metadata
       properties:
-        bannerUrl:
-          type:
-            - string
-            - 'null'
-          description: ENTITY.TOKEN_EXTRA.BANNER_URL
         collectionAddress:
           type:
             - string
@@ -11420,6 +11898,11 @@ components:
             - 'null'
           format: int64
           description: ENTITY.TOKEN_EXTRA.DEXSCREENER_AD_AT
+        dexscreenerBannerUrl:
+          type:
+            - string
+            - 'null'
+          description: DexScreener banner image URL
         dexscreenerBoostAt:
           type:
             - integer
@@ -12537,6 +13020,12 @@ components:
             - 'null'
           description: 上位100保有者の総供給量に対する割合
           example: '0.8'
+        top100TotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.TOP100_TOTAL_HOLDERS
+          example: '100'
         top100TotalHoldings:
           type:
             - string
@@ -12549,6 +13038,12 @@ components:
             - 'null'
           description: 上位10保有者の総供給量に対する割合
           example: '0.5'
+        top10TotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.TOP10_TOTAL_HOLDERS
+          example: '10'
         top10TotalHoldings:
           type:
             - string
@@ -12561,6 +13056,12 @@ components:
             - 'null'
           description: 上位50保有者の総供給量に対する割合
           example: '0.3'
+        top50TotalHolders:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.TOKEN_MARKET_DATA.TOP50_TOTAL_HOLDERS
+          example: '50'
         top50TotalHoldings:
           type:
             - string
@@ -12756,6 +13257,13 @@ components:
           items:
             $ref: '#/components/schemas/Token'
           description: トークンリスト
+        durationMs:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: Search duration in milliseconds
+          minimum: 0
         endCursor:
           type:
             - string
@@ -12770,6 +13278,11 @@ components:
           type: boolean
           description: 前のページがあるかどうか
           example: false
+        searchId:
+          type:
+            - string
+            - 'null'
+          description: Search session identifier (UUID)
         startCursor:
           type:
             - string
@@ -12882,6 +13395,83 @@ components:
           items:
             type: string
           description: ENTITY.TOKEN_SECURITY.SOURCES_AVAILABLE
+          example:
+            - goplus
+    TokenSecuritySummary:
+      type: object
+      properties:
+        buyTax:
+          type:
+            - string
+            - 'null'
+          description: Buy tax rate
+        holderCount:
+          type:
+            - string
+            - 'null'
+          description: Number of token holders
+        isBlacklisted:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is blacklisted
+        isFreezable:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is freezable
+        isHoneypot:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is a honeypot scam
+        isMintable:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the token is mintable
+        isOpenSource:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is open source
+        isProxy:
+          type:
+            - boolean
+            - 'null'
+          description: Whether the contract is a proxy
+        isRenounced:
+          type:
+            - boolean
+            - 'null'
+          description: Whether contract ownership is renounced
+        isShowAlert:
+          type:
+            - boolean
+            - 'null'
+          description: Whether to show a security alert
+        lpHolderCount:
+          type:
+            - string
+            - 'null'
+          description: Number of liquidity pool holders
+        ownerAddress:
+          type:
+            - string
+            - 'null'
+          description: Token owner address
+        sellTax:
+          type:
+            - string
+            - 'null'
+          description: Sell tax rate
+        sourcesAvailable:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+          description: Available security data sources
           example:
             - goplus
     TokenSocialMedias:

@@ -778,8 +778,8 @@ paths:
     get:
       tags:
         - Ranking
-      summary: CONTROLLER.RANKING_POOL.GET.SUMMARY
-      description: CONTROLLER.RANKING_POOL.GET.DESCRIPTION
+      summary: Ranking - Pools
+      description: Get ranking pools (e.g. newly created pools) for a blockchain
       operationId: get.ranking.pools
       parameters:
         - name: chain
@@ -791,7 +791,7 @@ paths:
           example: sol
         - name: rankingType
           in: path
-          description: DTO.RANKING_POOL.TYPE
+          description: Ranking pool type (e.g. new-pool)
           required: true
           schema:
             $ref: '#/components/schemas/RankingPoolType'
@@ -814,7 +814,7 @@ paths:
           example: 20
       responses:
         '200':
-          description: CONTROLLER.RANKING_POOL.GET.RESPONSE
+          description: Successful response
           content:
             application/json:
               schema:
@@ -1707,31 +1707,80 @@ paths:
           schema:
             type: string
           example: 3NUHqNG2Big2WxbYnaBzSNmxwE4NrxgckJuoiyGxu3Am
-        - name: cursor
+        - name: sortBy
           in: query
-          description: Pagination cursor
+          description: 'Sort field: market_cap, fdv, holders, created_at, volume_24h, price_change_24h, trades_24h'
           required: false
           schema:
             type: string
-          example: eyJpZCI6IjEyMyJ9
+          example: market_cap
+        - name: order
+          in: query
+          description: 'Sort order: asc or desc (default desc)'
+          required: false
+          schema:
+            type: string
+          example: desc
+        - name: search
+          in: query
+          description: Text search in token name / symbol (case-insensitive)
+          required: false
+          schema:
+            type: string
+          example: dog
+        - name: minMarketCap
+          in: query
+          description: Minimum market cap in USD
+          required: false
+          schema:
+            type: string
+          example: '1000'
+        - name: maxMarketCap
+          in: query
+          description: Maximum market cap in USD
+          required: false
+          schema:
+            type: string
+          example: '1000000'
+        - name: createdAfter
+          in: query
+          description: Only tokens created after this timestamp (ms)
+          required: false
+          schema:
+            type: string
+          example: '1717200000000'
+        - name: createdBefore
+          in: query
+          description: Only tokens created before this timestamp (ms)
+          required: false
+          schema:
+            type: string
+          example: '1720000000000'
+        - name: minHolders
+          in: query
+          description: Minimum holder count
+          required: false
+          schema:
+            type: string
+          example: '100'
         - name: limit
           in: query
-          description: Number of results per page
+          description: Items per page (1–100)
           required: false
           schema:
             type: integer
             format: int64
             default: 20
           example: 20
-        - name: direction
+        - name: page
           in: query
-          description: Pagination direction (next or prev)
+          description: Page number (1-based)
           required: false
           schema:
-            oneOf:
-              - $ref: '#/components/schemas/PageDirection'
-            default: next
-          example: next
+            type: integer
+            format: int64
+            default: 1
+          example: 1
       responses:
         '200':
           description: Get Dev Tokens
@@ -2649,19 +2698,19 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.CREATORS_HOLDINGS_RATIO
+                      description: Creator wallets holdings as a ratio of total supply
                       example: '0.10'
                     creatorsTotalHolders:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDERS
+                      description: Number of creator wallet holders
                       example: '1'
                     creatorsTotalHoldings:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDINGS
+                      description: Total amount held by creator wallets
                       example: '100000000.00'
                     devHoldingsRatio:
                       type:
@@ -2781,30 +2830,30 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.MAX_SUPPLY
+                      description: Maximum token supply
                     phishingHoldingsRatio:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.PHISHING_HOLDINGS_RATIO
+                      description: Phishing wallets holdings as a ratio of total supply
                       example: '0.0005'
                     phishingTotalHolders:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDERS
+                      description: Number of phishing-flagged holders
                       example: '2'
                     phishingTotalHoldings:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDINGS
+                      description: Total amount held by phishing-flagged wallets
                       example: '50000.00'
                     priceInNative:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.PRICE_IN_NATIVE
+                      description: Token price in the chain native token
                       example: '0.00000261383847574915906643405542'
                     priceInSol:
                       type:
@@ -2840,19 +2889,19 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.RAT_HOLDINGS_RATIO
+                      description: Rat-trader wallets holdings as a ratio of total supply
                       example: '0.0012'
                     ratTotalHolders:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDERS
+                      description: Number of rat-trader holders
                       example: '5'
                     ratTotalHoldings:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDINGS
+                      description: Total amount held by rat-trader wallets
                       example: '120000.00'
                     sandwishHoldingsRatio:
                       type:
@@ -2876,19 +2925,19 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.SMART_HOLDINGS_RATIO
+                      description: Smart-money wallets holdings as a ratio of total supply
                       example: '0.03'
                     smartTotalHolders:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDERS
+                      description: Number of smart-money holders
                       example: '30'
                     smartTotalHoldings:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDINGS
+                      description: Total amount held by smart-money wallets
                       example: '3000000.00'
                     sniperHoldingsRatio:
                       type:
@@ -2918,7 +2967,7 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.TOP100_TOTAL_HOLDERS
+                      description: Number of holders among the top 100
                       example: '100'
                     top100TotalHoldings:
                       type:
@@ -2936,7 +2985,7 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.TOP10_TOTAL_HOLDERS
+                      description: Number of holders among the top 10
                       example: '10'
                     top10TotalHoldings:
                       type:
@@ -2954,7 +3003,7 @@ paths:
                       type:
                         - string
                         - 'null'
-                      description: ENTITY.TOKEN_MARKET_DATA.TOP50_TOTAL_HOLDERS
+                      description: Number of holders among the top 50
                       example: '50'
                     top50TotalHoldings:
                       type:
@@ -3073,7 +3122,7 @@ paths:
                         - integer
                         - 'null'
                       format: int64
-                      description: ENTITY.TOKEN_METADATA.FIRST_TRADE_AT
+                      description: Timestamp of the first trade
                       example: 1714857600000
                     imageUrl:
                       type:
@@ -3130,7 +3179,7 @@ paths:
                       description: List of token creators
                     translations:
                       $ref: '#/components/schemas/TokenTranslations'
-                      description: ENTITY.TOKEN_METADATA.TRANSLATIONS
+                      description: Localized name/symbol translations
                     updatedAt:
                       type:
                         - string
@@ -3571,8 +3620,8 @@ paths:
     get:
       tags:
         - Token
-      summary: CONTROLLER.TOKEN.GET_FEE_ESTIMATES.SUMMARY
-      description: CONTROLLER.TOKEN.GET_FEE_ESTIMATES.DESCRIPTION
+      summary: Token - Fee Estimates
+      description: Estimate trading fees for a token
       operationId: get.feeEstimates
       parameters:
         - name: chain
@@ -3700,19 +3749,24 @@ paths:
           example: next
         - name: sortBy
           in: query
-          description: 'DTO.TOKEN.HOLDERS.SORT_BY Sort by: holdingUsd (default) | lastActiveAt | profit | buyVolume | sellVolume'
+          description: 'DTO.TOKEN.HOLDERS.SORT_BY Sort by: amountPercentage (default) | holdingUsd | usdValue | totalPnl | realizedPnl | unrealizedPnl | buyVolume | sellVolume | netflowUsd | lastActiveAt | createdAt'
           required: false
           schema:
-            oneOf:
-              - $ref: '#/components/schemas/HolderSortBy'
-            default: holdingUsd
-          example: holdingUsd
+            $ref: '#/components/schemas/HolderSortBy'
+          example: amountPercentage
+        - name: sortDirection
+          in: query
+          description: 'Sort direction: desc (default) | asc'
+          required: false
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+          example: desc
         - name: tag
           in: query
           description: 'Filter by wallet tag: smart | kol | sniper | dev | bundle | bluechip | fresh | insider | pro | sandwich | phishing'
           required: false
           schema:
-            type: string
+            $ref: '#/components/schemas/TokenTraderTag'
           example: smart
         - name: minCostUsd
           in: query
@@ -3834,8 +3888,8 @@ paths:
     get:
       tags:
         - Token
-      summary: CONTROLLER.TOKEN.GET_LOGO_DUPLICATES.SUMMARY
-      description: CONTROLLER.TOKEN.GET_LOGO_DUPLICATES.DESCRIPTION
+      summary: Token - Logo Duplicates
+      description: Get tokens sharing the same logo image (potential impersonators)
       operationId: get.logoDuplicates
       parameters:
         - name: chain
@@ -4321,19 +4375,24 @@ paths:
           example: next
         - name: sortBy
           in: query
-          description: 'DTO.TOKEN.HOLDERS.SORT_BY Sort by: holdingUsd (default) | lastActiveAt | profit | buyVolume | sellVolume'
+          description: 'DTO.TOKEN.HOLDERS.SORT_BY Sort by: amountPercentage (default) | holdingUsd | usdValue | totalPnl | realizedPnl | unrealizedPnl | buyVolume | sellVolume | netflowUsd | lastActiveAt | createdAt'
           required: false
           schema:
-            oneOf:
-              - $ref: '#/components/schemas/HolderSortBy'
-            default: holdingUsd
-          example: holdingUsd
+            $ref: '#/components/schemas/HolderSortBy'
+          example: amountPercentage
+        - name: sortDirection
+          in: query
+          description: 'Sort direction: desc (default) | asc'
+          required: false
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+          example: desc
         - name: tag
           in: query
           description: 'Filter by wallet tag: smart | kol | sniper | dev | bundle | bluechip | fresh | insider | pro | sandwich | phishing'
           required: false
           schema:
-            type: string
+            $ref: '#/components/schemas/TokenTraderTag'
           example: smart
         - name: minCostUsd
           in: query
@@ -4355,9 +4414,7 @@ paths:
     get:
       tags:
         - Token
-      summary: |-
-        Get top traders for a token, sorted by profit or volume.
-        Includes all historical traders (cleared positions included).
+      summary: Get top traders for a token. Alias of traders with the same default sort.
       operationId: get.token.topTraders
       parameters:
         - name: chain
@@ -4401,19 +4458,24 @@ paths:
           example: next
         - name: sortBy
           in: query
-          description: 'Sort by field: profit (default) | buyVolume | sellVolume | lastActiveAt'
+          description: 'Sort by field: totalPnl (default) | realizedPnl | unrealizedPnl | buyVolume | sellVolume | netflowUsd | lastActiveAt | createdAt'
           required: false
           schema:
-            oneOf:
-              - $ref: '#/components/schemas/TraderSortBy'
-            default: profit
-          example: profit
+            $ref: '#/components/schemas/TraderSortBy'
+          example: totalPnl
+        - name: sortDirection
+          in: query
+          description: 'Sort direction: desc (default) | asc'
+          required: false
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+          example: desc
         - name: tag
           in: query
           description: 'Filter by wallet tag: smart | kol | sniper | dev | bundle | bluechip | fresh | insider | pro | sandwich | phishing'
           required: false
           schema:
-            type: string
+            $ref: '#/components/schemas/TokenTraderTag'
           example: smart
       responses:
         '200':
@@ -4422,12 +4484,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PageResponse_TokenTopTrader'
-  /v2/token/{chain}/{tokenAddress}/traders/{tag}:
+  /v2/token/{chain}/{tokenAddress}/traders:
     get:
       tags:
         - Token
-      summary: Token - Get Token Traders
-      description: Retrieve traders for a token by tag (fresh, sandwish, bundle, sniper, dev, pro, insider)
+      summary: |-
+        Get traders for a token, sorted by PnL, volume, activity, or wallet age.
+        Includes all historical traders (cleared positions included).
       operationId: get.token.traders
       parameters:
         - name: chain
@@ -4444,13 +4507,6 @@ paths:
           schema:
             type: string
           example: 6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN
-        - name: tag
-          in: path
-          description: Token trader tag (fresh, sandwish, bundle, sniper, dev, pro, insider)
-          required: true
-          schema:
-            $ref: '#/components/schemas/TokenTraderTag'
-          example: fresh
         - name: cursor
           in: query
           description: Pagination cursor
@@ -4476,13 +4532,34 @@ paths:
               - $ref: '#/components/schemas/PageDirection'
             default: next
           example: next
+        - name: sortBy
+          in: query
+          description: 'Sort by field: totalPnl (default) | realizedPnl | unrealizedPnl | buyVolume | sellVolume | netflowUsd | lastActiveAt | createdAt'
+          required: false
+          schema:
+            $ref: '#/components/schemas/TraderSortBy'
+          example: totalPnl
+        - name: sortDirection
+          in: query
+          description: 'Sort direction: desc (default) | asc'
+          required: false
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+          example: desc
+        - name: tag
+          in: query
+          description: 'Filter by wallet tag: smart | kol | sniper | dev | bundle | bluechip | fresh | insider | pro | sandwich | phishing'
+          required: false
+          schema:
+            $ref: '#/components/schemas/TokenTraderTag'
+          example: smart
       responses:
         '200':
-          description: Get Token Traders
+          description: Traders list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PageResponse_TokenTrader'
+                $ref: '#/components/schemas/PageResponse_TokenTopTrader'
   /v2/token/{chain}/{tokenAddress}/transfer-total:
     get:
       tags:
@@ -4821,17 +4898,20 @@ paths:
           example: BUY
         - name: sortBy
           in: query
-          description: 'DTO.TRADE.SORT_BY Sort by: timestamp (default) | totalUsd'
+          description: |-
+            DTO.TRADE.SORT_BY Sort by: timestampDesc (default) | timestampAsc | totalUsdDesc | totalUsdAsc.
+            Legacy aliases: timestamp -> timestampDesc, totalUsd -> totalUsdDesc.
           required: false
           schema:
             oneOf:
               - $ref: '#/components/schemas/ActivitySortBy'
-            default: timestamp
-          example: timestamp
+            default: timestampDesc
+          example: timestampDesc
         - name: traderTags
           in: query
           description: |-
-            Filter by trader tag(s). Comma-separated list from: kol, smart, sniper, bundle, dev, bluechip, insider, fresh.
+            Filter by trader tag(s). Comma-separated list from: kol, smart, sniper, dev, fresh, bundle, bluechip, insider.
+            GMGN tags without existing activities data are unsupported: whale, top_holder, rat_trader, bot_degen, following, remarks.
             Returns activities where the trader has ANY of the specified tags.
           required: false
           schema:
@@ -4844,9 +4924,16 @@ paths:
           schema:
             type: string
           example: '1000'
+        - name: maxAmountUsd
+          in: query
+          description: Maximum trade value in USD (inclusive).
+          required: false
+          schema:
+            type: string
+          example: '5000'
         - name: maker
           in: query
-          description: Filter by specific maker (trader) wallet address. Equivalent to filtering by accountOwnerAddress.
+          description: Filter by one maker (trader) wallet address. Equivalent to filtering by accountOwnerAddress.
           required: false
           schema:
             type: string
@@ -5091,7 +5178,7 @@ paths:
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p
         - name: resolution
           in: query
-          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          description: Time resolution for PnL aggregation
           required: false
           schema:
             oneOf:
@@ -5491,7 +5578,7 @@ paths:
           example: 4MbgMQGvXBWyxKsTfrvkcRgh5FNLg1VxLnzWqbsdPh7p,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
         - name: resolution
           in: query
-          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          description: Time resolution for PnL aggregation
           required: false
           schema:
             oneOf:
@@ -5554,20 +5641,20 @@ paths:
           example: next
         - name: resolution
           in: query
-          description: DTO.WALLET.PNL_DETAILS.RESOLUTION
+          description: Time resolution for PnL aggregation
           required: true
           schema:
             $ref: '#/components/schemas/PnlResolution'
           example: 1d
         - name: positionState
           in: query
-          description: DTO.WALLET.PNL_DETAILS.POSITION_STATE
+          description: Filter by position state (open or closed)
           required: false
           schema:
             $ref: '#/components/schemas/PositionState'
         - name: sortBy
           in: query
-          description: DTO.WALLET.PNL_DETAILS.SORT_BY
+          description: Sort field for PnL detail results
           required: false
           schema:
             $ref: '#/components/schemas/PnlSortBy'
@@ -6040,10 +6127,12 @@ components:
   schemas:
     ActivitySortBy:
       type: string
-      description: Sort field for activities query
+      description: Sort field and direction for activities query
       enum:
-        - timestamp
-        - totalUsd
+        - timestampDesc
+        - timestampAsc
+        - totalUsdDesc
+        - totalUsdAsc
     ActivityType:
       type: string
       description: Activity type (extends TradeType)
@@ -6057,6 +6146,8 @@ components:
         - RED_PACKET_CLAIM
         - RED_PACKET_COMPLETE
         - RED_PACKET_REFUND
+        - MINT
+        - BURN
     BalanceChangeType:
       type: string
       description: Balance change type
@@ -7470,11 +7561,17 @@ components:
       type: string
       description: Sort field for token holders query
       enum:
+        - amountPercentage
         - holdingUsd
-        - lastActiveAt
-        - profit
+        - usdValue
+        - totalPnl
+        - realizedPnl
+        - unrealizedPnl
         - buyVolume
         - sellVolume
+        - netflowUsd
+        - lastActiveAt
+        - createdAt
     HoneypotIsSecurityInfo:
       type: object
       required:
@@ -8429,6 +8526,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_DevToken:
       type: object
       description: Generic pagination response
@@ -8480,6 +8586,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_Dex:
       type: object
       description: Generic pagination response
@@ -8541,6 +8656,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_DexPool:
       type: object
       description: Generic pagination response
@@ -8702,6 +8826,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_DexPoolSnapshot:
       type: object
       description: Generic pagination response
@@ -8801,6 +8934,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_NetWorthByTokensItem:
       type: object
       description: Generic pagination response
@@ -8930,6 +9072,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_Token:
       type: object
       description: Generic pagination response
@@ -9116,6 +9267,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TokenHolder:
       type: object
       description: Generic pagination response
@@ -9165,6 +9325,14 @@ components:
                 type: string
                 description: Token holding amount
                 example: '1000000000000000000'
+              amountInNative:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  Holder's token position value denominated in the chain's native coin (SOL/BNB/ETH).
+                  Computed as `price_in_native × amount` using real-time Redis price;
+                  falls back to OpenSearch `post_balance_in_native` snapshot when price is unavailable.
               amountInUsd:
                 type: string
                 description: Token holding value in USD
@@ -9485,6 +9653,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TokenLiquiditySnapshot:
       type: object
       description: Generic pagination response
@@ -9572,6 +9749,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TokenMintBurn:
       type: object
       description: Generic pagination response
@@ -9637,6 +9823,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TokenPrice:
       type: object
       description: Generic pagination response
@@ -9699,6 +9894,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TokenTopTrader:
       type: object
       description: Generic pagination response
@@ -9980,101 +10184,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
-    PageResponse_TokenTrader:
-      type: object
-      description: Generic pagination response
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            description: Token trader info — mirrors TS `TokenTraderDTO`
-            required:
-              - address
-            properties:
-              address:
-                type: string
-                description: Wallet address
-                example: MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2
-              blockTimestamp:
-                type:
-                  - string
-                  - 'null'
-                description: Block timestamp (sniper)
-                example: 2025-01-15T10:30:00Z
-              onchainCreatedAt:
-                type:
-                  - string
-                  - 'null'
-                description: Onchain account creation time (fresh/dev)
-                example: 2025-01-15T10:30:00Z
-              percentileRankTradeAmountInUsd:
-                type:
-                  - string
-                  - 'null'
-                description: Percentile rank of trade amount in USD (pro/insider)
-                example: '0.98'
-              percentileRankTradeCount:
-                type:
-                  - integer
-                  - 'null'
-                format: int64
-                description: Percentile rank of trade count (pro)
-                example: 95
-              rankTradeAmountInUsd:
-                type:
-                  - string
-                  - 'null'
-                description: Rank trade amount in USD (insider)
-                example: '0.95'
-              tradeAmountInNative:
-                type:
-                  - string
-                  - 'null'
-                description: Trade amount in native token (pro/insider)
-                example: '1500.50'
-              tradeAmountInUsd:
-                type:
-                  - string
-                  - 'null'
-                description: Trade amount in USD (pro/insider)
-                example: '45000.00'
-              tradeCount:
-                type:
-                  - integer
-                  - 'null'
-                format: int64
-                description: Trade count (pro/insider)
-                example: 42
-              transactionSignature:
-                type:
-                  - string
-                  - 'null'
-                description: Transaction signature (sandwish/bundle/sniper)
-                example: 5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz...
-          description: Page data
-        endCursor:
+        total:
           type:
-            - string
+            - integer
             - 'null'
-          description: Cursor for the end of current page
-          example: eyJpZCI6ImVuZCJ9
-        hasNext:
-          type: boolean
-          description: Whether there is a next page
-          example: false
-        hasPrev:
-          type: boolean
-          description: Whether there is a previous page
-          example: false
-        startCursor:
-          type:
-            - string
-            - 'null'
-          description: Cursor for the start of current page
-          example: eyJpZCI6InN0YXJ0In0=
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TokenTransfer:
       type: object
       description: Generic pagination response
@@ -10161,6 +10279,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TopTrader:
       type: object
       description: Generic pagination response
@@ -10258,6 +10385,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TradeDetail:
       type: object
       description: Generic pagination response
@@ -10327,6 +10463,24 @@ components:
                 type: string
                 description: Chain identifier
                 example: sol
+              dexFeeInNative:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  DEX protocol fee in native currency.
+                  Aggregated from fees_processed[PROTOCOL] entries (trade-processing-pipeline Bug A fix required).
+                  Null when no PROTOCOL fee data is available (e.g. SOL — ETL not yet populated).
+                example: '0.00025'
+              dexFeeInUsd:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  DEX protocol fee in USD.
+                  Uses the same native-price snapshot as dex_fee_in_native; satisfies same-snapshot constraint.
+                  Null when no PROTOCOL fee data is available.
+                example: '0.50'
               dexImage:
                 type:
                   - string
@@ -10429,6 +10583,15 @@ components:
                 description: |-
                   Token balance after this trade (token quantity).
                   Matches GMGN `balance` in activity feed.
+              priorityFeeInNative:
+                type:
+                  - string
+                  - 'null'
+                description: |-
+                  EVM priority fee (fee_miner_reward ÷ 1e18) in native currency (ETH/BNB).
+                  Null on SOL (ETL does not yet provide compute-budget priority fee).
+                  Equals (effectiveGasPrice − baseFeePerGas) × gasUsed converted to native units.
+                example: '0.000005'
               realizedProfitInUsd:
                 type:
                   - string
@@ -10528,7 +10691,7 @@ components:
                 type: array
                 items:
                   type: string
-                description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "bundle", "bluechip")
+                description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "fresh", "bundle", "bluechip", "insider")
               transactionSignature:
                 type: string
                 description: Transaction signature
@@ -10567,6 +10730,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_TraderGainersLosersItem:
       type: object
       description: Generic pagination response
@@ -10626,6 +10798,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PageResponse_WalletTransfer:
       type: object
       description: Generic pagination response
@@ -10707,6 +10888,15 @@ components:
             - 'null'
           description: Cursor for the start of current page
           example: eyJpZCI6InN0YXJ0In0=
+        total:
+          type:
+            - integer
+            - 'null'
+          format: int64
+          description: |-
+            Total number of items matching the query (not just the current page).
+            When `None`, the caller should treat it as unknown (backward-compatible).
+          example: 564094
     PnlDetailItem:
       type: object
       description: PnL detail for a single wallet-token pair (mirrors TS PnlDetailItemDTO).
@@ -10796,7 +10986,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.PNL_DETAIL_ITEM.LOSSES
+          description: Number of losing trades
           example: '5'
         name:
           type: string
@@ -10838,7 +11028,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.PNL_DETAIL_ITEM.TOTAL_COST_IN_USD
+          description: Total cost basis in USD
           example: '48469.17'
         totalProfitInUsd:
           type: string
@@ -10852,6 +11042,30 @@ components:
           type: string
           description: Total number of trades
           example: '385'
+        transferInAmountInUsd:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.TRANSFER_IN_AMOUNT_IN_USD — USD value of TFR_IN in the window
+          example: '150.00'
+        transferInCount:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.TRANSFER_IN_COUNT — number of TFR_IN events in the resolution window
+          example: '3'
+        transferOutAmountInUsd:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.TRANSFER_OUT_AMOUNT_IN_USD — USD value of TFR_OUT in the window
+          example: '29.40'
+        transferOutCount:
+          type:
+            - string
+            - 'null'
+          description: ENTITY.PNL_DETAIL_ITEM.TRANSFER_OUT_COUNT — number of TFR_OUT events in the resolution window
+          example: '1'
         unrealizedProfitInUsd:
           type: string
           description: Unrealized profit in USD
@@ -10868,7 +11082,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.PNL_DETAIL_ITEM.WINS
+          description: Number of winning trades
           example: '12'
     PnlDetailSummary:
       type: object
@@ -10943,6 +11157,22 @@ components:
           type: string
           description: Total number of trades
           example: '385'
+        transferInAmountInUsd:
+          type: string
+          description: Total value transferred in, in USD
+          example: '350.00'
+        transferInCount:
+          type: string
+          description: ENTITY.PNL_DETAIL_SUMMARY.TRANSFER_IN_COUNT — total TFR_IN events across all items
+          example: '5'
+        transferOutAmountInUsd:
+          type: string
+          description: Total value transferred out, in USD
+          example: '29.40'
+        transferOutCount:
+          type: string
+          description: ENTITY.PNL_DETAIL_SUMMARY.TRANSFER_OUT_COUNT — total TFR_OUT events across all items
+          example: '2'
         unrealizedProfitInUsd:
           type: string
           description: Total unrealized profit in USD
@@ -11891,13 +12121,13 @@ components:
           type:
             - boolean
             - 'null'
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_AD
+          description: Whether the token has an active DexScreener advertisement
         dexscreenerAdAt:
           type:
             - integer
             - 'null'
           format: int64
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_AD_AT
+          description: Timestamp of the DexScreener advertisement
         dexscreenerBannerUrl:
           type:
             - string
@@ -11908,34 +12138,34 @@ components:
             - integer
             - 'null'
           format: int64
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_BOOST_AT
+          description: Timestamp of the DexScreener boost
         dexscreenerBoostFeeInUsd:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_BOOST_FEE_IN_USD
+          description: DexScreener boost fee in USD
         dexscreenerTrendingBar:
           type:
             - boolean
             - 'null'
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_TRENDING_BAR
+          description: Whether the token appears in the DexScreener trending bar
         dexscreenerTrendingBarAt:
           type:
             - integer
             - 'null'
           format: int64
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_TRENDING_BAR_AT
+          description: Timestamp of the DexScreener trending bar appearance
         dexscreenerUpdateLink:
           type:
             - boolean
             - 'null'
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_UPDATE_LINK
+          description: Whether the token profile links were updated on DexScreener
         dexscreenerUpdateLinkAt:
           type:
             - integer
             - 'null'
           format: int64
-          description: ENTITY.TOKEN_EXTRA.DEXSCREENER_UPDATE_LINK_AT
+          description: Timestamp of the DexScreener link update
         editionNonce:
           type:
             - integer
@@ -12001,7 +12231,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_EXTRA.LAUNCH_QUOTE_TOKEN_ADDRESS
+          description: Quote token address used at launch
         migratedAt:
           type:
             - integer
@@ -12172,6 +12402,14 @@ components:
           type: string
           description: Token holding amount
           example: '1000000000000000000'
+        amountInNative:
+          type:
+            - string
+            - 'null'
+          description: |-
+            Holder's token position value denominated in the chain's native coin (SOL/BNB/ETH).
+            Computed as `price_in_native × amount` using real-time Redis price;
+            falls back to OpenSearch `post_balance_in_native` snapshot when price is unavailable.
         amountInUsd:
           type: string
           description: Token holding value in USD
@@ -12755,19 +12993,19 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.CREATORS_HOLDINGS_RATIO
+          description: Creator wallets holdings as a ratio of total supply
           example: '0.10'
         creatorsTotalHolders:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDERS
+          description: Number of creator wallet holders
           example: '1'
         creatorsTotalHoldings:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.CREATORS_TOTAL_HOLDINGS
+          description: Total amount held by creator wallets
           example: '100000000.00'
         devHoldingsRatio:
           type:
@@ -12887,30 +13125,30 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.MAX_SUPPLY
+          description: Maximum token supply
         phishingHoldingsRatio:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.PHISHING_HOLDINGS_RATIO
+          description: Phishing wallets holdings as a ratio of total supply
           example: '0.0005'
         phishingTotalHolders:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDERS
+          description: Number of phishing-flagged holders
           example: '2'
         phishingTotalHoldings:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.PHISHING_TOTAL_HOLDINGS
+          description: Total amount held by phishing-flagged wallets
           example: '50000.00'
         priceInNative:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.PRICE_IN_NATIVE
+          description: Token price in the chain native token
           example: '0.00000261383847574915906643405542'
         priceInSol:
           type:
@@ -12946,19 +13184,19 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.RAT_HOLDINGS_RATIO
+          description: Rat-trader wallets holdings as a ratio of total supply
           example: '0.0012'
         ratTotalHolders:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDERS
+          description: Number of rat-trader holders
           example: '5'
         ratTotalHoldings:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.RAT_TOTAL_HOLDINGS
+          description: Total amount held by rat-trader wallets
           example: '120000.00'
         sandwishHoldingsRatio:
           type:
@@ -12982,19 +13220,19 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.SMART_HOLDINGS_RATIO
+          description: Smart-money wallets holdings as a ratio of total supply
           example: '0.03'
         smartTotalHolders:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDERS
+          description: Number of smart-money holders
           example: '30'
         smartTotalHoldings:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.SMART_TOTAL_HOLDINGS
+          description: Total amount held by smart-money wallets
           example: '3000000.00'
         sniperHoldingsRatio:
           type:
@@ -13024,7 +13262,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.TOP100_TOTAL_HOLDERS
+          description: Number of holders among the top 100
           example: '100'
         top100TotalHoldings:
           type:
@@ -13042,7 +13280,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.TOP10_TOTAL_HOLDERS
+          description: Number of holders among the top 10
           example: '10'
         top10TotalHoldings:
           type:
@@ -13060,7 +13298,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_MARKET_DATA.TOP50_TOTAL_HOLDERS
+          description: Number of holders among the top 50
           example: '50'
         top50TotalHoldings:
           type:
@@ -13140,7 +13378,7 @@ components:
             - integer
             - 'null'
           format: int64
-          description: ENTITY.TOKEN_METADATA.FIRST_TRADE_AT
+          description: Timestamp of the first trade
           example: 1714857600000
         imageUrl:
           type:
@@ -13197,7 +13435,7 @@ components:
           description: List of token creators
         translations:
           $ref: '#/components/schemas/TokenTranslations'
-          description: ENTITY.TOKEN_METADATA.TRANSLATIONS
+          description: Localized name/symbol translations
         updatedAt:
           type:
             - string
@@ -13500,7 +13738,7 @@ components:
           type:
             - string
             - 'null'
-          description: ENTITY.TOKEN_SOCIAL_MEDIAS.FARCASTER
+          description: Farcaster handle or URL
           example: https://warpcast.com/vitalik
         github:
           type:
@@ -14080,86 +14318,21 @@ components:
             - 'null'
           description: Volume change ratio vs previous period
           example: '0.25'
-    TokenTrader:
-      type: object
-      description: Token trader info — mirrors TS `TokenTraderDTO`
-      required:
-        - address
-      properties:
-        address:
-          type: string
-          description: Wallet address
-          example: MJKqp326RZCHnAAbew9MDdui3iCKWco7fsK9sVuZTX2
-        blockTimestamp:
-          type:
-            - string
-            - 'null'
-          description: Block timestamp (sniper)
-          example: 2025-01-15T10:30:00Z
-        onchainCreatedAt:
-          type:
-            - string
-            - 'null'
-          description: Onchain account creation time (fresh/dev)
-          example: 2025-01-15T10:30:00Z
-        percentileRankTradeAmountInUsd:
-          type:
-            - string
-            - 'null'
-          description: Percentile rank of trade amount in USD (pro/insider)
-          example: '0.98'
-        percentileRankTradeCount:
-          type:
-            - integer
-            - 'null'
-          format: int64
-          description: Percentile rank of trade count (pro)
-          example: 95
-        rankTradeAmountInUsd:
-          type:
-            - string
-            - 'null'
-          description: Rank trade amount in USD (insider)
-          example: '0.95'
-        tradeAmountInNative:
-          type:
-            - string
-            - 'null'
-          description: Trade amount in native token (pro/insider)
-          example: '1500.50'
-        tradeAmountInUsd:
-          type:
-            - string
-            - 'null'
-          description: Trade amount in USD (pro/insider)
-          example: '45000.00'
-        tradeCount:
-          type:
-            - integer
-            - 'null'
-          format: int64
-          description: Trade count (pro/insider)
-          example: 42
-        transactionSignature:
-          type:
-            - string
-            - 'null'
-          description: Transaction signature (sandwish/bundle/sniper)
-          example: 5dJ1BxPiFT7w7aBdkxNy2jopGZnZoLwRwS8e9GkEXrVz...
     TokenTraderTag:
       type: string
       description: Token trader tag
       enum:
-        - fresh
-        - sandwish
-        - bundle
+        - smart
+        - kol
         - sniper
         - dev
-        - pro
-        - insider
-        - kol
+        - bundle
         - bluechip
-        - smart
+        - fresh
+        - insider
+        - pro
+        - sandwich
+        - phishing
     TokenTransfer:
       type: object
       description: Token transfer
@@ -14385,6 +14558,24 @@ components:
           type: string
           description: Chain identifier
           example: sol
+        dexFeeInNative:
+          type:
+            - string
+            - 'null'
+          description: |-
+            DEX protocol fee in native currency.
+            Aggregated from fees_processed[PROTOCOL] entries (trade-processing-pipeline Bug A fix required).
+            Null when no PROTOCOL fee data is available (e.g. SOL — ETL not yet populated).
+          example: '0.00025'
+        dexFeeInUsd:
+          type:
+            - string
+            - 'null'
+          description: |-
+            DEX protocol fee in USD.
+            Uses the same native-price snapshot as dex_fee_in_native; satisfies same-snapshot constraint.
+            Null when no PROTOCOL fee data is available.
+          example: '0.50'
         dexImage:
           type:
             - string
@@ -14487,6 +14678,15 @@ components:
           description: |-
             Token balance after this trade (token quantity).
             Matches GMGN `balance` in activity feed.
+        priorityFeeInNative:
+          type:
+            - string
+            - 'null'
+          description: |-
+            EVM priority fee (fee_miner_reward ÷ 1e18) in native currency (ETH/BNB).
+            Null on SOL (ETL does not yet provide compute-budget priority fee).
+            Equals (effectiveGasPrice − baseFeePerGas) × gasUsed converted to native units.
+          example: '0.000005'
         realizedProfitInUsd:
           type:
             - string
@@ -14586,7 +14786,7 @@ components:
           type: array
           items:
             type: string
-          description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "bundle", "bluechip")
+          description: Trader classification tags (e.g. "kol", "smart", "sniper", "dev", "fresh", "bundle", "bluechip", "insider")
         transactionSignature:
           type: string
           description: Transaction signature
@@ -14651,11 +14851,14 @@ components:
       type: string
       description: Sort field for top traders query
       enum:
-        - profit
+        - totalPnl
+        - realizedPnl
+        - unrealizedPnl
         - buyVolume
         - sellVolume
         - lastActiveAt
         - netflowUsd
+        - createdAt
     TransactionStatus:
       type: string
       description: Transaction status

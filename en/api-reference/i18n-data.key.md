@@ -1344,3 +1344,6 @@ ENTITY.TOKEN_MARKET_DATA.TOP100_TOTAL_HOLDERS='Number of holders among the top 1
 ENTITY.TOKEN_METADATA.FIRST_TRADE_AT='Timestamp of the first trade'
 ENTITY.TOKEN_METADATA.TRANSLATIONS='Localized name/symbol translations'
 ENTITY.TOKEN_SOCIAL_MEDIAS.FARCASTER='Farcaster handle or URL'
+DTO.TOKEN.REQUEST.FILTER_BY='JSON array of filter conditions'
+DTO.WALLET.NET_WORTH_CHART.HOURS='Time range in hours (1-720, default 24)'
+DTO.WALLET.NET_WORTH_DETAILS.HOURS='Snapshot hours (0=realtime, 1-720=historical, default 0)'

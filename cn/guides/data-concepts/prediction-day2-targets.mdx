@@ -30,7 +30,7 @@ icon: "list-check"
 - `polygon_prediction_wallet_token_activities_local` / distributed / archive / realtime view 已有 DDL。
 - trades sink 会为 buy/sell 生成 activity row。
 - settlements sink 会为 redeem/split/merge 生成 activity row，其中 redemption 映射为 `redeem`，split/merge 映射为 `inventory_adjust`。
-- activity row 包含 `activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`taker`、`timestamp`、`tokenId`、`txHash`、`type`。
+- activity row 至少能映射出 REST response 所需字段：`activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`logIndex`、`marketIcon`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`source`、`taker`、`takerAge`、`takerImage`、`takerName`、`takerOrderHash`、`takerPseudonym`、`takerTags`、`timestamp`、`tokenId`、`txHash`、`type`。
 - Kafka key 使用 `taker:tokenId`，activity topic retention 为 `86400000` ms。
 - ClickHouse activity TTL 为 3 天。
 - Topic map Redis TTL 为 1 天，topic 数据不做长期缓存。
@@ -43,6 +43,7 @@ icon: "list-check"
 - 当前 event allowlist 为 `world-cup-winner`。
 - OpenAPI 单测验证 activity schema 完整字段。
 - 字段集合验收规则为 `chainstream_fields >= features_new_fields`。
+- `PredictionActivity` required fields 为 `activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`logIndex`、`marketIcon`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`source`、`taker`、`takerAge`、`takerImage`、`takerName`、`takerOrderHash`、`takerPseudonym`、`takerTags`、`timestamp`、`tokenId`、`txHash`、`type`。
 - 画像类字段缺失时仍返回 key，并使用空值兜底：`""`、`[]`、`null`。
 - 分页使用稳定 cursor，连续两页不能出现重复 `activityId`。
 

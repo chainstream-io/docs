@@ -2,9 +2,11 @@
 
 本文记录 ChainStream prediction activities API 的调用方式、当前返回样本、futures.new 抓包样本，以及字段差异。
 
+注意：产品上需要看的不是整个 `world-cup-winner` 专题的 activity feed，而是某一个 prediction / market 的 activity feed。`event_slug=world-cup-winner` 只是专题上下文，真正锁定单个预测需要传 `condition_id` 或 `market_id`。如果要进一步锁定 Yes / No 单个 outcome，再追加 `token_id`。
+
 验证日期：2026-06-05  
 ChainStream event：`world-cup-winner`  
-ChainStream endpoint：`GET https://api.chainstream.io/v1/prediction/events/{event_slug}/activities`
+ChainStream endpoint：`GET https://api.chainstream.io/v1/prediction/events/{event_slug}/activities?condition_id={condition_id}`
 
 ## ChainStream 调用方式
 
@@ -28,7 +30,7 @@ TOKEN="$(
 )"
 
 curl -sS \
-  "https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?limit=1" \
+  "https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -45,12 +47,20 @@ curl -sS \
 | `activity_type` | `buy` / `sell` / `redeem` / `inventory_adjust` |
 | `order` | `desc` 或 `asc` |
 
+推荐调用口径：
+
+| 使用场景 | 调用方式 |
+|---|---|
+| 某个 prediction / market 的全部 activity | `GET /v1/prediction/events/{event_slug}/activities?condition_id={condition_id}` |
+| 某个 prediction / market 的某个 outcome activity | `GET /v1/prediction/events/{event_slug}/activities?condition_id={condition_id}&token_id={token_id}` |
+| 整个 event / topic feed | `GET /v1/prediction/events/{event_slug}/activities`，仅用于专题聚合，不建议作为单个预测页数据源 |
+
 ## ChainStream 返回样本
 
 请求：
 
 ```http
-GET /v1/prediction/events/world-cup-winner/activities?limit=1
+GET /v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=1
 ```
 
 返回：
@@ -58,45 +68,45 @@ GET /v1/prediction/events/world-cup-winner/activities?limit=1
 ```json
 {
   "eventSlug": "world-cup-winner",
-  "cursor": "WyIxNzgwNjAwMDg2MDAwMDAwMDQiLCIweDQ2MTIwNDk0Yzc0NjRhMTJiNWYxMjhlOTgxYWE0YTg0YWYxNjQ3MTY4MGY3Y2I2NGI2NThkY2UxZDczMmZmOWE6NDoxMDY1OTM1Mzk0MzcwMzI0Njc2MTUxNDg1NTM3MDc5OTg0NzI4MjkzMzQwNTA2MTcxMjgyNDQ5MjA4MjE5MTcwMjU3NDY0ODExODQxMDk6c2VsbCJd",
+  "cursor": "WyIxNzgwNjAwMzMwMDAwMDAwMTciLCIweDcwN2U1NmQ5NWMyODgwMTZhYmVjZDg5ZmY0OTFkNzQ0MDg3Mjc5ZDI4ZjljODI3Y2RjNDFiZWIwNDM2MDg5M2M6MTY6MzIyNzA0MTE2OTQ1MjM1Mzk0OTUyNjIzMDM4Njg2Mjk0Nzc4NjEwMTc4Mjk3MjIyODI1NzY0NTgwMzE4MTUzMzM0ODYzNjgyMzk1NDQ6aW52ZW50b3J5X2FkanVzdCJd",
   "limit": 1,
   "order": "desc",
   "retentionDays": 3,
   "activities": [
     {
-      "activityId": "0x46120494c7464a12b5f128e981aa4a84af16471680f7cb64b658dce1d732ff9a:4:106593539437032467615148553707998472829334050617128244920821917025746481184109:sell",
-      "amount": "0.999999",
+      "activityId": "0x707e56d95c288016abecd89ff491d744087279d28f9c827cdc41beb04360893c:16:32270411694523539495262303868629477861017829722282576458031815333486368239544:inventory_adjust",
+      "amount": "1061.432325",
       "assetIds": [
-        "106593539437032467615148553707998472829334050617128244920821917025746481184109",
-        "22335540631248526397385139154377717431237265005174891396662761131414559126312"
+        "108233603819467706476318984012158651931658302669301887462181073562758483842092",
+        "32270411694523539495262303868629477861017829722282576458031815333486368239544"
       ],
-      "blockNumber": 87930067,
-      "conditionId": "0xe5bd80313b8859e3f5761568ac9498866ea9d4419e4d1b6a877a9a9bd2754cb4",
+      "blockNumber": 87930230,
+      "conditionId": "0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894",
       "eventSlug": "world-cup-winner",
-      "logIndex": 4,
-      "marketIcon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/world-cup-winner-croatia-flag-20260603-192743.png",
-      "marketId": "558976",
-      "marketQuestion": "Will Croatia win the 2026 FIFA World Cup?",
-      "outcome": "Yes",
+      "logIndex": 16,
+      "marketIcon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/world-cup-winner-france-flag-20260603-192743.png",
+      "marketId": "558936",
+      "marketQuestion": "Will France win the 2026 FIFA World Cup?",
+      "outcome": "No",
       "outcomes": [
         "Yes",
         "No"
       ],
-      "price": "0.0089999910089999",
-      "quantity": "111.111111",
-      "seqIndex": 178060008600000004,
+      "price": "0",
+      "quantity": "1061.432325",
+      "seqIndex": 178060033000000017,
       "source": "chainstream",
-      "taker": "0xe2222d279d744050d28e00520010520000310F59",
+      "taker": "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296",
       "takerAge": 0,
       "takerImage": "",
       "takerName": "",
-      "takerOrderHash": "0x47d38fed0cdeb7d4487e652142cdf1fc75cc5015cc142a6dcbc12a475e7c3569",
+      "takerOrderHash": "",
       "takerPseudonym": "",
       "takerTags": [],
-      "timestamp": 1780600086000,
-      "tokenId": "106593539437032467615148553707998472829334050617128244920821917025746481184109",
-      "txHash": "0x46120494c7464a12b5f128e981aa4a84af16471680f7cb64b658dce1d732ff9a",
-      "type": "sell"
+      "timestamp": 1780600330000,
+      "tokenId": "32270411694523539495262303868629477861017829722282576458031815333486368239544",
+      "txHash": "0x707e56d95c288016abecd89ff491d744087279d28f9c827cdc41beb04360893c",
+      "type": "inventory_adjust"
     }
   ]
 }
@@ -104,7 +114,7 @@ GET /v1/prediction/events/world-cup-winner/activities?limit=1
 
 ## futures.new 返回样本
 
-样本来源：本地 Future.news 抓包样本，`event_slug=world-cup-winner`。
+样本来源：本地 Future.news 抓包样本，调用口径为 `event_slug=world-cup-winner`、`market_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894`、`token_id=108233603819467706476318984012158651931658302669301887462181073562758483842092`。
 
 返回：
 
@@ -156,6 +166,7 @@ GET /v1/prediction/events/world-cup-winner/activities?limit=1
 | activities 路径 | `activities` | `data.activities` |
 | cursor 路径 | `cursor` | `data.cursor` |
 | event slug | `eventSlug` | activity 内的 `event_slug` |
+| prediction / market id | query `condition_id`，响应 `conditionId` / `marketId` | query `market_id`，响应 `market_id` |
 | limit | `limit` | 未在样本顶层返回 |
 | order | `order` | 未在样本顶层返回 |
 | 数据保留说明 | `retentionDays` | 未在样本顶层返回 |
@@ -213,4 +224,5 @@ GET /v1/prediction/events/world-cup-winner/activities?limit=1
 3. ChainStream 顶层不返回 `code/reason/message/data` wrapper，而是直接返回业务对象。
 4. ChainStream 多返回 `activityId`、`conditionId`、`logIndex`、`source`，便于去重、链上追溯和数据来源标识。
 5. `market_id` 语义需要注意：futures.new 样本里是 condition id 风格；ChainStream 拆成 `marketId` 和 `conditionId`，语义更明确。
-6. 当前生产最新两页普通 cursor 分页无重复；深分页重复 `activityId` 已定位，services 修复 PR 为 `https://github.com/chainstream-io/services/pull/29`，待 review 后再 merge、tag、部署和复测。
+6. 单个预测页推荐使用 `condition_id` 过滤；如果要和 futures.new 的 outcome tab 完全一致，再追加 `token_id`。
+7. 当前生产最新两页普通 cursor 分页无重复；深分页重复 `activityId` 已定位，services 修复 PR 为 `https://github.com/chainstream-io/services/pull/29`，待 review 后再 merge、tag、部署和复测。

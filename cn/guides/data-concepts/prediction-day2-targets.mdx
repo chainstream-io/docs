@@ -137,6 +137,16 @@ icon: "list-check"
   - 相比 Future.news activity item 额外返回 `activityId`、`conditionId`、`logIndex`、`source`。
   - 当前页 `activityId` 无重复，`seqIndex` 倒序。
   - `takerImage`、`takerName`、`takerPseudonym` 缺失画像时仍返回 key，值为空字符串。
+- 公网 API Bearer 鉴权验收已完成：
+  - `GET https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?limit=20` 返回 200。
+  - 使用第一页 cursor 请求第二页返回 200。
+  - 第一页与第二页各返回 20 条 activity，页内与跨页均无重复 `activityId`。
+  - `seqIndex` 页内倒序，第一页末尾到第二页开头仍保持倒序。
+  - Future.news 样本字段数为 23，公网 ChainStream activity item 字段数为 27，映射覆盖 23/23，缺失字段为 `[]`。
+  - 公网 ChainStream 相比 Future.news 额外返回 `activityId`、`conditionId`、`logIndex`、`source`。
+  - 第一页 activity type 覆盖 `buy`、`sell`、`inventory_adjust`。
+  - 缺失画像类字段仍返回 key；当前样本中 `takerImage`、`takerName`、`takerPseudonym` 为空字符串兜底。
+  - 当前样本中部分 `inventory_adjust` activity 的 `takerOrderHash` 为空字符串兜底，字段 key 保持存在。
 - chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
 - chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 13 ahead`，当前 head commit 为 `37d2c53`。
 - chainstream-sdk PR 已补 review note：`https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4624807620`。

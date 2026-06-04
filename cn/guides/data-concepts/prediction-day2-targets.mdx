@@ -69,9 +69,9 @@ icon: "list-check"
 - TypeScript、Rust、Go、Python SDK 均使用 enum + builder 生成 prediction activity channel，并能把短字段 payload 反序列化为完整 activity model。
 - TypeScript REST SDK 由 `openapi.yaml` 生成 `getPredictionEventActivities` 与 `getPredictionMarketActivities`。
 - Rust REST SDK 由 `openapi.yaml` 生成 `get_prediction_event_activities` 与 `get_prediction_market_activities`。
-- Go OpenAPI 生成配置已纳入 `Prediction` tag：`MODULES` 包含 `prediction`，生成目标为 `go/openapi/prediction/client.gen.go`；Go generated REST client 文件本次未生成提交。
+- Go REST SDK 已补 `go/openapi/prediction/client.gen.go`，并通过 `client.Prediction` 暴露 event / market activities methods。
 - Python OpenAPI generation 会从合并后的 `openapi.yaml` 生成所有 tag；当前 committed generated client 尚未包含 prediction API/model 文件。
-- 若 Day2 SDK REST 验收要求覆盖 Go/Python generated REST client，则 SDK PR 仍需在可用生成器环境中补 `go/openapi/prediction/client.gen.go` 与 Python prediction API/model generated 文件。
+- 若 Day2 SDK REST 验收要求覆盖 Python generated REST client，则 SDK PR 仍需在可用生成器环境中补 Python prediction API/model generated 文件。
 
 ### 缓存
 
@@ -183,7 +183,7 @@ icon: "list-check"
     - `cargo test -p infrastructure database::prediction::tests`
     - `cargo test -p api verify_prediction_event_activities_schema`
 - chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
-- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 21 ahead`，当前 head commit 为 `9cb5f3a`，GitHub merge state 为 `CLEAN`。
+- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 22 ahead`，当前 head commit 为 `d0c245d`，GitHub merge state 为 `CLEAN`。
 - chainstream-sdk PR 已补 review note：
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625505564`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625651585`
@@ -194,6 +194,8 @@ icon: "list-check"
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625968505`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626012457`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626033235`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626107819`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626744276`
 - SDK 本地验证已完成：
   - TypeScript example build 通过。
   - TypeScript SDK build 通过。
@@ -209,8 +211,10 @@ icon: "list-check"
   - 复核 TypeScript 全量 unit tests `./node_modules/.bin/vitest --config=./vitest.config.ts run` 通过，5 个 test files / 31 个 tests 通过。
   - 复核 Rust 全量 `cargo test` 通过。
   - 复核 OpenAPI smoke check 确认 `/v1/prediction/markets/{condition_id}/activities`、`get.prediction.market.activities`、`PredictionActivityType`、`PredictionActivityOrder` 存在。
-  - 复核 Go OpenAPI Makefile 生成配置已纳入 Prediction：`MODULES` 包含 `prediction`，`oapi-codegen` 使用 `-include-tags Prediction` 输出 `go/openapi/prediction/client.gen.go`；本地安装 `oapi-codegen v2.7.0` 超时，未生成/提交 Go REST client 文件。
-  - 2026-06-05 复核 Go/Python generated REST client 缺口：当前分支没有 `go/openapi/prediction/client.gen.go`，Python generated client 也没有 `prediction_api.py` 和 prediction activity model 文件。
+  - 复核 Go OpenAPI Makefile 生成配置已纳入 Prediction：`MODULES` 包含 `prediction`，`oapi-codegen` 使用 `-include-tags Prediction` 输出 `go/openapi/prediction/client.gen.go`。
+  - 复核 Go REST generated client 已补：`go/openapi/prediction/client.gen.go` 包含 event / market activities 方法、activity model、order/type enum；`go/chainstream.go` 已挂载 `client.Prediction`。
+  - 复核 Go REST focused checks：本地 `gofmt`、`git diff --check`、`go list ./openapi/prediction` 通过；GitHub Actions `Go Linting` 通过，`Go Tests` 1.23 / 1.24 通过。
+  - 2026-06-05 复核 Python generated REST client 缺口：Python generated client 还没有 `prediction_api.py` 和 prediction activity model 文件。
   - 2026-06-05 本地生成器尝试未通过：`go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.0` 第一次被系统 kill，第二次低并发超过 3 分钟无输出后停止；`java -version` 5 秒无输出，无法可靠运行 `openapi-generator 7.11.0`。
   - 复核 TypeScript runtime dependency 修复：`@solana/web3.js`、`viem` 已加入 dependencies，`bs58` 已从 devDependencies 移到 dependencies。
   - 复核 `pnpm --dir typescript install --frozen-lockfile` 通过。
@@ -247,7 +251,7 @@ icon: "list-check"
 - services PR #30 等待 reviewer 确认；确认前不 merge、不 tag、不部署。
 - services PR #30 merge 后，必须拉最新 `origin/main`，从 main 打 tag，再部署 services，并复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且无需 `event_slug`。
 - SDK PR 仍等待 reviewer 确认；确认前不 merge、不 tag、不发布。
-- SDK REST generated client 仍需 reviewer 决策：若 Day2 要求 Go/Python REST API 也由 `openapi.yaml` 生成并随包发布，则必须先在可用生成器环境中补 committed generated 文件，再重新跑 CI。
+- SDK REST generated client 仍需 reviewer 决策：若 Day2 要求 Python REST API 也由 `openapi.yaml` 生成并随包发布，则必须先在可用生成器环境中补 committed generated 文件，再重新跑 CI。
 - SDK release tag 尚未创建；必须在 PR merge 后拉最新 `origin/main`，再从 main 创建 tag。
 - SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收尚未完成。
 - Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的生产 live receive 验收尚未完成；按当前要求 realtime 先不部署，后续需补 production `pred` namespace 或等价放行配置后再复测。

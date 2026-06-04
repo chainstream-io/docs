@@ -102,3 +102,58 @@ icon: "list-check"
 7. 缓存：`PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false` 时没有 firstscreen queue 堆积，也没有持续 firstscreen cache write 日志。
 8. 日志：生产无持续 decode error、ClickHouse insert error、cache write error。
 9. 发布：aggregation/services/SDK 的生产记录均包含 tag 值、对应 main commit、workflow 或 rollout 链接。
+
+## 2026-06-05 验收记录
+
+### 已验证
+
+- services 已合并 PR 并从 `main` 打 tag：`v1.20260605-prediction-activities`，对应 main commit `1cc1250`。
+- aggregation-pipelines 已合并 PR：
+  - `#37 feat(prediction): add wallet token activities pipeline`，merge commit `f21974b0`。
+  - `#38 fix: make prediction activity release build pass`，merge commit `3e55e724`。
+- aggregation 生产部署 tag 为 `deploy-prediction-activities-20260605-3e55e724`，该 tag 中：
+  - topic job 配置 `polygon.v2.prediction.wallet-token-activities` retention 为 `86400000`。
+  - realtime channel 固定为 `pred:evt:{event_slug}:act` 与 `pred:tok:{token_id}:act`。
+  - realtime payload 外层为 `a`，内部字段使用 `id`、`amt`、`cid`、`mid`、`tid`、`tx`、`ty` 等短字段。
+  - activity Kafka、realtime、firstscreen cache publish 均为 best-effort；失败只记录 debug 日志并继续主流程。
+  - `PREDICTION_FIRSTSCREEN_CACHE_ENABLED` 默认值为 `false`。
+  - `PREDICTION_FIRSTSCREEN_CACHE_TTL_SECS` 默认值为 `86400`。
+- activity 映射单测覆盖：
+  - buy 使用 `trade_buyer`。
+  - sell 使用 `trade_seller`。
+  - redemption 映射为 `redeem`。
+  - split/merge 映射为 `inventory_adjust`。
+- services OpenAPI 单测 `verify_prediction_event_activities_schema` 锁定 `chainstream_fields >= features_new_fields`，并要求画像兜底字段存在。
+- 生产 services 端口转发 API 验收已完成：
+  - `GET /v1/prediction/events/world-cup-winner/activities?limit=20` 返回 200。
+  - 返回 20 条 activity。
+  - activity item 字段数为 27，Future.news activity 字段映射后缺失字段为 `[]`。
+  - 相比 Future.news activity item 额外返回 `activityId`、`conditionId`、`logIndex`、`source`。
+  - 当前页 `activityId` 无重复，`seqIndex` 倒序。
+  - `takerImage`、`takerName`、`takerPseudonym` 缺失画像时仍返回 key，值为空字符串。
+- chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
+- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 12 ahead`。
+- chainstream-sdk PR 已补 review note：`https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4624807620`。
+- SDK 本地验证已完成：
+  - TypeScript example build 通过。
+  - TypeScript SDK build 通过。
+  - TypeScript stream tests 通过。
+  - Rust example `cargo check` 通过。
+  - Rust stream tests 通过。
+- SDK 静态与测试覆盖：
+  - TypeScript/Rust 都使用 enum + builder 生成 prediction activity channel。
+  - TypeScript/Rust 都能把短字段 realtime payload 解析成完整 activity model。
+  - REST API 方法和类型由 `openapi.yaml` 生成。
+
+### 待最终验收
+
+- SDK PR 仍等待 reviewer 确认；确认前不 merge、不 tag、不发布。
+- SDK release tag 尚未创建；必须在 PR merge 后拉最新 `origin/main`，再从 main 创建 tag。
+- 当前环境没有 `CHAINSTREAM_ACCESS_TOKEN` 或 `CHAINSTREAM_API_KEY`，尚未完成 SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收。
+- 当前 kubectl 集群查询超时，尚未补最新一轮 rollout/logs/cache queue 的运行态截图或命令输出。
+- 公网 `https://api.chainstream.io` unauthenticated curl 返回 Cloudflare `402`，接口验收以 production services port-forward 结果为准。
+- SDK PR 当前 CI 为 `UNSTABLE`：
+  - TypeScript/Rust build、tests、examples 通过。
+  - TypeScript lint 存在全仓 JSDoc/member-ordering/import baseline 问题。
+  - Python lint/format 存在 ruff baseline 问题，Python tests 通过。
+  - Go lint/test 存在生成 openapi client unused imports 与缺依赖问题。

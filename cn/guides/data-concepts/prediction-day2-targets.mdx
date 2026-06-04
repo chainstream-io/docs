@@ -69,7 +69,8 @@ icon: "list-check"
 - TypeScript、Rust、Go、Python SDK 均使用 enum + builder 生成 prediction activity channel，并能把短字段 payload 反序列化为完整 activity model。
 - TypeScript REST SDK 由 `openapi.yaml` 生成 `getPredictionEventActivities` 与 `getPredictionMarketActivities`。
 - Rust REST SDK 由 `openapi.yaml` 生成 `get_prediction_event_activities` 与 `get_prediction_market_activities`。
-- Go 与 Python 的 prediction activity REST 方法生成不在当前 Day2 功能验收范围内；当前 SDK PR 已补 Go/Python realtime stream API 与 CI baseline，发布前不再存在 Go/Python 红灯。
+- Go OpenAPI 生成配置已纳入 `Prediction` tag：`MODULES` 包含 `prediction`，生成目标为 `go/openapi/prediction/client.gen.go`；Go generated REST client 文件本次未生成提交。
+- Python 的 prediction activity REST 方法生成不在当前 Day2 功能验收范围内；当前 SDK PR 已补 Go/Python realtime stream API 与 CI baseline，发布前不再存在 Go/Python 红灯。
 
 ### 缓存
 
@@ -179,7 +180,7 @@ icon: "list-check"
     - `cargo test -p infrastructure database::prediction::tests`
     - `cargo test -p api verify_prediction_event_activities_schema`
 - chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
-- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 20 ahead`，当前 head commit 为 `aa31a9d`，GitHub merge state 为 `CLEAN`。
+- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 21 ahead`，当前 head commit 为 `9cb5f3a`，GitHub merge state 为 `CLEAN`。
 - chainstream-sdk PR 已补 review note：
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625505564`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625651585`
@@ -188,6 +189,8 @@ icon: "list-check"
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625859236`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625946849`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625968505`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626012457`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626033235`
 - SDK 本地验证已完成：
   - TypeScript example build 通过。
   - TypeScript SDK build 通过。
@@ -203,6 +206,7 @@ icon: "list-check"
   - 复核 TypeScript 全量 unit tests `./node_modules/.bin/vitest --config=./vitest.config.ts run` 通过，5 个 test files / 31 个 tests 通过。
   - 复核 Rust 全量 `cargo test` 通过。
   - 复核 OpenAPI smoke check 确认 `/v1/prediction/markets/{condition_id}/activities`、`get.prediction.market.activities`、`PredictionActivityType`、`PredictionActivityOrder` 存在。
+  - 复核 Go OpenAPI Makefile 生成配置已纳入 Prediction：`MODULES` 包含 `prediction`，`oapi-codegen` 使用 `-include-tags Prediction` 输出 `go/openapi/prediction/client.gen.go`；本地安装 `oapi-codegen v2.7.0` 超时，未生成/提交 Go REST client 文件。
   - 复核 TypeScript runtime dependency 修复：`@solana/web3.js`、`viem` 已加入 dependencies，`bs58` 已从 devDependencies 移到 dependencies。
   - 复核 `pnpm --dir typescript install --frozen-lockfile` 通过。
   - 复核缺依赖相关文件 focused ESLint 通过：`src/utils/export.ts`、`src/utils/serializeTransaction.ts`、`src/types/calls.ts`。

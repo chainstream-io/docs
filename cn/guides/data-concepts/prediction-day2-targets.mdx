@@ -70,7 +70,8 @@ icon: "list-check"
 - TypeScript REST SDK 由 `openapi.yaml` 生成 `getPredictionEventActivities` 与 `getPredictionMarketActivities`。
 - Rust REST SDK 由 `openapi.yaml` 生成 `get_prediction_event_activities` 与 `get_prediction_market_activities`。
 - Go OpenAPI 生成配置已纳入 `Prediction` tag：`MODULES` 包含 `prediction`，生成目标为 `go/openapi/prediction/client.gen.go`；Go generated REST client 文件本次未生成提交。
-- Python 的 prediction activity REST 方法生成不在当前 Day2 功能验收范围内；当前 SDK PR 已补 Go/Python realtime stream API 与 CI baseline，发布前不再存在 Go/Python 红灯。
+- Python OpenAPI generation 会从合并后的 `openapi.yaml` 生成所有 tag；当前 committed generated client 尚未包含 prediction API/model 文件。
+- 若 Day2 SDK REST 验收要求覆盖 Go/Python generated REST client，则 SDK PR 仍需在可用生成器环境中补 `go/openapi/prediction/client.gen.go` 与 Python prediction API/model generated 文件。
 
 ### 缓存
 
@@ -209,6 +210,8 @@ icon: "list-check"
   - 复核 Rust 全量 `cargo test` 通过。
   - 复核 OpenAPI smoke check 确认 `/v1/prediction/markets/{condition_id}/activities`、`get.prediction.market.activities`、`PredictionActivityType`、`PredictionActivityOrder` 存在。
   - 复核 Go OpenAPI Makefile 生成配置已纳入 Prediction：`MODULES` 包含 `prediction`，`oapi-codegen` 使用 `-include-tags Prediction` 输出 `go/openapi/prediction/client.gen.go`；本地安装 `oapi-codegen v2.7.0` 超时，未生成/提交 Go REST client 文件。
+  - 2026-06-05 复核 Go/Python generated REST client 缺口：当前分支没有 `go/openapi/prediction/client.gen.go`，Python generated client 也没有 `prediction_api.py` 和 prediction activity model 文件。
+  - 2026-06-05 本地生成器尝试未通过：`go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.0` 第一次被系统 kill，第二次低并发超过 3 分钟无输出后停止；`java -version` 5 秒无输出，无法可靠运行 `openapi-generator 7.11.0`。
   - 复核 TypeScript runtime dependency 修复：`@solana/web3.js`、`viem` 已加入 dependencies，`bs58` 已从 devDependencies 移到 dependencies。
   - 复核 `pnpm --dir typescript install --frozen-lockfile` 通过。
   - 复核缺依赖相关文件 focused ESLint 通过：`src/utils/export.ts`、`src/utils/serializeTransaction.ts`、`src/types/calls.ts`。
@@ -244,6 +247,7 @@ icon: "list-check"
 - services PR #30 等待 reviewer 确认；确认前不 merge、不 tag、不部署。
 - services PR #30 merge 后，必须拉最新 `origin/main`，从 main 打 tag，再部署 services，并复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且无需 `event_slug`。
 - SDK PR 仍等待 reviewer 确认；确认前不 merge、不 tag、不发布。
+- SDK REST generated client 仍需 reviewer 决策：若 Day2 要求 Go/Python REST API 也由 `openapi.yaml` 生成并随包发布，则必须先在可用生成器环境中补 committed generated 文件，再重新跑 CI。
 - SDK release tag 尚未创建；必须在 PR merge 后拉最新 `origin/main`，再从 main 创建 tag。
 - SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收尚未完成。
 - Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的生产 live receive 验收尚未完成；按当前要求 realtime 先不部署，后续需补 production `pred` namespace 或等价放行配置后再复测。

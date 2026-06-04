@@ -86,12 +86,30 @@ icon: "list-check"
   - `kubectl -n blockchain-streaming-aggregation-pol set image deployment/pol-prediction-trades-to-clickhouse-pipeline pol-prediction-trades-to-clickhouse-pipeline=440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:${AGG_TAG}`
   - `kubectl -n blockchain-streaming-aggregation-pol set image deployment/pol-prediction-settlements-to-clickhouse-pipeline pol-prediction-settlements-to-clickhouse-pipeline=440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:${AGG_TAG}`
 - services：提 PR；review 通过并合并后拉最新 `origin/main`；从 main 打 tag；部署 API。
-- services tag 必须指向 main commit；production workflow 使用 tag 值作为镜像 tag，验收记录中写明 `${SERVICES_TAG}`、GitHub Actions run、镜像 tag 和 rollout 结果。
+- services tag 必须指向 main commit；production workflow 监听 `v*` tag 并校验该 commit 位于 `origin/main`，workflow 使用 tag 值作为镜像 tag，验收记录中写明 `${SERVICES_TAG}`、GitHub Actions run、镜像 tag 和 rollout 结果。
 - chainstream-sdk：提 PR；review 通过并合并后拉最新 `origin/main`；从 main 打 tag；发布 SDK。
-- chainstream-sdk release tag 必须从 main 创建；TypeScript 使用 `js-v*` tag，Rust 使用 `rust-v*` tag，验收记录中写明 `${SDK_TAG}`、GitHub Actions run 和发布包版本。
+- chainstream-sdk release tag 必须从 main 创建；TypeScript 使用 `js-v*` tag，Rust 使用 `rust-v*` tag，Python 使用 `py-v*` tag，Go 使用 `go-v*` tag，验收记录中写明 `${SDK_TAG}`、GitHub Actions run 和发布包版本。
 - 部署后验证 OpenAPI YAML、REST 首页、cursor 下一页、realtime event channel、realtime token channel、SDK 订阅解析。
 - 禁止使用 feature branch 或 `latest` 作为生产发布依据；生产发布使用 tag 镜像或 tag commit，review 未确认前不创建这些 tag。
 - reviewer 未确认前不 merge、不 tag、不部署。
+
+### Review 后执行 runbook
+
+1. services PR #29 review 通过后合并到 `main`。
+2. 在 services 仓库执行 `git checkout main && git pull --ff-only origin main`，确认 `git rev-parse HEAD` 为 #29 merge 后的 main commit。
+3. 从 services main 创建 `${SERVICES_TAG}`，格式使用 `v*`，执行 `git tag -a ${SERVICES_TAG} -m "${SERVICES_TAG}" && git push origin ${SERVICES_TAG}`。
+4. 等待 services `CD - Production` workflow 完成，记录 workflow run、ECR image `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/service:${SERVICES_TAG}`。
+5. 部署 services image tag 到 production services deployment，记录 rollout status、pod image tag、pod restart。
+6. 复测深分页重复探针，验收 `activityId` 页内重复数为 `0`、跨页重复数为 `0`。
+7. 刷新 services PR #30 到最新 `origin/main`，解决 `crates/infrastructure/src/database/prediction.rs` 冲突。
+8. 对 PR #30 重跑 `cargo test -p infrastructure database::prediction::tests`、`cargo test -p api verify_prediction_event_activities_schema`、OpenAPI smoke check、`git diff --check`。
+9. PR #30 review 通过后合并到 `main`。
+10. 在 services 仓库重新执行 `git checkout main && git pull --ff-only origin main`，从 main 创建新的 `${SERVICES_TAG}` 并推送。
+11. 等待 services `CD - Production` workflow 完成，部署新 services image tag，复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且调用方不需要 `event_slug`。
+12. chainstream-sdk PR #10 review 通过后合并到 `main`。
+13. 在 SDK 仓库执行 `git checkout main && git pull --ff-only origin main`，从 main 创建并推送需要发布的 SDK tag：`js-v*`、`rust-v*`、`py-v*`、`go-v*`。
+14. 等待 SDK release workflows 完成，记录 npm、crates.io、PyPI、Go SDK repo/tag 发布结果。
+15. Realtime 仍按当前要求先不部署；生产 live receive 与 SDK live receive 在 `pred` namespace 放行后单独补验收。
 
 ## PR 审核顺序
 
@@ -220,6 +238,12 @@ icon: "list-check"
   - 最近两页 activity type 计数为 `buy=16`、`sell=16`、`inventory_adjust=8`。
   - 最新 activity lag 约 `38s`。
   - 画像兜底样本仍为 `takerImage=""`、`takerName=""`、`takerPseudonym=""`、`takerTags=[]`，字段 key 均存在。
+- 公网 API 于 2026-06-05 07:48 CST 复测仍通过：
+  - 第一页与第二页均返回 200，各返回 20 条 activity。
+  - 第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
+  - 最近两页 activity type 计数为 `buy=17`、`sell=15`、`inventory_adjust=8`。
+  - 最新 activity lag 约 `146s`。
 - 深分页重复问题已定位：
   - 使用生产 ClickHouse 中重复 `activity_id` 附近的 cursor 访问公网 API，`limit=10` 返回 200，但存在 2 个重复 `activityId`。
   - services 修复 PR 已创建：`https://github.com/chainstream-io/services/pull/29`。

@@ -2,11 +2,13 @@
 
 本文记录 ChainStream prediction activities API 的调用方式、当前返回样本、futures.new 抓包样本，以及字段差异。
 
-注意：产品上需要看的不是整个 `world-cup-winner` 专题的 activity feed，而是某一个 prediction / market 的 activity feed。`event_slug=world-cup-winner` 只是专题上下文，真正锁定单个预测需要传 `condition_id` 或 `market_id`。如果要进一步锁定 Yes / No 单个 outcome，再追加 `token_id`。
+注意：产品上需要看的不是整个 `world-cup-winner` 专题的 activity feed，而是某一个 prediction / market 的 activity feed。`event_slug=world-cup-winner` 只是专题上下文，真正锁定单个预测应使用 `condition_id`。如果要进一步锁定 Yes / No 单个 outcome，再追加 `token_id`。
 
 验证日期：2026-06-05  
 ChainStream event：`world-cup-winner`  
-ChainStream endpoint：`GET https://api.chainstream.io/v1/prediction/events/{event_slug}/activities?condition_id={condition_id}`
+ChainStream 目标 endpoint：`GET https://api.chainstream.io/v1/prediction/markets/{condition_id}/activities`
+当前生产验证 endpoint：`GET https://api.chainstream.io/v1/prediction/events/{event_slug}/activities?condition_id={condition_id}`
+服务端目标 endpoint PR：`https://github.com/chainstream-io/services/pull/30`
 
 ## ChainStream 调用方式
 
@@ -30,34 +32,49 @@ TOKEN="$(
 )"
 
 curl -sS \
+  "https://api.chainstream.io/v1/prediction/markets/0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894/activities?limit=1" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+当前生产环境在 PR #30 merge、tag、部署前，可用 event endpoint 加 `condition_id` 作为兼容验证方式：
+
+```bash
+curl -sS \
   "https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-支持的 query 参数：
+目标 market endpoint 支持的 query 参数：
 
 | 参数 | 说明 |
 |---|---|
 | `cursor` | 上一页返回的 cursor，用于继续分页 |
 | `limit` | 返回条数，当前接口支持 clamp 到服务端上限 |
 | `token_id` | 按 outcome token id 过滤 |
-| `market_id` | 按 market id 过滤，兼容 condition id 语义 |
-| `condition_id` | 按 condition id 过滤 |
 | `wallet` | 按 taker wallet 过滤 |
 | `activity_type` | `buy` / `sell` / `redeem` / `inventory_adjust` |
 | `order` | `desc` 或 `asc` |
+
+event endpoint 额外兼容 `market_id` / `condition_id` query 参数，用于从专题 feed 中过滤单个 prediction。
 
 推荐调用口径：
 
 | 使用场景 | 调用方式 |
 |---|---|
-| 某个 prediction / market 的全部 activity | `GET /v1/prediction/events/{event_slug}/activities?condition_id={condition_id}` |
-| 某个 prediction / market 的某个 outcome activity | `GET /v1/prediction/events/{event_slug}/activities?condition_id={condition_id}&token_id={token_id}` |
+| 某个 prediction / market 的全部 activity | `GET /v1/prediction/markets/{condition_id}/activities` |
+| 某个 prediction / market 的某个 outcome activity | `GET /v1/prediction/markets/{condition_id}/activities?token_id={token_id}` |
+| PR #30 部署前的生产兼容调用 | `GET /v1/prediction/events/{event_slug}/activities?condition_id={condition_id}` |
 | 整个 event / topic feed | `GET /v1/prediction/events/{event_slug}/activities`，仅用于专题聚合，不建议作为单个预测页数据源 |
 
 ## ChainStream 返回样本
 
-请求：
+目标请求：
+
+```http
+GET /v1/prediction/markets/0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894/activities?limit=1
+```
+
+当前生产验证请求：
 
 ```http
 GET /v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=1
@@ -166,7 +183,7 @@ GET /v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef24904
 | activities 路径 | `activities` | `data.activities` |
 | cursor 路径 | `cursor` | `data.cursor` |
 | event slug | `eventSlug` | activity 内的 `event_slug` |
-| prediction / market id | query `condition_id`，响应 `conditionId` / `marketId` | query `market_id`，响应 `market_id` |
+| prediction / market id | path `{condition_id}`，响应 `conditionId` / `marketId`；生产兼容调用也支持 query `condition_id` | query `market_id`，响应 `market_id` |
 | limit | `limit` | 未在样本顶层返回 |
 | order | `order` | 未在样本顶层返回 |
 | 数据保留说明 | `retentionDays` | 未在样本顶层返回 |
@@ -224,5 +241,5 @@ GET /v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef24904
 3. ChainStream 顶层不返回 `code/reason/message/data` wrapper，而是直接返回业务对象。
 4. ChainStream 多返回 `activityId`、`conditionId`、`logIndex`、`source`，便于去重、链上追溯和数据来源标识。
 5. `market_id` 语义需要注意：futures.new 样本里是 condition id 风格；ChainStream 拆成 `marketId` 和 `conditionId`，语义更明确。
-6. 单个预测页推荐使用 `condition_id` 过滤；如果要和 futures.new 的 outcome tab 完全一致，再追加 `token_id`。
-7. 当前生产最新两页普通 cursor 分页无重复；深分页重复 `activityId` 已定位，services 修复 PR 为 `https://github.com/chainstream-io/services/pull/29`，待 review 后再 merge、tag、部署和复测。
+6. 单个预测页目标接口为 `/v1/prediction/markets/{condition_id}/activities`；如果要和 futures.new 的 outcome tab 完全一致，再追加 `token_id`。
+7. 当前生产最新两页普通 cursor 分页无重复；深分页重复 `activityId` 已定位，services 修复 PR 为 `https://github.com/chainstream-io/services/pull/29`，market-level endpoint PR 为 `https://github.com/chainstream-io/services/pull/30`，均待 review 后再 merge、tag、部署和复测。

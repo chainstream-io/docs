@@ -112,6 +112,24 @@ icon: "list-check"
 8. 日志：生产无持续 decode error、ClickHouse insert error、cache write error。
 9. 发布：aggregation/services/SDK 的生产记录均包含 tag 值、对应 main commit、workflow 或 rollout 链接。
 
+## 完成状态矩阵
+
+| 目标项 | 当前状态 | 已有证据 | 剩余动作 |
+|---|---|---|---|
+| Activities 数据链路 | 已验证 | Polygon trades / settlements sink 运行 tag `deploy-prediction-activities-20260605-3e55e724`；ClickHouse activity 表有 `buy`、`sell`、`inventory_adjust` 样本；logs 有 `CH_INSERT_OK` | PR #29 部署后复测深分页去重 |
+| Activity topic retention | 已验证 | `polygon.v2.prediction.wallet-token-activities` partitions 为 `12`，`retention.ms=86400000`，`retention.local.target.ms=86400000` | 无 |
+| ClickHouse 3 天热表 | 已验证 | `polygon_prediction_wallet_token_activities_local` engine 为 `MergeTree`，TTL 为 `ts + toIntervalDay(3)` | 无 |
+| trade / settlement 映射 | 已验证 | `from_trade` 使用 `trade_buyer` / `trade_seller`；`settlement_activity_type` 映射 `redeem` / `inventory_adjust`；对应单测已记录 | 无 |
+| Event REST API | 已验证 | `GET /v1/prediction/events/world-cup-winner/activities` 公网返回 200，字段数 27，Future.news 23 字段缺失 `[]`，连续两页无重复 | PR #29 部署后补深分页重复探针 |
+| Market REST API | PR ready，未部署 | services PR #30 新增 `/v1/prediction/markets/{condition_id}/activities`，focused tests 通过，PR `OPEN / CLEAN` | 等 reviewer 确认后 merge、从 main 打 tag、部署、公网复测 200 |
+| OpenAPI / SDK REST | PR ready，未发布 | SDK PR #10 head `32e7416` 覆盖 TypeScript/Rust/Go/Python REST client；CI 全绿 | 等 reviewer 确认后 merge、从 main 打 SDK release tag、发布 |
+| Realtime channel / payload | 代码 ready，生产 live 未通过 | aggregation tag 使用 `pred:evt:{event_slug}:act` / `pred:tok:{token_id}:act`，payload 短字段；SDK parser 单测通过 | 按当前要求 realtime 先不部署；后续放行 `pred` namespace 后复测 live receive |
+| Realtime failure rule | 已验证代码证据 | Kafka/realtime/cache publish 失败只 debug 记录并继续主流程；不补发、不进 DLQ、不阻塞 offset commit | 生产 live receive 放行后补端到端验证 |
+| SDK realtime 订阅 | PR ready，live receive 未通过 | TS/Rust/Go/Python enum + builder 构造 channel，短字段 payload 解析为完整模型；SDK CI 全绿 | 等 SDK PR review/发布；realtime namespace 放行后跑 SDK live 示例 |
+| Firstscreen cache gate | 已验证默认关闭 | aggregation YAML 显式 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`；services deployment 未设置覆盖项；代码默认 false；最近 logs 无 cache write error | 后续打开开关前补命中率、陈旧数据、cache write 日志验收 |
+| 发布流程 | 部分完成，剩余受 review gate 控制 | aggregation/services 已有历史生产 tag；services #29/#30、SDK #10、docs #3 均 `OPEN / CLEAN` | 等 reviewer 确认；确认前不 merge、不 tag、不部署、不发布 |
+| 最终验收 | 未完成 | topic、DDL、pipeline、API、SDK、logs 已有记录 | 还缺 services #29/#30 部署后验收、SDK 发布、realtime live receive、SDK live receive |
+
 ## 2026-06-05 验收记录
 
 ### 已验证

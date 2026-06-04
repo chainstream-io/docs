@@ -165,6 +165,16 @@ icon: "list-check"
   - 缺失画像类字段仍返回 key；当前样本中 `takerImage`、`takerName`、`takerPseudonym` 为空字符串兜底。
   - 当前样本中部分 `inventory_adjust` activity 的 `takerOrderHash` 为空字符串兜底，字段 key 保持存在。
   - 当前最新两页已满足字段完整性与普通 cursor 分页验收。
+- 公网 API 于 2026-06-05 07:24 CST 重新按单个 prediction 口径验收：
+  - 验证 endpoint：`GET https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=20`。
+  - 使用 `curl` + Bearer token 调用返回 200；Python `urllib` 被 Cloudflare 1010 browser signature 拦截，因此公网 API 自动化验收使用 `curl` 发起 HTTP 请求。
+  - 第一页返回 20 条、第二页返回 20 条；第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，字段集合为 `activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`logIndex`、`marketIcon`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`source`、`taker`、`takerAge`、`takerImage`、`takerName`、`takerOrderHash`、`takerPseudonym`、`takerTags`、`timestamp`、`tokenId`、`txHash`、`type`。
+  - Future.news 23 个字段映射后缺失字段为 `[]`；required 字段缺失样本为 `[]`。
+  - 画像兜底样本：`takerImage=""`、`takerName=""`、`takerPseudonym=""`、`takerTags=[]`，字段 key 均存在。
+  - `token_id` 过滤探针返回 200，返回 5 条，所有返回项的 `tokenId` 均等于请求 token。
+  - 单独按 `activity_type=buy`、`sell`、`redeem`、`inventory_adjust` 过滤时均返回 200，样本条数均为 3，样本 `type` 均与请求值一致。
+  - 最近两页 activity type 计数为 `buy=8`、`sell=12`、`inventory_adjust=20`；最新 activity lag 约 `195s`。
 - 深分页重复问题已定位：
   - 使用生产 ClickHouse 中重复 `activity_id` 附近的 cursor 访问公网 API，`limit=10` 返回 200，但存在 2 个重复 `activityId`。
   - services 修复 PR 已创建：`https://github.com/chainstream-io/services/pull/29`。
@@ -259,4 +269,5 @@ icon: "list-check"
 - SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收尚未完成。
 - Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的生产 live receive 验收尚未完成；按当前要求 realtime 先不部署，后续需补 production `pred` namespace 或等价放行配置后再复测。
 - Firstscreen cache 默认关闭已由代码与日志复核；若后续打开，需要单独补缓存命中率、陈旧数据和 cache write 日志验收。
+- 2026-06-05 07:25 CST 新鲜生产日志复查未完成：`dexes-eks` context 下 `kubectl get ns`、`kubectl get deploy -A`、`kubectl get pods -A` 未在 30 秒内返回，已停止这些只读查询；最终部署验收前需重新拉取 services、trades sink、settlements sink 日志，确认无持续 `decode error`、`ClickHouse insert`、`cache write`、`prediction activity failed`。
 - SDK PR 当前 CI 为 `CLEAN`，所有 GitHub Actions checks 已通过；仍等待 reviewer 确认，确认前不 merge、不 tag、不发布。

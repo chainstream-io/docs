@@ -1,0 +1,104 @@
+---
+title: "Prediction Activities Day2 验收"
+description: "Prediction wallet-token activity 的 Day2 完成目标、交付边界、部署顺序与验收清单"
+icon: "list-check"
+---
+
+# Prediction Activities Day2 目标与验收目录
+
+## 完成目标
+
+1. 基于远程 `origin/main` 创建 Day2 实施分支，隔离 Day1 工作区改动。
+2. 为 Polygon prediction trades / settlements 生成 wallet-token activity 明细，写入 ClickHouse activity 表。
+3. REST API 新增 `GET /v1/prediction/events/{event_slug}/activities`，返回字段不少于 Future.news activity 字段集合。
+4. OpenAPI 注册 prediction activity path、query params、response schema，并用 schema 测试锁定字段完整性。
+5. Realtime 使用短 channel：
+   - event activity: `pred:evt:{eventSlug}:act`
+   - token activity: `pred:tok:{tokenId}:act`
+6. Realtime activity payload 使用短字段并由 SDK 反序列化为完整模型。
+7. SDK 增加 prediction activity 订阅方法，channel 构造使用枚举，不手写拼接。
+8. Activity Kafka topic retention 为 1 天；ClickHouse activity 明细保留 3 天；topic map Redis TTL 为 1 天。
+9. 首屏缓存增加开关，默认 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`，TTL 预设 1 天，默认不读写缓存。
+10. 部署顺序明确：先 PR，由 reviewer 确认后才能合并；合并后拉最新 `origin/main`，再对 services 和 SDK 打 tag。
+
+## 验收目录
+
+### 数据与存储
+
+- source topics：`polygon.v2.prediction.trades`、`polygon.v2.prediction.settlements`。
+- activity topic：`polygon.v2.prediction.wallet-token-activities`。
+- `polygon_prediction_wallet_token_activities_local` / distributed / archive / realtime view 已有 DDL。
+- trades sink 会为 buy/sell 生成 activity row。
+- settlements sink 会为 redeem/split/merge 生成 activity row，其中 redemption 映射为 `redeem`，split/merge 映射为 `inventory_adjust`。
+- activity row 至少能映射出 REST response 所需字段：`activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`logIndex`、`marketIcon`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`source`、`taker`、`takerAge`、`takerImage`、`takerName`、`takerOrderHash`、`takerPseudonym`、`takerTags`、`timestamp`、`tokenId`、`txHash`、`type`。
+- Kafka key 使用 `taker:tokenId`，activity topic retention 为 `86400000` ms。
+- ClickHouse activity TTL 为 3 天。
+- Topic map Redis TTL 为 1 天，topic 数据不做长期缓存。
+
+### REST API
+
+- OpenAPI path 存在：`/v1/prediction/events/{event_slug}/activities`。
+- Query 支持 `cursor`、`limit`、`token_id`、`market_id`、`condition_id`、`wallet`、`activity_type`、`order`。
+- `market_id` 与 `condition_id` 同时传入且不一致时返回 bad request。
+- 当前 event allowlist 为 `world-cup-winner`。
+- OpenAPI 单测验证 activity schema 完整字段。
+- 字段集合验收规则为 `chainstream_fields >= features_new_fields`。
+- `PredictionActivity` required fields 为 `activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`logIndex`、`marketIcon`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`source`、`taker`、`takerAge`、`takerImage`、`takerName`、`takerOrderHash`、`takerPseudonym`、`takerTags`、`timestamp`、`tokenId`、`txHash`、`type`。
+- 画像类字段缺失时仍返回 key，并使用空值兜底：`""`、`[]`、`null`。
+- 分页使用稳定 cursor，连续两页不能出现重复 `activityId`。
+
+### Realtime 与 SDK
+
+- Realtime channel 不带 `chains.` 前缀。
+- Payload 外层使用 `a`，内部字段缩写，如 `id`、`amt`、`cid`、`mid`、`tid`、`tx`、`ty`。
+- realtime publish 为 best-effort；失败不补发、不写 DLQ、不阻塞 Kafka offset commit。
+- TypeScript SDK 方法：
+  - `subscribePredictionEventActivities`
+  - `subscribePredictionTokenActivities`
+- Rust SDK 方法：
+  - `subscribe_prediction_event_activities`
+  - `subscribe_prediction_token_activities`
+- SDK activity type 使用枚举：`buy`、`sell`、`redeem`、`inventory_adjust`。
+- TypeScript 与 Rust SDK 能把短字段 payload 反序列化为完整 activity model。
+- TypeScript 与 Rust REST SDK 方法由 `openapi.yaml` 生成。
+- Go 与 Python 的全量 REST SDK 生成不在当前 Day2 PR 的已完成范围内；如果发布要求覆盖所有语言，需要在 SDK 发布前单独修复 Go/Python 生成器与生成物。
+
+### 缓存
+
+- Metadata cache TTL 维持 1 天。
+- Topic map cache TTL 为 1 天。
+- Firstscreen cache 默认关闭；如果后续打开，默认 TTL 为 1 天，与 activity topic retention 对齐，并需补缓存命中率与陈旧数据监控。
+- 默认关闭时，pipeline 不写 firstscreen queue，不刷新 firstscreen cache；API 不读 firstscreen cache。
+
+### 部署
+
+- aggregation-pipelines：提 PR；review 通过后，先创建/确认 ClickHouse activity 表，再创建/更新 Kafka topic retention，再部署 prediction trades/settlements sink。
+- aggregation-pipelines 生产部署必须使用已构建的 tag 镜像覆盖运行中 deployment，验收记录中写明 `${AGG_TAG}`：
+  - `kubectl -n blockchain-streaming-aggregation-pol set image deployment/pol-prediction-trades-to-clickhouse-pipeline pol-prediction-trades-to-clickhouse-pipeline=440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:${AGG_TAG}`
+  - `kubectl -n blockchain-streaming-aggregation-pol set image deployment/pol-prediction-settlements-to-clickhouse-pipeline pol-prediction-settlements-to-clickhouse-pipeline=440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:${AGG_TAG}`
+- services：提 PR；review 通过并合并后拉最新 `origin/main`；从 main 打 tag；部署 API。
+- services tag 必须指向 main commit；production workflow 使用 tag 值作为镜像 tag，验收记录中写明 `${SERVICES_TAG}`、GitHub Actions run、镜像 tag 和 rollout 结果。
+- chainstream-sdk：提 PR；review 通过并合并后拉最新 `origin/main`；从 main 打 tag；发布 SDK。
+- chainstream-sdk release tag 必须从 main 创建；TypeScript 使用 `js-v*` tag，Rust 使用 `rust-v*` tag，验收记录中写明 `${SDK_TAG}`、GitHub Actions run 和发布包版本。
+- 部署后验证 OpenAPI YAML、REST 首页、cursor 下一页、realtime event channel、realtime token channel、SDK 订阅解析。
+- 禁止使用 feature branch 或 `latest` 作为生产发布依据；生产发布使用 tag 镜像或 tag commit，review 未确认前不创建这些 tag。
+- reviewer 未确认前不 merge、不 tag、不部署。
+
+## PR 审核顺序
+
+1. aggregation-pipelines：确认 topic、DDL、activity 映射、ClickHouse 写入、realtime publish、firstscreen cache gate。
+2. services：确认 REST schema、features.new 字段完整性、profile fallback、cursor 分页、firstscreen cache read gate。
+3. chainstream-sdk：确认 TypeScript/Rust REST 生成、realtime enum builder、短字段 parser、示例。
+4. docs：确认目标、验收目录、部署顺序、发布门禁。
+
+## 生产验收证据
+
+1. Kafka topic：`polygon.v2.prediction.wallet-token-activities` 存在，retention 为 `86400000` ms。
+2. ClickHouse：activity local/distributed/archive/realtime view 存在，热表 TTL 为 3 天。
+3. Pipeline：trade buy/sell、settlement redeem/split/merge 样本能落 activity 表。
+4. API：`GET /v1/prediction/events/world-cup-winner/activities` 返回 200，字段不少于 features.new；分页下一页无重复 `activityId`。
+5. Realtime：`pred:evt:world-cup-winner:act` 与 `pred:tok:{tokenId}:act` 能收到短字段 payload。
+6. SDK：TypeScript 或 Rust 示例能订阅 WorldCup activity，并解析成完整模型。
+7. 缓存：`PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false` 时没有 firstscreen queue 堆积，也没有持续 firstscreen cache write 日志。
+8. 日志：生产无持续 decode error、ClickHouse insert error、cache write error。
+9. 发布：aggregation/services/SDK 的生产记录均包含 tag 值、对应 main commit、workflow 或 rollout 链接。

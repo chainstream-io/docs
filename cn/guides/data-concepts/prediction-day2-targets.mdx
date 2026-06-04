@@ -142,7 +142,15 @@ icon: "list-check"
 - production rollout 已复核：
   - `chainstream/services` 运行镜像为 `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/service:v1.20260605-prediction-activities`，deployment 为 `2/2` ready，pod restart 为 `0`。
   - `pol-prediction-trades-to-clickhouse-pipeline` 与 `pol-prediction-settlements-to-clickhouse-pipeline` 运行镜像均为 `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:deploy-prediction-activities-20260605-3e55e724`，deployment 为 `1/1` ready，pod restart 为 `0`。
-  - services、trades sink、settlements sink 最近日志未发现持续 `decode error`、`ClickHouse insert`、`cache write`、`prediction activity failed`、`panic`、`fatal`、`error`。
+  - services、trades sink、settlements sink 最近日志未发现持续 `decode error`、`ClickHouse insert error`、`cache write`、`prediction activity failed`、`panic`、`fatal`、`error`。
+- production rollout 于 2026-06-05 07:34 CST 重新用 Kubernetes direct API 复核：
+  - Homebrew `aws` CLI 在本地执行 `aws --version`、`aws sts get-caller-identity`、`aws eks get-token` 时卡住；改用本地 SigV4 presigned STS URL 生成 EKS bearer token 后，Kubernetes `/version` 返回 200，cluster version 为 `v1.35.4-eks-40737a8`。
+  - `pol-prediction-trades-to-clickhouse-pipeline` 为 `1/1` ready，运行 pod `pol-prediction-trades-to-clickhouse-pipeline-77f5b7745-mksvt`，restart 为 `0`，镜像 tag 为 `deploy-prediction-activities-20260605-3e55e724`。
+  - `pol-prediction-settlements-to-clickhouse-pipeline` 为 `1/1` ready，运行 pod `pol-prediction-settlements-to-clickhouse-pipeline-5dfcb69ckxvxz`，restart 为 `0`，镜像 tag 为 `deploy-prediction-activities-20260605-3e55e724`。
+  - `chainstream/services` 为 `2/2` ready，运行 pod `services-846cb4c66f-fp65w`、`services-846cb4c66f-hqzsz`，restart 均为 `0`，镜像 tag 为 `v1.20260605-prediction-activities`。
+  - `chainstream/services` deployment 未设置 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED`，`chainstream` namespace ConfigMap 中也未发现 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED` 或 firstscreen/prediction 相关覆盖项；services 代码默认值为 `false`。
+  - 最近 1 小时 logs（每个 pod tail 1500 行）扫描结果：trades sink、settlements sink、两个 services pod 的 `decode_error`、`cache_write`、`prediction_activity_failed`、`panic_fatal`、`generic_error` 计数均为 `0`。
+  - trades sink 最近日志持续出现 `CH_INSERT_OK` 写入 `dexes_dwd2.polygon_prediction_wallet_token_activities_local`；settlements sink 最近日志持续出现 `CH_INSERT_OK` 写入 ClickHouse。
 - 生产 topic 与 ClickHouse 已复核：
   - Redpanda topic `polygon.v2.prediction.wallet-token-activities` partitions 为 `12`，`retention.ms` 为 `86400000`，`retention.local.target.ms` 为 `86400000`。
   - ClickHouse local table engine 为 `MergeTree`，`ORDER BY (event_slug, seq_index, activity_id)`，热表 TTL 为 `ts + toIntervalDay(3)`。
@@ -269,5 +277,4 @@ icon: "list-check"
 - SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收尚未完成。
 - Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的生产 live receive 验收尚未完成；按当前要求 realtime 先不部署，后续需补 production `pred` namespace 或等价放行配置后再复测。
 - Firstscreen cache 默认关闭已由代码与日志复核；若后续打开，需要单独补缓存命中率、陈旧数据和 cache write 日志验收。
-- 2026-06-05 07:25 CST 新鲜生产日志复查未完成：`dexes-eks` context 下 `kubectl get ns`、`kubectl get deploy -A`、`kubectl get pods -A` 未在 30 秒内返回，已停止这些只读查询；最终部署验收前需重新拉取 services、trades sink、settlements sink 日志，确认无持续 `decode error`、`ClickHouse insert`、`cache write`、`prediction activity failed`。
 - SDK PR 当前 CI 为 `CLEAN`，所有 GitHub Actions checks 已通过；仍等待 reviewer 确认，确认前不 merge、不 tag、不发布。

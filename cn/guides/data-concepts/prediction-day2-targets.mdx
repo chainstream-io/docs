@@ -59,11 +59,17 @@ icon: "list-check"
 - Rust SDK 方法：
   - `subscribe_prediction_event_activities`
   - `subscribe_prediction_token_activities`
+- Go SDK 方法：
+  - `SubscribePredictionEventActivities`
+  - `SubscribePredictionTokenActivities`
+- Python SDK 方法：
+  - `subscribe_prediction_event_activities`
+  - `subscribe_prediction_token_activities`
 - SDK activity type 使用枚举：`buy`、`sell`、`redeem`、`inventory_adjust`。
-- TypeScript 与 Rust SDK 能把短字段 payload 反序列化为完整 activity model。
+- TypeScript、Rust、Go、Python SDK 均使用 enum + builder 生成 prediction activity channel，并能把短字段 payload 反序列化为完整 activity model。
 - TypeScript REST SDK 由 `openapi.yaml` 生成 `getPredictionEventActivities` 与 `getPredictionMarketActivities`。
 - Rust REST SDK 由 `openapi.yaml` 生成 `get_prediction_event_activities` 与 `get_prediction_market_activities`。
-- Go 与 Python 的 prediction activity REST 方法生成不在当前 Day2 功能验收范围内；当前 SDK PR 已补 Go/Python CI baseline，发布前不再存在 Go/Python 红灯。
+- Go 与 Python 的 prediction activity REST 方法生成不在当前 Day2 功能验收范围内；当前 SDK PR 已补 Go/Python realtime stream API 与 CI baseline，发布前不再存在 Go/Python 红灯。
 
 ### 缓存
 
@@ -90,7 +96,7 @@ icon: "list-check"
 
 1. aggregation-pipelines：确认 topic、DDL、activity 映射、ClickHouse 写入、realtime publish、firstscreen cache gate。
 2. services：确认 REST schema、features.new 字段完整性、profile fallback、cursor 分页、firstscreen cache read gate。
-3. chainstream-sdk：确认 TypeScript/Rust REST 生成、realtime enum builder、短字段 parser、示例。
+3. chainstream-sdk：确认 TypeScript/Rust REST 生成，TypeScript/Rust/Go/Python realtime enum builder、短字段 parser、示例。
 4. docs：确认目标、验收目录、部署顺序、发布门禁。
 
 ## 生产验收证据
@@ -100,7 +106,7 @@ icon: "list-check"
 3. Pipeline：trade buy/sell、settlement redeem/split/merge 样本能落 activity 表。
 4. API：`GET /v1/prediction/events/world-cup-winner/activities` 返回 200，字段不少于 features.new；目标 market endpoint `/v1/prediction/markets/{condition_id}/activities` 在 PR #30 部署后返回 200；分页下一页无重复 `activityId`。
 5. Realtime：`pred:evt:world-cup-winner:act` 与 `pred:tok:{tokenId}:act` 能收到短字段 payload。
-6. SDK：TypeScript 或 Rust 示例能订阅 WorldCup activity，并解析成完整模型。
+6. SDK：TypeScript 或 Rust 示例能订阅 WorldCup activity，并解析成完整模型；TypeScript/Rust/Go/Python parser 单测能把短字段 payload 解析成完整模型。
 7. 缓存：`PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false` 时没有 firstscreen queue 堆积，也没有持续 firstscreen cache write 日志。
 8. 日志：生产无持续 decode error、ClickHouse insert error、cache write error。
 9. 发布：aggregation/services/SDK 的生产记录均包含 tag 值、对应 main commit、workflow 或 rollout 链接。
@@ -173,13 +179,15 @@ icon: "list-check"
     - `cargo test -p infrastructure database::prediction::tests`
     - `cargo test -p api verify_prediction_event_activities_schema`
 - chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
-- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 19 ahead`，当前 head commit 为 `39e1ce6`，GitHub merge state 为 `CLEAN`。
+- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 20 ahead`，当前 head commit 为 `aa31a9d`，GitHub merge state 为 `CLEAN`。
 - chainstream-sdk PR 已补 review note：
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625505564`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625651585`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625795368`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625833281`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625859236`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625946849`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625968505`
 - SDK 本地验证已完成：
   - TypeScript example build 通过。
   - TypeScript SDK build 通过。
@@ -201,6 +209,8 @@ icon: "list-check"
   - 复核 Python ruff baseline 修复：`ruff format --check` 通过，`ruff check` 通过。
   - 复核 TypeScript 全量 lint `pnpm --dir typescript lint` 通过。
   - 复核 Go lint config 使用 CI 同版本 `golangci-lint v2.12.2` 执行 `config verify` 通过。
+  - 复核 Python prediction activity stream targeted tests 通过：`chainstream/stream/test_prediction_activity.py`，3 个 tests 通过。
+  - 复核 Go prediction activity stream 新增单测已随 GitHub Actions `Go Tests` 1.23 / 1.24 通过；本地 Go test 在 desktop 环境中无输出卡住，未作为本地证据。
 - SDK PR GitHub Actions 已全绿：
   - TypeScript Checks：build、lint、format、lockfile、build-examples、check-auth-crypto-imports 全部通过。
   - TypeScript Tests：通过。
@@ -211,8 +221,8 @@ icon: "list-check"
   - Python Checks：build、lint、format、lockfile 全部通过。
   - Python Tests：3.10、3.11、3.12 全部通过。
 - SDK 静态与测试覆盖：
-  - TypeScript/Rust 都使用 enum + builder 生成 prediction activity channel。
-  - TypeScript/Rust 都能把短字段 realtime payload 解析成完整 activity model。
+  - TypeScript/Rust/Go/Python 都使用 enum + builder 生成 prediction activity channel。
+  - TypeScript/Rust/Go/Python 都能把短字段 realtime payload 解析成完整 activity model。
   - TypeScript/Rust REST API 方法和类型由 `openapi.yaml` 生成，event 与 market activities endpoint 均已覆盖。
 - SDK live 订阅验收尝试已完成：
   - 使用 `~/.chainstream/credentials.env` client credentials 获取 fresh token，token 有效期为 24 小时。

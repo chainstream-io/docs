@@ -128,13 +128,24 @@ icon: "list-check"
   - activity Kafka、realtime、firstscreen cache publish 均为 best-effort；失败只记录 debug 日志并继续主流程。
   - `PREDICTION_FIRSTSCREEN_CACHE_ENABLED` 默认值为 `false`。
   - `PREDICTION_FIRSTSCREEN_CACHE_TTL_SECS` 默认值为 `86400`。
+  - `deploy/k8s/pol/pol-prediction-trades-to-clickhouse-pipeline.yaml` 与 `deploy/k8s/pol/pol-prediction-settlements-to-clickhouse-pipeline.yaml` 均显式配置 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED: "false"`、`PREDICTION_FIRSTSCREEN_CACHE_TTL_SECS: "86400"`。
+  - `prediction-to-clickhouse-pipeline/src/activity.rs` 只有在 `prediction_firstscreen_cache_enabled()` 返回 true 时才调用 `write_firstscreen_cache`；该函数默认读取 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`。
+  - `prediction-to-clickhouse-pipeline/src/activity.rs` 未发现 firstscreen queue 写入路径；关闭时不写 firstscreen Redis hot/payload/meta key，也不存在 queue 堆积入口。
 - aggregation 当前本地工作区仍停在 Day1 metadata 分支，且有大量未提交改动；topic retention 验证以 `origin/main` 与生产部署 tag 为准，两者均为 `86400000`，不以该本地工作区文件为准。
 - activity 映射单测覆盖：
   - buy 使用 `trade_buyer`。
   - sell 使用 `trade_seller`。
   - redemption 映射为 `redeem`。
   - split/merge 映射为 `inventory_adjust`。
+- activity 映射代码证据：
+  - `prediction-to-clickhouse-pipeline/src/model.rs` 中 `DwdPolygonPredictionWalletTokenActivity::from_trade` 根据 `trade_is_outcome_buy` 映射 `buy` / `sell`，并分别选择 `trade_buyer` / `trade_seller` 作为 `taker`。
+  - `prediction-to-clickhouse-pipeline/src/model.rs` 中 `settlement_activity_type` 将 `REDEMPTION` / `Redemption` / `PayoutRedemption` 映射为 `redeem`，将 `SPLIT` / `Split` / `PositionSplit` / `MERGE` / `Merge` / `PositionsMerge` 映射为 `inventory_adjust`。
+  - `prediction-to-clickhouse-pipeline/src/model.rs` 单测 `settlement_activity_maps_redemption_to_redeem` 与 `settlement_activity_maps_split_and_merge_to_inventory_adjust` 锁定 settlement 映射。
 - services OpenAPI 单测 `verify_prediction_event_activities_schema` 锁定 `chainstream_fields >= features_new_fields`，并要求画像兜底字段存在。
+- services firstscreen read gate 代码证据：
+  - `crates/infrastructure/src/database/prediction.rs` 中 `firstscreen_cache_enabled()` 默认读取 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`。
+  - `firstscreen_cache_eligible_with` 要求开关为 true、desc 首页、无 cursor、无 token / market / condition / wallet / activity_type filter 且 limit 不超过 firstscreen limit；关闭时 `try_fetch_firstscreen_cache` 不会读取 firstscreen cache。
+  - 单测 `firstscreen_cache_requires_first_unfiltered_desc_page` 锁定关闭时不可命中、过滤页不可命中、cursor 下一页不可命中。
 - services tag 上复核 focused tests：
   - `cargo test -p api verify_prediction_event_activities_schema` 通过。
   - `cargo test -p infrastructure firstscreen_cache_requires_first_unfiltered_desc_page` 通过。
@@ -259,6 +270,8 @@ icon: "list-check"
   - TypeScript/Rust/Go/Python 都使用 enum + builder 生成 prediction activity channel。
   - TypeScript/Rust/Go/Python 都能把短字段 realtime payload 解析成完整 activity model。
   - TypeScript/Rust/Go/Python REST API client 均覆盖 event 与 market activities endpoint，并暴露 activity type/order enum。
+  - TypeScript `src/stream/stream.ts`、Rust `src/stream/client.rs`、Go `stream/stream.go`、Python `chainstream/stream/client.py` 均通过 `PredictionActivityChannelKind` / `WsPredictionActivityChannelKind` builder 生成 `pred:evt:{key}:act` 与 `pred:tok:{key}:act`，用户无需手写 channel。
+  - TypeScript、Rust、Go、Python 的 prediction activity stream tests 均断言 event channel 为 `pred:evt:world-cup-winner:act`，token channel 为 `pred:tok:{token}:act`，并验证短字段 `ty` 等 payload 能解析成完整 activity model。
 - SDK live 订阅验收尝试已完成：
   - 使用 `~/.chainstream/credentials.env` client credentials 获取 fresh token，token 有效期为 24 小时。
   - TypeScript SDK PR 分支本地 `dist` 可以完成 REST seed：`world-cup-winner` 拉取 50 条 activity，并从中得到 token channel 列表。

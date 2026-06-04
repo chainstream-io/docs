@@ -102,14 +102,16 @@ icon: "list-check"
 5. 部署 services image tag 到 production services deployment，记录 rollout status、pod image tag、pod restart。
 6. 复测深分页重复探针，验收 `activityId` 页内重复数为 `0`、跨页重复数为 `0`。
 7. 刷新 services PR #30 到最新 `origin/main`，解决 `crates/infrastructure/src/database/prediction.rs` 冲突。
-8. 对 PR #30 重跑 `cargo test -p infrastructure database::prediction::tests`、`cargo test -p api verify_prediction_event_activities_schema`、OpenAPI smoke check、`git diff --check`。
-9. PR #30 review 通过后合并到 `main`。
-10. 在 services 仓库重新执行 `git checkout main && git pull --ff-only origin main`，从 main 创建新的 `${SERVICES_TAG}` 并推送。
-11. 等待 services `CD - Production` workflow 完成，部署新 services image tag，复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且调用方不需要 `event_slug`。
-12. chainstream-sdk PR #10 review 通过后合并到 `main`。
-13. 在 SDK 仓库执行 `git checkout main && git pull --ff-only origin main`，从 main 创建并推送需要发布的 SDK tag：`js-v*`、`rust-v*`、`py-v*`、`go-v*`。
-14. 等待 SDK release workflows 完成，记录 npm、crates.io、PyPI、Go SDK repo/tag 发布结果。
-15. Realtime 仍按当前要求先不部署；生产 live receive 与 SDK live receive 在 `pred` namespace 放行后单独补验收。
+8. 冲突 resolution 固定保留 PR #30 的 market endpoint query 重构，并把 PR #29 的 `LIMIT 1 BY activity_id` 放在 ClickHouse SQL 的 `ORDER BY seq_index {order}, activity_id {order}` 后、page `LIMIT {limit}` 前。
+9. 冲突 resolution 固定保留 PR #30 的 `event_activities_sql_keeps_event_slug_filter`、`market_activities_sql_filters_condition_without_event_slug` tests，并补回 PR #29 的 `activities_sql_deduplicates_activity_ids_before_page_limit` test。
+10. 对 PR #30 重跑 `cargo test -p infrastructure database::prediction::tests`、`cargo test -p api verify_prediction_event_activities_schema`、OpenAPI smoke check、`git diff --check`。
+11. PR #30 review 通过后合并到 `main`。
+12. 在 services 仓库重新执行 `git checkout main && git pull --ff-only origin main`，从 main 创建新的 `${SERVICES_TAG}` 并推送。
+13. 等待 services `CD - Production` workflow 完成，部署新 services image tag，复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且调用方不需要 `event_slug`。
+14. chainstream-sdk PR #10 review 通过后合并到 `main`。
+15. 在 SDK 仓库执行 `git checkout main && git pull --ff-only origin main`，从 main 创建并推送需要发布的 SDK tag：`js-v*`、`rust-v*`、`py-v*`、`go-v*`。
+16. 等待 SDK release workflows 完成，记录 npm、crates.io、PyPI、Go SDK repo/tag 发布结果。
+17. Realtime 仍按当前要求先不部署；生产 live receive 与 SDK live receive 在 `pred` namespace 放行后单独补验收。
 
 ## PR 审核顺序
 
@@ -354,7 +356,7 @@ icon: "list-check"
 - services PR #29 等待 reviewer 确认；确认前不 merge、不 tag、不部署。
 - services PR #29 merge 后，必须拉最新 `origin/main`，从 main 打 tag，再部署 services，并复测深分页探针重复数为 `0`。
 - services PR #30 等待 reviewer 确认；确认前不 merge、不 tag、不部署。
-- services PR #30 与 PR #29 在 `crates/infrastructure/src/database/prediction.rs` 存在预期内容冲突；release 顺序固定为先 merge #29，再刷新 #30 到最新 `origin/main` 并解决冲突，通过 focused tests 后才能 merge。
+- services PR #30 与 PR #29 在 `crates/infrastructure/src/database/prediction.rs` 存在预期内容冲突；release 顺序固定为先 merge #29，再刷新 #30 到最新 `origin/main` 并解决冲突，通过 focused tests 后才能 merge。冲突 resolution 必须同时保留 #30 的 market endpoint query 重构、#30 的 event/market SQL tests、#29 的 `LIMIT 1 BY activity_id` 和 #29 的 dedup SQL test。
 - services PR #30 merge 后，必须拉最新 `origin/main`，从 main 打 tag，再部署 services，并复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且无需 `event_slug`。
 - SDK PR 仍等待 reviewer 确认；确认前不 merge、不 tag、不发布。
 - SDK release tag 尚未创建；必须在 PR merge 后拉最新 `origin/main`，再从 main 创建 tag。

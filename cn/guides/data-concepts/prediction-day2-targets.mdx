@@ -212,6 +212,14 @@ icon: "list-check"
   - `token_id` 过滤探针返回 200，返回 5 条，所有返回项的 `tokenId` 均等于请求 token。
   - 单独按 `activity_type=buy`、`sell`、`redeem`、`inventory_adjust` 过滤时均返回 200，样本条数均为 3，样本 `type` 均与请求值一致。
   - 最近两页 activity type 计数为 `buy=8`、`sell=12`、`inventory_adjust=20`；最新 activity lag 约 `195s`。
+- 公网 API 于 2026-06-05 07:44 CST 再次按单个 prediction 口径复测：
+  - 验证 endpoint 仍为 `GET https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=20`。
+  - 第一页与第二页均返回 200，各返回 20 条 activity。
+  - 第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
+  - 最近两页 activity type 计数为 `buy=16`、`sell=16`、`inventory_adjust=8`。
+  - 最新 activity lag 约 `38s`。
+  - 画像兜底样本仍为 `takerImage=""`、`takerName=""`、`takerPseudonym=""`、`takerTags=[]`，字段 key 均存在。
 - 深分页重复问题已定位：
   - 使用生产 ClickHouse 中重复 `activity_id` 附近的 cursor 访问公网 API，`limit=10` 返回 200，但存在 2 个重复 `activityId`。
   - services 修复 PR 已创建：`https://github.com/chainstream-io/services/pull/29`。

@@ -244,6 +244,14 @@ icon: "list-check"
   - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
   - 最近两页 activity type 计数为 `buy=17`、`sell=15`、`inventory_adjust=8`。
   - 最新 activity lag 约 `146s`。
+- 公网 API 于 2026-06-05 07:54 CST 复测：
+  - 单个 prediction 口径 endpoint 第一页与第二页均返回 200，各返回 20 条 activity。
+  - 第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
+  - 最新 activity lag 约 `31s`。
+  - `token_id` 过滤返回 200，5 条样本全部匹配请求 token。
+  - 单个 prediction 口径下 `activity_type=buy`、`sell`、`inventory_adjust` 均返回 200，样本数均为 3，样本 `type` 全部匹配请求值。
+  - 单个 prediction 口径下 `activity_type=redeem` 返回 200，但当前该 market 返回 0 条样本；event 口径不带 `condition_id` 的 `activity_type=redeem` 返回 200，5 条样本全部为 `redeem`，样本来自 condition `0xc7c21c8972c773b34f36f67f15dada2584474d959f7e338aca5994727d37ae39`。
 - 深分页重复问题已定位：
   - 使用生产 ClickHouse 中重复 `activity_id` 附近的 cursor 访问公网 API，`limit=10` 返回 200，但存在 2 个重复 `activityId`。
   - services 修复 PR 已创建：`https://github.com/chainstream-io/services/pull/29`。

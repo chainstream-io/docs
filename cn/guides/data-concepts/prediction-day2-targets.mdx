@@ -108,6 +108,7 @@ icon: "list-check"
 ### 已验证
 
 - services 已合并 PR 并从 `main` 打 tag：`v1.20260605-prediction-activities`，对应 main commit `1cc1250`。
+- services 当前本地复核工作区干净，HEAD 为 `main`，且指向 tag `v1.20260605-prediction-activities`。
 - aggregation-pipelines 已合并 PR：
   - `#37 feat(prediction): add wallet token activities pipeline`，merge commit `f21974b0`。
   - `#38 fix: make prediction activity release build pass`，merge commit `3e55e724`。
@@ -118,12 +119,17 @@ icon: "list-check"
   - activity Kafka、realtime、firstscreen cache publish 均为 best-effort；失败只记录 debug 日志并继续主流程。
   - `PREDICTION_FIRSTSCREEN_CACHE_ENABLED` 默认值为 `false`。
   - `PREDICTION_FIRSTSCREEN_CACHE_TTL_SECS` 默认值为 `86400`。
+- aggregation 当前本地工作区仍停在 Day1 metadata 分支，且有大量未提交改动；topic retention 验证以 `origin/main` 与生产部署 tag 为准，两者均为 `86400000`，不以该本地工作区文件为准。
 - activity 映射单测覆盖：
   - buy 使用 `trade_buyer`。
   - sell 使用 `trade_seller`。
   - redemption 映射为 `redeem`。
   - split/merge 映射为 `inventory_adjust`。
 - services OpenAPI 单测 `verify_prediction_event_activities_schema` 锁定 `chainstream_fields >= features_new_fields`，并要求画像兜底字段存在。
+- services tag 上复核 focused tests：
+  - `cargo test -p api verify_prediction_event_activities_schema` 通过。
+  - `cargo test -p infrastructure firstscreen_cache_requires_first_unfiltered_desc_page` 通过。
+  - `cargo test -p infrastructure prediction_activity_firstscreen_keys_match_aggregation_contract` 通过。
 - 生产 services 端口转发 API 验收已完成：
   - `GET /v1/prediction/events/world-cup-winner/activities?limit=20` 返回 200。
   - 返回 20 条 activity。

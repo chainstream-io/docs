@@ -63,7 +63,7 @@ icon: "list-check"
 - TypeScript 与 Rust SDK 能把短字段 payload 反序列化为完整 activity model。
 - TypeScript REST SDK 由 `openapi.yaml` 生成 `getPredictionEventActivities` 与 `getPredictionMarketActivities`。
 - Rust REST SDK 由 `openapi.yaml` 生成 `get_prediction_event_activities` 与 `get_prediction_market_activities`。
-- Go 与 Python 的全量 REST SDK 生成不在当前 Day2 PR 的已完成范围内；如果发布要求覆盖所有语言，需要在 SDK 发布前单独修复 Go/Python 生成器与生成物。
+- Go 与 Python 的 prediction activity REST 方法生成不在当前 Day2 功能验收范围内；当前 SDK PR 已补 Go/Python CI baseline，发布前不再存在 Go/Python 红灯。
 
 ### 缓存
 
@@ -173,10 +173,13 @@ icon: "list-check"
     - `cargo test -p infrastructure database::prediction::tests`
     - `cargo test -p api verify_prediction_event_activities_schema`
 - chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
-- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 15 ahead`，当前 head commit 为 `4be0aa4`。
+- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 19 ahead`，当前 head commit 为 `39e1ce6`，GitHub merge state 为 `CLEAN`。
 - chainstream-sdk PR 已补 review note：
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625505564`
   - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625651585`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625795368`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625833281`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625859236`
 - SDK 本地验证已完成：
   - TypeScript example build 通过。
   - TypeScript SDK build 通过。
@@ -195,6 +198,18 @@ icon: "list-check"
   - 复核 TypeScript runtime dependency 修复：`@solana/web3.js`、`viem` 已加入 dependencies，`bs58` 已从 devDependencies 移到 dependencies。
   - 复核 `pnpm --dir typescript install --frozen-lockfile` 通过。
   - 复核缺依赖相关文件 focused ESLint 通过：`src/utils/export.ts`、`src/utils/serializeTransaction.ts`、`src/types/calls.ts`。
+  - 复核 Python ruff baseline 修复：`ruff format --check` 通过，`ruff check` 通过。
+  - 复核 TypeScript 全量 lint `pnpm --dir typescript lint` 通过。
+  - 复核 Go lint config 使用 CI 同版本 `golangci-lint v2.12.2` 执行 `config verify` 通过。
+- SDK PR GitHub Actions 已全绿：
+  - TypeScript Checks：build、lint、format、lockfile、build-examples、check-auth-crypto-imports 全部通过。
+  - TypeScript Tests：通过。
+  - Rust Checks：build、lint、format、lockfile、format-examples、lint-examples 全部通过。
+  - Rust Tests：stable 与 beta 全部通过。
+  - Go Linting：通过。
+  - Go Tests：1.23 与 1.24 全部通过。
+  - Python Checks：build、lint、format、lockfile 全部通过。
+  - Python Tests：3.10、3.11、3.12 全部通过。
 - SDK 静态与测试覆盖：
   - TypeScript/Rust 都使用 enum + builder 生成 prediction activity channel。
   - TypeScript/Rust 都能把短字段 realtime payload 解析成完整 activity model。
@@ -217,10 +232,4 @@ icon: "list-check"
 - SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收尚未完成。
 - Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的生产 live receive 验收尚未完成；按当前要求 realtime 先不部署，后续需补 production `pred` namespace 或等价放行配置后再复测。
 - Firstscreen cache 默认关闭已由代码与日志复核；若后续打开，需要单独补缓存命中率、陈旧数据和 cache write 日志验收。
-- SDK PR 当前 CI 为 `UNSTABLE`：
-  - TypeScript build、format、lockfile、examples、unit tests 通过。
-  - Rust build、format、format-examples、lint、lint-examples、lockfile、stable/beta tests 通过。
-  - TypeScript lint 仍存在全仓 JSDoc/member-ordering/no-console/import-order baseline 问题；`import/no-unresolved` 缺依赖问题已由 `4be0aa4` 关闭。
-  - Python build、lockfile、3.10/3.11/3.12 tests 通过；Python lint/format 存在 ruff baseline 问题。
-  - Go lint/test 存在生成 openapi client unused imports 与生成依赖声明问题。
-  - SDK PR diff 未包含 `go/` 或 `python/` 文件变更，Go/Python 红灯不是本次 prediction activity SDK 改动直接引入；若 SDK 发布要求所有语言 CI 全绿，需在 release 前单独修复这些 baseline。
+- SDK PR 当前 CI 为 `CLEAN`，所有 GitHub Actions checks 已通过；仍等待 reviewer 确认，确认前不 merge、不 tag、不发布。

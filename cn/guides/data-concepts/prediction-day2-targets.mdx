@@ -10,7 +10,7 @@ icon: "list-check"
 
 1. 基于远程 `origin/main` 创建 Day2 实施分支，隔离 Day1 工作区改动。
 2. 为 Polygon prediction trades / settlements 生成 wallet-token activity 明细，写入 ClickHouse activity 表。
-3. REST API 新增 `GET /v1/prediction/events/{event_slug}/activities`，返回字段不少于 Future.news activity 字段集合。
+3. REST API 新增 event feed 与 market feed：`GET /v1/prediction/events/{event_slug}/activities`、`GET /v1/prediction/markets/{condition_id}/activities`，返回字段不少于 Future.news activity 字段集合。
 4. OpenAPI 注册 prediction activity path、query params、response schema，并用 schema 测试锁定字段完整性。
 5. Realtime 使用短 channel：
    - event activity: `pred:evt:{eventSlug}:act`
@@ -37,8 +37,9 @@ icon: "list-check"
 
 ### REST API
 
-- OpenAPI path 存在：`/v1/prediction/events/{event_slug}/activities`。
-- Query 支持 `cursor`、`limit`、`token_id`、`market_id`、`condition_id`、`wallet`、`activity_type`、`order`。
+- OpenAPI path 存在：`/v1/prediction/events/{event_slug}/activities` 与 `/v1/prediction/markets/{condition_id}/activities`。
+- event endpoint query 支持 `cursor`、`limit`、`token_id`、`market_id`、`condition_id`、`wallet`、`activity_type`、`order`。
+- market endpoint path 使用 `{condition_id}` 锁定单个 prediction，query 支持 `cursor`、`limit`、`token_id`、`wallet`、`activity_type`、`order`，不要求传 `event_slug`。
 - `market_id` 与 `condition_id` 同时传入且不一致时返回 bad request。
 - 当前 event allowlist 为 `world-cup-winner`。
 - OpenAPI 单测验证 activity schema 完整字段。
@@ -58,10 +59,18 @@ icon: "list-check"
 - Rust SDK 方法：
   - `subscribe_prediction_event_activities`
   - `subscribe_prediction_token_activities`
+- Go SDK 方法：
+  - `SubscribePredictionEventActivities`
+  - `SubscribePredictionTokenActivities`
+- Python SDK 方法：
+  - `subscribe_prediction_event_activities`
+  - `subscribe_prediction_token_activities`
 - SDK activity type 使用枚举：`buy`、`sell`、`redeem`、`inventory_adjust`。
-- TypeScript 与 Rust SDK 能把短字段 payload 反序列化为完整 activity model。
-- TypeScript 与 Rust REST SDK 方法由 `openapi.yaml` 生成。
-- Go 与 Python 的全量 REST SDK 生成不在当前 Day2 PR 的已完成范围内；如果发布要求覆盖所有语言，需要在 SDK 发布前单独修复 Go/Python 生成器与生成物。
+- TypeScript、Rust、Go、Python SDK 均使用 enum + builder 生成 prediction activity channel，并能把短字段 payload 反序列化为完整 activity model。
+- TypeScript REST SDK 由 `openapi.yaml` 生成 `getPredictionEventActivities` 与 `getPredictionMarketActivities`。
+- Rust REST SDK 由 `openapi.yaml` 生成 `get_prediction_event_activities` 与 `get_prediction_market_activities`。
+- Go REST SDK 已补 `go/openapi/prediction/client.gen.go`，并通过 `client.Prediction` 暴露 event / market activities methods。
+- Python OpenAPI client 已补 `PredictionApi`、`PredictionActivitiesResponse`、`PredictionActivity`、`PredictionActivityOrder`、`PredictionActivityType`，event / market activities endpoint 均已覆盖。
 
 ### 缓存
 
@@ -77,18 +86,38 @@ icon: "list-check"
   - `kubectl -n blockchain-streaming-aggregation-pol set image deployment/pol-prediction-trades-to-clickhouse-pipeline pol-prediction-trades-to-clickhouse-pipeline=440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:${AGG_TAG}`
   - `kubectl -n blockchain-streaming-aggregation-pol set image deployment/pol-prediction-settlements-to-clickhouse-pipeline pol-prediction-settlements-to-clickhouse-pipeline=440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:${AGG_TAG}`
 - services：提 PR；review 通过并合并后拉最新 `origin/main`；从 main 打 tag；部署 API。
-- services tag 必须指向 main commit；production workflow 使用 tag 值作为镜像 tag，验收记录中写明 `${SERVICES_TAG}`、GitHub Actions run、镜像 tag 和 rollout 结果。
+- services tag 必须指向 main commit；production workflow 监听 `v*` tag 并校验该 commit 位于 `origin/main`，workflow 使用 tag 值作为镜像 tag，验收记录中写明 `${SERVICES_TAG}`、GitHub Actions run、镜像 tag 和 rollout 结果。
 - chainstream-sdk：提 PR；review 通过并合并后拉最新 `origin/main`；从 main 打 tag；发布 SDK。
-- chainstream-sdk release tag 必须从 main 创建；TypeScript 使用 `js-v*` tag，Rust 使用 `rust-v*` tag，验收记录中写明 `${SDK_TAG}`、GitHub Actions run 和发布包版本。
+- chainstream-sdk release tag 必须从 main 创建；TypeScript 使用 `js-v*` tag，Rust 使用 `rust-v*` tag，Python 使用 `py-v*` tag，Go 使用 `go-v*` tag，验收记录中写明 `${SDK_TAG}`、GitHub Actions run 和发布包版本。
 - 部署后验证 OpenAPI YAML、REST 首页、cursor 下一页、realtime event channel、realtime token channel、SDK 订阅解析。
 - 禁止使用 feature branch 或 `latest` 作为生产发布依据；生产发布使用 tag 镜像或 tag commit，review 未确认前不创建这些 tag。
 - reviewer 未确认前不 merge、不 tag、不部署。
+
+### Review 后执行 runbook
+
+1. services PR #29 review 通过后合并到 `main`。
+2. 在 services 仓库执行 `git checkout main && git pull --ff-only origin main`，确认 `git rev-parse HEAD` 为 #29 merge 后的 main commit。
+3. 从 services main 创建 `${SERVICES_TAG}`，格式使用 `v*`，执行 `git tag -a ${SERVICES_TAG} -m "${SERVICES_TAG}" && git push origin ${SERVICES_TAG}`。
+4. 等待 services `CD - Production` workflow 完成，记录 workflow run、ECR image `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/service:${SERVICES_TAG}`。
+5. 部署 services image tag 到 production services deployment，记录 rollout status、pod image tag、pod restart。
+6. 复测深分页重复探针，验收 `activityId` 页内重复数为 `0`、跨页重复数为 `0`。
+7. 刷新 services PR #30 到最新 `origin/main`，解决 `crates/infrastructure/src/database/prediction.rs` 冲突。
+8. 冲突 resolution 固定保留 PR #30 的 market endpoint query 重构，并把 PR #29 的 `LIMIT 1 BY activity_id` 放在 ClickHouse SQL 的 `ORDER BY seq_index {order}, activity_id {order}` 后、page `LIMIT {limit}` 前。
+9. 冲突 resolution 固定保留 PR #30 的 `event_activities_sql_keeps_event_slug_filter`、`market_activities_sql_filters_condition_without_event_slug` tests，并补回 PR #29 的 `activities_sql_deduplicates_activity_ids_before_page_limit` test。
+10. 对 PR #30 重跑 `cargo test -p infrastructure database::prediction::tests`、`cargo test -p api verify_prediction_event_activities_schema`、OpenAPI smoke check、`git diff --check`。
+11. PR #30 review 通过后合并到 `main`。
+12. 在 services 仓库重新执行 `git checkout main && git pull --ff-only origin main`，从 main 创建新的 `${SERVICES_TAG}` 并推送。
+13. 等待 services `CD - Production` workflow 完成，部署新 services image tag，复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且调用方不需要 `event_slug`。
+14. chainstream-sdk PR #10 review 通过后合并到 `main`。
+15. 在 SDK 仓库执行 `git checkout main && git pull --ff-only origin main`，从 main 创建并推送需要发布的 SDK tag：`js-v*`、`rust-v*`、`py-v*`、`go-v*`。
+16. 等待 SDK release workflows 完成，记录 npm、crates.io、PyPI、Go SDK repo/tag 发布结果。
+17. Realtime 仍按当前要求先不部署；生产 live receive 与 SDK live receive 在 `pred` namespace 放行后单独补验收。
 
 ## PR 审核顺序
 
 1. aggregation-pipelines：确认 topic、DDL、activity 映射、ClickHouse 写入、realtime publish、firstscreen cache gate。
 2. services：确认 REST schema、features.new 字段完整性、profile fallback、cursor 分页、firstscreen cache read gate。
-3. chainstream-sdk：确认 TypeScript/Rust REST 生成、realtime enum builder、短字段 parser、示例。
+3. chainstream-sdk：确认 TypeScript/Rust REST 生成，TypeScript/Rust/Go/Python realtime enum builder、短字段 parser、示例。
 4. docs：确认目标、验收目录、部署顺序、发布门禁。
 
 ## 生产验收证据
@@ -96,9 +125,242 @@ icon: "list-check"
 1. Kafka topic：`polygon.v2.prediction.wallet-token-activities` 存在，retention 为 `86400000` ms。
 2. ClickHouse：activity local/distributed/archive/realtime view 存在，热表 TTL 为 3 天。
 3. Pipeline：trade buy/sell、settlement redeem/split/merge 样本能落 activity 表。
-4. API：`GET /v1/prediction/events/world-cup-winner/activities` 返回 200，字段不少于 features.new；分页下一页无重复 `activityId`。
+4. API：`GET /v1/prediction/events/world-cup-winner/activities` 返回 200，字段不少于 features.new；目标 market endpoint `/v1/prediction/markets/{condition_id}/activities` 在 PR #30 部署后返回 200；分页下一页无重复 `activityId`。
 5. Realtime：`pred:evt:world-cup-winner:act` 与 `pred:tok:{tokenId}:act` 能收到短字段 payload。
-6. SDK：TypeScript 或 Rust 示例能订阅 WorldCup activity，并解析成完整模型。
+6. SDK：TypeScript 或 Rust 示例能订阅 WorldCup activity，并解析成完整模型；TypeScript/Rust/Go/Python parser 单测能把短字段 payload 解析成完整模型。
 7. 缓存：`PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false` 时没有 firstscreen queue 堆积，也没有持续 firstscreen cache write 日志。
 8. 日志：生产无持续 decode error、ClickHouse insert error、cache write error。
 9. 发布：aggregation/services/SDK 的生产记录均包含 tag 值、对应 main commit、workflow 或 rollout 链接。
+
+## 完成状态矩阵
+
+| 目标项 | 当前状态 | 已有证据 | 剩余动作 |
+|---|---|---|---|
+| Activities 数据链路 | 已验证 | Polygon trades / settlements sink 运行 tag `deploy-prediction-activities-20260605-3e55e724`；ClickHouse activity 表有 `buy`、`sell`、`inventory_adjust` 样本；logs 有 `CH_INSERT_OK` | PR #29 部署后复测深分页去重 |
+| Activity topic retention | 已验证 | `polygon.v2.prediction.wallet-token-activities` partitions 为 `12`，`retention.ms=86400000`，`retention.local.target.ms=86400000` | 无 |
+| ClickHouse 3 天热表 | 已验证 | `polygon_prediction_wallet_token_activities_local` engine 为 `MergeTree`，TTL 为 `ts + toIntervalDay(3)` | 无 |
+| trade / settlement 映射 | 已验证 | `from_trade` 使用 `trade_buyer` / `trade_seller`；`settlement_activity_type` 映射 `redeem` / `inventory_adjust`；对应单测已记录 | 无 |
+| Event REST API | 已验证 | `GET /v1/prediction/events/world-cup-winner/activities` 公网返回 200，字段数 27，Future.news 23 字段缺失 `[]`，连续两页无重复 | PR #29 部署后补深分页重复探针 |
+| Market REST API | PR ready，未部署 | services PR #30 新增 `/v1/prediction/markets/{condition_id}/activities`，focused tests 通过，PR `OPEN / CLEAN` | 等 reviewer 确认后 merge、从 main 打 tag、部署、公网复测 200 |
+| OpenAPI / SDK REST | PR ready，未发布 | SDK PR #10 head `32e7416` 覆盖 TypeScript/Rust/Go/Python REST client；CI 全绿 | 等 reviewer 确认后 merge、从 main 打 SDK release tag、发布 |
+| Realtime channel / payload | 代码 ready，生产 live 未通过 | aggregation tag 使用 `pred:evt:{event_slug}:act` / `pred:tok:{token_id}:act`，payload 短字段；SDK parser 单测通过 | 按当前要求 realtime 先不部署；后续放行 `pred` namespace 后复测 live receive |
+| Realtime failure rule | 已验证代码证据 | Kafka/realtime/cache publish 失败只 debug 记录并继续主流程；不补发、不进 DLQ、不阻塞 offset commit | 生产 live receive 放行后补端到端验证 |
+| SDK realtime 订阅 | PR ready，live receive 未通过 | TS/Rust/Go/Python enum + builder 构造 channel，短字段 payload 解析为完整模型；SDK CI 全绿 | 等 SDK PR review/发布；realtime namespace 放行后跑 SDK live 示例 |
+| Firstscreen cache gate | 已验证默认关闭 | aggregation YAML 显式 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`；services deployment 未设置覆盖项；代码默认 false；最近 logs 无 cache write error | 后续打开开关前补命中率、陈旧数据、cache write 日志验收 |
+| 发布流程 | 部分完成，剩余受 review gate 控制 | aggregation/services 已有历史生产 tag；services #29/#30、SDK #10、docs #3 均 `OPEN / CLEAN` | 等 reviewer 确认；确认前不 merge、不 tag、不部署、不发布 |
+| 最终验收 | 未完成 | topic、DDL、pipeline、API、SDK、logs 已有记录 | 还缺 services #29/#30 部署后验收、SDK 发布、realtime live receive、SDK live receive |
+
+## 2026-06-05 验收记录
+
+### 已验证
+
+- services 已合并 PR 并从 `main` 打 tag：`v1.20260605-prediction-activities`，对应 main commit `1cc1250`。
+- services 当前本地复核工作区干净，HEAD 为 `main`，且指向 tag `v1.20260605-prediction-activities`。
+- aggregation-pipelines 已合并 PR：
+  - `#37 feat(prediction): add wallet token activities pipeline`，merge commit `f21974b0`。
+  - `#38 fix: make prediction activity release build pass`，merge commit `3e55e724`。
+- aggregation 生产部署 tag 为 `deploy-prediction-activities-20260605-3e55e724`，该 tag 中：
+  - topic job 配置 `polygon.v2.prediction.wallet-token-activities` retention 为 `86400000`。
+  - realtime channel 固定为 `pred:evt:{event_slug}:act` 与 `pred:tok:{token_id}:act`。
+  - realtime payload 外层为 `a`，内部字段使用 `id`、`amt`、`cid`、`mid`、`tid`、`tx`、`ty` 等短字段。
+  - activity Kafka、realtime、firstscreen cache publish 均为 best-effort；失败只记录 debug 日志并继续主流程。
+  - `PREDICTION_FIRSTSCREEN_CACHE_ENABLED` 默认值为 `false`。
+  - `PREDICTION_FIRSTSCREEN_CACHE_TTL_SECS` 默认值为 `86400`。
+  - `deploy/k8s/pol/pol-prediction-trades-to-clickhouse-pipeline.yaml` 与 `deploy/k8s/pol/pol-prediction-settlements-to-clickhouse-pipeline.yaml` 均显式配置 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED: "false"`、`PREDICTION_FIRSTSCREEN_CACHE_TTL_SECS: "86400"`。
+  - `prediction-to-clickhouse-pipeline/src/activity.rs` 只有在 `prediction_firstscreen_cache_enabled()` 返回 true 时才调用 `write_firstscreen_cache`；该函数默认读取 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`。
+  - `prediction-to-clickhouse-pipeline/src/activity.rs` 未发现 firstscreen queue 写入路径；关闭时不写 firstscreen Redis hot/payload/meta key，也不存在 queue 堆积入口。
+- aggregation 当前本地工作区仍停在 Day1 metadata 分支，且有大量未提交改动；topic retention 验证以 `origin/main` 与生产部署 tag 为准，两者均为 `86400000`，不以该本地工作区文件为准。
+- activity 映射单测覆盖：
+  - buy 使用 `trade_buyer`。
+  - sell 使用 `trade_seller`。
+  - redemption 映射为 `redeem`。
+  - split/merge 映射为 `inventory_adjust`。
+- activity 映射代码证据：
+  - `prediction-to-clickhouse-pipeline/src/model.rs` 中 `DwdPolygonPredictionWalletTokenActivity::from_trade` 根据 `trade_is_outcome_buy` 映射 `buy` / `sell`，并分别选择 `trade_buyer` / `trade_seller` 作为 `taker`。
+  - `prediction-to-clickhouse-pipeline/src/model.rs` 中 `settlement_activity_type` 将 `REDEMPTION` / `Redemption` / `PayoutRedemption` 映射为 `redeem`，将 `SPLIT` / `Split` / `PositionSplit` / `MERGE` / `Merge` / `PositionsMerge` 映射为 `inventory_adjust`。
+  - `prediction-to-clickhouse-pipeline/src/model.rs` 单测 `settlement_activity_maps_redemption_to_redeem` 与 `settlement_activity_maps_split_and_merge_to_inventory_adjust` 锁定 settlement 映射。
+- services OpenAPI 单测 `verify_prediction_event_activities_schema` 锁定 `chainstream_fields >= features_new_fields`，并要求画像兜底字段存在。
+- services firstscreen read gate 代码证据：
+  - `crates/infrastructure/src/database/prediction.rs` 中 `firstscreen_cache_enabled()` 默认读取 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`。
+  - `firstscreen_cache_eligible_with` 要求开关为 true、desc 首页、无 cursor、无 token / market / condition / wallet / activity_type filter 且 limit 不超过 firstscreen limit；关闭时 `try_fetch_firstscreen_cache` 不会读取 firstscreen cache。
+  - 单测 `firstscreen_cache_requires_first_unfiltered_desc_page` 锁定关闭时不可命中、过滤页不可命中、cursor 下一页不可命中。
+- services tag 上复核 focused tests：
+  - `cargo test -p api verify_prediction_event_activities_schema` 通过。
+  - `cargo test -p infrastructure firstscreen_cache_requires_first_unfiltered_desc_page` 通过。
+  - `cargo test -p infrastructure prediction_activity_firstscreen_keys_match_aggregation_contract` 通过。
+- production rollout 已复核：
+  - `chainstream/services` 运行镜像为 `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/service:v1.20260605-prediction-activities`，deployment 为 `2/2` ready，pod restart 为 `0`。
+  - `pol-prediction-trades-to-clickhouse-pipeline` 与 `pol-prediction-settlements-to-clickhouse-pipeline` 运行镜像均为 `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/chainstream/aggregation/prediction-to-clickhouse-pipeline:deploy-prediction-activities-20260605-3e55e724`，deployment 为 `1/1` ready，pod restart 为 `0`。
+  - services、trades sink、settlements sink 最近日志未发现持续 `decode error`、`ClickHouse insert error`、`cache write`、`prediction activity failed`、`panic`、`fatal`、`error`。
+- production rollout 于 2026-06-05 07:34 CST 重新用 Kubernetes direct API 复核：
+  - Homebrew `aws` CLI 在本地执行 `aws --version`、`aws sts get-caller-identity`、`aws eks get-token` 时卡住；改用本地 SigV4 presigned STS URL 生成 EKS bearer token 后，Kubernetes `/version` 返回 200，cluster version 为 `v1.35.4-eks-40737a8`。
+  - `pol-prediction-trades-to-clickhouse-pipeline` 为 `1/1` ready，运行 pod `pol-prediction-trades-to-clickhouse-pipeline-77f5b7745-mksvt`，restart 为 `0`，镜像 tag 为 `deploy-prediction-activities-20260605-3e55e724`。
+  - `pol-prediction-settlements-to-clickhouse-pipeline` 为 `1/1` ready，运行 pod `pol-prediction-settlements-to-clickhouse-pipeline-5dfcb69ckxvxz`，restart 为 `0`，镜像 tag 为 `deploy-prediction-activities-20260605-3e55e724`。
+  - `chainstream/services` 为 `2/2` ready，运行 pod `services-846cb4c66f-fp65w`、`services-846cb4c66f-hqzsz`，restart 均为 `0`，镜像 tag 为 `v1.20260605-prediction-activities`。
+  - `chainstream/services` deployment 未设置 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED`，`chainstream` namespace ConfigMap 中也未发现 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED` 或 firstscreen/prediction 相关覆盖项；services 代码默认值为 `false`。
+  - 最近 1 小时 logs（每个 pod tail 1500 行）扫描结果：trades sink、settlements sink、两个 services pod 的 `decode_error`、`cache_write`、`prediction_activity_failed`、`panic_fatal`、`generic_error` 计数均为 `0`。
+  - trades sink 最近日志持续出现 `CH_INSERT_OK` 写入 `dexes_dwd2.polygon_prediction_wallet_token_activities_local`；settlements sink 最近日志持续出现 `CH_INSERT_OK` 写入 ClickHouse。
+- 生产 topic 与 ClickHouse 已复核：
+  - Redpanda topic `polygon.v2.prediction.wallet-token-activities` partitions 为 `12`，`retention.ms` 为 `86400000`，`retention.local.target.ms` 为 `86400000`。
+  - ClickHouse local table engine 为 `MergeTree`，`ORDER BY (event_slug, seq_index, activity_id)`，热表 TTL 为 `ts + toIntervalDay(3)`。
+  - ClickHouse 当前 activity 样本存在 `buy`、`sell`、`inventory_adjust`，但原始表中发现少量重复 `activity_id`，需由 API 查询层去重。
+- 生产 services 端口转发 API 验收已完成：
+  - `GET /v1/prediction/events/world-cup-winner/activities?limit=20` 返回 200。
+  - 返回 20 条 activity。
+  - activity item 字段数为 27，Future.news activity 字段映射后缺失字段为 `[]`。
+  - 相比 Future.news activity item 额外返回 `activityId`、`conditionId`、`logIndex`、`source`。
+  - 当前页 `activityId` 无重复，`seqIndex` 倒序。
+  - `takerImage`、`takerName`、`takerPseudonym` 缺失画像时仍返回 key，值为空字符串。
+- 公网 API Bearer 鉴权验收已完成，并于 2026-06-05 重新拉取确认：
+  - `GET https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?limit=20` 返回 200。
+  - 使用第一页 cursor 请求第二页返回 200。
+  - 第一页与第二页各返回 20 条 activity，页内与跨页均无重复 `activityId`。
+  - `seqIndex` 页内倒序，第一页末尾到第二页开头仍保持倒序。
+  - Future.news 样本字段数为 23，公网 ChainStream activity item 字段数为 27，映射覆盖 23/23，缺失字段为 `[]`。
+  - 公网 ChainStream 相比 Future.news 额外返回 `activityId`、`conditionId`、`logIndex`、`source`。
+  - 第一页 activity type 覆盖 `buy`、`sell`、`inventory_adjust`。
+  - 缺失画像类字段仍返回 key；当前样本中 `takerImage`、`takerName`、`takerPseudonym` 为空字符串兜底。
+  - 当前样本中部分 `inventory_adjust` activity 的 `takerOrderHash` 为空字符串兜底，字段 key 保持存在。
+  - 当前最新两页已满足字段完整性与普通 cursor 分页验收。
+- 公网 API 于 2026-06-05 07:24 CST 重新按单个 prediction 口径验收：
+  - 验证 endpoint：`GET https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=20`。
+  - 使用 `curl` + Bearer token 调用返回 200；Python `urllib` 被 Cloudflare 1010 browser signature 拦截，因此公网 API 自动化验收使用 `curl` 发起 HTTP 请求。
+  - 第一页返回 20 条、第二页返回 20 条；第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，字段集合为 `activityId`、`amount`、`assetIds`、`blockNumber`、`conditionId`、`eventSlug`、`logIndex`、`marketIcon`、`marketId`、`marketQuestion`、`outcome`、`outcomes`、`price`、`quantity`、`seqIndex`、`source`、`taker`、`takerAge`、`takerImage`、`takerName`、`takerOrderHash`、`takerPseudonym`、`takerTags`、`timestamp`、`tokenId`、`txHash`、`type`。
+  - Future.news 23 个字段映射后缺失字段为 `[]`；required 字段缺失样本为 `[]`。
+  - 画像兜底样本：`takerImage=""`、`takerName=""`、`takerPseudonym=""`、`takerTags=[]`，字段 key 均存在。
+  - `token_id` 过滤探针返回 200，返回 5 条，所有返回项的 `tokenId` 均等于请求 token。
+  - 单独按 `activity_type=buy`、`sell`、`redeem`、`inventory_adjust` 过滤时均返回 200，样本条数均为 3，样本 `type` 均与请求值一致。
+  - 最近两页 activity type 计数为 `buy=8`、`sell=12`、`inventory_adjust=20`；最新 activity lag 约 `195s`。
+- 公网 API 于 2026-06-05 07:44 CST 再次按单个 prediction 口径复测：
+  - 验证 endpoint 仍为 `GET https://api.chainstream.io/v1/prediction/events/world-cup-winner/activities?condition_id=0x9b6fef249040fd17e9c107955b37ac2c3e923509b6b0ff01cc463a331ddeb894&limit=20`。
+  - 第一页与第二页均返回 200，各返回 20 条 activity。
+  - 第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
+  - 最近两页 activity type 计数为 `buy=16`、`sell=16`、`inventory_adjust=8`。
+  - 最新 activity lag 约 `38s`。
+  - 画像兜底样本仍为 `takerImage=""`、`takerName=""`、`takerPseudonym=""`、`takerTags=[]`，字段 key 均存在。
+- 公网 API 于 2026-06-05 07:48 CST 复测仍通过：
+  - 第一页与第二页均返回 200，各返回 20 条 activity。
+  - 第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
+  - 最近两页 activity type 计数为 `buy=17`、`sell=15`、`inventory_adjust=8`。
+  - 最新 activity lag 约 `146s`。
+- 公网 API 于 2026-06-05 07:54 CST 复测：
+  - 单个 prediction 口径 endpoint 第一页与第二页均返回 200，各返回 20 条 activity。
+  - 第一页页内重复 `activityId` 数为 `0`，第一页和第二页跨页重复 `activityId` 数为 `0`。
+  - 返回字段数为 27，Future.news 23 个字段映射后缺失字段为 `[]`，required 字段缺失样本为 `[]`。
+  - 最新 activity lag 约 `31s`。
+  - `token_id` 过滤返回 200，5 条样本全部匹配请求 token。
+  - 单个 prediction 口径下 `activity_type=buy`、`sell`、`inventory_adjust` 均返回 200，样本数均为 3，样本 `type` 全部匹配请求值。
+  - 单个 prediction 口径下 `activity_type=redeem` 返回 200，但当前该 market 返回 0 条样本；event 口径不带 `condition_id` 的 `activity_type=redeem` 返回 200，5 条样本全部为 `redeem`，样本来自 condition `0xc7c21c8972c773b34f36f67f15dada2584474d959f7e338aca5994727d37ae39`。
+- 深分页重复问题已定位：
+  - 使用生产 ClickHouse 中重复 `activity_id` 附近的 cursor 访问公网 API，`limit=10` 返回 200，但存在 2 个重复 `activityId`。
+  - services 修复 PR 已创建：`https://github.com/chainstream-io/services/pull/29`。
+  - PR #29 基于最新 `origin/main`：`0 behind / 1 ahead`，当前 head commit 为 `b7151a`，GitHub merge state 为 `CLEAN`，无仓库 checks 配置。
+  - PR #29 在 ClickHouse 查询中增加 `LIMIT 1 BY activity_id`，在 API page limit 前按 `activity_id` 去重。
+  - PR #29 focused tests 已通过：
+    - `cargo test -p infrastructure database::prediction::tests`
+    - `cargo test -p api verify_prediction_event_activities_schema`
+  - 2026-06-05 07:56 CST 重新在 PR #29 head `b7151a1` 验证通过：
+    - `cargo test -p infrastructure database::prediction::tests`：4 个 prediction tests 通过，包含 `activities_sql_deduplicates_activity_ids_before_page_limit`。
+    - `cargo test -p api verify_prediction_event_activities_schema`：schema test 在 `api` lib 与 `data-service` test binary 均通过。
+    - `git diff --check` 通过。
+    - 输出仅包含仓库既有 warnings，无新增失败。
+- 单个 prediction / market endpoint 已补 PR：
+  - services PR #30 已创建：`https://github.com/chainstream-io/services/pull/30`。
+  - PR #30 基于最新 `origin/main`：`0 behind / 1 ahead`，当前 head commit 为 `1beaca3`，GitHub merge state 为 `CLEAN`，无仓库 checks 配置。
+  - PR #30 新增 `GET /v1/prediction/markets/{condition_id}/activities`，用于直接获取某一个 prediction / market 的 activity，不需要调用方指定 `event_slug`。
+  - PR #30 保留 event endpoint 作为专题 feed 与生产兼容路径，event endpoint 仍可用 `condition_id` 过滤单个 market。
+  - PR #30 focused tests 已通过：
+    - `cargo test -p infrastructure database::prediction::tests`
+    - `cargo test -p api verify_prediction_event_activities_schema`
+  - 2026-06-05 07:56 CST 重新在 PR #30 head `1beaca3` 验证通过：
+    - `cargo test -p infrastructure database::prediction::tests`：5 个 prediction tests 通过，包含 event slug filter 与 market condition-only SQL tests。
+    - `cargo test -p api verify_prediction_event_activities_schema`：schema test 在 `api` lib 与 `data-service` test binary 均通过。
+    - `git diff --check` 通过。
+    - OpenAPI smoke check 确认 `/v1/prediction/events/{event_slug}/activities`、`/v1/prediction/markets/{condition_id}/activities`、`PredictionActivitiesResponse`、`PredictionActivity`、`PredictionActivityOrder`、`PredictionActivityType` 与 `Prediction` tag 存在。
+    - 输出仅包含仓库既有 warnings，无新增失败。
+- chainstream-sdk PR 已创建：`https://github.com/chainstream-io/chainstream-sdk/pull/10`。
+- chainstream-sdk PR 基于最新 `origin/main`：`0 behind / 23 ahead`，当前 head commit 为 `32e7416`，GitHub merge state 为 `CLEAN`。
+- chainstream-sdk PR 已补 review note：
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625505564`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625651585`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625795368`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625833281`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625859236`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625946849`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4625968505`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626012457`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626033235`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626107819`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626744276`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626760602`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626796373`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626807595`
+  - `https://github.com/chainstream-io/chainstream-sdk/pull/10#issuecomment-4626909758`
+- SDK 本地验证已完成：
+  - TypeScript example build 通过。
+  - TypeScript SDK build 通过。
+  - TypeScript stream tests 通过。
+  - TypeScript activity 相关文件 Prettier check 通过。
+  - Rust example `cargo check` 通过。
+  - Rust stream tests 通过。
+  - 复核 `git diff --check origin/main...HEAD` 通过。
+  - 复核 TypeScript activity 相关文件 Prettier check 通过。
+  - 复核 `corepack pnpm --dir typescript test -- --run src/stream/stream.test.ts` 通过，5 个 test files / 31 个 tests 通过。
+  - 复核 `cargo test --manifest-path rust/Cargo.toml stream --lib` 通过，7 个 tests 通过。
+  - 复核 TypeScript SDK build `./node_modules/.bin/tsup` 通过。
+  - 复核 TypeScript 全量 unit tests `./node_modules/.bin/vitest --config=./vitest.config.ts run` 通过，5 个 test files / 31 个 tests 通过。
+  - 复核 Rust 全量 `cargo test` 通过。
+  - 复核 OpenAPI smoke check 确认 `/v1/prediction/markets/{condition_id}/activities`、`get.prediction.market.activities`、`PredictionActivityType`、`PredictionActivityOrder` 存在。
+  - 复核 Go OpenAPI Makefile 生成配置已纳入 Prediction：`MODULES` 包含 `prediction`，`oapi-codegen` 使用 `-include-tags Prediction` 输出 `go/openapi/prediction/client.gen.go`。
+  - 复核 Go REST generated client 已补：`go/openapi/prediction/client.gen.go` 包含 event / market activities 方法、activity model、order/type enum；`go/chainstream.go` 已挂载 `client.Prediction`。
+  - 复核 Go REST focused checks：本地 `gofmt`、`git diff --check`、`go list ./openapi/prediction` 通过；GitHub Actions `Go Linting` 通过，`Go Tests` 1.23 / 1.24 通过。
+  - 复核 Python REST OpenAPI client 已补：`prediction_api.py`、`prediction_activities_response.py`、`prediction_activity.py`、`prediction_activity_order.py`、`prediction_activity_type.py` 已纳入 committed client，并在 package exports 中暴露。
+  - 复核 Python REST focused tests 通过：`test_prediction_api.py`、`test_prediction_activity.py`、`test_prediction_activities_response.py`、`test_prediction_activity_order.py`、`test_prediction_activity_type.py`，7 个 tests 通过。
+  - 复核 Python REST import smoke 通过：`PredictionApi`、`PredictionActivitiesResponse`、`PredictionActivity`、`PredictionActivityOrder`、`PredictionActivityType` 均可从 `chainstream.openapi_client` 导入。
+  - 2026-06-05 本地生成器尝试未通过：`go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.0` 第一次被系统 kill，第二次低并发超过 3 分钟无输出后停止；`java -version` 5 秒无输出，无法可靠运行 `openapi-generator 7.11.0`。
+  - 复核 TypeScript runtime dependency 修复：`@solana/web3.js`、`viem` 已加入 dependencies，`bs58` 已从 devDependencies 移到 dependencies。
+  - 复核 `pnpm --dir typescript install --frozen-lockfile` 通过。
+  - 复核缺依赖相关文件 focused ESLint 通过：`src/utils/export.ts`、`src/utils/serializeTransaction.ts`、`src/types/calls.ts`。
+  - 复核 Python ruff baseline 修复：`ruff format --check` 通过，`ruff check` 通过。
+  - 复核 TypeScript 全量 lint `pnpm --dir typescript lint` 通过。
+  - 复核 Go lint config 使用 CI 同版本 `golangci-lint v2.12.2` 执行 `config verify` 通过。
+  - 复核 Python prediction activity stream targeted tests 通过：`chainstream/stream/test_prediction_activity.py`，3 个 tests 通过。
+  - 复核 Go prediction activity stream 新增单测已随 GitHub Actions `Go Tests` 1.23 / 1.24 通过；本地 Go test 在 desktop 环境中无输出卡住，未作为本地证据。
+- SDK PR GitHub Actions 已全绿：
+  - TypeScript Checks：build、lint、format、lockfile、build-examples、check-auth-crypto-imports 全部通过。
+  - TypeScript Tests：通过。
+  - Rust Checks：build、lint、format、lockfile、format-examples、lint-examples 全部通过。
+  - Rust Tests：stable 与 beta 全部通过。
+  - Go Linting：通过。
+  - Go Tests：1.23 与 1.24 全部通过。
+  - Python Checks：build、lint、format、lockfile 全部通过。
+  - Python Tests：3.10、3.11、3.12 全部通过。
+- SDK 静态与测试覆盖：
+  - TypeScript/Rust/Go/Python 都使用 enum + builder 生成 prediction activity channel。
+  - TypeScript/Rust/Go/Python 都能把短字段 realtime payload 解析成完整 activity model。
+  - TypeScript/Rust/Go/Python REST API client 均覆盖 event 与 market activities endpoint，并暴露 activity type/order enum。
+  - TypeScript `src/stream/stream.ts`、Rust `src/stream/client.rs`、Go `stream/stream.go`、Python `chainstream/stream/client.py` 均通过 `PredictionActivityChannelKind` / `WsPredictionActivityChannelKind` builder 生成 `pred:evt:{key}:act` 与 `pred:tok:{key}:act`，用户无需手写 channel。
+  - TypeScript、Rust、Go、Python 的 prediction activity stream tests 均断言 event channel 为 `pred:evt:world-cup-winner:act`，token channel 为 `pred:tok:{token}:act`，并验证短字段 `ty` 等 payload 能解析成完整 activity model。
+- SDK live 订阅验收尝试已完成：
+  - 使用 `~/.chainstream/credentials.env` client credentials 获取 fresh token，token 有效期为 24 小时。
+  - TypeScript SDK PR 分支本地 `dist` 可以完成 REST seed：`world-cup-winner` 拉取 50 条 activity，并从中得到 token channel 列表。
+  - TypeScript SDK 能连接 `wss://realtime-dex.chainstream.io/connection/websocket`，连接阶段通过。
+  - 订阅 `pred:evt:world-cup-winner:act` 与 `pred:tok:{tokenId}:act` 时，production realtime 返回 `code=102, message=unknown channel`。
+  - 判断：SDK channel 构造与解析逻辑已由本地测试覆盖，但 production realtime 侧尚未开放 `pred` namespace，因此 realtime live receive 与 SDK live receive 尚未通过。
+
+### 待最终验收
+
+- services PR #29 等待 reviewer 确认；确认前不 merge、不 tag、不部署。
+- services PR #29 merge 后，必须拉最新 `origin/main`，从 main 打 tag，再部署 services，并复测深分页探针重复数为 `0`。
+- services PR #30 等待 reviewer 确认；确认前不 merge、不 tag、不部署。
+- services PR #30 与 PR #29 在 `crates/infrastructure/src/database/prediction.rs` 存在预期内容冲突；release 顺序固定为先 merge #29，再刷新 #30 到最新 `origin/main` 并解决冲突，通过 focused tests 后才能 merge。冲突 resolution 必须同时保留 #30 的 market endpoint query 重构、#30 的 event/market SQL tests、#29 的 `LIMIT 1 BY activity_id` 和 #29 的 dedup SQL test。
+- services PR #30 merge 后，必须拉最新 `origin/main`，从 main 打 tag，再部署 services，并复测 `GET /v1/prediction/markets/{condition_id}/activities` 公网返回 200，且无需 `event_slug`。
+- SDK PR 仍等待 reviewer 确认；确认前不 merge、不 tag、不发布。
+- SDK release tag 尚未创建；必须在 PR merge 后拉最新 `origin/main`，再从 main 创建 tag。
+- SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收尚未完成。
+- Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的生产 live receive 验收尚未完成；按当前要求 realtime 先不部署，后续需补 production `pred` namespace 或等价放行配置后再复测。
+- Firstscreen cache 默认关闭已由代码与日志复核；若后续打开，需要单独补缓存命中率、陈旧数据和 cache write 日志验收。
+- SDK PR 当前 CI 为 `CLEAN`，所有 GitHub Actions checks 已通过；仍等待 reviewer 确认，确认前不 merge、不 tag、不发布。

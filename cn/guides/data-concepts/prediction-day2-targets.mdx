@@ -111,7 +111,7 @@ icon: "list-check"
 14. chainstream-sdk PR #10 review 通过后合并到 `main`。
 15. 在 SDK 仓库执行 `git checkout main && git pull --ff-only origin main`，从 main 创建并推送需要发布的 SDK tag：`js-v*`、`rust-v*`、`py-v*`、`go-v*`。
 16. 等待 SDK release workflows 完成，记录 npm、crates.io、PyPI、Go SDK repo/tag 发布结果。
-17. Realtime 仍按当前要求先不部署；生产 live receive 与 SDK live receive 在 `pred` namespace 放行后单独补验收。
+17. Realtime production hotfix 在 `xrealtime/dexes-xrealtimego-server` 放行 `pred` namespace；rollout 完成后复测 event / token channel 与 SDK live example。
 
 ## PR 审核顺序
 
@@ -126,8 +126,8 @@ icon: "list-check"
 2. ClickHouse：activity local/distributed/archive/realtime view 存在，热表 TTL 为 3 天。
 3. Pipeline：trade buy/sell、settlement redeem/split/merge 样本能落 activity 表。
 4. API：`GET /v1/prediction/events/world-cup-winner/activities` 与 `GET /v1/prediction/markets/{condition_id}/activities` 均返回 200，字段不少于 features.new，分页下一页无重复 `activityId`。
-5. Realtime：producer、channel builder、短字段 payload 与 SDK parser 已上线；production live receive 按当前要求不纳入本次部署验收。
-6. SDK：TypeScript/Rust/Go/Python release tags 已发布；SDK parser 单测能把短字段 payload 解析成完整模型。
+5. Realtime：producer、channel builder、短字段 payload 与 SDK parser 已上线；production event / token channel live receive 已通过。
+6. SDK：TypeScript/Rust/Go/Python release tags 已发布；SDK parser 单测与 TypeScript SDK production live example 均能把短字段 payload 解析成完整模型。
 7. 缓存：`PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false` 时没有 firstscreen queue 堆积，也没有持续 firstscreen cache write 日志。
 8. 日志：生产无持续 decode error、ClickHouse insert error、cache write error。
 9. 发布：aggregation/services/SDK 的生产记录均包含 tag 值、对应 main commit、workflow 或 rollout 链接。
@@ -143,12 +143,12 @@ icon: "list-check"
 | Event REST API | 已验证 | `GET /v1/prediction/events/world-cup-winner/activities?limit=5` 公网返回 200，5 条，cursor present，`retentionDays=3`，必需字段缺失 `[]`，页内 `activityId` 无重复 | 无 |
 | Market REST API | 已验证 | `GET /v1/prediction/markets/{condition_id}/activities?limit=5` 公网返回 200，5 条，cursor present，`retentionDays=3`，无需传 `event_slug` | 无 |
 | OpenAPI / SDK REST | 已发布 | SDK PR #10 已 merge；`js-v2.1.15`、`py-v2.1.7`、`rust-v2.1.6`、`go-v2.1.7` 均指向 main commit `d41bed1`，release workflows 全 success | 无 |
-| Realtime channel / payload | 代码已上线，live receive 暂不验收 | aggregation tag 使用 `pred:evt:{event_slug}:act` / `pred:tok:{token_id}:act`，payload 短字段；SDK parser 单测通过；producer logs 曾确认 publish path 生效 | 按当前要求 realtime live receive 先不部署；后续放行 `pred` namespace 后复测 |
-| Realtime failure rule | 已验证代码证据 | Kafka/realtime/cache publish 失败只 debug 记录并继续主流程；不补发、不进 DLQ、不阻塞 offset commit | 生产 live receive 放行后补端到端验证 |
-| SDK realtime 订阅 | SDK 已发布，live receive 暂不验收 | TS/Rust/Go/Python enum + builder 构造 channel，短字段 payload 解析为完整模型；SDK release workflows 全绿 | realtime namespace 放行后跑 SDK live 示例 |
+| Realtime channel / payload | 已验证 | aggregation tag 使用 `pred:evt:{event_slug}:act` / `pred:tok:{token_id}:act`，payload 短字段；xrealtime generation `11128` 已放行 `pred` namespace；raw production WebSocket event / token channel 均收到 activity push | 无 |
+| Realtime failure rule | 已验证 | Kafka/realtime/cache publish 失败只 debug 记录并继续主流程；不补发、不进 DLQ、不阻塞 offset commit；production live receive 已确认 realtime 不反向阻塞 activity 链路 | 无 |
+| SDK realtime 订阅 | 已验证 | TS/Rust/Go/Python enum + builder 构造 channel，短字段 payload 解析为完整模型；SDK release workflows 全绿；published `@chainstream-io/sdk@2.1.15` production live example 收到完整 27 字段 activity model | 无 |
 | Firstscreen cache gate | 已验证默认关闭 | aggregation YAML 显式 `PREDICTION_FIRSTSCREEN_CACHE_ENABLED=false`；services deployment 未设置覆盖项；代码默认 false；最近 logs 无 cache write error | 后续打开开关前补命中率、陈旧数据、cache write 日志验收 |
-| 发布流程 | 已验证 | aggregation PR #39、services PR #29/#30、SDK PR #10、docs PR #3 均已 merge；aggregation/services/SDK tags 均指向各自 `origin/main` | 无 |
-| 最终验收 | 本次范围已完成 | topic、DDL、pipeline、API、SDK、发布 tag、protobuf Kafka payload、API 分页均有记录 | realtime production live receive 与 SDK live receive 按当前要求留作后续单独验收 |
+| 发布流程 | 已验证 | aggregation PR #39、services PR #29/#30、SDK PR #10、docs PR #4 均已 merge；aggregation/services/SDK tags 均指向各自 `origin/main`；xrealtime production image 已从 `latest` 切到 tag `pred-namespace-20260605-1f8d03dd` | 无 |
+| 最终验收 | 已完成 | topic、DDL、pipeline、API、realtime、SDK、发布 tag、protobuf Kafka payload、API 分页均有记录；SDK live example 已收到完整模型 | 无 |
 
 ## 2026-06-05 验收记录
 
@@ -165,8 +165,12 @@ icon: "list-check"
   - 最新样本包含全部 27 个必需字段，缺失字段为 `[]`；画像字段无数据时返回 `""` 或 `[]` 兜底。
   - event endpoint cursor 翻页验证：page1/page2 均返回 5 条，cursor 均存在，跨页 `activityId` overlap 为 `0`。
 - production Kafka payload 已用集群内 kcat 验证为 protobuf envelope，不是 JSON：latest payload `bytes=1065`，first16 为 `08 01 12 a4 08 0a 17 32 30 32 36 2d 30 36 2d 30`，`json_like=false`。
-- 当前本地 `kubectl` 只读查询在 `aws eks get-token` 凭据链路处 30 秒超时，因此本段不新增 K8s 实时 pod/log 证据；K8s rollout 与日志证据以本节下方已记录的 direct API 复核和本次公网 API 最新数据为准。
-- realtime production live receive 与 SDK live receive 按当前要求不纳入本次部署验收；代码、producer、SDK enum/builder/parser 已上线，后续需要放行 production `pred` namespace 后单独复测。
+- 当前本地 `kubectl` / AWS CLI 凭据链路曾在 `aws eks get-token` 处超时；最终使用直接 EKS SigV4 token 访问 Kubernetes API 复核 rollout。
+- xrealtime production hotfix 已完成：deployment `xrealtime/dexes-xrealtimego-server` generation `11128` rollout 成功，replicas / updated / ready / available 均为 `4/4/4/4`；`CENTRIFUGO_CHANNEL_NAMESPACES` 解析为 40 个 namespace，原 39 个 namespace 均保留并新增 `pred`。
+- xrealtime production image 已从 `latest` 切换为 tag 镜像 `440744256864.dkr.ecr.ap-southeast-1.amazonaws.com/xrealtime/xrealtimego:pred-namespace-20260605-1f8d03dd`；该 tag 对应 digest `sha256:1fd733b9c74925c7d405a5cbf07cc6d13fea35e7814936fedc35fc6e3e973e7d`。
+- production raw WebSocket 使用 fresh token 完成 connect / subscribe，`pred:evt:world-cup-winner:act` 与 `pred:tok:{token_id}:act` 均可订阅并收到 push；payload 为短字段集合 `id`、`amt`、`as`、`bn`、`cid`、`es`、`li`、`mi`、`mid`、`mq`、`oc`、`ocs`、`p`、`q`、`seq`、`src`、`tk`、`ta`、`ti`、`tn`、`toh`、`tp`、`tt`、`ts`、`tid`、`tx`、`ty`。
+- published TypeScript SDK `@chainstream-io/sdk@2.1.15` production live example 已通过：SDK 订阅 event channel 与 token channel 后收到完整 27 字段 activity model，字段集合与 REST `PredictionActivity` 对齐。
+- realtime repo 仍存在发布资产工程债：当前 production `centrifugo/config.json` 被 `.gitignore` 忽略，远端 clean worktree 缺少该文件；`Dockerfile-xrealtime`、`deploy.sh`、`k8s/` 在本地为 untracked。Day2 runtime 验收已完成，后续需把 xrealtime namespace 与 deploy manifest 收敛到可审计的 repo / secret-managed 发布流程。
 
 ### 历史过程记录
 
@@ -367,10 +371,10 @@ icon: "list-check"
   - TypeScript SDK PR 分支本地 `dist` 可以完成 REST seed：`world-cup-winner` 拉取 50 条 activity，并从中得到 token channel 列表。
   - TypeScript SDK 能连接 `wss://realtime-dex.chainstream.io/connection/websocket`，连接阶段通过。
   - 订阅 `pred:evt:world-cup-winner:act` 与 `pred:tok:{tokenId}:act` 时，production realtime 返回 `code=102, message=unknown channel`。
-  - 判断：SDK channel 构造与解析逻辑已由本地测试覆盖，但 production realtime 侧尚未开放 `pred` namespace，因此 realtime live receive 与 SDK live receive 尚未通过。
+  - 判断：SDK channel 构造与解析逻辑已由本地测试覆盖；首次失败根因为 production realtime 侧尚未开放 `pred` namespace。
+  - 最终复测：放行 `pred` namespace 并切换 xrealtime tag 镜像后，published `@chainstream-io/sdk@2.1.15` production live example 已成功收到完整 activity model，该历史失败已被覆盖。
 
-### 待最终验收
+### 后续工程债
 
-- Realtime event channel `pred:evt:world-cup-winner:act` 与 token channel `pred:tok:{tokenId}:act` 的 production live receive 验收尚未纳入本次部署；后续需补 production `pred` namespace 或等价放行配置后再复测。
-- SDK 示例 live 订阅 WorldCup activity 并收到完整模型的生产验收随 realtime namespace 放行后单独补测。
+- xrealtime production runtime 已通过 live 验收，但 `centrifugo/config.json`、`Dockerfile-xrealtime`、`deploy.sh`、`k8s/` 等发布资产仍需 repo 化或进入 secret-managed 配置流程，避免后续 namespace 变更依赖本地 ignored / untracked 文件。
 - Firstscreen cache 默认关闭已由代码、配置和日志复核；若后续打开，需要单独补缓存命中率、陈旧数据和 cache write 日志验收。
